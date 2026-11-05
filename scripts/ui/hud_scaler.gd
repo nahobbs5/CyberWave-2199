@@ -18,7 +18,11 @@ static func apply(layer: CanvasLayer, hud_scale: float) -> void:
 				child.reparent(root, false)
 		var viewport := layer.get_viewport()
 		if viewport != null:
-			viewport.size_changed.connect(_resize.bind(layer, root))
+			var on_resize := func() -> void: _resize(layer, root)
+			viewport.size_changed.connect(on_resize)
+			root.tree_exiting.connect(func() -> void:
+				if viewport.size_changed.is_connected(on_resize):
+					viewport.size_changed.disconnect(on_resize))
 	layer.scale = Vector2.ONE * hud_scale
 	_resize(layer, root)
 

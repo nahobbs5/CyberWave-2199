@@ -1,5 +1,5 @@
 # CYBERWAVE 2199
-## Game Design Document — Version 1.3
+## Game Design Document — Version 1.4
 
 **Status:** Development Baseline  
 **Engine:** Godot 4  
@@ -596,6 +596,7 @@ Coins are collected automatically on contact.
 - Track coins respawn each lap.
 - Maximum collectible track coins per race: 30.
 - Coins are not dropped when hit.
+- Only the player collects track coins; AI racers pass through them.
 - Coin placement should encourage exploration without requiring excessive deviation from racing lines.
 
 ## 9.3 Race Rewards
@@ -609,6 +610,8 @@ Coins are collected automatically on contact.
 | Win Grand Prix | +100 |
 
 These rewards are additive.
+
+A racer eliminated in Elimination has not completed the race and keeps only the track coins collected.
 
 ## 9.4 Cosmetic Shop
 
@@ -636,6 +639,8 @@ Planned categories:
 Prices may change during balancing.
 
 Purchased cosmetics remain permanently available.
+
+Purchases are shared by every vehicle; each vehicle keeps its own equipped cosmetics.
 
 ## 9.5 License Plates
 
@@ -1102,7 +1107,7 @@ Detailed artwork, weapons, cosmetics, and completed environments are not require
 # 20. Document Control
 
 **Project:** Cyberwave 2199  
-**Document Version:** 1.3  
+**Document Version:** 1.4  
 **Status:** Approved design baseline for initial development  
 **Engine:** Godot 4  
 **Initial Platform:** Windows PC  
@@ -1121,5 +1126,6 @@ Changes after Version 1.0 should be tracked as revisions rather than silently re
 | 1.1 | 2026-11-05 | Keyboard drift changed from Q / E to holding Shift while steering with A / D, after Phase 1 testing found it more intuitive (§3.2, §4.1, §16, §19). Gamepad drift buttons unchanged. |
 | 1.2 | 2026-11-05 | After Phase 3 testing: Hunter Drone and Railgun hits knock out the victim's selected weapon (§6.5); the EMP Pulse keeps weapons offline for 5 s (§6.3). |
 | 1.3 | 2026-11-05 | Phase 4: added Triple Nitro, three Nitro charges in one slot (§6.3, §6.4). Grand Prix results are fixed at the player's finish, classifying racers still on track by current position (§2.2). |
+| 1.4 | 2026-11-05 | Phase 5: only the player collects track coins (§9.2); eliminated racers don't earn the completion reward (§9.3); purchases are shared across vehicles while each vehicle keeps its own equipped cosmetics (§9.4). |
 
-**End of Game Design Document — Version 1.3**
+**End of Game Design Document — Version 1.4**

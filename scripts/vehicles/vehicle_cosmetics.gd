@@ -147,7 +147,9 @@ static func _add_stripes(car: Node3D, item: CosmeticItem) -> void:
 			s.position = Vector3(side * 0.956, 0.04, 0.2)
 			group.add_child(s)
 		return
-	var lanes: Array[float] = [0.0] if item.style == "center" else [-0.22, 0.22]
+	var lanes: Array[float] = [0.0]
+	if item.style != "center":
+		lanes = [-0.22, 0.22]
 	var width := 0.3 if item.style == "center" else 0.16
 	# Each stripe runs over the nose, the cabin roof and the rear deck.
 	for lane in lanes:
@@ -234,7 +236,7 @@ static func _add_exhaust(root: Node3D, item: CosmeticItem) -> void:
 	sphere.rings = 4
 	for side in [-1.0, 1.0]:
 		var tip := MeshInstance3D.new()
-		tip.name = "Exhaust"
+		tip.name = "ExhaustL" if side < 0.0 else "ExhaustR"
 		tip.mesh = sphere
 		tip.material_override = _material(item.color, "neon")
 		tip.position = Vector3(side * 0.45, -0.05, 2.13)

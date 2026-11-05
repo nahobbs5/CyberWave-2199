@@ -39,7 +39,7 @@ static func get_profile() -> PlayerProfile:
 
 ## Drops the in-memory copy so the next access reads the file again (as if
 ## the game had been restarted).
-static func reload() -> PlayerProfile:
+static func reload_from_disk() -> PlayerProfile:
 	_instance = null
 	return get_profile()
 
@@ -48,7 +48,9 @@ static func load_from_disk() -> PlayerProfile:
 	var p := PlayerProfile.new()
 	var text := SaveUtil.read_text(save_path)
 	if text != "":
-		var data: Variant = JSON.parse_string(text)
+		# A damaged file just means a fresh profile (parse quietly).
+		var json := JSON.new()
+		var data: Variant = json.data if json.parse(text) == OK else null
 		if data is Dictionary and int(data.get("version", 0)) == SAVE_VERSION:
 			p._read(data)
 	p._ensure_free_items()

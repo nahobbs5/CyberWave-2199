@@ -1,20 +1,20 @@
 # CyberWave-2199
 
 Single-player 3D arcade combat racing game for Godot 4 (GDScript, Jolt Physics).
-The authoritative design is [`docs/Game Design Document.md`](docs/Game%20Design%20Document.md) (GDD v1.3).
+The authoritative design is [`docs/Game Design Document.md`](docs/Game%20Design%20Document.md) (GDD v1.4).
 
-**Current milestone: Phase 4, game modes** (GDD §16). On the graybox test circuit:
-- **Versus:** one race against seven AI rivals,
-- **Grand Prix:** two three-race championships with points, grids that follow the previous race, and saving between races,
-- **Elimination:** the last two racers are knocked out at each lap's midpoint checkpoint,
-- a pause menu (Esc / Start) and a new **Triple Nitro** weapon.
+**Current milestone: Phase 5, interface and progression** (GDD §16):
+- a **main menu**, a **race setup** screen that remembers your choices, a **garage** and a **settings** screen,
+- **eight vehicles** (placeholder bodies with different stats and proportions),
+- **coins**: picked up on track and paid out for finishing, spent in the garage's **cosmetic shop** (8 categories),
+- a **global license plate** shown on your car, plus the AI rivals' own plates,
+- **saved progress** (coins, cosmetics, plate, car, personal bests, Grand Prix results, last setup) and **settings and accessibility** (HUD scale, motion blur, camera shake, reduced flashing, audio sliders, remappable controls).
 
-Phases 1–3 (driving, racing, combat) are unchanged. The real main menu, garage and cosmetics are Phase 5.
+Phases 1–4 (driving, racing, combat, game modes) are unchanged. Every race still uses the graybox test circuit (Phase 6 builds the real tracks and car models).
 
-Open the project in Godot 4.7 and press **F5**. That opens a placeholder **mode select** screen
-(`scenes/menu/mode_select.tscn`) with the modes and race settings: AI difficulty, laps (Versus) and weapons on/off.
-Running `scenes/race/race.tscn` directly (**F6**) still starts a Versus race using the `Race` node's Inspector settings.
-**Free drive** (`scenes/free_drive.tscn`, the Phase 1 sandbox) is on the mode screen too; Esc returns from it.
+Open the project in Godot 4.7 and press **F5** for the main menu (`scenes/menu/main_menu.tscn`).
+Running `scenes/race/race.tscn` directly (**F6**) still starts a Versus race using the `Race` node's Inspector settings and your selected car.
+**Free drive (practice)** on the main menu opens the Phase 1 sandbox (`scenes/free_drive.tscn`) with your car; Esc returns from it.
 
 ## Controls
 
@@ -29,13 +29,14 @@ Running `scenes/race/race.tscn` directly (**F6**) still starts a Versus race usi
 | Select weapon slot 1 / 2 | 1 / 2 | D-pad Left / Right |
 | Use selected weapon | Space | A / Cross |
 | Pause menu | Esc | Start / Options |
-| Menu buttons (pause, results, mode select) | Enter, mouse, arrow keys | A / Cross, D-pad |
+| Menu buttons | Enter, mouse, arrow keys | A / Cross, D-pad |
 
 Arrow keys are an extra convenience on top of the GDD's bindings. Space doesn't press menu buttons, so firing
 weapons as you cross the line can't skip the results screen. The results buttons also wait 1.5 s before they respond.
 
+Every gameplay action can be rebound in **Settings → Controls** (keyboard and gamepad separately; see below).
 Actions are registered at startup by `scripts/core/input_setup.gd`. Any action you define in
-**Project Settings → Input Map** with the same name takes priority over the defaults.
+**Project Settings → Input Map** with the same name takes priority over the defaults (your Settings rebinds still apply on top).
 
 ### Drifting
 
@@ -100,6 +101,66 @@ track list is data (`resources/grand_prix/*.tres`), so the Phase 6 tracks can be
   - HUD: active racers, the next elimination, places left, your distance to the gate, a QUALIFIED banner when you get through, and an "X ELIMINATED" feed. If you're knocked out, the camera follows the leader and the results appear.
 - **Pause menu** (Esc / Start): the whole race stops (physics, timers, AI). It offers **Resume**, **Restart race** and **Quit to mode select**.
 
+### Menus
+
+- **Main menu** (GDD §11.2): Continue Grand Prix (only when one is saved), Versus, Grand Prix, Elimination, Garage, Settings, Free drive (practice), Exit.
+- **Race setup** (GDD §11.3): track (only the test circuit for now) or championship, vehicle picker with a rotating preview of your car (paint, cosmetics and plate), stats, AI difficulty, laps (Versus), weapons on/off, Start race. It remembers your last choices and shows your personal best (Versus) or best championship finish (Grand Prix).
+  - **A Grand Prix keeps the car you started it with** for all three races (the GDD saves the player vehicle with the championship).
+- **Garage** (GDD §11.4): rotating preview, vehicle stats, license plate editor, the 8 cosmetic categories, your coin balance.
+  - **Click an item's name** to try it on. **Buy** spends coins and equips it; **Equip** puts an item you own on this car. Purchases are permanent and shared by all cars, but **each car has its own equipped look**.
+  - The **license plate** is one text for every car: up to 8 characters (letters, digits, spaces, dashes), saved as you type.
+- **Settings** (GDD §11.9): every change applies and saves immediately.
+  - **HUD scale** 75–150%, **motion blur** (off by default; a subtle edge blur at high speed and during boosts, the centre stays sharp), **camera shake** 0–100% (impacts, stuns, boosts), **reduced flashing** (the INCOMING warning stays steady instead of blinking; weapon flashes, status lights and the lock reticle are calmer).
+  - **Audio:** Master, Music and Sound effects. There's no music yet, so the Music slider has nothing to control until Phase 6.
+  - **Controls:** press a binding, then the new key, gamepad button or stick direction within 5 seconds. A rebind replaces all of that action's keyboard inputs (so W + Up becomes just your new key) or all of its gamepad inputs. If another action already uses that input, you get a note (both keep working). **Reset controls to defaults** undoes all rebinds.
+  - HUD scale and motion blur take effect from the next race.
+
+### Vehicles
+
+All eight GDD cars are available from the start (GDD §5.1). Until the Phase 6 models arrive, they share the placeholder body with different proportions (longer, lower, taller, no roof, bigger wing). Their stats are a first balance pass, kept within about 13% of the V8 Specter (the biggest gap is the Nexus X's acceleration). No car beats another in all four stats; a test enforces this.
+
+| Vehicle | Character | Top speed | Accel | Handling | Drift |
+|---|---|---:|---:|---:|---:|
+| V8 Specter | Balanced (the reference car) | 44.0 | 14.0 | 2.40 | 1.40 |
+| Aurora GT | Smooth, precise, extra grip | 43.5 | 13.6 | 2.50 | 1.32 |
+| Empyrean S | Highest top speed | 46.2 | 13.0 | 2.25 | 1.35 |
+| Nexus X | Strongest acceleration | 43.0 | 15.8 | 2.35 | 1.38 |
+| Riviera 88 | Responsive cornering | 42.8 | 14.0 | 2.62 | 1.46 |
+| Orbiter | Keeps more steering flat out | 45.0 | 13.6 | 2.30 | 1.30 |
+| Valkyrie R | Predictable, steady drifts | 43.8 | 14.2 | 2.42 | 1.36 |
+| Cipher EVO | Sharp and loose: less grip, slow off the line | 44.8 | 13.4 | 2.56 | 1.56 |
+
+Speeds are m/s, acceleration m/s², handling and drift rad/s. The AI rivals all drive the V8 Specter (so the racing line and AI pace stay as tuned), each in their own colour and plate.
+
+### Coins and cosmetics
+
+- **Track coins** (GDD §9.2): 10 gold coins per lap on the test circuit, in pairs on the straights a few metres off the racing line. Only you collect them (on contact); they come back every lap, the cap is 30 per race, and getting hit never costs any. The HUD shows a coin counter.
+- **Race rewards** (GDD §9.3), paid when your race ends: 25 for completing, +15 / +25 / +40 for 3rd / 2nd / 1st, +100 for winning a Grand Prix, plus your track coins.
+  - **Eliminated** in Elimination counts as not completing: you keep only your track coins. The other finalist counts as completing in 2nd.
+  - **Paid once:** in a Grand Prix the race's coins are written into the championship save first, and the race can't be restarted after its result is saved, so neither resuming nor restarting pays twice (GDD §13.2).
+- **Results screen** (GDD §11.7) adds: coins earned line by line and your new balance, **NEW PERSONAL BEST** (race time and/or best lap, per track and lap count), cosmetics you can **newly afford**, and in a Grand Prix the **next race's grid**.
+- **Shop** (GDD §9.4), one free starter item per category, owned from the start:
+
+| Category | Items | Price |
+|---|---|---:|
+| Paint | Crimson, Ultraviolet, Acid Green, Arctic White, Sunset Orange, Midnight Black | 100 |
+| Finish | Matte 500, Metallic Flake 750, Chrome 1,000 | 500–1,000 |
+| Stripes | Twin racing, centre line, side flash | 300 |
+| Decals | "2199", "88" 200; "CYBERWAVE" 300 | 200–300 |
+| Wheels | Chrome mesh, gold spoke, neon rim | 500 |
+| Plate frame | Chrome, gold, neon magenta | 250 |
+| Underglow | Cyan, magenta, lime | 400 |
+| Exhaust | Plasma blue, toxic green, violet tips | 350 |
+
+The GDD prices basic paint (100), plate frames (250), wheels (500) and premium finishes (1,000); the other prices are first guesses. Items live in `scripts/progression/cosmetic_catalog.gd`; ids must stay stable because saves refer to them. Exhaust cosmetics colour the exhaust tips only: boost flames keep their drift-level colours, which carry gameplay information.
+
+### Saving
+
+- **Profile** (`user://profile.json`, GDD §13.1): coins, owned and equipped cosmetics, license plate, selected car, personal bests, completed Grand Prix results and the last race setup. It's versioned JSON written atomically (to a temporary file, then swapped in). A damaged or unknown-version file falls back to a fresh profile instead of crashing; an interrupted swap is recovered from the temporary file.
+- **Settings** (`user://settings.cfg`): display, audio, control rebinds and the camera view.
+- **Grand Prix** (`user://grand_prix_save.json`): as in Phase 4, now also written atomically, with the coins already awarded.
+- To start over, delete those files (on Windows they're in `%APPDATA%\Godot\app_userdata\Cyberwave 2199\`).
+
 ### Weapons
 
 Drive through a "?" crate to collect a random weapon into your first free slot. With both slots full, crates stay in place for someone else. Crates respawn after 3 s, in 5 rows of 4 around the lap.
@@ -140,7 +201,8 @@ Drive through a "?" crate to collect a random weapon into your first free slot. 
 
 ```
 scenes/
-  menu/mode_select.tscn      Main scene: placeholder mode select (Phase 5 replaces it)
+  menu/main_menu.tscn        Main scene: main menu
+  menu/race_setup.tscn, garage.tscn, settings_menu.tscn
   race/race.tscn             8-car race (RaceManager + track + camera + HUDs)
   free_drive.tscn            Phase 1 sandbox (one car, no race rules)
   tracks/test_circuit.tscn   Graybox circuit, environment and moonlight
@@ -176,15 +238,28 @@ scripts/
     vehicle_recovery.gd      VehicleRecovery: manual/auto reset, safe-point tracking
     vehicle_feedback.gd      Placeholder drift/boost visuals and generated audio cues
     vehicle_stats.gd         VehicleStats resource (Top Speed, Acceleration, Handling, Drift, ...)
+    vehicle_data.gd          VehicleData resource: name, type, stats, placeholder proportions
+    vehicle_catalog.gd       VehicleCatalog: the eight cars, stat ratings
+    vehicle_cosmetics.gd     VehicleCosmetics: applies proportions, cosmetics and plates to the car
   camera/
     chase_camera.gd          ChaseCamera: shared controller, collision avoidance, saved choice
     camera_profile.gd        CameraProfile resource (distance, height, FOV, smoothing, ...)
   track/track_circuit.gd     TrackCircuit: builds the circuit and answers track-space queries
-  ui/                        PrototypeHUD, DriftMeter, RaceHUD, PauseMenu, UIStyle
-  menu/mode_select.gd        ModeSelect: placeholder launch screen
-  core/game_session.gd       GameSession: carries the chosen RaceConfig between scenes
+  ui/                        PrototypeHUD, DriftMeter, RaceHUD, PauseMenu, UIStyle,
+                             VehiclePreview (rotating 3D car), HudScaler, SpeedBlur (motion blur)
+  menu/                      MainMenu, RaceSetup, Garage, SettingsMenu
+  progression/
+    player_profile.gd        PlayerProfile: coins, shop, equip, plate, records, save / load
+    cosmetic_item.gd         CosmeticItem resource
+    cosmetic_catalog.gd      CosmeticCatalog: every shop item and price
+    race_rewards.gd          RaceRewards: coin payout rules
+    track_coins.gd           TrackCoins: on-track coin pickups
+  core/game_session.gd       GameSession: carries the chosen RaceConfig between scenes, menu navigation
+  core/game_settings.gd      GameSettings: settings, accessibility, audio buses, rebinds
+  core/save_util.gd          SaveUtil: atomic writes
 resources/
-  vehicles/placeholder_gt_stats.tres
+  vehicles/*.tres            The eight VehicleData resources (V8 Specter uses placeholder_gt_stats.tres)
+  vehicles/stats/*.tres      The other seven cars' stats
   cameras/far_chase.tres, close_chase.tres
   ai/easy.tres, normal.tres, hard.tres
   racers/rival_roster.tres   Seven placeholder rivals (edit in the Inspector)
@@ -194,6 +269,7 @@ tests/
   test_phase2.gd             Race checks, including full simulated races (weapons off)
   test_phase3.gd             Combat checks, including a full race with weapons
   test_phase4.gd             Mode checks: full Versus, 3-race Grand Prix and Elimination events
+  test_phase5.gd             Menus, garage, shop, coins, rewards, saving, settings and rebinding
 docs/                        GDD
 ```
 
@@ -219,7 +295,8 @@ docs/                        GDD
   - Generated nodes are prefixed `_Gen` and are not saved, so edit the exported values instead.
   - It also builds the checkpoint gates (Area3D, emitting `checkpoint_crossed`), defines the grid slots, and exposes `get_offset_at`, `get_safe_transform`, `wrapped_delta` and related helpers.
 - **Collision layers:** 1 = environment, 2 = vehicles. Wheel rays only hit the environment, so cars never "drive" on each other.
-- **Camera choice** is stored in `user://settings.cfg` (`[camera] profile_index`). A Phase 5 SettingsManager should take over this file.
+- **Camera choice** is stored in `user://settings.cfg` (`[camera] profile_index`), next to `GameSettings`' own sections.
+- **Static services:** `GameSession`, `GameSettings`, `PlayerProfile`, `CosmeticCatalog` and `VehicleCatalog` are static classes that load on first use, not autoloads. That keeps every scene runnable on its own and works with `godot -s` test scripts.
 
 ## Running the headless checks
 
@@ -229,7 +306,10 @@ godot --headless --fixed-fps 60 -s res://tests/test_phase1.gd
 godot --headless --fixed-fps 60 -s res://tests/test_phase2.gd
 godot --headless --fixed-fps 60 -s res://tests/test_phase3.gd
 godot --headless --fixed-fps 60 -s res://tests/test_phase4.gd
+godot --headless --fixed-fps 60 -s res://tests/test_phase5.gd
 ```
+
+Every suite uses its own `user://test_*` save files, so running them never touches your profile, settings or Grand Prix.
 
 `--fixed-fps 60` runs the physics as fast as the machine allows (about 2.5× faster than real time here), which matters for the simulated races. Phases 1–3 take 40–90 s each here. Phase 4 takes about 6 minutes: it runs a Versus race, three Grand Prix races (shortened to 1 lap each) and a full Elimination event. It writes a temporary save (`user://test_phase4_gp.json`), never your real one.
 
@@ -280,11 +360,23 @@ Phase 4 covers:
 - a 3-race Grand Prix, continued from the save after race 1: grids, rival identities, 58 points per race, one save per race, no restart after a saved result, and final standings,
 - a full Elimination event: 2 out at each of the three midpoints, nobody who qualified eliminated, positions 1–8, eliminated cars gone, and results shown.
 
+Phase 5 covers:
+- the catalogue (8 categories, one free starter each, GDD prices),
+- the profile: buying (not enough coins, twice, then success), equipping only owned items, per-car looks, plate rules, personal bests, newly affordable items, and everything surviving a "restart" (reloading from disk),
+- save safety: corrupt and unknown-version files, no leftover temp file, and recovery from an interrupted swap,
+- the reward rules, including eliminated and Grand Prix wins,
+- the eight vehicles: GDD names, the stat band, no car better in all four stats, Empyrean fastest and Nexus quickest,
+- settings and rebinding: keyboard and gamepad rebinds, surviving a restart, audio buses and volumes, stick directions, and reset,
+- HUD scale keeping full-screen controls on screen, and every cosmetic actually appearing on the car (and being replaced when changed),
+- the menus: main menu entries, garage buy / try-on / plate / per-car loadout, race setup remembering choices after a restart, and rebinding through the Settings screen (including the conflict note and the timeout),
+- in races: your car's stats and plate, AI plates, coins (only you collect, respawn, the 30 cap), camera shake, reduced flashing, motion blur, a chosen car's stats,
+- a finished race paying once and saving, with the results showing coins and personal bests, and a Grand Prix race recording its coins in the championship and refusing a replay.
+
 The exit code is non-zero if anything fails. These checks do **not** judge how the game looks or feels.
 
 ## Status and known issues
 
-**Verified (2026-11-05):** 91 Phase 1, 159 Phase 2, 97 Phase 3 and 115 Phase 4 headless checks pass on Godot 4.7.2 (Linux build). In a typical simulated weapons race, the AI use 30–50 weapons and land 13–19 hits, with no recoveries. On the redesigned 2.6 km circuit, simulated races run with no recoveries at any difficulty. AI earn roughly 2–18 drift boosts each per race.
+**Verified (2026-11-05):** 91 Phase 1, 159 Phase 2, 97 Phase 3, 117 Phase 4 and 113 Phase 5 headless checks pass on Godot 4.7.2 (Linux build). In a typical simulated weapons race, the AI use 30–50 weapons and land 13–19 hits, with no recoveries. On the redesigned 2.6 km circuit, simulated races run with no recoveries at any difficulty. AI earn roughly 2–18 drift boosts each per race.
 
 | AI difficulty | Typical lap | 3-lap race (all 8 AI) |
 |---|---|---|
@@ -295,7 +387,11 @@ The exit code is non-zero if anything fails. These checks do **not** judge how t
 The racing has **not** been played on screen yet.
 
 - **AI pace is untested against a human.** Normal laps at about 64 s may be quick or slow for you. Tune `speed_factor` in `resources/ai/*.tres`.
-- **Game modes haven't been played on screen.** The mode select screen, pause menu, results buttons, Grand Prix standings and Elimination HUD are built in code and only checked headless. They may need layout fixes.
+- **None of the menus have been seen on screen.** The main menu, race setup, garage, settings, pause menu, results screen (now with rewards and the next grid), Grand Prix standings and Elimination HUD are built in code and only checked headless. Expect layout fixes, especially at small window sizes and at 150% HUD scale.
+- **Cosmetics and the 3D preview haven't been seen either.** Stripes, decals, plates and rims are positioned by hand on the placeholder body; the Riviera's lowered cabin and the other proportions may leave stripes or decals slightly off.
+- **Vehicle balance is a first pass.** The stat spread follows each car's GDD character but hasn't been driven. AI always drive the V8 Specter.
+- **Prices and payouts are first guesses** where the GDD gives none (stripes, decals, underglow, exhaust, metallic and matte finishes). At roughly 30–75 coins per race, the 1,000-coin Chrome finish takes 15+ races.
+- **Not in Phase 5:** the optional first-time tutorial (GDD §11.9, not chosen for this phase), the race presentation items in GDD §11.8 (pre-race camera sweep, position-change feedback, podium ceremony), music, and dragging to rotate the preview.
 - **Every race uses the test circuit**, and there's only one vehicle, until Phases 5–6.
 - **Grand Prix classification at your finish** gives racers still on track their current position. The GDD doesn't specify this; it avoids waiting for the field.
 - **Only 6 of the GDD's 11 weapons** exist so far, plus Triple Nitro. Holo Decoy, Gravity Mine, System Glitch, Cyber Leech and Swarm Bots are Phase 6 content; the data-driven setup should make adding them straightforward.
