@@ -2,7 +2,8 @@ class_name VehicleFeedback
 extends Node3D
 ## Placeholder drift and boost feedback (GDD 4.3): coloured undercarriage glow
 ## and wheel sparks per charge level, exhaust flames during boosts, and
-## generated audio tones for each level, drift end and boost.
+## generated audio tones for each level, drift end and boost, and water
+## spray behind the rear wheels while the car is wet.
 ## Replace with real particles and sounds in Phase 6.
 
 @export var spark_flicker_speed: float = 30.0
@@ -13,6 +14,7 @@ var _spark_material: StandardMaterial3D
 var _flame_material: StandardMaterial3D
 var _tones: Dictionary = {}
 var _time: float = 0.0
+var _spray: Array[MeshInstance3D] = []
 
 @onready var _glow: OmniLight3D = $UnderGlow
 @onready var _sparks: Array[MeshInstance3D] = [$SparkL, $SparkR]
@@ -34,6 +36,7 @@ func _ready() -> void:
 		flame.material_override = _flame_material
 		flame.visible = false
 	_glow.visible = false
+	_build_spray()
 	_cue_player.bus = &"SFX"
 	_boost_player.bus = &"SFX"
 
@@ -67,6 +70,13 @@ func _process(delta: float) -> void:
 	if _glow.visible:
 		_glow.light_energy = 2.0 + float(drift.level)
 
+	var wet := _vehicle.status != null and _vehicle.status.has(&"wet") and absf(_vehicle.forward_speed) > 6.0
+	for spray in _spray:
+		spray.visible = wet
+		if wet:
+			var size := clampf(absf(_vehicle.forward_speed) / 30.0, 0.4, 1.4)
+			spray.scale = Vector3(size, size * (0.9 + 0.2 * sin(_time * 25.0 + spray.position.x)), size)
+
 	var boosting := _vehicle.is_boosting()
 	if boosting:
 		_flame_material.albedo_color = _vehicle.boost_color
@@ -76,6 +86,31 @@ func _process(delta: float) -> void:
 		if boosting:
 			var length := 0.8 + 0.4 * float(_vehicle.boost_level) + 0.2 * sin(_time * 40.0)
 			flame.scale = Vector3(1.0, length, 1.0)
+
+
+func _build_spray() -> void:
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(0.8, 0.9, 1.0, 0.45)
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.emission_enabled = true
+	mat.emission = Color(0.6, 0.8, 1.0)
+	mat.emission_energy_multiplier = 0.8
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	var cone := CylinderMesh.new()
+	cone.top_radius = 0.05
+	cone.bottom_radius = 0.45
+	cone.height = 1.0
+	cone.radial_segments = 8
+	cone.rings = 1
+	for side in [-1.0, 1.0]:
+		var spray := MeshInstance3D.new()
+		spray.mesh = cone
+		spray.material_override = mat
+		spray.position = Vector3(side * 0.85, -0.45, 1.9)
+		spray.rotation.x = -1.2 # fanning up and back from the tyre
+		spray.visible = false
+		add_child(spray)
+		_spray.append(spray)
 
 
 func _set_level_color(level: int) -> void:

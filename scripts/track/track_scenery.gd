@@ -164,6 +164,43 @@ func add_panel(key: String, w: float, h: float, xf: Transform3D) -> void:
 	_quad(st, a, b, c, d, xf * Vector3(0, h * 0.5, -1.0))
 
 
+## Observation / Ferris wheel standing at `base`, turning in the YZ plane:
+## rim segments, spokes, cabins, a hub and two A-frame legs.
+func add_ferris_wheel(base: Vector3, radius: float, rim_key: String, frame_key: String,
+		cabin_key: String, hub_key: String) -> void:
+	var center := base + Vector3(0, radius + 8.0, 0)
+	var segments := 36
+	for i in segments:
+		var a0 := TAU * i / segments
+		var a1 := TAU * (i + 1) / segments
+		var p0 := center + Vector3(0, cos(a0) * radius, sin(a0) * radius)
+		var p1 := center + Vector3(0, cos(a1) * radius, sin(a1) * radius)
+		var seg := Transform3D(Basis.looking_at((p1 - p0).normalized(), Vector3.RIGHT), (p0 + p1) * 0.5)
+		add_box(rim_key, Vector3(1.2, 1.2, (p1 - p0).length()), seg)
+		if i % 3 == 0:
+			var spoke := Transform3D(Basis.looking_at((p0 - center).normalized(), Vector3.RIGHT), (center + p0) * 0.5)
+			add_box(frame_key, Vector3(0.4, 0.4, radius), spoke)
+			add_box(cabin_key, Vector3(3.0, 3.0, 4.0), xform(p0 + Vector3(2.5, -2.0, 0)))
+	add_cyl(hub_key, 4.0, 6.0, xform(center + Vector3(-3, 0, 0)).rotated_local(Vector3.FORWARD, PI * 0.5), 10)
+	for side in [-1.0, 1.0]:
+		var foot := base + Vector3(0, 0, side * radius * 0.57)
+		var dir := center - foot
+		add_box(frame_key, Vector3(3.0, 3.0, dir.length()),
+				Transform3D(Basis.looking_at(dir.normalized(), Vector3.RIGHT), (foot + center) * 0.5))
+
+
+## Palm tree: leaning trunk and a crown of seven fronds.
+func add_palm(pos: Vector3, h: float, trunk_key: String, leaf_key: String) -> void:
+	var lean := rng.randf_range(-0.08, 0.08)
+	var base := Transform3D(Basis(Vector3.FORWARD, lean), pos)
+	add_cyl(trunk_key, 0.35, h, base, 6, 0.25)
+	var top := base * Vector3(0, h, 0)
+	for i in 7:
+		var yaw := TAU * i / 7.0 + rng.randf() * 0.3
+		var leaf := Transform3D(Basis(Vector3.UP, yaw) * Basis(Vector3.RIGHT, -0.35), top)
+		add_box(leaf_key, Vector3(0.9, 0.12, 5.0), leaf.translated_local(Vector3(0, 0, -2.4)))
+
+
 ## A text sign (Label3D, not batched).
 func add_text(text: String, xf: Transform3D, color: Color, pixel: float = 0.06, font_size: int = 96) -> Label3D:
 	var label := Label3D.new()

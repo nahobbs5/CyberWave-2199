@@ -29,6 +29,7 @@ func _ready() -> void:
 	Music.play(get_tree(), Music.MENU)
 	mode = GameSession.setup_mode
 	_build()
+	UIStyle.fade_in(self)
 	_restore()
 	_start.grab_focus.call_deferred()
 
@@ -174,7 +175,7 @@ func _build() -> void:
 	var spacer := Control.new()
 	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	left.add_child(spacer)
-	_start = UIStyle.button("Start race", start)
+	_start = UIStyle.primary_button("Start race", start)
 	_start.custom_minimum_size = Vector2(420, 52)
 	left.add_child(_start)
 	left.add_child(UIStyle.button("Back", func() -> void: GameSession.to_main_menu(get_tree())))

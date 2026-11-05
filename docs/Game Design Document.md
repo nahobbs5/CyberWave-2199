@@ -1,5 +1,5 @@
 # CYBERWAVE 2199
-## Game Design Document — Version 1.6
+## Game Design Document — Version 1.7
 
 **Status:** Development Baseline  
 **Engine:** Godot 4  
@@ -515,6 +515,8 @@ An abandoned amusement park with overgrown pathways, flooded sections, roller co
 
 **Identity:** Jumps, environmental hazards, alternate routes.
 
+Built at about 3.1 km: two jump ramps on straights, a jump on the water-park shortcut, and standing water that makes cars slightly slower and less grippy while they're in it.
+
 ## 8.3 Vegas Overdrive
 
 **Location:** Las Vegas, Nevada
@@ -561,7 +563,7 @@ Tracks may contain:
 - Destructible barriers
 - Explosive environmental objects
 - Electrified hazards
-- Traction-altering surfaces
+- Traction-altering surfaces (standing water: about 12% lower top speed and 25% less grip while in it)
 - Starting gantries
 - Lap and elimination checkpoints
 - Vehicle recovery points
@@ -1122,7 +1124,7 @@ Detailed artwork, weapons, cosmetics, and completed environments are not require
 # 20. Document Control
 
 **Project:** Cyberwave 2199  
-**Document Version:** 1.6  
+**Document Version:** 1.7  
 **Status:** Approved design baseline for initial development  
 **Engine:** Godot 4  
 **Initial Platform:** Windows PC  
@@ -1144,5 +1146,6 @@ Changes after Version 1.0 should be tracked as revisions rather than silently re
 | 1.4 | 2026-11-05 | Phase 5: only the player collects track coins (§9.2); eliminated racers don't earn the completion reward (§9.3); purchases are shared across vehicles while each vehicle keeps its own equipped cosmetics (§9.4). |
 | 1.5 | 2026-11-05 | Phase 6 (first part): track specials from the concept art recorded as proposals, not requirements (§8.9). Vegas Overdrive built at about 4.4 km, with the Luxor shortcut through the pyramid (§8.3, §8.8). |
 | 1.6 | 2026-11-05 | After playtesting Vegas: shortened to about 3.2 km with a roughly 500 m opening straight (§8.3). HUD weapon slots show weapon pictures; the minimap sits bottom right (§11.5). |
+| 1.7 | 2026-11-05 | Six Flags New Orleans built at about 3.1 km (§8.2). Jump ramps and standing water defined as track features (§8.7). |
 
-**End of Game Design Document — Version 1.6**
+**End of Game Design Document — Version 1.7**

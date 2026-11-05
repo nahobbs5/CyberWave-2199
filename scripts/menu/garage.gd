@@ -25,6 +25,7 @@ func _ready() -> void:
 	Music.play(get_tree(), Music.GARAGE)
 	vehicle_index = VehicleCatalog.index_of(PlayerProfile.get_profile().selected_vehicle)
 	_build()
+	UIStyle.fade_in(self)
 	_refresh_all()
 	_tabs[0].grab_focus.call_deferred()
 

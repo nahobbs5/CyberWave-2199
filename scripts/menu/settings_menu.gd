@@ -27,6 +27,7 @@ func _ready() -> void:
 	InputSetup.ensure_actions()
 	Music.play(get_tree(), Music.MENU)
 	_build()
+	UIStyle.fade_in(self)
 	_refresh_bindings()
 	_first.grab_focus.call_deferred()
 

@@ -1,10 +1,11 @@
 # CyberWave-2199
 
 Single-player 3D arcade combat racing game for Godot 4 (GDScript, Jolt Physics).
-The authoritative design is [`docs/Game Design Document.md`](docs/Game%20Design%20Document.md) (GDD v1.6).
+The authoritative design is [`docs/Game Design Document.md`](docs/Game%20Design%20Document.md) (GDD v1.7).
 
 **Current milestone: Phase 6, content and polish** (GDD §16), in progress. Done so far:
 - **Eight vehicle models**, built procedurally after the roster art, with support for swapping in your own `.glb` models,
+- **Six Flags New Orleans**, the second finished track: an abandoned, overgrown theme park at night with real jump ramps, flooded water patches and a water-park shortcut,
 - **Vegas Overdrive**, the first finished track: a 3.2 km neon circuit with themed scenery, the Luxor shortcut, boost pads and rings, EMP puddles, a smashable barrier and chevron signs,
 - **weapon pictures** in the HUD slots and a **minimap** in the bottom-right corner,
 - the track tech the other five tracks will reuse: shortcuts, track features, batched scenery and per-track looks.
@@ -199,7 +200,18 @@ Music carries across menu screens without restarting and crossfades when the tra
 
 ### Tracks
 
-The race setup screen lists **Vegas Overdrive** and the **Test Circuit**. In a Grand Prix, American Circuit race 3 is Vegas; the other Grand Prix races still run on the test circuit under their real names until those tracks are built.
+The race setup screen lists **Six Flags New Orleans**, **Vegas Overdrive** and the **Test Circuit**. In a Grand Prix, American Circuit races 2 and 3 are Six Flags and Vegas; the other Grand Prix races still run on the test circuit under their real names until those tracks are built.
+
+#### Six Flags New Orleans (GDD §8.2)
+
+A 3.1 km circuit through an abandoned, overgrown amusement park at night, on an 18 m road (narrower than Vegas):
+- **Park Entrance:** start/finish under a decaying "SIX FLAGS / NEW ORLEANS" arch with a fleur-de-lis, a purple Ferris wheel and a drop tower on the skyline.
+- **Midway:** tight S-bends lined with game booths (striped awnings, glowing stall signs) and a carousel.
+- **Coaster Run:** a long straight beside a red roller coaster (lift hill, loop, a crossing high over the road), with a **jump ramp** halfway.
+- **Water Park:** the main road loops around the park; the **water-park shortcut** cuts straight through it past the slide tower and pools: a smashable fence at the entrance, a flooded pool section, a **slide jump** and three bonus coins. It's about 110 m shorter.
+- **Backlot:** 90° service-road corners between warehouses ("STAGE 4"), containers and light poles; an EMP puddle (downed power lines).
+- **Bayou Outrun:** a plank boardwalk through a swamp of cypress trees and hanging moss, with a **jump ramp** and two **water patches**.
+- Rainy purple night with heavier fog; 5 crate rows and 10 coins per lap.
 
 #### Vegas Overdrive (GDD §8.3)
 
@@ -219,8 +231,10 @@ A 3.2 km night circuit (shortened from 4.4 km after your first drive) with 20 m 
 - **`TrackShortcut`** (child of a TrackCircuit): give it control points from one point on the main road to a later one. The circuit builds its road and barriers, opens the main barriers where the two meet, and mirrors any checkpoint gate it bypasses onto it, so laps always count. Positions on a shortcut map onto the main loop proportionally, so race positions, recovery, wrong-way checks and the AI all work on either route.
 - **AI shortcuts:** each AI decides once per approach (the shortcut's `ai_chance` × the difficulty's `shortcut_chance` × aggression), then follows the shortcut at its own safe speeds and rejoins the racing line. If it gets pinned while still heading for a shortcut it isn't on (a late turn-in), it gives up and follows the main road.
 - **Junction design:** a shortcut should leave at a gentle angle (the Luxor one turns in about 55°). A first version peeled off at nearly 110° and trapped a car in the wedge between the roads.
-- **`TrackFeature`**: boost pads, boost rings, EMP puddles and breakable barriers, placed by distance (or near a layout point) on the main road or a shortcut. Every kind is lit and marked so it reads at speed.
-- **`TrackScenery`**: base class for a track's set dressing (`VegasScenery` is the first). Geometry is merged into a few batched meshes, one per material, and it skips anything that would overlap a road. It builds in the editor too.
+- **`TrackFeature`**: boost pads, boost rings, EMP puddles, breakable barriers, **jump ramps** and **water**, placed by distance (or near a layout point) on the main road or a shortcut. Every kind is lit and marked so it reads at speed.
+  - **Jump ramp:** a solid wedge (`length` × `width`, lip of `ramp_height`) that the wheels drive up. Put them on straights at full road width. On the Coaster Run a car at full speed gets about 1.6 s of air and 4 m of height, and lands on its wheels.
+  - **Water:** standing water makes cars **wet**: top speed ×0.88 and grip ×0.75 while in it (and for 0.3 s after), with spray from the rear wheels and "WET" in the effects line. A Firewall doesn't keep you dry; wet stacks with EMP and Road Spike effects.
+- **`TrackScenery`**: base class for a track's set dressing (`VegasScenery`, `SixFlagsScenery`), with shared helpers such as `add_ferris_wheel` and `add_palm`. Geometry is merged into a few batched meshes, one per material, and it skips anything that would overlap a road. It builds in the editor too.
 - **Look:** road, edge, barrier, neon and light colours are exports on each track, and corners tighter than `corner_sign_radius` get chevron signs automatically.
 - Each track scene carries its own sky, fog and lighting (`WorldEnvironment`).
 
@@ -265,6 +279,7 @@ Drive through a "?" crate to collect a random weapon into your first free slot. 
 ```
 scenes/
   tracks/vegas_overdrive.tscn  Vegas Overdrive (layout, shortcut, features, scenery, environment)
+  tracks/six_flags_new_orleans.tscn  Six Flags New Orleans
   menu/main_menu.tscn        Main scene: main menu
   menu/race_setup.tscn, garage.tscn, settings_menu.tscn
   race/race.tscn             8-car race (RaceManager + track + camera + HUDs)
@@ -315,6 +330,7 @@ scripts/
   track/track_feature.gd     TrackFeature: boost pads / rings, EMP puddles, breakable barriers
   track/track_scenery.gd     TrackScenery: batched set-dressing base class
   track/vegas_scenery.gd     VegasScenery: the Vegas landmarks and city
+  track/six_flags_scenery.gd SixFlagsScenery: the park, coaster, water park, backlot and bayou
   track/track_catalog.gd     TrackCatalog: raceable tracks for the menus
   ui/                        PrototypeHUD, DriftMeter, RaceHUD, Minimap, PauseMenu, UIStyle,
                              VehiclePreview (rotating 3D car), HudScaler, SpeedBlur (motion blur)
@@ -457,7 +473,7 @@ The exit code is non-zero if anything fails. These checks do **not** judge how t
 
 ## Status and known issues
 
-**Verified (2026-11-05):** 91 Phase 1, 159 Phase 2, 97 Phase 3, 117 Phase 4, 113 Phase 5 and 92 Phase 6 headless checks pass. A simulated 8-car, 3-lap Vegas race with weapons ran 5:23–5:31 with no recoveries, and the AI took the Luxor shortcut 10 times. With every AI forced onto the shortcut, all 8 still finish with every gate counted. The 1:45-ish lap puts Vegas races inside the GDD's 4–6 minute target on Godot 4.7.2 (Linux build). In a typical simulated weapons race, the AI use 30–50 weapons and land 13–19 hits, with no recoveries. On the redesigned 2.6 km circuit, simulated races run with no recoveries at any difficulty. AI earn roughly 2–18 drift boosts each per race.
+**Verified (2026-11-05):** 91 Phase 1, 159 Phase 2, 103 Phase 3, 124 Phase 4, 113 Phase 5 and 93 Phase 6 headless checks pass on Godot 4.7.2 (Linux build). On the shortened 3.2 km Vegas Overdrive, a simulated 8-car, 3-lap race with weapons ran 3:54–4:00 (laps about 1:18) with no recoveries, and the AI took the Luxor shortcut 7 times. With every AI forced onto the shortcut, all 8 still finish with every gate counted. On the test circuit, a typical simulated weapons race sees the AI use 30–50 weapons and land 13–19 hits; races there run with no or very few recoveries at any difficulty, and AI earn roughly 2–18 drift boosts each per race.
 
 | AI difficulty | Typical lap | 3-lap race (all 8 AI) |
 |---|---|---|

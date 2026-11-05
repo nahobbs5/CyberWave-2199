@@ -3,6 +3,7 @@ extends CanvasLayer
 ## Esc / gamepad Start pauses the whole race (physics, timers, AI) and shows
 ## Resume / Restart race / Quit to main menu (GDD 3.2, 3.3). Runs while the
 ## tree is paused. Restart is disabled once a Grand Prix result is saved.
+## The controls (current bindings) sit beside the buttons.
 
 var race: RaceManager
 
@@ -34,6 +35,7 @@ func open() -> void:
 	_restart.disabled = not race.can_restart()
 	_title.text = "PAUSED  -  %s" % RaceConfig.MODE_NAMES[race.mode()]
 	_panel.visible = true
+	UIStyle.fade_in(_panel, 0.15)
 	_resume.grab_focus()
 
 
@@ -62,13 +64,17 @@ func _build() -> void:
 	_panel = UIStyle.panel()
 	_panel.visible = false
 	center.add_child(_panel)
+	var columns := HBoxContainer.new()
+	columns.add_theme_constant_override("separation", 24)
+	_panel.add_child(columns)
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 10)
-	_panel.add_child(box)
-	_title = UIStyle.label("PAUSED", 30, UIStyle.CYAN)
+	columns.add_child(box)
+	columns.add_child(ControlsCard.new())
+	_title = UIStyle.heading("PAUSED", 30, UIStyle.CYAN)
 	_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(_title)
-	_resume = UIStyle.button("Resume", close)
+	_resume = UIStyle.primary_button("Resume", close)
 	_restart = UIStyle.button("Restart race", func() -> void: race.restart())
 	_quit = UIStyle.button("Quit to main menu", func() -> void: race.quit_to_menu())
 	for b in [_resume, _restart, _quit]:

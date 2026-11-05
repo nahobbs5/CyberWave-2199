@@ -9,14 +9,22 @@ extends Node3D
 ##   EMP_PUDDLE     electrified hazard: a 1 s EMP (a Firewall blocks it)
 ##   BREAKABLE      destructible barrier row: smashes on contact, costs some
 ##                  speed, rebuilds after a while (often guards a shortcut)
+##   JUMP_RAMP      a solid ramp the wheels drive up; launches cars into the
+##                  air (place on straights, full road width)
+##   WATER          standing water: cars in it are "wet" (a little slower,
+##                  less grip) and throw spray
 ## Every kind is clearly marked and lit so it reads at speed (GDD 15.3).
 
-enum Kind { BOOST_PAD, BOOST_RING, EMP_PUDDLE, BREAKABLE }
+enum Kind { BOOST_PAD, BOOST_RING, EMP_PUDDLE, BREAKABLE, JUMP_RAMP, WATER }
 
 const PAD_COLOR := Color(0.0, 0.95, 1.0)
 const RING_COLOR := Color(1.0, 0.2, 0.85)
 const EMP_COLOR := Color(0.3, 0.55, 1.0)
 const BARRIER_COLOR := Color(1.0, 0.75, 0.1)
+const RAMP_COLOR := Color(1.0, 0.55, 0.1)
+const WATER_COLOR := Color(0.2, 0.55, 0.75)
+## How long a car stays wet after leaving the water.
+const WET_LINGER := 0.3
 
 @export var kind: Kind = Kind.BOOST_PAD:
 	set(value):
@@ -31,8 +39,12 @@ const BARRIER_COLOR := Color(1.0, 0.75, 0.1)
 @export var lateral: float = 0.0
 ## Name of a TrackShortcut sibling to place this on; empty = main road.
 @export var on_shortcut: String = ""
-## Width across the road (pads, puddles, barrier rows).
+## Width across the road (pads, puddles, barrier rows, ramps, water).
 @export var width: float = 5.0
+## Along the road (ramps and water).
+@export var length: float = 14.0
+## Height of a jump ramp's lip.
+@export var ramp_height: float = 1.6
 ## Boost strength (pads and rings): extra top speed, duration, instant kick.
 @export var boost_extra: float = 7.0
 @export var boost_duration: float = 1.0
@@ -50,6 +62,8 @@ var _broken_time: float = 0.0
 var _visual: Node3D
 var _light: OmniLight3D
 var _time: float = 0.0
+var _area: Area3D
+var _water_mat: StandardMaterial3D
 
 
 func _ready() -> void:
@@ -105,9 +119,19 @@ func _rebuild_visuals() -> void:
 			box.size = Vector3(width, 2.5, 1.6)
 			shape.position.y = 1.0
 			_barrier_visual()
+		Kind.JUMP_RAMP:
+			# The area only counts launches; the ramp itself is solid.
+			box.size = Vector3(width, 3.0, 3.0)
+			shape.position = Vector3(0, ramp_height + 1.0, -length * 0.5)
+			_ramp_body()
+		Kind.WATER:
+			box.size = Vector3(width, 2.0, length)
+			shape.position.y = 0.8
+			_water_visual()
 	shape.shape = box
 	area.add_child(shape)
 	add_child(area)
+	_area = area
 	if not Engine.is_editor_hint():
 		area.body_entered.connect(_on_body_entered)
 
@@ -190,6 +214,70 @@ func _barrier_visual() -> void:
 	_light = _add_light(BARRIER_COLOR, 1.5, 6.0, Vector3(0, 1.5, 0))
 
 
+## Solid wedge: low at the back (+Z), lip of ramp_height at the front (-Z).
+func _ramp_body() -> void:
+	var body := StaticBody3D.new()
+	body.collision_layer = 1 # environment: the wheel rays drive up it
+	body.collision_mask = 0
+	var hw := width * 0.5
+	var hl := length * 0.5
+	var pts := PackedVector3Array([
+		Vector3(-hw, 0, hl), Vector3(hw, 0, hl), Vector3(-hw, 0, -hl), Vector3(hw, 0, -hl),
+		Vector3(-hw, ramp_height, -hl), Vector3(hw, ramp_height, -hl),
+	])
+	var shape := CollisionShape3D.new()
+	var convex := ConvexPolygonShape3D.new()
+	convex.points = pts
+	shape.shape = convex
+	body.add_child(shape)
+	_visual.add_child(body)
+	# Visual: sloped deck, side skirts, glowing chevrons and lip lights.
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for tri in [[0, 1, 5], [0, 5, 4], [2, 4, 5], [2, 5, 3], [0, 4, 2], [1, 3, 5]]:
+		var n := (pts[tri[1]] - pts[tri[0]]).cross(pts[tri[2]] - pts[tri[0]]).normalized()
+		for i in tri:
+			st.set_normal(n)
+			st.add_vertex(pts[i])
+	var deck := MeshInstance3D.new()
+	deck.mesh = st.commit()
+	var deck_mat := _mat(Color(0.12, 0.1, 0.14), 0.0)
+	deck_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	deck.material_override = deck_mat
+	_visual.add_child(deck)
+	var glow := _mat(RAMP_COLOR, 4.0)
+	var slope := atan2(ramp_height, length)
+	for i in 3:
+		var z := lerpf(hl * 0.6, -hl * 0.6, i / 2.0)
+		var y := lerpf(0.0, ramp_height, (hl - z) / length) + 0.06
+		for arm in [-1.0, 1.0]:
+			var bar := _box(Vector3(width * 0.36, 0.05, 0.4), Vector3(arm * width * 0.16, y, z), glow)
+			bar.rotation = Vector3(slope, arm * 0.55, 0)
+	_box(Vector3(width, 0.12, 0.2), Vector3(0, ramp_height, -hl + 0.1), glow)
+	for side in [-1.0, 1.0]:
+		_box(Vector3(0.15, 0.15, length), Vector3(side * hw, ramp_height * 0.5 + 0.05, 0), glow).rotation.x = slope
+	_light = _add_light(RAMP_COLOR, 2.5, 10.0, Vector3(0, ramp_height + 1.0, -hl))
+
+
+func _water_visual() -> void:
+	var water := MeshInstance3D.new()
+	var plane := PlaneMesh.new()
+	plane.size = Vector2(width, length)
+	water.mesh = plane
+	water.position.y = 0.06
+	_water_mat = StandardMaterial3D.new()
+	_water_mat.albedo_color = Color(WATER_COLOR.r, WATER_COLOR.g, WATER_COLOR.b, 0.55)
+	_water_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	_water_mat.metallic = 0.6
+	_water_mat.roughness = 0.05
+	_water_mat.emission_enabled = true
+	_water_mat.emission = WATER_COLOR
+	_water_mat.emission_energy_multiplier = 0.4
+	water.material_override = _water_mat
+	_visual.add_child(water)
+	_light = _add_light(Color(0.5, 0.8, 1.0), 1.2, maxf(width, length) * 0.6, Vector3(0, 1.0, 0))
+
+
 func _add_light(color: Color, energy: float, light_range: float, pos: Vector3) -> OmniLight3D:
 	var light := OmniLight3D.new()
 	light.light_color = color
@@ -217,6 +305,10 @@ func _on_body_entered(body: Node3D) -> void:
 				return
 			car.scrub_speed(smash_speed_kept)
 			_smash()
+		Kind.JUMP_RAMP:
+			pass # counted only
+		Kind.WATER:
+			pass # handled every frame in _physics_process
 	_cooldowns[car] = 1.5
 	triggered += 1
 
@@ -244,6 +336,11 @@ func _physics_process(delta: float) -> void:
 		_broken_time -= delta
 		if _broken_time <= 0.0:
 			_rebuild_visuals()
+	if kind == Kind.WATER and _area != null and _area.monitoring:
+		for body in _area.get_overlapping_bodies():
+			var car := body as VehicleController
+			if car != null and car.status != null:
+				car.status.apply_surface(&"wet", WET_LINGER)
 
 
 func _process(delta: float) -> void:
@@ -252,3 +349,5 @@ func _process(delta: float) -> void:
 	_time += delta
 	if kind == Kind.EMP_PUDDLE and not GameSettings.reduced_flashing:
 		_light.light_energy = 2.0 + 1.5 * absf(sin(_time * 9.0))
+	elif kind == Kind.WATER and _water_mat != null:
+		_water_mat.emission_energy_multiplier = 0.35 + 0.12 * sin(_time * 1.7)

@@ -1,7 +1,6 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/prototype_hud.gd" id="1_hud"]
-[ext_resource type="Script" path="res://scripts/ui/drift_meter.gd" id="2_meter"]
 
 [node name="PrototypeHUD" type="CanvasLayer"]
 script = ExtResource("1_hud")
@@ -18,63 +17,20 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 18
 text = "Camera"
 
-[node name="Controls" type="Label" parent="."]
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -380.0
-offset_top = 16.0
-offset_right = -20.0
-offset_bottom = 220.0
-grow_horizontal = 0
-theme_override_font_sizes/font_size = 14
-text = "W/S  accelerate / brake-reverse
-A/D  steer
-Shift + A/D  drift (release Shift to boost)
-C    cycle camera
-R    reset vehicle
-1/2  select weapon   Space  fire
-Esc  pause"
-horizontal_alignment = 2
-
 [node name="Notice" type="CenterContainer" parent="."]
-anchors_preset = 10
+anchors_preset = 12
+anchor_top = 1.0
 anchor_right = 1.0
-offset_top = 90.0
-offset_bottom = 140.0
+anchor_bottom = 1.0
+offset_top = -190.0
+offset_bottom = -150.0
 grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
 
 [node name="NoticeLabel" type="Label" parent="Notice"]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 22
 text = "Notice"
-
-[node name="Bottom" type="VBoxContainer" parent="."]
-anchors_preset = 2
-anchor_top = 1.0
-anchor_bottom = 1.0
-offset_left = 20.0
-offset_top = -130.0
-offset_right = 440.0
-offset_bottom = -20.0
-grow_vertical = 0
-
-[node name="SpeedLabel" type="Label" parent="Bottom"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_font_sizes/font_size = 40
-text = "0 km/h"
-
-[node name="DriftLabel" type="Label" parent="Bottom"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_font_sizes/font_size = 18
-text = "DRIFT"
-
-[node name="DriftMeter" type="Control" parent="Bottom"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(400, 18)
-layout_mode = 2
-script = ExtResource("2_meter")

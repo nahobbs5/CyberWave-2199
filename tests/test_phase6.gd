@@ -10,6 +10,7 @@ extends SceneTree
 const RACE_SCENE := "res://scenes/race/race.tscn"
 const CAR_SCENE := "res://scenes/vehicles/placeholder_car.tscn"
 const VEGAS := "res://scenes/tracks/vegas_overdrive.tscn"
+const SIX_FLAGS := "res://scenes/tracks/six_flags_new_orleans.tscn"
 
 var _passed: int = 0
 var _failed: int = 0
@@ -28,14 +29,18 @@ func _run_all() -> void:
 	GameSession.scene_changes_enabled = false
 	await _test_models()
 	await _test_glb_model()
-	await _test_vegas_layout()
+	_test_wet_status()
+	await _test_layout(VEGAS, "Vegas Overdrive", 3000.0, 3400.0, 9, 90.0)
+	await _test_layout(SIX_FLAGS, "Six Flags New Orleans", 2900.0, 3300.0, 10, 90.0)
 	await _run("features on Vegas", _test_features, _vegas_config(), false)
+	await _run("jump ramps and water (Six Flags)", _test_ramps_and_water, _config(SIX_FLAGS, "Six Flags New Orleans"), false)
 	await _run("shortcut: recovery and positions", _test_shortcut_recovery, _vegas_config(), false)
 	_test_menus_and_gp()
-	var forced := _vegas_config()
-	forced.total_laps = 1
-	await _run("everyone takes the shortcut (1 lap)", _test_forced_shortcut, forced, true)
-	await _run("full race on Vegas (3 laps, weapons)", _test_full_race, _vegas_config(), true)
+	for track in [[VEGAS, "Vegas Overdrive"], [SIX_FLAGS, "Six Flags New Orleans"]]:
+		var forced := _config(track[0], track[1])
+		forced.total_laps = 1
+		await _run("%s: everyone takes the shortcut (1 lap)" % track[1], _test_forced_shortcut, forced, true)
+		await _run("%s: full race (3 laps, weapons)" % track[1], _test_full_race, _config(track[0], track[1]), true)
 	PlayerProfile.delete_save()
 	print("\n%d checks passed, %d failed" % [_passed, _failed])
 	quit(1 if _failed > 0 else 0)
@@ -49,6 +54,14 @@ func _check(condition: bool, message: String) -> void:
 	else:
 		_failed += 1
 		printerr("  FAIL [%s] %s" % [_current, message])
+
+
+func _config(path: String, track_name: String) -> RaceConfig:
+	var config := RaceConfig.new()
+	config.difficulty = load("res://resources/ai/normal.tres") as AIDifficulty
+	config.track_name = track_name
+	config.track_scene = load(path) as PackedScene
+	return config
 
 
 func _vegas_config() -> RaceConfig:
@@ -184,20 +197,21 @@ func _test_glb_model() -> void:
 
 # --- Vegas layout ----------------------------------------------------------------------
 
-func _test_vegas_layout() -> void:
-	_current = "Vegas layout"
-	print("- Vegas Overdrive layout")
-	var track := (load(VEGAS) as PackedScene).instantiate() as TrackCircuit
+func _test_layout(path: String, track_name: String, min_length: float, max_length: float,
+		feature_count: int, min_saving: float) -> void:
+	_current = "%s layout" % track_name
+	print("- %s layout" % track_name)
+	var track := (load(path) as PackedScene).instantiate() as TrackCircuit
 	root.add_child(track)
 	await physics_frame
 	await physics_frame
-	_check(track.length > 3000.0 and track.length < 3400.0, "about 3.2 km (%.0f m)" % track.length)
+	_check(track.length > min_length and track.length < max_length, "length %.0f m" % track.length)
 	_check(track.shortcuts.size() == 1, "one shortcut")
 	if track.shortcuts.is_empty():
 		track.queue_free()
 		return
 	var sc := track.shortcuts[0]
-	_check(sc.length < sc.span - 90.0, "the Luxor shortcut is shorter (%.0f m vs %.0f m)" % [sc.length, sc.span])
+	_check(sc.length < sc.span - min_saving, "the shortcut is shorter (%.0f m vs %.0f m)" % [sc.length, sc.span])
 	var gates := track.find_children("Checkpoint*", "Area3D", true, false)
 	var bypassed := 0
 	for i in track.checkpoint_count:
@@ -212,7 +226,7 @@ func _test_vegas_layout() -> void:
 	_check(track.is_on_road(mid), "the shortcut counts as road")
 	_check(track.get_direction_at(mid).dot(track.global_transform.basis * sc.tangent_at(sc.length * 0.5)) > 0.99,
 			"direction follows the shortcut")
-	_check(not track.is_on_road(track.to_global(VegasScenery.PYRAMID + Vector3(80, 0, 0))), "off-road away from both routes")
+	_check(not track.is_on_road(track.to_global(Vector3(3000, 0, 3000))), "off-road far from both routes")
 	# No barrier across either route (cast along the centre lines at car height).
 	var space := track.get_world_3d().direct_space_state
 	var blocked := []
@@ -239,7 +253,7 @@ func _test_vegas_layout() -> void:
 	var scenery := track.get_node("Scenery/Generated")
 	_check(scenery != null and scenery.get_child_count() > 20, "the city is built (%d nodes)" % scenery.get_child_count())
 	var features := track.find_children("*", "TrackFeature", false, false)
-	_check(features.size() == 9, "nine track features placed (%d)" % features.size())
+	_check(features.size() == feature_count, "%d track features placed (%d)" % [feature_count, features.size()])
 	track.queue_free()
 	await process_frame
 
@@ -273,6 +287,61 @@ func _test_features(race: RaceManager) -> void:
 	_check(not gate.is_broken(), "and rebuilds")
 
 
+func _test_wet_status() -> void:
+	_current = "wet surface"
+	print("- wet surface effect (no scene)")
+	var s := StatusEffects.new()
+	s.apply_buff(&"shield", 10.0)
+	s.apply_surface(&"wet", 0.3)
+	_check(s.has(&"wet") and s.has(&"shield"), "a Firewall doesn't keep you dry")
+	_check(is_equal_approx(s.speed_multiplier(), s.wet_speed_multiplier)
+			and is_equal_approx(s.grip_multiplier(), s.wet_grip_multiplier), "wet: slower and less grip")
+	s.apply_attack(&"emp", 1.5) # used up the shield
+	s.apply_attack(&"emp", 1.5)
+	s.apply_attack(&"traction", 1.0)
+	_check(is_equal_approx(s.speed_multiplier(), s.wet_speed_multiplier * s.emp_speed_multiplier)
+			and is_equal_approx(s.grip_multiplier(), s.wet_grip_multiplier * s.traction_grip_multiplier), "stacks with EMP and traction")
+	for i in 30:
+		s._physics_process(1.0 / 60.0)
+	_check(not s.has(&"wet"), "dries off 0.3 s after leaving the water")
+	s.free()
+
+
+func _test_ramps_and_water(race: RaceManager) -> void:
+	var me := race.player.vehicle
+	me.player_controlled = false
+	var track := race.track
+	var ramp := track.get_node("JumpCoaster") as TrackFeature
+	var xf: Transform3D = ramp.global_transform
+	# Start 60 m before the ramp, at speed, aimed straight at it.
+	me.teleport(Transform3D(xf.basis, xf.origin + xf.basis.z * 60.0 + Vector3.UP * 0.9))
+	await _frames(3)
+	me.linear_velocity = -xf.basis.z * 36.0
+	var airborne := 0
+	var max_height := 0.0
+	for i in 240:
+		me.throttle_input = 1.0
+		await physics_frame
+		if me.grounded_wheels == 0:
+			airborne += 1
+		max_height = maxf(max_height, me.global_position.y - xf.origin.y)
+	print("    jump: %.2f s airborne, %.1f m up" % [airborne / 60.0, max_height])
+	_check(airborne > 30 and max_height > 2.0, "the ramp launches the car (%.2f s, %.1f m)" % [airborne / 60.0, max_height])
+	_check(me.global_transform.basis.y.dot(Vector3.UP) > 0.9 and me.grounded_wheels >= 3, "and it lands on its wheels")
+	_check(me.recovery.last_reason == "" and track.is_on_road(me.global_position), "on the road, no recovery")
+	# Water.
+	var water := track.get_node("WaterBayou1") as TrackFeature
+	var cap_dry := me.get_speed_cap()
+	var wxf: Transform3D = water.global_transform
+	me.teleport(Transform3D(wxf.basis, wxf.origin + Vector3.UP * 0.9))
+	await _frames(10)
+	_check(me.status.has(&"wet") and me.get_speed_cap() < cap_dry and me.status.grip_multiplier() < 1.0,
+			"in the water: wet, slower top speed, less grip")
+	me.teleport(Transform3D(wxf.basis, wxf.origin + wxf.basis.z * 60.0 + Vector3.UP * 0.9))
+	await _frames(30)
+	_check(not me.status.has(&"wet"), "dry again after leaving it")
+
+
 func _test_shortcut_recovery(race: RaceManager) -> void:
 	var me := race.player.vehicle
 	var sc := race.track.shortcuts[0]
@@ -298,6 +367,11 @@ func _test_menus_and_gp() -> void:
 	var config := c.make_race_config()
 	_check(config.track_name == "Vegas Overdrive" and config.track_scene.resource_path == VEGAS,
 			"American Circuit race 3 runs on Vegas Overdrive")
+	c.race_index = 1
+	config = c.make_race_config()
+	_check(config.track_name == "Six Flags New Orleans" and config.track_scene.resource_path == SIX_FLAGS,
+			"American Circuit race 2 runs on Six Flags New Orleans")
+	_check(TrackCatalog.scene_path("Six Flags New Orleans") == SIX_FLAGS, "Six Flags is in the track list")
 
 
 func _test_forced_shortcut(race: RaceManager) -> void:
@@ -341,7 +415,7 @@ func _test_full_race(race: RaceManager) -> void:
 	for racer in race.get_standings():
 		times.append(RaceProgress.format_time(racer.finish_time))
 	print("    race %.1f s simulated; times %s; shortcuts taken %d; recoveries %d" % [frames / 60.0, times, taken, recoveries[0]])
-	_check(race.racers.all(func(r: RaceProgress) -> bool: return r.finished), "all 8 finish 3 laps of Vegas")
+	_check(race.racers.all(func(r: RaceProgress) -> bool: return r.finished), "all 8 finish 3 laps")
 	_check(race.racers.all(func(r: RaceProgress) -> bool: return r.checkpoints_passed == 3 * race.track.checkpoint_count + 1),
 			"every gate counted")
 	_check(taken > 0, "the AI used the shortcut (%d times)" % taken)

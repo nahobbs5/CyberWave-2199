@@ -10,6 +10,8 @@ extends Node
 ##   traction        greatly reduced grip (Road Spike)
 ##   jammed          weapons offline; outlasts the EMP itself (EMP Pulse)
 ##   shield          blocks the next incoming attack (Firewall)
+##   wet             standing water: a little slower and less grip (track
+##                   surface, refreshed while driving through it)
 ## After any hard stun ends, the racer is protected from hard stuns for
 ## stun_protection_time, so stuns can't be chained (GDD 6.5).
 
@@ -26,6 +28,8 @@ const HARD_STUNS: Array[StringName] = [&"stun", &"stagger"]
 @export var stagger_speed_kept: float = 0.7
 @export var emp_speed_multiplier: float = 0.85
 @export var traction_grip_multiplier: float = 0.2
+@export var wet_speed_multiplier: float = 0.88
+@export var wet_grip_multiplier: float = 0.75
 
 var _timers: Dictionary = {}
 var _protection: float = 0.0
@@ -70,6 +74,15 @@ func apply_jam(duration: float) -> void:
 	_start(&"jammed", duration)
 
 
+## Track surface effects (water). Never blocked: a Firewall doesn't keep
+## you dry. Refreshing an active surface effect just extends it.
+func apply_surface(effect: StringName, duration: float) -> void:
+	if has(effect):
+		_timers[effect] = maxf(time_left(effect), duration)
+	else:
+		_start(effect, duration)
+
+
 func has(effect: StringName) -> bool:
 	return _timers.has(effect)
 
@@ -103,11 +116,21 @@ func can_charge_drift() -> bool:
 
 
 func speed_multiplier() -> float:
-	return emp_speed_multiplier if has(&"emp") else 1.0
+	var m := 1.0
+	if has(&"emp"):
+		m *= emp_speed_multiplier
+	if has(&"wet"):
+		m *= wet_speed_multiplier
+	return m
 
 
 func grip_multiplier() -> float:
-	return traction_grip_multiplier if has(&"traction") else 1.0
+	var m := 1.0
+	if has(&"traction"):
+		m *= traction_grip_multiplier
+	if has(&"wet"):
+		m *= wet_grip_multiplier
+	return m
 
 
 func clear_all() -> void:

@@ -1,8 +1,10 @@
 class_name PrototypeHUD
 extends CanvasLayer
-## Minimal Phase 1 debug HUD: speed, drift charge, boost, camera, lap timer,
-## recovery notices and a controls hint. Not the final race HUD (GDD 11.5).
-## In races, RaceHUD handles laps, so show_lap_info is turned off there.
+## Driving HUD shared by free drive and races: the speed + drift panel
+## (bottom left), short notices (drift lost, recovered, camera, boosts) and
+## the controls card (first race only, or every time in free drive). Free
+## drive also shows its camera / lap timer; in races RaceHUD handles laps, so
+## show_lap_info is turned off there.
 
 ## Show the distance-based free-drive lap timer.
 @export var show_lap_info: bool = true
@@ -18,18 +20,41 @@ var _best_lap_time: float = -1.0
 var _race_clock: float = 0.0
 var _notice_time: float = 0.0
 
-@onready var _speed_label: Label = %SpeedLabel
-@onready var _drift_label: Label = %DriftLabel
-@onready var _drift_meter: DriftMeter = %DriftMeter
+## Seconds the controls card stays up before fading.
+const CONTROLS_SECONDS := 8.0
+
+var speed_panel: SpeedDriftPanel
+var controls_card: ControlsCard
+
 @onready var _info_label: Label = %InfoLabel
 @onready var _notice_label: Label = %NoticeLabel
+
+
+func _ready() -> void:
+	speed_panel = SpeedDriftPanel.new()
+	add_child(speed_panel)
+	controls_card = ControlsCard.new(CONTROLS_SECONDS)
+	controls_card.set_anchors_and_offsets_preset(Control.PRESET_CENTER_RIGHT)
+	controls_card.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	controls_card.grow_vertical = Control.GROW_DIRECTION_BOTH
+	controls_card.offset_right = -20.0
+	controls_card.visible = false
+	add_child(controls_card)
+	_notice_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+	_notice_label.add_theme_constant_override("outline_size", 6)
 
 
 func setup(vehicle: VehicleController, camera: ChaseCamera, track: TrackCircuit) -> void:
 	_vehicle = vehicle
 	_camera = camera
 	_track = track
-	_drift_meter.drift = vehicle.drift
+	speed_panel.setup(vehicle)
+	# Controls: every time in free drive, only on the first race otherwise.
+	var profile := PlayerProfile.get_profile()
+	if show_lap_info or not profile.seen_controls:
+		controls_card.visible = true
+		if not show_lap_info:
+			profile.mark_controls_seen()
 	vehicle.recovery.recovered.connect(_on_recovered)
 	vehicle.drift.drift_ended.connect(_on_drift_ended)
 	vehicle.drift.drift_cancelled.connect(_on_drift_cancelled)
@@ -48,20 +73,6 @@ func _process(delta: float) -> void:
 	if show_lap_info:
 		_update_laps()
 
-	_speed_label.text = "%d km/h" % roundi(absf(_vehicle.forward_speed) * 3.6)
-
-	var drift := _vehicle.drift
-	if _vehicle.is_boosting():
-		_drift_label.text = "BOOST  %s" % _vehicle.boost_label.to_upper()
-		_drift_label.modulate = _vehicle.boost_color
-	elif drift.is_drifting():
-		_drift_label.text = "DRIFT %s  %.1fs  %s" % [
-			"L" if drift.direction < 0 else "R", drift.charge_time, DriftController.LEVEL_NAMES[drift.level]]
-		_drift_label.modulate = DriftController.LEVEL_COLORS[drift.level]
-	else:
-		_drift_label.text = "DRIFT  (hold Shift + A / D in a corner)"
-		_drift_label.modulate = Color(1, 1, 1, 0.6)
-
 	var lap_time := _race_clock - _lap_start_time if _lap_start_time >= 0.0 else 0.0
 	# In races the top-left corner belongs to RaceHUD (weapon slots, race info);
 	# camera changes still show the centred notice.
@@ -73,6 +84,7 @@ func _process(delta: float) -> void:
 	if _notice_time > 0.0:
 		_notice_time -= delta
 		_notice_label.visible = _notice_time > 0.0
+		_notice_label.modulate.a = clampf(_notice_time / 0.4, 0.0, 1.0)
 
 
 func _update_laps() -> void:
@@ -96,17 +108,18 @@ func _on_recovered(reason: String) -> void:
 
 func _on_drift_ended(level: int, boosted: bool) -> void:
 	if boosted:
-		_show_notice("%s boost!" % DriftController.LEVEL_NAMES[level])
+		_show_notice("%s BOOST!" % DriftController.LEVEL_NAMES[level].to_upper(), DriftController.LEVEL_COLORS[level])
 
 
 func _on_drift_cancelled(reason: String) -> void:
 	_show_notice("Drift lost (%s)" % reason)
 
 
-func _show_notice(text: String) -> void:
+func _show_notice(text: String, color: Color = Color.WHITE) -> void:
 	_notice_label.text = text
+	_notice_label.add_theme_color_override("font_color", color)
 	_notice_label.visible = true
-	_notice_time = 2.0
+	_notice_time = 1.6
 
 
 static func _fmt(seconds: float) -> String:

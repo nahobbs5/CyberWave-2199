@@ -29,6 +29,8 @@ var personal_bests: Dictionary = {}
 var gp_results: Array = []
 ## Last race setup screen choices (GDD 11.3 "remembered").
 var last_setup: Dictionary = {}
+## The controls card has been shown in a race (it only shows on the first).
+var seen_controls: bool = false
 
 
 static func get_profile() -> PlayerProfile:
@@ -135,6 +137,12 @@ static func sanitize_plate(text: String) -> String:
 	return out.substr(0, PLATE_MAX)
 
 
+func mark_controls_seen() -> void:
+	if not seen_controls:
+		seen_controls = true
+		save()
+
+
 func set_plate(text: String) -> void:
 	plate_text = sanitize_plate(text)
 	save()
@@ -206,6 +214,7 @@ func _to_dict() -> Dictionary:
 		"personal_bests": personal_bests,
 		"grand_prix_results": gp_results,
 		"last_setup": last_setup,
+		"seen_controls": seen_controls,
 	}
 
 
@@ -225,6 +234,7 @@ func _read(data: Dictionary) -> void:
 	var gp: Variant = data.get("grand_prix_results", [])
 	if gp is Array:
 		gp_results = gp
+	seen_controls = bool(data.get("seen_controls", false))
 	var setup: Variant = data.get("last_setup", {})
 	if setup is Dictionary:
 		last_setup = setup

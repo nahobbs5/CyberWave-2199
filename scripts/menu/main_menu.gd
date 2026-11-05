@@ -12,6 +12,7 @@ func _ready() -> void:
 	InputSetup.ensure_actions()
 	Music.play(get_tree(), Music.MENU)
 	_build()
+	UIStyle.fade_in(self)
 	_buttons[0].grab_focus.call_deferred()
 
 
@@ -33,7 +34,7 @@ func _build() -> void:
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 10)
 	center.add_child(box)
-	var title := UIStyle.label("CYBERWAVE 2199", 56, UIStyle.MAGENTA)
+	var title := UIStyle.heading("CYBERWAVE 2199", 56, UIStyle.MAGENTA)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(title)
 	var profile := PlayerProfile.get_profile()

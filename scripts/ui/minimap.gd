@@ -2,11 +2,14 @@ class_name Minimap
 extends Control
 ## Race minimap (GDD 11.5), bottom-right of the race HUD. Draws the circuit
 ## (and any shortcuts, dimmer), the start line, the elimination gate in
-## Elimination, every active racer as a dot in their colour, and the player
-## as a larger arrow showing their heading. North-up in layout space.
+## Elimination, every active racer as a dot in their colour (dark outline so
+## close dots stay apart; a faint ring when they're near you), and the player
+## as a larger cyan arrow showing their heading. North-up in layout space.
 
 const MAP_SIZE := Vector2(250, 200)
 const PADDING := 12.0
+## Rivals closer than this (m) get a ring.
+const NEAR_DISTANCE := 40.0
 
 var race: RaceManager
 
@@ -97,8 +100,8 @@ func _process(_delta: float) -> void:
 
 
 func _draw() -> void:
-	draw_rect(Rect2(Vector2.ZERO, MAP_SIZE), Color(0.02, 0.01, 0.06, 0.6))
-	draw_rect(Rect2(Vector2.ZERO, MAP_SIZE), Color(1.0, 0.2, 0.85, 0.5), false, 1.5)
+	draw_rect(Rect2(Vector2.ZERO, MAP_SIZE), Color(0.06, 0.02, 0.12, 0.62))
+	draw_rect(Rect2(Vector2.ZERO, MAP_SIZE), Color(UIStyle.MAGENTA, 0.55), false, 1.0)
 	if race == null or _main.size() < 2:
 		return
 	var track := race.track
@@ -107,15 +110,20 @@ func _draw() -> void:
 		draw_polyline(mapped, Color(0.35, 0.3, 0.45, 0.9), 5.0, true)
 		draw_polyline(mapped, Color(0.0, 0.9, 1.0, 0.45), 1.5, true)
 	var main := _to_map(_main)
-	draw_polyline(main, Color(0.35, 0.33, 0.45), 7.0, true)
-	draw_polyline(main, Color(1.0, 0.25, 0.85), 2.0, true)
-	_draw_tick(track, track.start_line_offset, Color.WHITE)
+	draw_polyline(main, Color(0.22, 0.16, 0.32, 0.9), 7.0, true)
+	draw_polyline(main, Color(0.62, 0.42, 0.85, 0.85), 2.0, true)
+	_draw_tick(track, track.start_line_offset, Color.WHITE, 4.0)
 	if race.elimination != null:
 		_draw_tick(track, track.get_checkpoint_offset(race.elimination.gate_index), Color(1.0, 0.2, 0.3))
+	var me: Vector3 = race.player.vehicle.global_position if race.player != null else Vector3.INF
 	for racer in visible_racers():
 		if racer.is_player:
 			continue
-		draw_circle(world_to_map(racer.vehicle.global_position), 3.5, racer.color.lightened(0.35))
+		var at := world_to_map(racer.vehicle.global_position)
+		if racer.vehicle.global_position.distance_to(me) < NEAR_DISTANCE:
+			draw_arc(at, 7.0, 0.0, TAU, 20, Color(1, 1, 1, 0.45), 1.2, true)
+		draw_circle(at, 4.5, Color(0.0, 0.0, 0.0, 0.8))
+		draw_circle(at, 3.5, racer.color.lightened(0.35))
 	if race.player != null and not race.player.eliminated:
 		var car := race.player.vehicle
 		var p := world_to_map(car.global_position)
@@ -124,12 +132,12 @@ func _draw() -> void:
 		if fwd == Vector2.ZERO:
 			fwd = Vector2.UP
 		var side := Vector2(-fwd.y, fwd.x)
-		var tri := PackedVector2Array([p + fwd * 8.0, p - fwd * 5.0 + side * 5.0, p - fwd * 5.0 - side * 5.0])
-		draw_colored_polygon(tri, Color(1.0, 0.2, 0.85))
-		draw_polyline(PackedVector2Array([tri[0], tri[1], tri[2], tri[0]]), Color.WHITE, 1.2, true)
+		var tri := PackedVector2Array([p + fwd * 10.0, p - fwd * 6.0 + side * 6.0, p - fwd * 6.0 - side * 6.0])
+		draw_colored_polygon(tri, UIStyle.CYAN)
+		draw_polyline(PackedVector2Array([tri[0], tri[1], tri[2], tri[0]]), Color.WHITE, 1.5, true)
 
 
-func _draw_tick(track: TrackCircuit, offset: float, color: Color) -> void:
+func _draw_tick(track: TrackCircuit, offset: float, color: Color, width: float = 3.0) -> void:
 	var c := track.get_center_at(offset)
 	var right := track.get_tangent_at(offset).cross(Vector3.UP).normalized() * (track.road_width * 0.9)
-	draw_line(world_to_map(c - right), world_to_map(c + right), color, 3.0)
+	draw_line(world_to_map(c - right), world_to_map(c + right), color, width)
