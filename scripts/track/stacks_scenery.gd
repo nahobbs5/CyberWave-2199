@@ -104,7 +104,7 @@ func _books_material() -> StandardMaterial3D:
 			for px in range(x, mini(x + w - 1, size)):
 				for py in range(y0 + row_h - 6 - h, y0 + row_h - 6):
 					img.set_pixel(px, py, c)
-				for band in [12, h - 10]:
+				for band: int in [12, h - 10]:
 					var by: int = y0 + row_h - 6 - h + band
 					img.set_pixel(px, by, Color(0.8, 0.62, 0.3))
 			x += w
@@ -128,7 +128,7 @@ func _great_hall(from_offset: float, to_offset: float) -> void:
 	var span := fposmod(to_offset - from_offset, track.length)
 	var half := track.road_width * 0.5
 	# Twin grand staircases rising along both walls near the start.
-	for side in [-1.0, 1.0]:
+	for side: float in [-1.0, 1.0]:
 		for step in 16:
 			var xf := at(from_offset + 20.0 + step * 1.2, side * (half + 6.0))
 			if clear(xf.origin, 2.0):
@@ -141,7 +141,7 @@ func _great_hall(from_offset: float, to_offset: float) -> void:
 	var d := 12.0
 	var n := 0
 	while d < span:
-		for side in [-1.0, 1.0]:
+		for side: float in [-1.0, 1.0]:
 			var p := at(from_offset + d, side * (half + 4.0))
 			if not clear(p.origin, 1.5):
 				continue
@@ -178,7 +178,7 @@ func _archive_stacks() -> void:
 		var tangent := sc.tangent_at(d)
 		var right := tangent.cross(Vector3.UP).normalized()
 		var basis := Basis.looking_at(tangent, Vector3.UP)
-		for side in [-1.0, 1.0]:
+		for side: float in [-1.0, 1.0]:
 			var pos := center + right * side * (sc.road_width * 0.5 + 2.2)
 			if clear(pos, 0.5) or edge_distance(pos) > 1.0:
 				HallBuilder.bookcase(self, Transform3D(basis * Basis(Vector3.UP, side * PI * 0.5), pos), 3.0, 7.5)
@@ -240,7 +240,7 @@ func _reading_room() -> void:
 				add_box("gold", Vector3(0.6, 0.6, p0.distance_to(p1) + 0.2), Transform3D(Basis.looking_at((p1 - p0).normalized(), Vector3.UP), (p0 + p1) * 0.5))
 	add_light(c + Vector3(0, drum_h + r * 0.7, 0), Color(1.0, 0.75, 0.45), 6.0, 90.0)
 	# Concentric reading desks with green lamps, and the central desk.
-	for ring_r in [26.0, 38.0]:
+	for ring_r: float in [26.0, 38.0]:
 		var count := int(ring_r * 0.5)
 		for i in count:
 			var ang := TAU * i / count
@@ -268,7 +268,7 @@ func _courtyard(from_offset: float, to_offset: float) -> void:
 		var center := at(o)
 		# Stone paving from façade to façade.
 		add_box("stone", Vector3(52.0, 0.02, 4.05), center.translated_local(Vector3(0, 0.008, 0)))
-		for side in [-1.0, 1.0]:
+		for side: float in [-1.0, 1.0]:
 			var face := at(o, side * 26.0)
 			if clear(face.origin, 1.0):
 				add_box("marble", Vector3(2.0, 3.0, 4.05), face.translated_local(Vector3(0, 1.5, 0)))
@@ -295,7 +295,7 @@ func _courtyard(from_offset: float, to_offset: float) -> void:
 	add_cyl("water", 5.0, 0.85, f, 20)
 	add_cyl("marble", 0.6, 3.0, f, 8)
 	add_cyl("marble", 1.8, 0.4, f.translated_local(Vector3(0, 3.0, 0)), 12)
-	for side in [-1.0, 1.0]:
+	for side: float in [-1.0, 1.0]:
 		for s in 4:
 			var step := at(from_offset + span * 0.66 - 6.0 + s * 1.5, side * (half + 6.0))
 			if clear(step.origin, 2.0):
