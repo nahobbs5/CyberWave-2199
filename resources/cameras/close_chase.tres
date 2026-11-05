@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="CameraProfile" format=3]
+
+[ext_resource type="Script" path="res://scripts/camera/camera_profile.gd" id="1_profile"]
+
+[resource]
+script = ExtResource("1_profile")
+display_name = "Close Chase"
+distance = 5.4
+height = 1.9
+look_height = 0.9
+look_ahead = 5.0
+fov = 78.0
+speed_fov_gain = 11.0
+speed_distance_gain = 0.8
+boost_fov_kick = 9.0
+position_smoothing = 14.0
+rotation_smoothing = 7.0
+velocity_blend = 0.35

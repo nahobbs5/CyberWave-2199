@@ -1,0 +1,26 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/prototype_main.gd" id="1_main"]
+[ext_resource type="PackedScene" path="res://scenes/tracks/test_circuit.tscn" id="2_track"]
+[ext_resource type="PackedScene" path="res://scenes/vehicles/placeholder_car.tscn" id="3_car"]
+[ext_resource type="Script" path="res://scripts/camera/chase_camera.gd" id="4_camera"]
+[ext_resource type="Resource" path="res://resources/cameras/far_chase.tres" id="5_far"]
+[ext_resource type="Resource" path="res://resources/cameras/close_chase.tres" id="6_close"]
+[ext_resource type="PackedScene" path="res://scenes/ui/prototype_hud.tscn" id="8_hud"]
+
+[node name="Main" type="Node3D"]
+script = ExtResource("1_main")
+
+[node name="TestCircuit" parent="." instance=ExtResource("2_track")]
+
+[node name="PlayerCar" parent="." instance=ExtResource("3_car")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 70)
+
+[node name="ChaseCamera" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.6, 79)
+current = true
+script = ExtResource("4_camera")
+far_chase = ExtResource("5_far")
+close_chase = ExtResource("6_close")
+
+[node name="PrototypeHUD" parent="." instance=ExtResource("8_hud")]

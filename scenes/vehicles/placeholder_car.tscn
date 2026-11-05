@@ -1,0 +1,244 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/vehicles/vehicle_controller.gd" id="1_vehicle"]
+[ext_resource type="Resource" path="res://resources/vehicles/placeholder_gt_stats.tres" id="2_stats"]
+[ext_resource type="Script" path="res://scripts/vehicles/drift_controller.gd" id="3_drift"]
+[ext_resource type="Script" path="res://scripts/vehicles/vehicle_recovery.gd" id="4_recovery"]
+[ext_resource type="Script" path="res://scripts/vehicles/vehicle_feedback.gd" id="5_feedback"]
+
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_body"]
+friction = 0.2
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_body"]
+size = Vector3(1.9, 0.55, 4.2)
+
+[sub_resource type="StandardMaterial3D" id="Mat_paint"]
+albedo_color = Color(0.1, 0.12, 0.22, 1)
+metallic = 0.8
+roughness = 0.25
+
+[sub_resource type="StandardMaterial3D" id="Mat_glass"]
+albedo_color = Color(0.02, 0.03, 0.06, 1)
+metallic = 0.5
+roughness = 0.05
+
+[sub_resource type="StandardMaterial3D" id="Mat_trim"]
+albedo_color = Color(0.03, 0.03, 0.04, 1)
+roughness = 0.6
+
+[sub_resource type="StandardMaterial3D" id="Mat_neon"]
+albedo_color = Color(0, 0.95, 1, 1)
+emission_enabled = true
+emission = Color(0, 0.95, 1, 1)
+emission_energy_multiplier = 3.0
+
+[sub_resource type="StandardMaterial3D" id="Mat_headlight"]
+albedo_color = Color(0.9, 0.95, 1, 1)
+emission_enabled = true
+emission = Color(0.9, 0.95, 1, 1)
+emission_energy_multiplier = 4.0
+
+[sub_resource type="StandardMaterial3D" id="Mat_taillight"]
+albedo_color = Color(1, 0.05, 0.2, 1)
+emission_enabled = true
+emission = Color(1, 0.05, 0.2, 1)
+emission_energy_multiplier = 4.0
+
+[sub_resource type="StandardMaterial3D" id="Mat_tyre"]
+albedo_color = Color(0.04, 0.04, 0.05, 1)
+roughness = 0.9
+
+[sub_resource type="BoxMesh" id="Mesh_chassis"]
+material = SubResource("Mat_paint")
+size = Vector3(1.9, 0.42, 4.2)
+
+[sub_resource type="BoxMesh" id="Mesh_nose"]
+material = SubResource("Mat_paint")
+size = Vector3(1.8, 0.16, 1.1)
+
+[sub_resource type="BoxMesh" id="Mesh_cabin"]
+material = SubResource("Mat_glass")
+size = Vector3(1.45, 0.42, 1.9)
+
+[sub_resource type="BoxMesh" id="Mesh_spoiler"]
+material = SubResource("Mat_trim")
+size = Vector3(1.9, 0.07, 0.45)
+
+[sub_resource type="BoxMesh" id="Mesh_strut"]
+material = SubResource("Mat_trim")
+size = Vector3(0.08, 0.32, 0.12)
+
+[sub_resource type="BoxMesh" id="Mesh_side_neon"]
+material = SubResource("Mat_neon")
+size = Vector3(0.04, 0.05, 3.4)
+
+[sub_resource type="BoxMesh" id="Mesh_headlight"]
+material = SubResource("Mat_headlight")
+size = Vector3(0.45, 0.08, 0.04)
+
+[sub_resource type="BoxMesh" id="Mesh_taillight"]
+material = SubResource("Mat_taillight")
+size = Vector3(1.6, 0.08, 0.04)
+
+[sub_resource type="CylinderMesh" id="Mesh_wheel"]
+material = SubResource("Mat_tyre")
+top_radius = 0.38
+bottom_radius = 0.38
+height = 0.32
+radial_segments = 16
+rings = 1
+
+[sub_resource type="SphereMesh" id="Mesh_spark"]
+radius = 0.12
+height = 0.24
+radial_segments = 8
+rings = 4
+
+[sub_resource type="CylinderMesh" id="Mesh_flame"]
+top_radius = 0.02
+bottom_radius = 0.13
+height = 0.6
+radial_segments = 8
+rings = 1
+
+[node name="PlaceholderCar" type="RigidBody3D"]
+collision_layer = 2
+collision_mask = 3
+mass = 1200.0
+physics_material_override = SubResource("PhysicsMaterial_body")
+center_of_mass_mode = 1
+center_of_mass = Vector3(0, -0.35, 0)
+can_sleep = false
+continuous_cd = true
+linear_damp_mode = 1
+contact_monitor = true
+max_contacts_reported = 4
+script = ExtResource("1_vehicle")
+stats = ExtResource("2_stats")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("BoxShape3D_body")
+
+[node name="Body" type="Node3D" parent="."]
+
+[node name="Chassis" type="MeshInstance3D" parent="Body"]
+mesh = SubResource("Mesh_chassis")
+
+[node name="Nose" type="MeshInstance3D" parent="Body"]
+position = Vector3(0, 0.12, -1.6)
+rotation = Vector3(-0.12, 0, 0)
+mesh = SubResource("Mesh_nose")
+
+[node name="Cabin" type="MeshInstance3D" parent="Body"]
+position = Vector3(0, 0.42, 0.25)
+mesh = SubResource("Mesh_cabin")
+
+[node name="Spoiler" type="MeshInstance3D" parent="Body"]
+position = Vector3(0, 0.55, 1.9)
+mesh = SubResource("Mesh_spoiler")
+
+[node name="StrutL" type="MeshInstance3D" parent="Body"]
+position = Vector3(-0.6, 0.36, 1.9)
+mesh = SubResource("Mesh_strut")
+
+[node name="StrutR" type="MeshInstance3D" parent="Body"]
+position = Vector3(0.6, 0.36, 1.9)
+mesh = SubResource("Mesh_strut")
+
+[node name="NeonL" type="MeshInstance3D" parent="Body"]
+position = Vector3(-0.97, -0.1, 0)
+mesh = SubResource("Mesh_side_neon")
+
+[node name="NeonR" type="MeshInstance3D" parent="Body"]
+position = Vector3(0.97, -0.1, 0)
+mesh = SubResource("Mesh_side_neon")
+
+[node name="HeadlightL" type="MeshInstance3D" parent="Body"]
+position = Vector3(-0.6, 0.08, -2.12)
+mesh = SubResource("Mesh_headlight")
+
+[node name="HeadlightR" type="MeshInstance3D" parent="Body"]
+position = Vector3(0.6, 0.08, -2.12)
+mesh = SubResource("Mesh_headlight")
+
+[node name="Taillights" type="MeshInstance3D" parent="Body"]
+position = Vector3(0, 0.1, 2.12)
+mesh = SubResource("Mesh_taillight")
+
+[node name="WheelFL" type="RayCast3D" parent="."]
+position = Vector3(-0.85, 0, -1.35)
+collision_mask = 1
+
+[node name="Pivot" type="Node3D" parent="WheelFL"]
+
+[node name="Mesh" type="MeshInstance3D" parent="WheelFL/Pivot"]
+rotation = Vector3(0, 0, 1.5708)
+mesh = SubResource("Mesh_wheel")
+
+[node name="WheelFR" type="RayCast3D" parent="."]
+position = Vector3(0.85, 0, -1.35)
+collision_mask = 1
+
+[node name="Pivot" type="Node3D" parent="WheelFR"]
+
+[node name="Mesh" type="MeshInstance3D" parent="WheelFR/Pivot"]
+rotation = Vector3(0, 0, 1.5708)
+mesh = SubResource("Mesh_wheel")
+
+[node name="WheelRL" type="RayCast3D" parent="."]
+position = Vector3(-0.85, 0, 1.35)
+collision_mask = 1
+
+[node name="Pivot" type="Node3D" parent="WheelRL"]
+
+[node name="Mesh" type="MeshInstance3D" parent="WheelRL/Pivot"]
+rotation = Vector3(0, 0, 1.5708)
+mesh = SubResource("Mesh_wheel")
+
+[node name="WheelRR" type="RayCast3D" parent="."]
+position = Vector3(0.85, 0, 1.35)
+collision_mask = 1
+
+[node name="Pivot" type="Node3D" parent="WheelRR"]
+
+[node name="Mesh" type="MeshInstance3D" parent="WheelRR/Pivot"]
+rotation = Vector3(0, 0, 1.5708)
+mesh = SubResource("Mesh_wheel")
+
+[node name="DriftController" type="Node" parent="."]
+script = ExtResource("3_drift")
+
+[node name="VehicleRecovery" type="Node" parent="."]
+script = ExtResource("4_recovery")
+
+[node name="Feedback" type="Node3D" parent="."]
+script = ExtResource("5_feedback")
+
+[node name="UnderGlow" type="OmniLight3D" parent="Feedback"]
+position = Vector3(0, -0.45, 0)
+light_energy = 3.0
+omni_range = 4.0
+
+[node name="SparkL" type="MeshInstance3D" parent="Feedback"]
+position = Vector3(-0.85, -0.7, 1.6)
+mesh = SubResource("Mesh_spark")
+
+[node name="SparkR" type="MeshInstance3D" parent="Feedback"]
+position = Vector3(0.85, -0.7, 1.6)
+mesh = SubResource("Mesh_spark")
+
+[node name="FlameL" type="MeshInstance3D" parent="Feedback"]
+position = Vector3(-0.45, -0.05, 2.45)
+rotation = Vector3(1.5708, 0, 0)
+mesh = SubResource("Mesh_flame")
+
+[node name="FlameR" type="MeshInstance3D" parent="Feedback"]
+position = Vector3(0.45, -0.05, 2.45)
+rotation = Vector3(1.5708, 0, 0)
+mesh = SubResource("Mesh_flame")
+
+[node name="CuePlayer" type="AudioStreamPlayer" parent="Feedback"]
+volume_db = -6.0
+
+[node name="BoostPlayer" type="AudioStreamPlayer" parent="Feedback"]
+volume_db = -8.0
