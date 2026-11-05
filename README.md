@@ -80,7 +80,7 @@ The layout is the `control_points` list on `scenes/tracks/test_circuit.tscn`, sa
 - **Checkpoints:** 8 evenly spaced gates, with gate 0 at the start/finish line. A gate only counts if it is the next one in order. Skipping ahead, reversing through gates, or a recovery teleport never adds progress. Crossing the line after every gate completes a lap.
 - **Positions** are live: finishers in finishing order, everyone else by distance raced since their last valid gate.
 - **When you finish,** the results screen shows the standings and fills in as the AI cross the line. Your car switches to autopilot.
-- **HUD:** position, lap, race time, live standings, lap/finish banners and a WRONG WAY warning. Speed and drift charge are as before.
+- **HUD:** position, lap, race time, live standings, lap/finish banners and a WRONG WAY warning (see HUD and results below).
 - **AI difficulty, laps and weapons** come from the mode select screen. When `race.tscn` is run directly, they come from the `Race` node in the Inspector instead (`difficulty`, `total_laps`, `weapons_enabled`).
 
 ### Game modes
@@ -188,6 +188,25 @@ The GDD prices basic paint (100), plate frames (250), wheels (500) and premium f
 - **Grand Prix** (`user://grand_prix_save.json`): as in Phase 4, now also written atomically, with the coins already awarded.
 - To start over, delete those files (on Windows they're in `%APPDATA%\Godot\app_userdata\Cyberwave 2199\`).
 
+### HUD and results
+
+The race HUD is built from small parts in `scripts/ui/hud/`, coordinated by `RaceHUD`:
+
+| Where | What |
+|---|---|
+| Top left | Race panel: mode / track, a large **position** (pulses cyan with POSITION UP! when you gain a place, orange when you lose one), lap, race time, and your coins as the count with a coin symbol. Elimination info below |
+| Left | Compact live standings, your row in magenta; only racers still in the race. At large HUD scales it shows the rows around you, or hides if it can't fit three |
+| Top centre | Announcements that pop in and fade: READY / SET / GO, LAP, FINAL LAP!, NEW BEST LAP!, 1ST PLACE! (taking the lead from lap 2, at most every 10 s), FINISH!, QUALIFIED, plus WRONG WAY, INCOMING and the elimination feed |
+| Top right | Item slots, lock-on, effects and combat notices |
+| Bottom left | Speed (cyan, km/h) and the drift meter: DRIFT CHARGE with a percentage, the bar in the current tier's colour with a growing glow, BOOST READY once a boost is banked, and the boost draining while you boost. The speed pops when a boost starts |
+| Bottom right | Minimap |
+
+There are no control instructions on the HUD; the controls (from your current bindings) are in the pause menu.
+
+**Results screen:** the mode and track, a big placement (1ST PLACE / VICTORY!, PODIUM!, RACE COMPLETE, ELIMINATED, CHAMPION!), tiles for race time, best lap and coins earned, NEW PERSONAL BEST!, the final standings with your row highlighted (points, championship standings and the next grid in a Grand Prix), the coin breakdown and new balance, then **Race again / Next race** (filled) and **Main menu** (outlined). It animates in over about 1.5 s; Enter / A or a click skips to the end.
+
+**Style:** `UIStyle` (`scripts/ui/ui_style.gd`) holds the colour system (magenta = you / selection / drifting, cyan = boost / speed / navigation, gold = coins and rewards, orange-red = warnings), translucent purple panels with thin neon borders, and the fonts: **Oxanium** for headings and big numbers, **Rajdhani** for everything else (the project theme, `resources/ui/cyberwave_theme.tres`). Both fonts are under the SIL Open Font License (`assets/fonts/*-OFL.txt`). Menus fade in and buttons have a focus glow and a small pop.
+
 ### Audio
 
 | Where | Sound | File |
@@ -204,14 +223,34 @@ The race setup screen lists **Six Flags New Orleans**, **Vegas Overdrive** and t
 
 #### Six Flags New Orleans (GDD §8.2)
 
-A 3.1 km circuit through an abandoned, overgrown amusement park at night, on an 18 m road (narrower than Vegas):
-- **Park Entrance:** start/finish under a decaying "SIX FLAGS / NEW ORLEANS" arch with a fleur-de-lis, a purple Ferris wheel and a drop tower on the skyline.
-- **Midway:** tight S-bends lined with game booths (striped awnings, glowing stall signs) and a carousel.
-- **Coaster Run:** a long straight beside a red roller coaster (lift hill, loop, a crossing high over the road), with a **jump ramp** halfway.
-- **Water Park:** the main road loops around the park; the **water-park shortcut** cuts straight through it past the slide tower and pools: a smashable fence at the entrance, a flooded pool section, a **slide jump** and three bonus coins. It's about 110 m shorter.
-- **Backlot:** 90° service-road corners between warehouses ("STAGE 4"), containers and light poles; an EMP puddle (downed power lines).
-- **Bayou Outrun:** a plank boardwalk through a swamp of cypress trees and hanging moss, with a **jump ramp** and two **water patches**.
-- Rainy purple night with heavier fog; 5 crate rows and 10 coins per lap.
+A 3.1 km circuit through a **realistic, eerie, abandoned amusement park**, after the real park left to rot after Hurricane Katrina. It goes for believable decay, not supernatural effects. The only clean light is the illegal racing neon on the barriers, dimmed to fit the scene. The road is 18 m wide.
+
+- **Atmosphere:**
+  - a stormy overcast night sky (Poly Haven HDRI, graded dark)
+  - blue-grey fog with low ground fog, dim cold ambient light and moonlight
+  - a few failing sodium lamps that flicker (steady and dim with Reduced flashing)
+- **Road:** cracked, patched, weathered asphalt (`road_damaged`) with faded, worn centre markings and small reflective puddles near the edges. The puddles are cosmetic; the gameplay water patches are tinted and lit.
+- **Ground:** overgrown, waterlogged terrain (rolling grass and mud, flooded hollows), dead trees, weeds, debris, wrecked cars, and a damaged chain-link fence along the circuit.
+- **Signs of the flood:** a dark flood-line stain on walls and booths, search-and-rescue "X" codes sprayed on buildings, and "KEEP OUT" / "NO TRESPASSING" signs.
+
+Representative section (full detail, ready for your review):
+- **Park Entrance:** start/finish under the derelict gate. Peeling sign with missing letters, chained gates pushed open, a smashed ticket booth, toppled turnstiles. A rusted, tilted Ferris wheel on the skyline.
+- **Flooded Midway:** the S-bends between boarded-up game booths with torn awnings, standing in flood water. A wrecked carousel with fallen horses, and the park's faded jester billboard.
+- **Coaster Run:** a **massive wooden lattice coaster** (about 1 km of track) runs alongside the road, then **crosses over it twice** on steel gantries (17 m clearance). It has a lift hill, a turnaround and a return run with a collapsed section. A jump ramp sits halfway along the straight.
+
+The rest of the lap (water park shortcut, backlot, bayou boardwalk) has a lighter pass for now: terrain, fences, debris, flood lines and lamps. It keeps its jump ramps, water patches, EMP puddle and smashable fence.
+
+**Needed assets.** None were supplied, so every prop is a procedural placeholder. These GLB models (Y-up, metres) would raise the fidelity most:
+- a coaster train car
+- a turnstile
+- a ticket booth
+- a carousel horse
+- the jester / park sign
+- a chain-link fence segment
+- a debris kit (barrels, tyres, trash)
+- an abandoned car
+- a Ferris wheel gondola
+- an optional water normal map for the flood water
 
 #### Vegas Overdrive (GDD §8.3)
 
@@ -234,7 +273,12 @@ A 3.2 km night circuit (shortened from 4.4 km after your first drive) with 20 m 
 - **`TrackFeature`**: boost pads, boost rings, EMP puddles, breakable barriers, **jump ramps** and **water**, placed by distance (or near a layout point) on the main road or a shortcut. Every kind is lit and marked so it reads at speed.
   - **Jump ramp:** a solid wedge (`length` × `width`, lip of `ramp_height`) that the wheels drive up. Put them on straights at full road width. On the Coaster Run a car at full speed gets about 1.6 s of air and 4 m of height, and lands on its wheels.
   - **Water:** standing water makes cars **wet**: top speed ×0.88 and grip ×0.75 while in it (and for 0.3 s after), with spray from the rear wheels and "WET" in the effects line. A Firewall doesn't keep you dry; wet stacks with EMP and Road Spike effects.
-- **`TrackScenery`**: base class for a track's set dressing (`VegasScenery`, `SixFlagsScenery`), with shared helpers such as `add_ferris_wheel` and `add_palm`. Geometry is merged into a few batched meshes, one per material, and it skips anything that would overlap a road. It builds in the editor too.
+- **`TrackScenery`**: base class for a track's set dressing (`VegasScenery`, `SixFlagsScenery`), with shared helpers such as `add_ferris_wheel`, `add_palm`, `textured()` (Poly Haven PBR sets mapped triplanar, so generated geometry needs no UVs) and `add_flicker_light()`.
+- **Reusable scenery builders** (`scripts/track/scenery/`):
+  - `SceneryTerrain`: overgrown, waterlogged terrain with level banks along the roads
+  - `WoodenCoaster`: a lattice coaster along any 3D path, with steel gantries where it crosses a road
+  - `ChainLinkFence`: damaged fencing with a procedural chain-link texture
+- **Track look exports** also cover `neon_energy` and `edge_line_energy` (racing-edge brightness), `faded_markings`, `ground_visible`, and `road_texture` / `barrier_texture` / `ground_texture`. Geometry is merged into a few batched meshes, one per material, and it skips anything that would overlap a road. It builds in the editor too.
 - **Look:** road, edge, barrier, neon and light colours are exports on each track, and corners tighter than `corner_sign_radius` get chevron signs automatically.
 - Each track scene carries its own sky, fog and lighting (`WorldEnvironment`).
 
@@ -265,10 +309,9 @@ Drive through a "?" crate to collect a random weapon into your first free slot. 
 - **Self-effects** (GDD §6.4): only the Road Spike can hit its owner, and only after a 1 s grace period. Everything else ignores its owner.
 - **Crate odds** depend on race position (GDD §6.5). Leaders mostly get Road Spikes and Firewalls, while trailing racers get more Hunter Drones and Nitros.
 - **HUD:**
-  - two weapon slots, top left, showing each weapon's picture from the Weapon Arsenal concept art (`assets/ui/weapons/`; the name is in the tooltip). The selected slot is outlined in magenta, empty slots show only their key number, and Triple Nitro shows its charges (x3, x2, x1)
-  - position, lap, time and standings below the slots (moved to the very top when weapons are off)
-  - a **minimap** in the bottom-right corner (GDD §11.5): the circuit, shortcuts (dimmer), the start line, the elimination gate in Elimination, every racer as a coloured dot, and you as a magenta arrow pointing your heading
-  - beside the slots: lock status, your active effects (with timers, e.g. JAMMED), and hit / pickup / "LOST …" notices
+  - two item slots, top right, showing each weapon's picture from the Weapon Arsenal concept art (`assets/ui/weapons/`; the name is in the tooltip). The active slot is larger with a magenta border and an ACTIVE caption, the other is smaller (STORED), empty slots say EMPTY, and Triple Nitro shows its charges (x3, x2, x1). Picking an item up flashes the slot and pops the icon in; using one puffs it out
+  - a **minimap** in the bottom-right corner (GDD §11.5): the circuit (muted purple), shortcuts (dimmer), the white start line, the elimination gate in Elimination, every racer as a dot in their colour (ringed when near you), and you as a cyan arrow pointing your heading
+  - under the slots: lock status, your active effects (with timers, e.g. JAMMED), and hit / pickup / "LOST …" notices
   - a flashing INCOMING warning when someone has locked on to you or a drone is chasing you
   - short tones for pickup, hit, getting hit, blocked and incoming
 - **AI** score each weapon for the moment: fire when locked, EMP when someone is close, drop spikes on a racer behind, Nitro on long straights (one burst at a time), and raise a Firewall when attacked. Difficulty sets reaction time and reliability; personality sets how long they hold weapons.
@@ -360,6 +403,7 @@ tests/
   test_phase4.gd             Mode checks: full Versus, 3-race Grand Prix and Elimination events
   test_phase5.gd             Menus, garage, shop, coins, rewards, saving, settings and rebinding
   test_audio.gd              Menu / garage music, crossfades, countdown beep
+  test_ui.gd                 Fonts, HUD panels, drift / item / results screens, layout at two HUD scales
   test_phase6.gd             Vehicle models, imported models, Vegas layout, shortcut, features, full Vegas races
   tools/screenshot.gd        Dev tool: renders a scene / race to PNG (needs a display, see below)
   tools/car_showroom.gd      Dev tool: renders every car model
@@ -402,6 +446,7 @@ godot --headless --fixed-fps 60 -s res://tests/test_phase4.gd
 godot --headless --fixed-fps 60 -s res://tests/test_phase5.gd
 godot --headless --fixed-fps 60 -s res://tests/test_phase6.gd
 godot --headless --fixed-fps 60 -s res://tests/test_audio.gd
+godot --headless --fixed-fps 60 -s res://tests/test_ui.gd
 ```
 
 The two scripts in `tests/tools/` render real screenshots, so they need a display (run them without `--headless`). For example, `godot --path . -s res://tests/tools/car_showroom.gd -- user://cars front` renders every car, and `SHOT_TRACK=res://scenes/tracks/vegas_overdrive.tscn SHOT_AUTOPILOT=1 SHOT_EVERY=600 godot --path . --fixed-fps 60 -s res://tests/tools/screenshot.gd -- res://scenes/race/race.tscn user://lap.png 6000` saves a screenshot every 10 s of an autopilot lap.
@@ -440,7 +485,7 @@ Phase 3 covers:
 - the drone finding a target without a lock,
 - the EMP's radius, that it never hits its owner, and that weapons stay jammed for 5 s without being lost,
 - Railgun and drone hits knocking out the selected item, and blocked hits or Road Spikes costing nothing,
-- the HUD layout: slots top left, race info below, bottom-right corner clear,
+- the HUD layout: item slots top right, race info top left with the standings below, bottom-right corner clear,
 - the Road Spike's owner grace period, then hitting its owner and an opponent,
 - the Nitro boost, Firewall blocking, a stunned car losing control, and the protection window,
 - finished racers being out of combat, and weapons switching off,
@@ -471,6 +516,10 @@ Phase 5 covers:
 
 The exit code is non-zero if anything fails. These checks do **not** judge how the game looks or feels.
 
+## Credits
+
+Environment textures and the Six Flags sky are from [Poly Haven](https://polyhaven.com) (CC0, public domain): asphalt_04, road_damaged, rust_coarse_01, rusty_metal_02, rusty_corrugated_iron, concrete_moss, dirty_concrete, peeling_painted_wall, wood_peeling_paint_weathered, distressed_painted_planks, brown_mud_leaves_01, bark_willow, dirty_tiles, painted_worn_brick, withered_grass, sparse_grass, and the kloofendal_overcast_puresky HDRI. They live in `assets/textures/polyhaven/` (colour, normal and roughness at 1K) and `assets/sky/`.
+
 ## Status and known issues
 
 **Verified (2026-11-05):** 91 Phase 1, 159 Phase 2, 103 Phase 3, 124 Phase 4, 113 Phase 5 and 93 Phase 6 headless checks pass on Godot 4.7.2 (Linux build). On the shortened 3.2 km Vegas Overdrive, a simulated 8-car, 3-lap race with weapons ran 3:54–4:00 (laps about 1:18) with no recoveries, and the AI took the Luxor shortcut 7 times. With every AI forced onto the shortcut, all 8 still finish with every gate counted. On the test circuit, a typical simulated weapons race sees the AI use 30–50 weapons and land 13–19 hits; races there run with no or very few recoveries at any difficulty, and AI earn roughly 2–18 drift boosts each per race.
@@ -498,7 +547,7 @@ The racing has **not** been played on screen yet.
 - **Only 6 of the GDD's 11 weapons** exist so far, plus Triple Nitro. Holo Decoy, Gravity Mine, System Glitch, Cyber Leech and Swarm Bots are Phase 6 content; the data-driven setup should make adding them straightforward.
 - **Combat balance is untested against a human:** crate odds, durations, the 22 m EMP radius and the Railgun's speed. The Railgun hits about half its shots in AI races. The AI often spend a held Firewall pre-emptively rather than saving it.
 - **Weapon visuals and sounds are placeholders:** glowing primitives, coloured lights and generated tones.
-- **The combat HUD hasn't been seen on screen.** Its layout is built in code and may need nudging.
+- **The new HUD and results screen haven't been seen on screen.** They're built in code and checked headless (including no overlaps at 1280×720 at 100% and 150% HUD scale), but spacing, font sizes and animation feel may need nudging.
 
 - **Tuning is first-pass.** Every number in `VehicleStats` and the camera profiles is a starting point (GDD §18 leaves these to playtesting): speeds, grip, drift yaw, boost strength, suspension and camera smoothing.
 - **Camera jitter on high-refresh monitors.** The camera updates in `_physics_process` (60 Hz). Physics interpolation is not enabled yet.

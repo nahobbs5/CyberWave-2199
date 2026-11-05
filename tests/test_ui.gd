@@ -3,7 +3,8 @@ extends SceneTree
 ## position-change cue, the speed + drift panel states, item slots (active /
 ## stored / empty, pickup and use animations), the results screen (placement,
 ## stats, rewards adding up, coin count-up, skipping the animation), the
-## controls card (first race only) and that the HUD panels don't overlap at
+## controls (pause menu only, never on the HUD), the coin counter and that
+## the HUD panels don't overlap at
 ## 1280x720 with HUD scale 1.0 and 1.5. Run from the project root:
 ##   godot --headless --import
 ##   godot --headless --fixed-fps 60 -s res://tests/test_ui.gd
@@ -30,7 +31,6 @@ func _run_all() -> void:
 	_test_fonts()
 	_test_ordinals()
 	await _run("HUD in a race", _test_hud, _config(3), false)
-	await _run("second race: no controls card", _test_controls_seen, _config(3), false)
 	await _run("layout at HUD scale 1.0 and 1.5", _test_layout, _config(3), false)
 	await _run("results screen", _test_results, _config(1), true)
 	_fresh()
@@ -122,18 +122,26 @@ func _test_hud(race: RaceManager) -> void:
 	_check(hud.info.time_value.text == RaceProgress.format_time(race.race_time)
 			or hud.info.time_value.text.length() == 7, "race time shown (%s)" % hud.info.time_value.text)
 	_check(hud.get_standings_text().split("\n").size() == 8, "standings list all eight")
-	_check(proto.controls_card.visible and PlayerProfile.get_profile().seen_controls, "controls card on the first race, then remembered")
+	var cards := hud.find_children("*", "ControlsCard", true, false) + proto.find_children("*", "ControlsCard", true, false)
+	_check(cards.is_empty(), "no controls on the HUD")
+	var pause := race.get_node_or_null("PauseMenu")
+	if pause == null:
+		pause = race.find_children("*", "PauseMenu", true, false).front() if not race.find_children("*", "PauseMenu", true, false).is_empty() else null
+	_check(pause != null and not pause.find_children("*", "ControlsCard", true, false).is_empty(), "controls are in the pause menu")
+	_check(hud.info.coin_label.text == "0" and hud.info.coin_icon.is_visible_in_tree()
+			and hud.info.coin_icon.get_global_rect().position.x > hud.info.coin_label.get_global_rect().end.x,
+			"coins: the count with the coin symbol on its right (%s)" % hud.info.coin_label.text)
 
 	# Position change: pretend we were a place behind.
 	await _settle(race)
 	var gains := hud.info.gains
 	hud._last_position = p.position + 1
-	await _frames(1)
+	await _frames(2)
 	_check(hud.info.gains == gains + 1 and hud.info.pos_cue.text == "POSITION UP!", "gaining a place pulses and says POSITION UP!")
 	var losses := hud.info.losses
 	hud._last_position = maxi(p.position - 1, 1) if p.position > 1 else 0
 	if p.position > 1:
-		await _frames(1)
+		await _frames(2)
 		_check(hud.info.losses == losses + 1, "losing a place pulses too")
 
 	# Speed + drift panel states (driven directly; physics may change them next step).
@@ -189,11 +197,6 @@ func _settle(race: RaceManager) -> void:
 		await physics_frame
 
 
-func _test_controls_seen(race: RaceManager) -> void:
-	await _frames(2)
-	_check(not race.prototype_hud.controls_card.visible, "not shown again once seen")
-
-
 func _test_layout(race: RaceManager) -> void:
 	for hud_scale in [1.0, 1.5]:
 		HudScaler.apply(race.race_hud, hud_scale)
@@ -207,7 +210,7 @@ func _test_layout(race: RaceManager) -> void:
 			"minimap": hud.minimap,
 			"speed / drift": race.prototype_hud.speed_panel,
 		}
-		var view := hud.get_viewport().get_visible_rect().size / hud_scale
+		var view: Vector2 = hud.get_viewport().get_visible_rect().size / float(hud_scale)
 		var clashes: PackedStringArray = []
 		var off_screen: PackedStringArray = []
 		var keys := panels.keys()

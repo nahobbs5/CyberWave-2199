@@ -16,6 +16,8 @@ extends Node3D
 var track: TrackCircuit
 var rng := RandomNumberGenerator.new()
 
+const TEXTURES := "res://assets/textures/polyhaven/%s/%s_%s_1k.jpg"
+
 var _batches: Dictionary = {}
 var _materials: Dictionary = {}
 var _root: Node3D
@@ -87,6 +89,74 @@ func material(key: String, color: Color, emission: float = 0.0, metallic: float 
 	if transparent:
 		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	_materials[key] = m
+
+
+## Registers a material using a Poly Haven texture set (CC0, see README),
+## mapped triplanar in world space so generated geometry needs no UVs.
+## tint multiplies the texture; metres_per_tile sets its scale.
+func textured(key: String, texture_name: String, tint: Color = Color.WHITE, metres_per_tile: float = 4.0,
+		roughness: float = 0.85, metallic: float = 0.0) -> void:
+	if _materials.has(key):
+		return
+	_materials[key] = texture_material(texture_name, tint, metres_per_tile, roughness, metallic)
+
+
+static func texture_material(texture_name: String, tint: Color = Color.WHITE, metres_per_tile: float = 4.0,
+		roughness: float = 0.85, metallic: float = 0.0) -> StandardMaterial3D:
+	var m := StandardMaterial3D.new()
+	m.albedo_texture = load(TEXTURES % [texture_name, texture_name, "diff"]) as Texture2D
+	var normal := load(TEXTURES % [texture_name, texture_name, "nor"]) as Texture2D
+	if normal != null:
+		m.normal_enabled = true
+		m.normal_texture = normal
+	var rough_path := TEXTURES % [texture_name, texture_name, "rough"]
+	if ResourceLoader.exists(rough_path):
+		m.roughness_texture = load(rough_path) as Texture2D
+	m.albedo_color = tint
+	m.roughness = roughness
+	m.metallic = metallic
+	m.cull_mode = BaseMaterial3D.CULL_DISABLED
+	m.uv1_triplanar = true
+	m.uv1_world_triplanar = true
+	m.uv1_scale = Vector3.ONE / maxf(metres_per_tile, 0.01)
+	m.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
+	return m
+
+
+func get_material(key: String) -> Material:
+	return _materials.get(key)
+
+
+## Registers a ready-made material under a key (e.g. alpha-tested fencing).
+func register_material(key: String, mat: Material) -> void:
+	_materials[key] = mat
+
+
+## A mesh built outside the batches (e.g. terrain), added under the scenery.
+func add_mesh_instance(mesh: Mesh, mat: Material, node_name: String = "Mesh") -> MeshInstance3D:
+	var mi := MeshInstance3D.new()
+	mi.name = node_name
+	mi.mesh = mesh
+	mi.material_override = mat
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_root.add_child(mi)
+	return mi
+
+
+## A flickering lamp (see FlickerLight). If glow_key names a registered
+## material, that material's glow flickers with it (dying neon, bulbs).
+func add_flicker_light(pos: Vector3, color: Color, energy: float, light_range: float,
+		failing: float = 0.35, glow_key: String = "") -> FlickerLight:
+	var light := FlickerLight.new()
+	light.position = pos
+	light.light_color = color
+	light.base_energy = energy
+	light.omni_range = light_range
+	light.failing = failing
+	if glow_key != "" and _materials.has(glow_key):
+		light.material = _materials[glow_key]
+	_root.add_child(light)
+	return light
 
 
 func _st(key: String) -> SurfaceTool:

@@ -147,7 +147,7 @@ func _process(delta: float) -> void:
 	info.lap_value.text = "%d / %d" % [p.display_lap(), race.total_laps]
 	var shown_time := p.finish_time if p.finished else race.race_time
 	info.time_value.text = RaceProgress.format_time(shown_time)
-	info.coin_label.text = "COINS  %d" % race.coins.collected
+	info.coin_label.text = str(race.coins.collected)
 	_track_position(delta)
 
 	# Standings may not reach the speed panel (bottom left, in PrototypeHUD).

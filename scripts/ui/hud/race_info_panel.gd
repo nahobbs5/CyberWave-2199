@@ -11,7 +11,9 @@ var pos_total: Label
 var pos_cue: Label
 var lap_value: Label
 var time_value: Label
+## Coin count (the number only); the coin symbol sits to its right.
 var coin_label: Label
+var coin_icon: CoinIcon
 var elim_label: Label
 
 ## Places gained / lost since the start (tests).
@@ -62,14 +64,19 @@ func _init() -> void:
 	time_value = UIStyle.heading("0:00.00", 22, Color.WHITE)
 	grid.add_child(time_value)
 
+	# Coins: the count with a coin symbol on its right.
 	var coin_row := HBoxContainer.new()
+	coin_row.add_theme_constant_override("separation", 6)
 	box.add_child(coin_row)
-	coin_label = UIStyle.stat("COINS  0", 19, UIStyle.GOLD)
+	coin_label = UIStyle.heading("0", 22, UIStyle.GOLD)
 	coin_label.resized.connect(func() -> void: coin_label.pivot_offset = Vector2(0, coin_label.size.y * 0.5))
 	coin_row.add_child(coin_label)
+	coin_icon = CoinIcon.new(20.0)
+	coin_icon.resized.connect(func() -> void: coin_icon.pivot_offset = coin_icon.size * 0.5)
+	coin_row.add_child(coin_icon)
 	# Free-positioned holder for the floating "+1".
 	_coin_holder = Control.new()
-	_coin_holder.custom_minimum_size = Vector2(40, 0)
+	_coin_holder.custom_minimum_size = Vector2(30, 0)
 	_coin_holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	coin_row.add_child(_coin_holder)
 
@@ -111,11 +118,13 @@ func position_changed(gained: bool) -> void:
 		_cue_time = 1.0
 
 
-## Gold pulse and a floating "+1".
+## Gold pulse on the count and coin, and a floating "+1".
 func coin_collected() -> void:
 	coin_label.scale = Vector2.ONE * 1.2
-	var t := create_tween()
+	coin_icon.scale = Vector2.ONE * 1.35
+	var t := create_tween().set_parallel()
 	t.tween_property(coin_label, "scale", Vector2.ONE, 0.2)
+	t.tween_property(coin_icon, "scale", Vector2.ONE, 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	var plus := UIStyle.stat("+1", 16, UIStyle.GOLD)
 	plus.position = Vector2(2, 0)
 	_coin_holder.add_child(plus)

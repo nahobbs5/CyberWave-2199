@@ -378,10 +378,11 @@ func _test_hud_layout(race: RaceManager) -> void:
 	var hud := race.race_hud
 	var view := race.get_viewport().get_visible_rect().size
 	var slot := hud._slot_panels[1].get_global_rect()
-	_check(slot.end.x < view.x * 0.5 and slot.end.y < view.y * 0.25,
-			"weapon slots are in the top left (%s in %s)" % [slot, view])
-	var info := hud._standings_label.get_global_rect()
-	_check(info.position.y >= slot.end.y, "race info sits below the slots")
+	_check(slot.position.x > view.x * 0.5 and slot.end.y < view.y * 0.25,
+			"weapon slots are in the top right (%s in %s)" % [slot, view])
+	var info := hud.info.get_global_rect()
+	_check(info.end.x < view.x * 0.5 and info.position.y < view.y * 0.25, "race info in the top left (%s)" % info)
+	_check(hud._standings_label.get_global_rect().position.y >= info.end.y, "standings sit below the race info")
 	# The minimap owns the bottom-right corner; nothing else sits there.
 	var corner := Rect2(view * 0.6, view * 0.4)
 	var map := hud.minimap

@@ -79,6 +79,15 @@ signal checkpoint_crossed(index: int, body: Node3D)
 @export var edge_line_color: Color = Color(0.0, 0.85, 1.0)
 @export var ground_color: Color = Color(0.05, 0.05, 0.08)
 @export var barrier_color: Color = Color(0.22, 0.22, 0.27)
+## Glow of the barrier-top neon strips and the road edge lines (lower them on
+## dark, gritty tracks, but keep them visible: they mark the racing edge).
+@export var neon_energy: float = 3.0
+@export var edge_line_energy: float = 1.5
+## Faded centre markings: most dashes worn away, the rest dull.
+@export var faded_markings: bool = false
+## Hide the flat ground slab's visual (scenery supplies its own terrain);
+## the collision slab always stays.
+@export var ground_visible: bool = true
 @export var neon_left_color: Color = Color(0.0, 0.9, 1.0)
 @export var neon_right_color: Color = Color(1.0, 0.1, 0.8)
 @export var light_colors: PackedColorArray = PackedColorArray([Color(0.0, 0.85, 1.0), Color(1.0, 0.2, 0.85)])
@@ -87,6 +96,11 @@ signal checkpoint_crossed(index: int, body: Node3D)
 ## 0 turns them off.
 @export var corner_sign_radius: float = 140.0
 @export var corner_sign_color: Color = Color(1.0, 0.15, 0.8)
+## Optional Poly Haven texture set names (assets/textures/polyhaven/<name>/)
+## for the road, the barrier walls and the ground. Tinted by the colours above.
+@export var road_texture: String = ""
+@export var barrier_texture: String = ""
+@export var ground_texture: String = ""
 @export_group("")
 ## Ground extends this far beyond the layout's bounds on every side.
 @export var ground_margin: float = 300.0
@@ -289,6 +303,13 @@ func _material(color: Color, emission: float = 0.0, roughness: float = 0.8) -> S
 	return mat
 
 
+## Plain colour, or a world-mapped texture tinted by the colour.
+func _surface_material(texture_name: String, color: Color, metres_per_tile: float, roughness: float) -> StandardMaterial3D:
+	if texture_name == "":
+		return _material(color, 0.0, roughness)
+	return TrackScenery.texture_material(texture_name, color, metres_per_tile, roughness)
+
+
 func _add_generated(node: Node, node_name: String) -> void:
 	node.name = GENERATED_PREFIX + node_name
 	add_child(node)
@@ -320,9 +341,10 @@ func _build_ground() -> void:
 	var mesh_instance := MeshInstance3D.new()
 	var plane := PlaneMesh.new()
 	plane.size = extent
-	plane.material = _material(ground_color, 0.0, 0.95)
+	plane.material = _surface_material(ground_texture, ground_color, 6.0, 0.95)
 	mesh_instance.mesh = plane
 	mesh_instance.position = Vector3(center.x, 0.0, center.y)
+	mesh_instance.visible = ground_visible
 	body.add_child(mesh_instance)
 	_add_generated(body, "Ground")
 
@@ -357,7 +379,7 @@ func _build_road() -> void:
 		_strip_quad(road, s0, s1, -half, half, 0.02)
 		_strip_quad(edges, s0, s1, -half, -half + 0.4, 0.04)
 		_strip_quad(edges, s0, s1, half - 0.4, half, 0.04)
-		if i % 4 < 2:
+		if i % 4 < 2 and (not faded_markings or (i * 7919) % 13 < 5):
 			_strip_quad(dashes, s0, s1, -0.15, 0.15, 0.04)
 
 	# Shortcut roads sit a few millimetres higher where they overlap the main one.
@@ -371,9 +393,12 @@ func _build_road() -> void:
 
 	var holder := Node3D.new()
 	_add_generated(holder, "Road")
-	_add_mesh(holder, "Surface", road, _material(road_color, 0.0, 0.7))
-	_add_mesh(holder, "EdgeLines", edges, _material(edge_line_color, 1.5))
-	_add_mesh(holder, "CentreDashes", dashes, _material(Color(0.85, 0.85, 0.9), 0.4))
+	_add_mesh(holder, "Surface", road, _surface_material(road_texture, road_color, 5.0, 0.55))
+	_add_mesh(holder, "EdgeLines", edges, _material(edge_line_color, edge_line_energy))
+	if faded_markings:
+		_add_mesh(holder, "CentreDashes", dashes, _material(Color(0.42, 0.41, 0.38), 0.0, 0.9))
+	else:
+		_add_mesh(holder, "CentreDashes", dashes, _material(Color(0.85, 0.85, 0.9), 0.4))
 
 
 func _add_mesh(parent: Node, node_name: String, st: SurfaceTool, mat: Material) -> void:
@@ -426,7 +451,7 @@ func _build_barriers() -> void:
 
 	var wall_mesh := BoxMesh.new()
 	wall_mesh.size = Vector3(barrier_thickness, barrier_height, 1.0)
-	var wall_visual := _multimesh(wall_mesh, _material(barrier_color, 0.0, 0.6), walls, lengths)
+	var wall_visual := _multimesh(wall_mesh, _surface_material(barrier_texture, barrier_color, 2.5, 0.8), walls, lengths)
 	wall_visual.name = "Walls"
 	body.add_child(wall_visual)
 	var strip_mesh := BoxMesh.new()
@@ -438,10 +463,10 @@ func _build_barriers() -> void:
 	var rx: Array[Transform3D] = []
 	for xf in right:
 		rx.append(xf.translated(strip_up))
-	var left_strip := _multimesh(strip_mesh, _material(neon_left_color, 3.0), lx, left_lengths)
+	var left_strip := _multimesh(strip_mesh, _material(neon_left_color, neon_energy), lx, left_lengths)
 	left_strip.name = "NeonLeft"
 	body.add_child(left_strip)
-	var right_strip := _multimesh(strip_mesh, _material(neon_right_color, 3.0), rx, right_lengths)
+	var right_strip := _multimesh(strip_mesh, _material(neon_right_color, neon_energy), rx, right_lengths)
 	right_strip.name = "NeonRight"
 	body.add_child(right_strip)
 

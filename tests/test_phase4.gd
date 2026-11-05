@@ -359,7 +359,7 @@ func _test_versus(race: RaceManager) -> void:
 	_check(race.mode() == RaceConfig.Mode.VERSUS and race.total_laps == 1 and race.championship == null, "Versus from config")
 	await _wait_player_done(race, 150.0)
 	var hud := race.race_hud
-	_check(hud.is_results_visible() and hud.get_results_title() == "RESULTS", "results shown")
+	_check(hud.is_results_visible() and hud.get_results_title().begins_with("VERSUS / "), "results shown (%s)" % hud.get_results_title())
 	_check(hud.get_continue_text() == "Race again" and hud._continue_button.disabled, "Race again, briefly disabled")
 	await _frames(100)
 	_check(not hud._continue_button.disabled, "then enabled")
@@ -503,7 +503,7 @@ func _test_elimination_race(race: RaceManager) -> void:
 			"six eliminated cars have disappeared")
 	var winner := race.get_standings()[0]
 	_check(winner.finish_time > 0.0 and not winner.eliminated, "the winner crossed the line")
-	_check(race.race_hud.is_results_visible() and race.race_hud.get_results_title() == "ELIMINATION RESULTS",
+	_check(race.race_hud.is_results_visible() and race.race_hud.get_results_title().begins_with("ELIMINATION / "),
 			"results shown to the player")
 	print("    winner %s; player P%d%s; %.1f s simulated" % [winner.display_name, race.player.finish_position,
 			" (eliminated)" if race.player.eliminated else "", frames / 60.0])

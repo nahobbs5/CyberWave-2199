@@ -1,10 +1,10 @@
 class_name PrototypeHUD
 extends CanvasLayer
 ## Driving HUD shared by free drive and races: the speed + drift panel
-## (bottom left), short notices (drift lost, recovered, camera, boosts) and
-## the controls card (first race only, or every time in free drive). Free
-## drive also shows its camera / lap timer; in races RaceHUD handles laps, so
-## show_lap_info is turned off there.
+## (bottom left) and short notices (drift lost, recovered, camera, boosts).
+## No controls on screen: they're in the pause menu. Free drive also shows
+## its camera / lap timer; in races RaceHUD handles laps, so show_lap_info is
+## turned off there.
 
 ## Show the distance-based free-drive lap timer.
 @export var show_lap_info: bool = true
@@ -20,11 +20,7 @@ var _best_lap_time: float = -1.0
 var _race_clock: float = 0.0
 var _notice_time: float = 0.0
 
-## Seconds the controls card stays up before fading.
-const CONTROLS_SECONDS := 8.0
-
 var speed_panel: SpeedDriftPanel
-var controls_card: ControlsCard
 
 @onready var _info_label: Label = %InfoLabel
 @onready var _notice_label: Label = %NoticeLabel
@@ -33,13 +29,6 @@ var controls_card: ControlsCard
 func _ready() -> void:
 	speed_panel = SpeedDriftPanel.new()
 	add_child(speed_panel)
-	controls_card = ControlsCard.new(CONTROLS_SECONDS)
-	controls_card.set_anchors_and_offsets_preset(Control.PRESET_CENTER_RIGHT)
-	controls_card.grow_horizontal = Control.GROW_DIRECTION_BEGIN
-	controls_card.grow_vertical = Control.GROW_DIRECTION_BOTH
-	controls_card.offset_right = -20.0
-	controls_card.visible = false
-	add_child(controls_card)
 	_notice_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
 	_notice_label.add_theme_constant_override("outline_size", 6)
 
@@ -49,12 +38,6 @@ func setup(vehicle: VehicleController, camera: ChaseCamera, track: TrackCircuit)
 	_camera = camera
 	_track = track
 	speed_panel.setup(vehicle)
-	# Controls: every time in free drive, only on the first race otherwise.
-	var profile := PlayerProfile.get_profile()
-	if show_lap_info or not profile.seen_controls:
-		controls_card.visible = true
-		if not show_lap_info:
-			profile.mark_controls_seen()
 	vehicle.recovery.recovered.connect(_on_recovered)
 	vehicle.drift.drift_ended.connect(_on_drift_ended)
 	vehicle.drift.drift_cancelled.connect(_on_drift_cancelled)

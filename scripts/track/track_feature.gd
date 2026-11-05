@@ -165,7 +165,7 @@ func _pad_visual() -> void:
 	for i in 3:
 		for arm in [-1.0, 1.0]:
 			var bar := _box(Vector3(width * 0.42, 0.06, 0.35), Vector3(arm * width * 0.19, 0.08, -1.6 + i * 1.5), glow)
-			bar.rotation.y = arm * 0.55
+			bar.rotation.y = -arm * 0.55 # arms trail back: the point faces the driving direction
 	_light = _add_light(PAD_COLOR, 2.5, 7.0, Vector3(0, 1.0, 0))
 
 
@@ -252,7 +252,7 @@ func _ramp_body() -> void:
 		var y := lerpf(0.0, ramp_height, (hl - z) / length) + 0.06
 		for arm in [-1.0, 1.0]:
 			var bar := _box(Vector3(width * 0.36, 0.05, 0.4), Vector3(arm * width * 0.16, y, z), glow)
-			bar.rotation = Vector3(slope, arm * 0.55, 0)
+			bar.rotation = Vector3(slope, -arm * 0.55, 0)
 	_box(Vector3(width, 0.12, 0.2), Vector3(0, ramp_height, -hl + 0.1), glow)
 	for side in [-1.0, 1.0]:
 		_box(Vector3(0.15, 0.15, length), Vector3(side * hw, ramp_height * 0.5 + 0.05, 0), glow).rotation.x = slope

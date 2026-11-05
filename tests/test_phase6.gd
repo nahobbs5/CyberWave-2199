@@ -31,7 +31,7 @@ func _run_all() -> void:
 	await _test_glb_model()
 	_test_wet_status()
 	await _test_layout(VEGAS, "Vegas Overdrive", 3000.0, 3400.0, 9, 90.0)
-	await _test_layout(SIX_FLAGS, "Six Flags New Orleans", 2900.0, 3300.0, 10, 90.0)
+	await _test_layout(SIX_FLAGS, "Six Flags New Orleans", 2900.0, 3300.0, 10, 80.0)
 	await _run("features on Vegas", _test_features, _vegas_config(), false)
 	await _run("jump ramps and water (Six Flags)", _test_ramps_and_water, _config(SIX_FLAGS, "Six Flags New Orleans"), false)
 	await _run("shortcut: recovery and positions", _test_shortcut_recovery, _vegas_config(), false)

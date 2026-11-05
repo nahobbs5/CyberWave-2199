@@ -447,7 +447,7 @@ func _test_race_coins(race: RaceManager) -> void:
 		me.teleport(Transform3D(me.global_transform.basis, coins.coins()[i + 1].global_position + Vector3.UP * 0.3))
 		await _frames(10)
 	_check(coins.collected == 3 and got[0] == 3 and coins.available_count() == 7, "driving through coins collects them")
-	_check(race.race_hud._coin_label.text == "COINS  3", "HUD coin counter")
+	_check(race.race_hud._coin_label.text == "3" and race.race_hud.info.coin_icon.is_visible_in_tree(), "HUD coin counter: count and coin symbol")
 	_place_away(race, me)
 	await _frames(5)
 	coins.respawn()
