@@ -8,4 +8,4 @@ id = "american_circuit"
 display_name = "Grand Prix 1 — American Circuit"
 track_names = PackedStringArray("The Stacks Grand Prix", "Six Flags New Orleans", "Vegas Overdrive")
 locations = PackedStringArray("Library of Congress, Washington, DC", "Louisiana", "Las Vegas, Nevada")
-track_scenes = PackedStringArray("res://scenes/tracks/test_circuit.tscn", "res://scenes/tracks/test_circuit.tscn", "res://scenes/tracks/test_circuit.tscn")
+track_scenes = PackedStringArray("res://scenes/tracks/test_circuit.tscn", "res://scenes/tracks/test_circuit.tscn", "res://scenes/tracks/vegas_overdrive.tscn")

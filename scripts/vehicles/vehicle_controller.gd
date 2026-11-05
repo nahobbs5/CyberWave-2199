@@ -123,15 +123,9 @@ func set_stats(new_stats: VehicleStats) -> void:
 		ray.target_position = Vector3(0.0, -(stats.suspension_rest_length + stats.wheel_radius), 0.0)
 
 
+## Plain gloss paint on whatever body the car has (model or box car).
 func set_body_color(color: Color) -> void:
-	var paint := StandardMaterial3D.new()
-	paint.albedo_color = color
-	paint.metallic = 0.8
-	paint.roughness = 0.25
-	for path in ["Body/Chassis", "Body/Nose"]:
-		var mesh := get_node_or_null(path) as MeshInstance3D
-		if mesh != null:
-			mesh.material_override = paint
+	VehicleCosmetics.paint_body(self, color)
 
 
 func is_boosting() -> bool:

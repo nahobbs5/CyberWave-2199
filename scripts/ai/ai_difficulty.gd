@@ -16,6 +16,8 @@ extends Resource
 @export var line_wander: float = 1.0
 ## Chance (0-1) of drifting through a suitable corner.
 @export_range(0.0, 1.0) var drift_chance: float = 0.65
+## Multiplies each shortcut's own AI chance (GDD 7.4, 14.3 shortcuts).
+@export_range(0.0, 2.0) var shortcut_chance: float = 1.0
 ## Target-speed adjustment per 200 m gap to the player (0 = no rubber-banding).
 @export_range(0.0, 0.3) var rubber_band: float = 0.03
 

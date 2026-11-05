@@ -40,7 +40,7 @@ const DATA := [
 	["glow_cyan", CosmeticItem.Category.UNDERGLOW, "Cyan", 400, Color(0.0, 0.95, 1.0), ""],
 	["glow_magenta", CosmeticItem.Category.UNDERGLOW, "Magenta", 400, Color(1.0, 0.2, 0.85), ""],
 	["glow_lime", CosmeticItem.Category.UNDERGLOW, "Lime", 400, Color(0.5, 1.0, 0.15), ""],
-	["exhaust_standard", CosmeticItem.Category.EXHAUST, "Standard", 0, Color(1.0, 0.5, 0.15), ""],
+	["exhaust_standard", CosmeticItem.Category.EXHAUST, "Standard", 0, Color(0.35, 0.35, 0.38), "metal"],
 	["exhaust_plasma", CosmeticItem.Category.EXHAUST, "Plasma Blue", 350, Color(0.25, 0.55, 1.0), ""],
 	["exhaust_toxic", CosmeticItem.Category.EXHAUST, "Toxic Green", 350, Color(0.4, 1.0, 0.2), ""],
 	["exhaust_violet", CosmeticItem.Category.EXHAUST, "Violet", 350, Color(0.7, 0.25, 1.0), ""],

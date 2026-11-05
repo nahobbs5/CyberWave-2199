@@ -20,6 +20,9 @@ const PLAYER_ID := -1
 @export var grid_order: Array[int] = []
 ## Player's vehicle id; empty = the profile's selected vehicle.
 @export var vehicle_id: String = ""
+## Rival license plates by roster index, rolled once per series (a Versus /
+## Elimination set or a Grand Prix). Empty = the roster's own plates.
+@export var rival_plates: PackedStringArray = PackedStringArray()
 
 ## Grand Prix only: the championship this race belongs to.
 var championship: Championship
@@ -31,6 +34,21 @@ static func default_grid(rival_count: int = 7) -> Array[int]:
 		grid.append(i)
 	grid.append(PLAYER_ID)
 	return grid
+
+
+## `count` distinct random plates like "KRX-417", never equal to `avoid`
+## (the player's plate).
+static func random_plates(count: int, avoid: String = "") -> PackedStringArray:
+	const LETTERS := "ABCDEFGHJKLMNPRSTUVWXYZ"
+	var plates := PackedStringArray()
+	while plates.size() < count:
+		var plate := ""
+		for i in 3:
+			plate += LETTERS[randi() % LETTERS.length()]
+		plate += "-%03d" % (randi() % 1000)
+		if plate != avoid and not plates.has(plate):
+			plates.append(plate)
+	return plates
 
 
 func is_elimination() -> bool:

@@ -4,9 +4,16 @@ extends Node3D
 ## Graybox circuit generated from a closed loop of control points.
 ##
 ## Builds the road surface, edge and centre markings, collidable barriers with
-## neon strips, a ground slab, a start gantry and trackside lights. It also
-## answers track-space questions (nearest offset, safe respawn transforms) for
-## recovery, checkpoints, the starting grid and AI racing lines.
+## neon strips, a ground slab, a start gantry, trackside lights and chevron
+## signs on sharp corners. It also answers track-space questions (nearest
+## offset, safe respawn transforms) for recovery, checkpoints, the starting
+## grid and AI racing lines.
+##
+## Children: TrackShortcut nodes add alternate routes (roads, barriers with
+## openings at the junctions, copies of bypassed checkpoint gates), and
+## TrackFeature nodes (boost pads, rings, hazards...) are placed by offset.
+## Positions on a shortcut map onto the main loop, so every query below
+## works on either route.
 ##
 ## Generated nodes are rebuilt on load and are not saved into the scene, so
 ## edit the exported values (or control points) rather than the generated
@@ -67,6 +74,19 @@ signal checkpoint_crossed(index: int, body: Node3D)
 ## Extra setback of the right-hand slot in each row (staggered grid).
 @export var grid_stagger: float = 4.5
 @export var grid_lateral: float = 4.0
+@export_group("Look")
+@export var road_color: Color = Color(0.13, 0.13, 0.16)
+@export var edge_line_color: Color = Color(0.0, 0.85, 1.0)
+@export var ground_color: Color = Color(0.05, 0.05, 0.08)
+@export var barrier_color: Color = Color(0.22, 0.22, 0.27)
+@export var neon_left_color: Color = Color(0.0, 0.9, 1.0)
+@export var neon_right_color: Color = Color(1.0, 0.1, 0.8)
+@export var light_colors: PackedColorArray = PackedColorArray([Color(0.0, 0.85, 1.0), Color(1.0, 0.2, 0.85)])
+@export var light_energy: float = 3.0
+## Chevron boards on the outside of corners tighter than this radius (m).
+## 0 turns them off.
+@export var corner_sign_radius: float = 140.0
+@export var corner_sign_color: Color = Color(1.0, 0.15, 0.8)
 @export_group("")
 ## Ground extends this far beyond the layout's bounds on every side.
 @export var ground_margin: float = 300.0
@@ -74,6 +94,7 @@ signal checkpoint_crossed(index: int, body: Node3D)
 
 var curve: Curve3D
 var length: float = 0.0
+var shortcuts: Array[TrackShortcut] = []
 
 var _rebuild_queued: bool = false
 
@@ -98,12 +119,22 @@ func rebuild() -> void:
 			child.queue_free()
 	if length <= 0.0:
 		return
+	shortcuts.clear()
+	for child in get_children():
+		if child is TrackShortcut:
+			(child as TrackShortcut).build_route(self)
+			if (child as TrackShortcut).is_valid():
+				shortcuts.append(child)
 	_build_ground()
 	_build_road()
 	_build_barriers()
 	_build_start_gantry()
 	_build_lights()
+	_build_corner_signs()
 	_build_checkpoints()
+	for child in get_children():
+		if child.has_method("place_on_track"):
+			child.place_on_track(self)
 
 
 # --- Track-space queries -------------------------------------------------
@@ -120,7 +151,38 @@ func wrapped_delta(from_offset: float, to_offset: float) -> float:
 
 
 func get_offset_at(world_pos: Vector3) -> float:
-	return wrap_offset(curve.get_closest_offset(to_local(world_pos)))
+	var local := to_local(world_pos)
+	var sc := _shortcut_at_local(local)
+	if sc != null:
+		return wrap_offset(sc.to_main_offset(sc.local_offset(local)))
+	return wrap_offset(curve.get_closest_offset(local))
+
+
+## The shortcut a position is on (off the main road, on the shortcut road), or null.
+func get_shortcut_at(world_pos: Vector3) -> TrackShortcut:
+	return _shortcut_at_local(to_local(world_pos))
+
+
+## Driving direction at a position (follows a shortcut when on one).
+func get_direction_at(world_pos: Vector3) -> Vector3:
+	var local := to_local(world_pos)
+	var sc := _shortcut_at_local(local)
+	if sc != null:
+		return (global_transform.basis * sc.tangent_at(sc.local_offset(local))).normalized()
+	return get_tangent_at(curve.get_closest_offset(local))
+
+
+func _shortcut_at_local(local: Vector3) -> TrackShortcut:
+	if shortcuts.is_empty():
+		return null
+	var closest := curve.get_closest_point(local)
+	var main_lateral := Vector2(local.x - closest.x, local.z - closest.z).length()
+	if main_lateral <= road_width * 0.5:
+		return null
+	for sc in shortcuts:
+		if sc.lateral_distance(local) <= sc.road_width * 0.5 + barrier_thickness:
+			return sc
+	return null
 
 
 func get_center_at(offset: float) -> Vector3:
@@ -134,11 +196,16 @@ func get_tangent_at(offset: float) -> Vector3:
 	return (global_transform.basis * local_dir).normalized()
 
 
-## Horizontal distance from the centre line.
+## Horizontal distance from the centre line, in main-road terms: on a
+## shortcut it's scaled so road_width * 0.5 is that road's edge too.
 func get_lateral_distance(world_pos: Vector3) -> float:
 	var local := to_local(world_pos)
 	var closest := curve.get_closest_point(local)
-	return Vector2(local.x - closest.x, local.z - closest.z).length()
+	var lateral := Vector2(local.x - closest.x, local.z - closest.z).length()
+	for sc in shortcuts:
+		var d := sc.lateral_distance(local) + (road_width - sc.road_width) * 0.5
+		lateral = minf(lateral, d)
+	return lateral
 
 
 func is_on_road(world_pos: Vector3) -> bool:
@@ -230,6 +297,8 @@ func _add_generated(node: Node, node_name: String) -> void:
 func _build_ground() -> void:
 	# Size the slab to the layout's bounds plus a margin on every side.
 	var points := curve.get_baked_points()
+	for sc in shortcuts:
+		points.append_array(sc.curve.get_baked_points())
 	var lo := Vector2(INF, INF)
 	var hi := Vector2(-INF, -INF)
 	for p in points:
@@ -251,7 +320,7 @@ func _build_ground() -> void:
 	var mesh_instance := MeshInstance3D.new()
 	var plane := PlaneMesh.new()
 	plane.size = extent
-	plane.material = _material(Color(0.05, 0.05, 0.08), 0.0, 0.95)
+	plane.material = _material(ground_color, 0.0, 0.95)
 	mesh_instance.mesh = plane
 	mesh_instance.position = Vector3(center.x, 0.0, center.y)
 	body.add_child(mesh_instance)
@@ -291,10 +360,19 @@ func _build_road() -> void:
 		if i % 4 < 2:
 			_strip_quad(dashes, s0, s1, -0.15, 0.15, 0.04)
 
+	# Shortcut roads sit a few millimetres higher where they overlap the main one.
+	for sc in shortcuts:
+		var ss := _shortcut_samples(sc)
+		var sh := sc.road_width * 0.5
+		for i in ss.size() - 1:
+			_strip_quad(road, ss[i], ss[i + 1], -sh, sh, 0.03)
+			_strip_quad(edges, ss[i], ss[i + 1], -sh, -sh + 0.3, 0.05)
+			_strip_quad(edges, ss[i], ss[i + 1], sh - 0.3, sh, 0.05)
+
 	var holder := Node3D.new()
 	_add_generated(holder, "Road")
-	_add_mesh(holder, "Surface", road, _material(Color(0.13, 0.13, 0.16), 0.0, 0.7))
-	_add_mesh(holder, "EdgeLines", edges, _material(Color(0.0, 0.85, 1.0), 1.5))
+	_add_mesh(holder, "Surface", road, _material(road_color, 0.0, 0.7))
+	_add_mesh(holder, "EdgeLines", edges, _material(edge_line_color, 1.5))
 	_add_mesh(holder, "CentreDashes", dashes, _material(Color(0.85, 0.85, 0.9), 0.4))
 
 
@@ -307,10 +385,6 @@ func _add_mesh(parent: Node, node_name: String, st: SurfaceTool, mat: Material) 
 
 
 func _build_barriers() -> void:
-	var samples := _samples()
-	var count := samples.size()
-	var edge := road_width * 0.5 + barrier_thickness * 0.5
-
 	var body := StaticBody3D.new()
 	body.collision_layer = 1
 	body.collision_mask = 0
@@ -319,60 +393,105 @@ func _build_barriers() -> void:
 	body.physics_material_override = physics_material
 	_add_generated(body, "Barriers")
 
-	var wall_transforms: Array[Transform3D] = []
-	var wall_lengths: Array[float] = []
-	var left_count := 0
+	var walls: Array[Transform3D] = []
+	var lengths: Array[float] = []
+	var left: Array[Transform3D] = []
+	var left_lengths: Array[float] = []
+	var right: Array[Transform3D] = []
+	var right_lengths: Array[float] = []
+	# Main loop: walls are left out where a shortcut road crosses them.
+	var main := _samples()
+	var edge := road_width * 0.5 + barrier_thickness * 0.5
 	for side in [-1.0, 1.0]:
-		if side > 0.0:
-			left_count = wall_transforms.size()
-		for i in count:
-			var s0 := samples[i]
-			var s1 := samples[(i + 1) % count]
+		for i in main.size():
+			var s0 := main[i]
+			var s1 := main[(i + 1) % main.size()]
 			var p0: Vector3 = s0.center + s0.right * edge * side
 			var p1: Vector3 = s1.center + s1.right * edge * side
-			var dir := p1 - p0
-			dir.y = 0.0
-			var seg_length := dir.length()
-			if seg_length < 0.01:
+			if _inside_shortcut((p0 + p1) * 0.5, null):
 				continue
-			var mid := (p0 + p1) * 0.5 + Vector3(0.0, barrier_height * 0.5, 0.0)
-			var xf := Transform3D(Basis.looking_at(dir / seg_length, Vector3.UP), mid)
-			# Overlap neighbours slightly so outer-curve joints have no gaps.
-			var padded := seg_length + barrier_thickness * 0.6
-			wall_transforms.append(xf)
-			wall_lengths.append(padded)
-			var shape := CollisionShape3D.new()
-			var box := BoxShape3D.new()
-			box.size = Vector3(barrier_thickness, barrier_collision_height, padded)
-			shape.shape = box
-			shape.transform = xf.translated(Vector3(0.0, (barrier_collision_height - barrier_height) * 0.5, 0.0))
-			body.add_child(shape)
+			_add_wall(body, p0, p1, walls, lengths, left if side < 0.0 else right, left_lengths if side < 0.0 else right_lengths)
+	# Shortcuts: walls are left out inside the main road (the junctions).
+	for sc in shortcuts:
+		var ss := _shortcut_samples(sc)
+		var sc_edge := sc.road_width * 0.5 + barrier_thickness * 0.5
+		for side in [-1.0, 1.0]:
+			for i in ss.size() - 1:
+				var p0: Vector3 = ss[i].center + ss[i].right * sc_edge * side
+				var p1: Vector3 = ss[i + 1].center + ss[i + 1].right * sc_edge * side
+				var mid := (p0 + p1) * 0.5
+				if _main_lateral(mid) < road_width * 0.5 + barrier_thickness * 1.5 or _inside_shortcut(mid, sc):
+					continue
+				_add_wall(body, p0, p1, walls, lengths, left if side < 0.0 else right, left_lengths if side < 0.0 else right_lengths)
 
-	# Visuals: one multimesh for walls and one per neon colour for the top strips.
 	var wall_mesh := BoxMesh.new()
 	wall_mesh.size = Vector3(barrier_thickness, barrier_height, 1.0)
-	var walls := _multimesh(wall_mesh, _material(Color(0.22, 0.22, 0.27), 0.0, 0.6), wall_transforms, wall_lengths)
-	walls.name = "Walls"
-	body.add_child(walls)
-
+	var wall_visual := _multimesh(wall_mesh, _material(barrier_color, 0.0, 0.6), walls, lengths)
+	wall_visual.name = "Walls"
+	body.add_child(wall_visual)
 	var strip_mesh := BoxMesh.new()
 	strip_mesh.size = Vector3(barrier_thickness * 0.5, 0.12, 1.0)
-	var half_count := left_count
 	var strip_up := Vector3(0.0, barrier_height * 0.5 + 0.06, 0.0)
-	var left_xf: Array[Transform3D] = []
-	var right_xf: Array[Transform3D] = []
-	for i in wall_transforms.size():
-		var xf := wall_transforms[i].translated(strip_up)
-		if i < half_count:
-			left_xf.append(xf)
-		else:
-			right_xf.append(xf)
-	var left_strip := _multimesh(strip_mesh, _material(Color(0.0, 0.9, 1.0), 3.0), left_xf, wall_lengths.slice(0, half_count))
+	var lx: Array[Transform3D] = []
+	for xf in left:
+		lx.append(xf.translated(strip_up))
+	var rx: Array[Transform3D] = []
+	for xf in right:
+		rx.append(xf.translated(strip_up))
+	var left_strip := _multimesh(strip_mesh, _material(neon_left_color, 3.0), lx, left_lengths)
 	left_strip.name = "NeonLeft"
 	body.add_child(left_strip)
-	var right_strip := _multimesh(strip_mesh, _material(Color(1.0, 0.1, 0.8), 3.0), right_xf, wall_lengths.slice(half_count))
+	var right_strip := _multimesh(strip_mesh, _material(neon_right_color, 3.0), rx, right_lengths)
 	right_strip.name = "NeonRight"
 	body.add_child(right_strip)
+
+
+func _add_wall(body: StaticBody3D, p0: Vector3, p1: Vector3, walls: Array[Transform3D], lengths: Array[float],
+		side_walls: Array[Transform3D], side_lengths: Array[float]) -> void:
+	var dir := p1 - p0
+	dir.y = 0.0
+	var seg_length := dir.length()
+	if seg_length < 0.01:
+		return
+	var mid := (p0 + p1) * 0.5 + Vector3(0.0, barrier_height * 0.5, 0.0)
+	var xf := Transform3D(Basis.looking_at(dir / seg_length, Vector3.UP), mid)
+	# Overlap neighbours slightly so outer-curve joints have no gaps.
+	var padded := seg_length + barrier_thickness * 0.6
+	walls.append(xf)
+	lengths.append(padded)
+	side_walls.append(xf)
+	side_lengths.append(padded)
+	var shape := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = Vector3(barrier_thickness, barrier_collision_height, padded)
+	shape.shape = box
+	shape.transform = xf.translated(Vector3(0.0, (barrier_collision_height - barrier_height) * 0.5, 0.0))
+	body.add_child(shape)
+
+
+func _main_lateral(local: Vector3) -> float:
+	var closest := curve.get_closest_point(local)
+	return Vector2(local.x - closest.x, local.z - closest.z).length()
+
+
+## True if a point lies on a shortcut road (other than `except`).
+func _inside_shortcut(local: Vector3, except: TrackShortcut) -> bool:
+	for sc in shortcuts:
+		if sc != except and sc.lateral_distance(local) < sc.road_width * 0.5 + barrier_thickness:
+			return true
+	return false
+
+
+## Open polyline samples along a shortcut (same format as _samples()).
+func _shortcut_samples(sc: TrackShortcut) -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	var count := maxi(2, int(sc.length / sample_spacing) + 1)
+	for i in count:
+		var d := sc.length * float(i) / float(count - 1)
+		var tangent := sc.tangent_at(d)
+		result.append({"offset": d, "center": sc.point_at(d), "tangent": tangent,
+				"right": tangent.cross(Vector3.UP).normalized()})
+	return result
 
 
 func _multimesh(mesh: Mesh, mat: Material, transforms: Array[Transform3D], z_scales: Array) -> MultiMeshInstance3D:
@@ -457,8 +576,8 @@ func _build_lights() -> void:
 		var right := Vector3(b.x - a.x, 0.0, b.z - a.z).normalized().cross(Vector3.UP)
 		var side := 1.0 if i % 2 == 0 else -1.0
 		var light := OmniLight3D.new()
-		light.light_color = Color(0.0, 0.85, 1.0) if i % 2 == 0 else Color(1.0, 0.2, 0.85)
-		light.light_energy = 3.0
+		light.light_color = light_colors[i % light_colors.size()] if not light_colors.is_empty() else Color.WHITE
+		light.light_energy = light_energy
 		light.omni_range = 32.0
 		light.position = center + right * side * (road_width * 0.5 + 2.0) + Vector3(0.0, 6.0, 0.0)
 		holder.add_child(light)
@@ -488,6 +607,83 @@ func _build_checkpoints() -> void:
 		holder.add_child(gate)
 		if not Engine.is_editor_hint():
 			gate.body_entered.connect(_on_checkpoint_body_entered.bind(i))
+		# The same gate on any shortcut that bypasses it, so either route counts.
+		for sc in shortcuts:
+			if not sc.contains_main_offset(self, offset):
+				continue
+			var d: float = sc.from_main_offset(self, offset)
+			var copy := Area3D.new()
+			copy.name = "Checkpoint%d_%s" % [i, sc.name]
+			copy.collision_layer = 0
+			copy.collision_mask = 2
+			copy.monitorable = false
+			copy.transform = Transform3D(Basis.looking_at(sc.tangent_at(d), Vector3.UP), sc.point_at(d) + Vector3(0.0, 2.5, 0.0))
+			var copy_shape := CollisionShape3D.new()
+			var copy_box := BoxShape3D.new()
+			copy_box.size = Vector3(sc.road_width + barrier_thickness * 2.0 + 2.0, 6.0, checkpoint_depth)
+			copy_shape.shape = copy_box
+			copy.add_child(copy_shape)
+			holder.add_child(copy)
+			if not Engine.is_editor_hint():
+				copy.body_entered.connect(_on_checkpoint_body_entered.bind(i))
+
+
+## Chevron boards on the outside of every corner tighter than
+## corner_sign_radius, pointing the way through (GDD 15.3 direction).
+func _build_corner_signs() -> void:
+	if corner_sign_radius <= 0.0:
+		return
+	var holder := Node3D.new()
+	_add_generated(holder, "CornerSigns")
+	var board_mat := _material(Color(0.04, 0.03, 0.07), 0.0, 0.6)
+	var chevron_mat := _material(corner_sign_color, 4.0)
+	var step := 6.0
+	var count := int(length / step)
+	var curv: Array[float] = []
+	for i in count:
+		var d := i * step
+		var t0 := get_tangent_at(d - 8.0)
+		var t1 := get_tangent_at(d + 8.0)
+		curv.append(t0.signed_angle_to(t1, Vector3.UP) / 16.0)
+	var limit := 1.0 / corner_sign_radius
+	var i := 0
+	while i < count:
+		if absf(curv[i]) < limit:
+			i += 1
+			continue
+		var j := i
+		while j < count and absf(curv[j]) >= limit and signf(curv[j]) == signf(curv[i]):
+			j += 1
+		# Turning left (positive yaw) puts the outside on the right.
+		var outside := 1.0 if curv[i] > 0.0 else -1.0
+		var mid := (i + j) / 2
+		for k in [-1, 0, 1]:
+			var d := clampf((mid + k * 3) * step, i * step, j * step)
+			var sign_xf := get_safe_transform(d, outside * (road_width * 0.5 + barrier_thickness + 1.2), 0.0)
+			sign_xf.basis = sign_xf.basis.rotated(Vector3.UP, PI) # face the oncoming cars
+			var board := Node3D.new()
+			board.transform = sign_xf
+			holder.add_child(board)
+			var panel := MeshInstance3D.new()
+			var panel_mesh := BoxMesh.new()
+			panel_mesh.size = Vector3(4.0, 1.6, 0.2)
+			panel.mesh = panel_mesh
+			panel.material_override = board_mat
+			panel.position = Vector3(0, 1.6, 0)
+			board.add_child(panel)
+			# Two chevrons pointing toward the inside of the corner.
+			for c in 2:
+				for arm in [-1.0, 1.0]:
+					var bar := MeshInstance3D.new()
+					var bar_mesh := BoxMesh.new()
+					bar_mesh.size = Vector3(0.18, 0.85, 0.06)
+					bar.mesh = bar_mesh
+					bar.material_override = chevron_mat
+					var x := (float(c) - 0.5) * 1.3
+					bar.position = Vector3(x + outside * 0.0, 1.6 + arm * 0.27, -0.13)
+					bar.rotation.z = arm * outside * 0.6
+					board.add_child(bar)
+		i = j
 
 
 func _on_checkpoint_body_entered(body: Node3D, index: int) -> void:

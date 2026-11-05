@@ -1,16 +1,17 @@
 # CyberWave-2199
 
 Single-player 3D arcade combat racing game for Godot 4 (GDScript, Jolt Physics).
-The authoritative design is [`docs/Game Design Document.md`](docs/Game%20Design%20Document.md) (GDD v1.4).
+The authoritative design is [`docs/Game Design Document.md`](docs/Game%20Design%20Document.md) (GDD v1.6).
 
-**Current milestone: Phase 5, interface and progression** (GDD §16):
-- a **main menu**, a **race setup** screen that remembers your choices, a **garage** and a **settings** screen,
-- **eight vehicles** (placeholder bodies with different stats and proportions),
-- **coins**: picked up on track and paid out for finishing, spent in the garage's **cosmetic shop** (8 categories),
-- a **global license plate** shown on your car, plus the AI rivals' own plates,
-- **saved progress** (coins, cosmetics, plate, car, personal bests, Grand Prix results, last setup) and **settings and accessibility** (HUD scale, motion blur, camera shake, reduced flashing, audio sliders, remappable controls).
+**Current milestone: Phase 6, content and polish** (GDD §16), in progress. Done so far:
+- **Eight vehicle models**, built procedurally after the roster art, with support for swapping in your own `.glb` models,
+- **Vegas Overdrive**, the first finished track: a 3.2 km neon circuit with themed scenery, the Luxor shortcut, boost pads and rings, EMP puddles, a smashable barrier and chevron signs,
+- **weapon pictures** in the HUD slots and a **minimap** in the bottom-right corner,
+- the track tech the other five tracks will reuse: shortcuts, track features, batched scenery and per-track looks.
 
-Phases 1–4 (driving, racing, combat, game modes) are unchanged. Every race still uses the graybox test circuit (Phase 6 builds the real tracks and car models).
+Still to come in Phase 6: the other five tracks, the remaining weapons, named rivals, sound and music (your files in `sounds/` aren't wired in yet), race presentation, optimisation and balancing.
+
+Phases 1–5 are unchanged apart from the models.
 
 Open the project in Godot 4.7 and press **F5** for the main menu (`scenes/menu/main_menu.tscn`).
 Running `scenes/race/race.tscn` directly (**F6**) still starts a Versus race using the `Race` node's Inspector settings and your selected car.
@@ -55,7 +56,8 @@ Actions are registered at startup by `scripts/core/input_setup.gd`. Any action y
   - upside down or on its side for 1.5 s,
   - stuck (pressing throttle or brake while barely moving forward or back; sliding sideways along a wall counts as stuck) for 3 s,
   - below the world, or
-  - outside the circuit (more than 3 m past the road edge, i.e. beyond the barrier) for 1 s.
+  - outside the circuit (more than 3 m past the road edge, i.e. beyond the barrier) for 1 s, or
+  - making no progress: trying to drive but gaining less than 15 m along the track in 8 s (catches a car rocking back and forth against a wall, which never looks "stuck").
 - The respawn spot is checked for other vehicles and shifts sideways or back if it is occupied.
 
 ### The test circuit
@@ -117,7 +119,20 @@ track list is data (`resources/grand_prix/*.tres`), so the Phase 6 tracks can be
 
 ### Vehicles
 
-All eight GDD cars are available from the start (GDD §5.1). Until the Phase 6 models arrive, they share the placeholder body with different proportions (longer, lower, taller, no roof, bigger wing). Their stats are a first balance pass, kept within about 13% of the V8 Specter (the biggest gap is the Nexus X's acceleration). No car beats another in all four stats; a test enforces this.
+All eight GDD cars are available from the start (GDD §5.1). Each has its own low-poly model, after the roster concept art:
+
+| Vehicle | Model |
+|---|---|
+| V8 Specter | Muscle car: long hood and scoop, fastback, full-width orange light bars, ducktail |
+| Aurora GT | 1980s wedge: knife-edge nose, rear louvres, pink light lines |
+| Empyrean S | Upright luxury limo: towering chrome grille, gold lights, chrome trim |
+| Nexus X | Low angular supercar: cab-forward canopy, side intakes, big wing, cyan blades |
+| Riviera 88 | Vintage roadster: curvy fenders, open cockpit with seats, round lamps, chrome grille |
+| Orbiter | Jet-age coupe: pointed nose, bubble canopy, tail fins, round red jet lights |
+| Valkyrie R | Performance sedan: four-door cabin, slatted purple grille, wing |
+| Cipher EVO | Open-wheel prototype: narrow tub, sidepods, exposed wheels, front and rear wings |
+
+The models share the car scene's physics, wheels and effects; only the body changes. Their stats are a first balance pass, kept within about 13% of the V8 Specter (the biggest gap is the Nexus X's acceleration). No car beats another in all four stats; a test enforces this.
 
 | Vehicle | Character | Top speed | Accel | Handling | Drift |
 |---|---|---:|---:|---:|---:|
@@ -130,7 +145,18 @@ All eight GDD cars are available from the start (GDD §5.1). Until the Phase 6 m
 | Valkyrie R | Predictable, steady drifts | 43.8 | 14.2 | 2.42 | 1.36 |
 | Cipher EVO | Sharp and loose: less grip, slow off the line | 44.8 | 13.4 | 2.56 | 1.56 |
 
-Speeds are m/s, acceleration m/s², handling and drift rad/s. The AI rivals all drive the V8 Specter (so the racing line and AI pace stay as tuned), each in their own colour and plate.
+Speeds are m/s, acceleration m/s², handling and drift rad/s. The AI rivals all drive the V8 Specter model and stats (so the racing line and AI pace stay as tuned), each in their own colour. Rival license plates are random (like `KRX-417`), rolled once per series: they stay the same through Race again / Restart in Versus and Elimination, and for a whole Grand Prix (saved with it). Your plate defaults to `CW-2199` until you change it in the Garage.
+
+#### Vehicle models
+
+`CarModelBuilder` lofts each body and cabin through cross-section stations listed in `scripts/vehicles/car_designs.gd`, then adds detail parts (grilles, light bars, wings, fins). Edit a design there to reshape a car (the format is explained at the top of that file). The meshes are cached, so eight cars on the grid share geometry.
+
+To use **your own model** for a car, import it (`.glb`) and set it as `model_scene` on that car's `resources/vehicles/<car>.tres`. It replaces the procedural model; anything it doesn't provide falls back gracefully. Conventions:
+- **Orientation and scale:** metres, +Y up, the car's nose toward **−Z**, origin at the body centre (matching the 1.9 × 0.55 × 4.2 m collision box).
+- **No wheels in the model:** the game's wheels sit at x ±0.85, z ±1.35, radius 0.38 and move with the suspension.
+- **Paint:** every mesh whose name starts with `Paint` gets the player's paint and finish. Other meshes keep their imported materials.
+- **Optional anchors** (empties or `Marker3D`, named exactly): `PlateAnchor` (rear plate, facing +Z), `DecalL` / `DecalR` (door decals), `ExhaustL` / `ExhaustR`, and meshes `NeonL` / `NeonR` for the underglow strips.
+- **Stripes** only work on the procedural models; imported models skip them.
 
 ### Coins and cosmetics
 
@@ -161,6 +187,43 @@ The GDD prices basic paint (100), plate frames (250), wheels (500) and premium f
 - **Grand Prix** (`user://grand_prix_save.json`): as in Phase 4, now also written atomically, with the coins already awarded.
 - To start over, delete those files (on Windows they're in `%APPDATA%\Godot\app_userdata\Cyberwave 2199\`).
 
+### Audio
+
+| Where | Sound | File |
+|---|---|---|
+| Main menu, race setup, settings | Main theme (loops) | `music/ikoliks_aj-cyberpunk-cyberpunk-music-614562.mp3` |
+| Garage | Wings of Hope (loops) | `music/ikoliks-wings-of-hope-no-copyright-music-background-corporate-380579.mp3` |
+| Race start | Countdown beeps on READY / SET / GO | `sounds/freesound_community-short-beep-countdown-81121.mp3` |
+
+Music carries across menu screens without restarting and crossfades when the track changes (`scripts/core/music.gd`); races and free drive have no music yet, so it fades out when one starts. The countdown clip has four beeps a second apart; it starts 1 s in so the last three land on READY, SET and GO. Music plays on the Music bus and effects on the SFX bus, so the Settings sliders control each. Tracks by ikoliks / ikoliks_aj and freesound_community.
+
+### Tracks
+
+The race setup screen lists **Vegas Overdrive** and the **Test Circuit**. In a Grand Prix, American Circuit race 3 is Vegas; the other Grand Prix races still run on the test circuit under their real names until those tracks are built.
+
+#### Vegas Overdrive (GDD §8.3)
+
+A 3.2 km night circuit (shortened from 4.4 km after your first drive) with 20 m wide roads:
+- **The Strip:** a roughly 500 m boulevard lined with neon casino towers, palms and billboards, starting past the "Welcome to Fabulous Las Vegas" sign. Two boost pads.
+- **Fountain lake:** a sweeping right-hander along a lake with an animated fountain show and a grand hotel.
+- **Paris:** an Eiffel-style tower and a glowing balloon along the south-east straight.
+- **Casino interior:** an infield S-bend under a roof, with chandeliers and slot machine rows. Two EMP puddles to avoid.
+- **High Roller:** a giant observation wheel inside the infield loop.
+- **Service tunnel:** an enclosed concrete tunnel with strip lights and a boost ring.
+- **Excalibur:** a castle with coloured spires along the south straight.
+- **Luxor shortcut:** a narrower 12 m road that cuts the west corners straight **through the glass pyramid** (under its sky beam). It's about 135 m shorter, but has a smashable barrier at the entrance (costs some speed), tighter turns and three bonus coins. A boost pad waits inside the pyramid.
+- Chevron signs mark every sharp corner; 5 rows of weapon crates and 10 coins per lap.
+
+#### Track tech (for the next five tracks)
+
+- **`TrackShortcut`** (child of a TrackCircuit): give it control points from one point on the main road to a later one. The circuit builds its road and barriers, opens the main barriers where the two meet, and mirrors any checkpoint gate it bypasses onto it, so laps always count. Positions on a shortcut map onto the main loop proportionally, so race positions, recovery, wrong-way checks and the AI all work on either route.
+- **AI shortcuts:** each AI decides once per approach (the shortcut's `ai_chance` × the difficulty's `shortcut_chance` × aggression), then follows the shortcut at its own safe speeds and rejoins the racing line. If it gets pinned while still heading for a shortcut it isn't on (a late turn-in), it gives up and follows the main road.
+- **Junction design:** a shortcut should leave at a gentle angle (the Luxor one turns in about 55°). A first version peeled off at nearly 110° and trapped a car in the wedge between the roads.
+- **`TrackFeature`**: boost pads, boost rings, EMP puddles and breakable barriers, placed by distance (or near a layout point) on the main road or a shortcut. Every kind is lit and marked so it reads at speed.
+- **`TrackScenery`**: base class for a track's set dressing (`VegasScenery` is the first). Geometry is merged into a few batched meshes, one per material, and it skips anything that would overlap a road. It builds in the editor too.
+- **Look:** road, edge, barrier, neon and light colours are exports on each track, and corners tighter than `corner_sign_radius` get chevron signs automatically.
+- Each track scene carries its own sky, fog and lighting (`WorldEnvironment`).
+
 ### Weapons
 
 Drive through a "?" crate to collect a random weapon into your first free slot. With both slots full, crates stay in place for someone else. Crates respawn after 3 s, in 5 rows of 4 around the lap.
@@ -188,9 +251,9 @@ Drive through a "?" crate to collect a random weapon into your first free slot. 
 - **Self-effects** (GDD §6.4): only the Road Spike can hit its owner, and only after a 1 s grace period. Everything else ignores its owner.
 - **Crate odds** depend on race position (GDD §6.5). Leaders mostly get Road Spikes and Firewalls, while trailing racers get more Hunter Drones and Nitros.
 - **HUD:**
-  - two weapon slots, top left; the selected one is outlined, and empty ones are dimmed
+  - two weapon slots, top left, showing each weapon's picture from the Weapon Arsenal concept art (`assets/ui/weapons/`; the name is in the tooltip). The selected slot is outlined in magenta, empty slots show only their key number, and Triple Nitro shows its charges (x3, x2, x1)
   - position, lap, time and standings below the slots (moved to the very top when weapons are off)
-  - the bottom-right corner is left clear for the minimap (GDD §11.5)
+  - a **minimap** in the bottom-right corner (GDD §11.5): the circuit, shortcuts (dimmer), the start line, the elimination gate in Elimination, every racer as a coloured dot, and you as a magenta arrow pointing your heading
   - beside the slots: lock status, your active effects (with timers, e.g. JAMMED), and hit / pickup / "LOST …" notices
   - a flashing INCOMING warning when someone has locked on to you or a drone is chasing you
   - short tones for pickup, hit, getting hit, blocked and incoming
@@ -201,6 +264,7 @@ Drive through a "?" crate to collect a random weapon into your first free slot. 
 
 ```
 scenes/
+  tracks/vegas_overdrive.tscn  Vegas Overdrive (layout, shortcut, features, scenery, environment)
   menu/main_menu.tscn        Main scene: main menu
   menu/race_setup.tscn, garage.tscn, settings_menu.tscn
   race/race.tscn             8-car race (RaceManager + track + camera + HUDs)
@@ -240,12 +304,19 @@ scripts/
     vehicle_stats.gd         VehicleStats resource (Top Speed, Acceleration, Handling, Drift, ...)
     vehicle_data.gd          VehicleData resource: name, type, stats, placeholder proportions
     vehicle_catalog.gd       VehicleCatalog: the eight cars, stat ratings
-    vehicle_cosmetics.gd     VehicleCosmetics: applies proportions, cosmetics and plates to the car
+    vehicle_cosmetics.gd     VehicleCosmetics: applies the model, cosmetics and plates to the car
+    car_model_builder.gd     CarModelBuilder: builds the procedural car models
+    car_designs.gd           CarDesigns: the eight car shapes
   camera/
     chase_camera.gd          ChaseCamera: shared controller, collision avoidance, saved choice
     camera_profile.gd        CameraProfile resource (distance, height, FOV, smoothing, ...)
   track/track_circuit.gd     TrackCircuit: builds the circuit and answers track-space queries
-  ui/                        PrototypeHUD, DriftMeter, RaceHUD, PauseMenu, UIStyle,
+  track/track_shortcut.gd    TrackShortcut: an alternate route
+  track/track_feature.gd     TrackFeature: boost pads / rings, EMP puddles, breakable barriers
+  track/track_scenery.gd     TrackScenery: batched set-dressing base class
+  track/vegas_scenery.gd     VegasScenery: the Vegas landmarks and city
+  track/track_catalog.gd     TrackCatalog: raceable tracks for the menus
+  ui/                        PrototypeHUD, DriftMeter, RaceHUD, Minimap, PauseMenu, UIStyle,
                              VehiclePreview (rotating 3D car), HudScaler, SpeedBlur (motion blur)
   menu/                      MainMenu, RaceSetup, Garage, SettingsMenu
   progression/
@@ -257,6 +328,8 @@ scripts/
   core/game_session.gd       GameSession: carries the chosen RaceConfig between scenes, menu navigation
   core/game_settings.gd      GameSettings: settings, accessibility, audio buses, rebinds
   core/save_util.gd          SaveUtil: atomic writes
+assets/ui/weapons/           Weapon pictures cropped from the Weapon Arsenal concept art
+                             (also the five weapons still to build)
 resources/
   vehicles/*.tres            The eight VehicleData resources (V8 Specter uses placeholder_gt_stats.tres)
   vehicles/stats/*.tres      The other seven cars' stats
@@ -270,6 +343,10 @@ tests/
   test_phase3.gd             Combat checks, including a full race with weapons
   test_phase4.gd             Mode checks: full Versus, 3-race Grand Prix and Elimination events
   test_phase5.gd             Menus, garage, shop, coins, rewards, saving, settings and rebinding
+  test_audio.gd              Menu / garage music, crossfades, countdown beep
+  test_phase6.gd             Vehicle models, imported models, Vegas layout, shortcut, features, full Vegas races
+  tools/screenshot.gd        Dev tool: renders a scene / race to PNG (needs a display, see below)
+  tools/car_showroom.gd      Dev tool: renders every car model
 docs/                        GDD
 ```
 
@@ -307,7 +384,11 @@ godot --headless --fixed-fps 60 -s res://tests/test_phase2.gd
 godot --headless --fixed-fps 60 -s res://tests/test_phase3.gd
 godot --headless --fixed-fps 60 -s res://tests/test_phase4.gd
 godot --headless --fixed-fps 60 -s res://tests/test_phase5.gd
+godot --headless --fixed-fps 60 -s res://tests/test_phase6.gd
+godot --headless --fixed-fps 60 -s res://tests/test_audio.gd
 ```
+
+The two scripts in `tests/tools/` render real screenshots, so they need a display (run them without `--headless`). For example, `godot --path . -s res://tests/tools/car_showroom.gd -- user://cars front` renders every car, and `SHOT_TRACK=res://scenes/tracks/vegas_overdrive.tscn SHOT_AUTOPILOT=1 SHOT_EVERY=600 godot --path . --fixed-fps 60 -s res://tests/tools/screenshot.gd -- res://scenes/race/race.tscn user://lap.png 6000` saves a screenshot every 10 s of an autopilot lap.
 
 Every suite uses its own `user://test_*` save files, so running them never touches your profile, settings or Grand Prix.
 
@@ -369,14 +450,14 @@ Phase 5 covers:
 - settings and rebinding: keyboard and gamepad rebinds, surviving a restart, audio buses and volumes, stick directions, and reset,
 - HUD scale keeping full-screen controls on screen, and every cosmetic actually appearing on the car (and being replaced when changed),
 - the menus: main menu entries, garage buy / try-on / plate / per-car loadout, race setup remembering choices after a restart, and rebinding through the Settings screen (including the conflict note and the timeout),
-- in races: your car's stats and plate, AI plates, coins (only you collect, respawn, the 30 cap), camera shake, reduced flashing, motion blur, a chosen car's stats,
+- in races: your car's stats and plate, AI plates (random per series, kept through a Grand Prix and its save), coins (only you collect, respawn, the 30 cap), camera shake, reduced flashing, motion blur, a chosen car's stats,
 - a finished race paying once and saving, with the results showing coins and personal bests, and a Grand Prix race recording its coins in the championship and refusing a replay.
 
 The exit code is non-zero if anything fails. These checks do **not** judge how the game looks or feels.
 
 ## Status and known issues
 
-**Verified (2026-11-05):** 91 Phase 1, 159 Phase 2, 97 Phase 3, 117 Phase 4 and 113 Phase 5 headless checks pass on Godot 4.7.2 (Linux build). In a typical simulated weapons race, the AI use 30–50 weapons and land 13–19 hits, with no recoveries. On the redesigned 2.6 km circuit, simulated races run with no recoveries at any difficulty. AI earn roughly 2–18 drift boosts each per race.
+**Verified (2026-11-05):** 91 Phase 1, 159 Phase 2, 97 Phase 3, 117 Phase 4, 113 Phase 5 and 92 Phase 6 headless checks pass. A simulated 8-car, 3-lap Vegas race with weapons ran 5:23–5:31 with no recoveries, and the AI took the Luxor shortcut 10 times. With every AI forced onto the shortcut, all 8 still finish with every gate counted. The 1:45-ish lap puts Vegas races inside the GDD's 4–6 minute target on Godot 4.7.2 (Linux build). In a typical simulated weapons race, the AI use 30–50 weapons and land 13–19 hits, with no recoveries. On the redesigned 2.6 km circuit, simulated races run with no recoveries at any difficulty. AI earn roughly 2–18 drift boosts each per race.
 
 | AI difficulty | Typical lap | 3-lap race (all 8 AI) |
 |---|---|---|
@@ -387,12 +468,16 @@ The exit code is non-zero if anything fails. These checks do **not** judge how t
 The racing has **not** been played on screen yet.
 
 - **AI pace is untested against a human.** Normal laps at about 64 s may be quick or slow for you. Tune `speed_factor` in `resources/ai/*.tres`.
-- **None of the menus have been seen on screen.** The main menu, race setup, garage, settings, pause menu, results screen (now with rewards and the next grid), Grand Prix standings and Elimination HUD are built in code and only checked headless. Expect layout fixes, especially at small window sizes and at 150% HUD scale.
+- **Screenshots are from a software renderer.** I rendered the cars, Vegas and the menus with Godot's Compatibility renderer in a virtual display. Your Forward+ (D3D12) renderer will show stronger glow, reflections and fog, so colours and brightness will differ; layout and geometry are the same.
+- **Vegas hasn't been driven by a person.** The AI complete it reliably, but corner speeds, the shortcut's payoff (about 180 m shorter, minus the barrier and tighter turns) and feature placement need your feel.
+- **Car models are stylised low-poly**, made from code. They match each car's silhouette and colours from the roster art, but aren't detailed. Any car can take a `.glb` instead (see "Vehicle models").
+- **Scenery is visual only and fairly blocky:** generic buildings away from the landmarks are plain boxes with neon roof lines.
+- **Menus are only partly checked on screen.** I've looked at the main menu and garage in screenshots (the garage overflowed at 1280×720 and is fixed; the project's base resolution is now 1280×720). The race setup, settings, pause and results screens, the Grand Prix standings and the Elimination HUD are still only checked headless.
 - **Cosmetics and the 3D preview haven't been seen either.** Stripes, decals, plates and rims are positioned by hand on the placeholder body; the Riviera's lowered cabin and the other proportions may leave stripes or decals slightly off.
 - **Vehicle balance is a first pass.** The stat spread follows each car's GDD character but hasn't been driven. AI always drive the V8 Specter.
 - **Prices and payouts are first guesses** where the GDD gives none (stripes, decals, underglow, exhaust, metallic and matte finishes). At roughly 30–75 coins per race, the 1,000-coin Chrome finish takes 15+ races.
 - **Not in Phase 5:** the optional first-time tutorial (GDD §11.9, not chosen for this phase), the race presentation items in GDD §11.8 (pre-race camera sweep, position-change feedback, podium ceremony), music, and dragging to rotate the preview.
-- **Every race uses the test circuit**, and there's only one vehicle, until Phases 5–6.
+- **Five tracks are still to build.** Races on them use the test circuit under their real names.
 - **Grand Prix classification at your finish** gives racers still on track their current position. The GDD doesn't specify this; it avoids waiting for the field.
 - **Only 6 of the GDD's 11 weapons** exist so far, plus Triple Nitro. Holo Decoy, Gravity Mine, System Glitch, Cyber Leech and Swarm Bots are Phase 6 content; the data-driven setup should make adding them straightforward.
 - **Combat balance is untested against a human:** crate odds, durations, the 22 m EMP radius and the Railgun's speed. The Railgun hits about half its shots in AI races. The AI often spend a held Firewall pre-emptively rather than saving it.

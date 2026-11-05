@@ -22,6 +22,7 @@ var _trying: Dictionary = {}
 
 func _ready() -> void:
 	InputSetup.ensure_actions()
+	Music.play(get_tree(), Music.GARAGE)
 	vehicle_index = VehicleCatalog.index_of(PlayerProfile.get_profile().selected_vehicle)
 	_build()
 	_refresh_all()
@@ -119,7 +120,8 @@ func _refresh_items() -> void:
 		swatch.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		row.add_child(swatch)
 		var name_button := UIStyle.button(item.display_name, try_on.bind(item))
-		name_button.custom_minimum_size = Vector2(250, 36)
+		name_button.custom_minimum_size = Vector2(230, 34)
+		name_button.add_theme_font_size_override("font_size", 15)
 		name_button.tooltip_text = "Try it on"
 		row.add_child(name_button)
 		var action: Button
@@ -131,7 +133,8 @@ func _refresh_items() -> void:
 		else:
 			action = UIStyle.button("Buy  %d" % item.price, buy.bind(item))
 			action.disabled = profile.coins < item.price
-		action.custom_minimum_size = Vector2(140, 36)
+		action.custom_minimum_size = Vector2(120, 34)
+		action.add_theme_font_size_override("font_size", 15)
 		row.add_child(action)
 		var status := "owned" if profile.owns(item.id) else ""
 		row.add_child(UIStyle.label(status, 13, Color(1, 1, 1, 0.45)))
@@ -145,15 +148,15 @@ func _build() -> void:
 	var margin := MarginContainer.new()
 	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	for side in ["left", "right", "top", "bottom"]:
-		margin.add_theme_constant_override("margin_" + side, 36)
+		margin.add_theme_constant_override("margin_" + side, 28)
 	add_child(margin)
 	var page := VBoxContainer.new()
-	page.add_theme_constant_override("separation", 14)
+	page.add_theme_constant_override("separation", 10)
 	margin.add_child(page)
 	_coins = UIStyle.header(page, "GARAGE")
 
 	var columns := HBoxContainer.new()
-	columns.add_theme_constant_override("separation", 36)
+	columns.add_theme_constant_override("separation", 28)
 	columns.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	page.add_child(columns)
 
@@ -170,7 +173,7 @@ func _build() -> void:
 	picker.add_child(prev)
 	picker.add_child(next)
 	_preview = VehiclePreview.new()
-	_preview.custom_minimum_size = Vector2(520, 320)
+	_preview.custom_minimum_size = Vector2(460, 260)
 	left.add_child(_preview)
 	_vehicle_info = VBoxContainer.new()
 	left.add_child(_vehicle_info)
@@ -199,7 +202,8 @@ func _build() -> void:
 	right.add_child(tabs)
 	for c in CosmeticItem.Category.values():
 		var tab := UIStyle.button(CosmeticItem.CATEGORY_NAMES[c], select_category.bind(c))
-		tab.custom_minimum_size = Vector2(140, 34)
+		tab.custom_minimum_size = Vector2(128, 32)
+		tab.add_theme_font_size_override("font_size", 15)
 		tabs.add_child(tab)
 		_tabs.append(tab)
 	var scroll := ScrollContainer.new()

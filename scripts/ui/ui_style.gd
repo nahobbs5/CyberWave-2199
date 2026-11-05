@@ -85,7 +85,7 @@ static func stat_bar(rating: int) -> ProgressBar:
 	bar.max_value = 10
 	bar.value = rating
 	bar.show_percentage = false
-	bar.custom_minimum_size = Vector2(220, 14)
+	bar.custom_minimum_size = Vector2(200, 12)
 	bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	var fill := StyleBoxFlat.new()
 	fill.bg_color = MAGENTA
@@ -102,11 +102,14 @@ static func stat_bar(rating: int) -> ProgressBar:
 static func fill_vehicle_info(box: VBoxContainer, vehicle: VehicleData) -> void:
 	for child in box.get_children():
 		child.queue_free()
-	box.add_child(label(vehicle.display_name, 26, Color.WHITE))
-	box.add_child(label(vehicle.vehicle_type, 15, CYAN))
+	var title := HBoxContainer.new()
+	title.add_theme_constant_override("separation", 12)
+	title.add_child(label(vehicle.display_name, 24, Color.WHITE))
+	title.add_child(label(vehicle.vehicle_type, 15, CYAN))
+	box.add_child(title)
 	var desc := label(vehicle.character, 14, Color(1, 1, 1, 0.7))
 	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	desc.custom_minimum_size = Vector2(420, 0)
+	desc.custom_minimum_size = Vector2(400, 0)
 	box.add_child(desc)
 	var names: Array = VehicleCatalog.STAT_RANGES.keys()
 	var values := VehicleCatalog.primary_stats(vehicle.stats)

@@ -2,10 +2,13 @@
 
 [ext_resource type="Script" path="res://scripts/combat/weapon_data.gd" id="1_8eo23"]
 
+[ext_resource type="Texture2D" path="res://assets/ui/weapons/nitro_overload.png" id="2_icon"]
+
 [resource]
 script = ExtResource("1_8eo23")
 id = &"nitro_overload"
 display_name = "Nitro Overload"
+icon = ExtResource("2_icon")
 kind = 4
 color = Color(1, 0.5, 0.1, 1)
 effect_duration = 3.0

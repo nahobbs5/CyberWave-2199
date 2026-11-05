@@ -25,6 +25,7 @@ var _first: Control
 
 func _ready() -> void:
 	InputSetup.ensure_actions()
+	Music.play(get_tree(), Music.MENU)
 	_build()
 	_refresh_bindings()
 	_first.grab_focus.call_deferred()
@@ -163,7 +164,6 @@ func _build() -> void:
 			_set_volume.bind("music"))
 	_slider(left, "Sound effects", 0, 100, 5, GameSettings.sfx_volume * 100.0, "%d%%",
 			_set_volume.bind("sfx"))
-	left.add_child(UIStyle.label("There's no music yet (Phase 6); the slider is ready for it.", 13, Color(1, 1, 1, 0.5)))
 	var spacer := Control.new()
 	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	left.add_child(spacer)

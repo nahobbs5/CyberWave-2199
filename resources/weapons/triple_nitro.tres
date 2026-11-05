@@ -2,10 +2,13 @@
 
 [ext_resource type="Script" path="res://scripts/combat/weapon_data.gd" id="1_3nitro"]
 
+[ext_resource type="Texture2D" path="res://assets/ui/weapons/nitro_overload.png" id="2_icon"]
+
 [resource]
 script = ExtResource("1_3nitro")
 id = &"triple_nitro"
 display_name = "Triple Nitro"
+icon = ExtResource("2_icon")
 kind = 4
 color = Color(1, 0.8, 0.15, 1)
 charges = 3

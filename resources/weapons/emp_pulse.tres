@@ -2,10 +2,13 @@
 
 [ext_resource type="Script" path="res://scripts/combat/weapon_data.gd" id="1_wew4n"]
 
+[ext_resource type="Texture2D" path="res://assets/ui/weapons/emp_pulse.png" id="2_icon"]
+
 [resource]
 script = ExtResource("1_wew4n")
 id = &"emp_pulse"
 display_name = "EMP Pulse"
+icon = ExtResource("2_icon")
 kind = 2
 color = Color(0.35, 0.6, 1, 1)
 effect = &"emp"

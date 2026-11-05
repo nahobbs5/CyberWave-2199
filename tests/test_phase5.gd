@@ -68,6 +68,7 @@ func _fresh() -> void:
 func _config() -> RaceConfig:
 	var config := RaceConfig.new()
 	config.difficulty = load("res://resources/ai/normal.tres") as AIDifficulty
+	config.rival_plates = RaceConfig.random_plates(7, PlayerProfile.DEFAULT_PLATE)
 	return config
 
 
@@ -312,12 +313,11 @@ func _test_cosmetics_on_car() -> void:
 	}
 	var riviera := VehicleCatalog.by_id("riviera_88")
 	VehicleCosmetics.apply(car, riviera, loadout, "ABC-123")
-	var paint := (car.get_node("Body/Chassis") as MeshInstance3D).material_override as StandardMaterial3D
+	var paint := (car.get_node("Body/Model/Paint") as MeshInstance3D).material_override as StandardMaterial3D
 	_check(paint != null and paint.metallic == 1.0 and paint.roughness < 0.1, "chrome finish on the paint")
-	_check(car.get_node("Body").scale.is_equal_approx(riviera.body_scale) and not car.get_node("Body/Spoiler").visible,
-			"Riviera proportions, roadster without a spoiler")
-	_check(car.get_node("Body/Cabin/Stripes").get_child_count() == 2 and car.get_node("Body/Nose/Stripes").get_child_count() == 2,
-			"twin stripes over the nose and roof")
+	_check(VehicleCosmetics.model_design(car) == "riviera_88", "the Riviera's own model")
+	var stripes := car.get_node_or_null("Body/Cosmetics/Stripes") as MeshInstance3D
+	_check(stripes != null and stripes.mesh.get_surface_count() == 1, "twin stripes along the body")
 	var decals := car.get_node("Body/Cosmetics").get_children().filter(func(n: Node) -> bool: return n is Label3D)
 	_check(decals.size() == 2 and (decals[0] as Label3D).text == "2199", "a decal on each side")
 	var rims := 0
@@ -326,7 +326,7 @@ func _test_cosmetics_on_car() -> void:
 			rims += 1
 	_check(rims == 4, "rims on all four wheels")
 	_check(VehicleCosmetics.get_plate_text(car) == "ABC-123", "license plate text")
-	var frame := (car.get_node("Body/Chassis/Plate/Frame") as MeshInstance3D).material_override as StandardMaterial3D
+	var frame := (car.find_child("Plate", true, false).get_node("Frame") as MeshInstance3D).material_override as StandardMaterial3D
 	_check(frame.albedo_color.is_equal_approx(_item("frame_gold").color), "gold plate frame")
 	var glow := car.get_node_or_null("Body/Cosmetics/Underglow") as OmniLight3D
 	_check(glow != null and glow.light_color.is_equal_approx(_item("glow_magenta").color), "magenta underglow")
@@ -336,8 +336,8 @@ func _test_cosmetics_on_car() -> void:
 	loadout[CosmeticItem.Category.STRIPES] = _item("stripes_none")
 	loadout[CosmeticItem.Category.UNDERGLOW] = _item("glow_none")
 	VehicleCosmetics.apply(car, VehicleCatalog.by_id("v8_specter"), loadout, "ABC-123")
-	_check(car.get_node_or_null("Body/Cabin/Stripes") == null and car.get_node_or_null("Body/Cosmetics/Underglow") == null
-			and car.get_node("Body/Spoiler").visible, "re-applying replaces the old look")
+	_check(car.get_node_or_null("Body/Cosmetics/Stripes") == null and car.get_node_or_null("Body/Cosmetics/Underglow") == null
+			and VehicleCosmetics.model_design(car) == "v8_specter", "re-applying replaces the old look")
 	holder.queue_free()
 	await process_frame
 
@@ -432,7 +432,9 @@ func _test_race_coins(race: RaceManager) -> void:
 	_check(me.stats.top_speed == VehicleCatalog.by_id("v8_specter").stats.top_speed, "default vehicle: V8 Specter")
 	_check(VehicleCosmetics.get_plate_text(me) == PlayerProfile.get_profile().plate_text, "player plate shown")
 	var tech := race.racers.filter(func(r: RaceProgress) -> bool: return r.display_name == "The Technician")[0] as RaceProgress
-	_check(VehicleCosmetics.get_plate_text(tech.vehicle) == "TECH-01", "AI use their own plates")
+	var tech_plate := VehicleCosmetics.get_plate_text(tech.vehicle)
+	_check(tech_plate == race.config.rival_plates[0] and RegEx.create_from_string("^[A-Z]{3}-[0-9]{3}$").search(tech_plate) != null,
+			"AI show the series' random plates (%s)" % tech_plate)
 	var coins := race.coins
 	_check(coins.coins().size() == 10 and coins.available_count() == 10, "10 coins per lap")
 	var rival := race.racers.filter(func(r: RaceProgress) -> bool: return not r.is_player)[0].vehicle as VehicleController

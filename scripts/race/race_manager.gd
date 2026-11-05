@@ -33,6 +33,8 @@ signal rewards_granted(summary: Dictionary)
 enum State { GRID, COUNTDOWN, RACING, FINISHED }
 
 const COUNTDOWN_WORDS: Array[String] = ["READY", "SET", "GO"]
+const COUNTDOWN_SOUND := preload("res://sounds/freesound_community-short-beep-countdown-81121.mp3")
+const COUNTDOWN_SOUND_OFFSET := 1.0
 
 ## Overrides the exports below. Null = GameSession.current, else the exports.
 @export var config: RaceConfig
@@ -73,6 +75,7 @@ var reward_summary: Dictionary = {}
 
 var _by_vehicle: Dictionary = {}
 var _countdown_time: float = 0.0
+var countdown_sound: AudioStreamPlayer
 var _countdown_index: int = -1
 var _finish_count: int = 0
 var _wrong_way_time: float = 0.0
@@ -87,6 +90,12 @@ var _player_done: bool = false
 
 func _ready() -> void:
 	InputSetup.ensure_actions()
+	Music.stop(get_tree())
+	countdown_sound = AudioStreamPlayer.new()
+	countdown_sound.name = "CountdownSound"
+	countdown_sound.stream = COUNTDOWN_SOUND
+	countdown_sound.bus = &"SFX"
+	add_child(countdown_sound)
 	_apply_config()
 	track.checkpoint_crossed.connect(_on_checkpoint_crossed)
 	_spawn_grid()
@@ -122,6 +131,9 @@ func _ready() -> void:
 func start_countdown() -> void:
 	_countdown_time = 0.0
 	_countdown_index = -1
+	# The clip beeps every second, four times; skip the first so the last
+	# three land on READY, SET and GO.
+	countdown_sound.play(COUNTDOWN_SOUND_OFFSET)
 	_set_state(State.COUNTDOWN)
 
 
@@ -250,8 +262,14 @@ func _spawn_grid() -> void:
 			var p := PlayerProfile.get_profile()
 			VehicleCosmetics.apply(car, player_vehicle, p.loadout_for(player_vehicle.id), p.plate_text)
 		else:
+			# Rivals all drive the V8 Specter (the racing line is tuned for it),
+			# each in their own colour and plate.
+			VehicleCosmetics.apply_model(car, VehicleCatalog.by_id(PlayerProfile.DEFAULT_VEHICLE))
 			car.set_body_color(color)
-			VehicleCosmetics.add_plate(car, profile.plate_text, null)
+			var plate := profile.plate_text
+			if config != null and id >= 0 and id < config.rival_plates.size():
+				plate = config.rival_plates[id]
+			VehicleCosmetics.add_plate(car, plate, null)
 		var racer_name := "You" if is_player else profile.display_name
 		var progress := RaceProgress.new(car, racer_name, color, is_player, slot,
 				track.checkpoint_count, total_laps)
@@ -578,7 +596,7 @@ func _update_rubber_band() -> void:
 
 func _update_wrong_way(delta: float) -> void:
 	var car := player.vehicle
-	var tangent := track.get_tangent_at(track.get_offset_at(car.global_position))
+	var tangent := track.get_direction_at(car.global_position) # follows shortcuts
 	var heading := -car.global_transform.basis.z
 	var backwards := car.linear_velocity.dot(tangent) < -3.0 and heading.dot(tangent) < -0.3
 	_wrong_way_time = _wrong_way_time + delta if backwards else 0.0

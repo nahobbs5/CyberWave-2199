@@ -1,5 +1,5 @@
 # CYBERWAVE 2199
-## Game Design Document — Version 1.4
+## Game Design Document — Version 1.6
 
 **Status:** Development Baseline  
 **Engine:** Godot 4  
@@ -523,6 +523,8 @@ A neon-lit circuit through a futuristic casino district, entertainment complexes
 
 **Identity:** High speed, wide roads, spectacle.
 
+About 3.2 km, after playtesting found the first 4.4 km layout and its 900 m opening straight too long.
+
 ## 8.4 Hoia Baciu Run
 
 **Location:** Romania
@@ -575,6 +577,19 @@ Shortcuts should offer meaningful tradeoffs:
 - Alternative overtaking opportunities
 
 All routes must maintain valid checkpoint and lap progression.
+
+## 8.9 Proposed Track Specials (not scheduled)
+
+The track concept art suggests one signature dynamic event per track. They are recorded here as ideas for after the six tracks are complete, not as Phase 6 requirements:
+
+| Track | Proposed special |
+|---|---|
+| The Stacks Grand Prix | Archive Lockdown: dynamic route changes |
+| Six Flags New Orleans | Flooded sections and coaster hazards |
+| Vegas Overdrive | Fountain show water barriers, collapsing signage, EMP security, police response |
+| Hoia Baciu Run | Phantom Signal: false routes and visual distortions |
+| Catacombs Descent | Tunnel Collapse: blocked routes and forced detours |
+| Arashiyama Circuit | Bamboo Collapse: falling bamboo hazards |
 
 ---
 
@@ -1107,7 +1122,7 @@ Detailed artwork, weapons, cosmetics, and completed environments are not require
 # 20. Document Control
 
 **Project:** Cyberwave 2199  
-**Document Version:** 1.4  
+**Document Version:** 1.6  
 **Status:** Approved design baseline for initial development  
 **Engine:** Godot 4  
 **Initial Platform:** Windows PC  
@@ -1127,5 +1142,7 @@ Changes after Version 1.0 should be tracked as revisions rather than silently re
 | 1.2 | 2026-11-05 | After Phase 3 testing: Hunter Drone and Railgun hits knock out the victim's selected weapon (§6.5); the EMP Pulse keeps weapons offline for 5 s (§6.3). |
 | 1.3 | 2026-11-05 | Phase 4: added Triple Nitro, three Nitro charges in one slot (§6.3, §6.4). Grand Prix results are fixed at the player's finish, classifying racers still on track by current position (§2.2). |
 | 1.4 | 2026-11-05 | Phase 5: only the player collects track coins (§9.2); eliminated racers don't earn the completion reward (§9.3); purchases are shared across vehicles while each vehicle keeps its own equipped cosmetics (§9.4). |
+| 1.5 | 2026-11-05 | Phase 6 (first part): track specials from the concept art recorded as proposals, not requirements (§8.9). Vegas Overdrive built at about 4.4 km, with the Luxor shortcut through the pyramid (§8.3, §8.8). |
+| 1.6 | 2026-11-05 | After playtesting Vegas: shortened to about 3.2 km with a roughly 500 m opening straight (§8.3). HUD weapon slots show weapon pictures; the minimap sits bottom right (§11.5). |
 
-**End of Game Design Document — Version 1.4**
+**End of Game Design Document — Version 1.6**

@@ -7,7 +7,10 @@ extends Node
 ## Drifting: holds drift through suitable corners, releases at the exit
 ## for a boost. Traffic: pulls out around slower cars ahead and avoids
 ## driving into them. Unsticking: reverses away from walls; resets after
-## longer failures are left to the car's VehicleRecovery.
+## longer failures are left to the car's VehicleRecovery. Shortcuts: on the
+## approach to each TrackShortcut the AI decides once whether to take it
+## (shortcut's chance x difficulty x aggression), then follows its centre
+## line at its safe speeds and rejoins the racing line.
 
 ## Cars ahead closer than this (plus speed-based lookahead) are considered.
 const TRAFFIC_BASE_RANGE := 10.0
@@ -45,6 +48,11 @@ var _drift_this_zone: bool = false
 var _rng := RandomNumberGenerator.new()
 var _blocked_time: float = 0.0
 var _reverse_time: float = 0.0
+## Shortcut being approached or driven (null = racing line).
+var _shortcut: TrackShortcut
+var _decided_for: TrackShortcut
+## Shortcuts taken (tests / telemetry).
+var shortcuts_taken: int = 0
 
 
 func setup(p_vehicle: VehicleController, p_track: TrackCircuit, p_line: RacingLine,
@@ -88,7 +96,11 @@ func _physics_process(delta: float) -> void:
 	var wander := sin(_time * 0.4 + _wander_phase) \
 			* difficulty.line_wander * profile.precision_wander
 	var lookahead := difficulty.lookahead_base + speed * difficulty.lookahead_time
+	_choose_shortcut(offset)
+	var sc_distance := _shortcut_distance(pos, offset)
 	var target := line.point_at(offset + lookahead, profile.line_bias + wander + _avoid)
+	if _shortcut != null:
+		target = _shortcut_target(sc_distance + lookahead, wander * 0.3 + _avoid * 0.5, target)
 	var to_target := target - pos
 	to_target.y = 0.0
 	var angle := forward.signed_angle_to(to_target, Vector3.UP)
@@ -103,6 +115,9 @@ func _physics_process(delta: float) -> void:
 	var lead := 3.0 + speed * 0.3
 	var target_speed := line.speed_at(offset + lead) * difficulty.speed_factor \
 			* profile.corner_speed_bias * speed_scale
+	if _shortcut != null and sc_distance + lead > -10.0:
+		var on := clampf(sc_distance + lead, 0.0, _shortcut.length)
+		target_speed = minf(target_speed, _shortcut.speed_at(on) * difficulty.speed_factor * speed_scale)
 	target_speed = minf(target_speed, traffic["max_speed"])
 	# Far off the line (after a bump or recovery): slow down to rejoin.
 	if absf(angle) > 0.9:
@@ -118,7 +133,63 @@ func _physics_process(delta: float) -> void:
 		vehicle.throttle_input = 0.35
 		vehicle.brake_input = 0.0
 
-	_update_drift(offset, speed, angle, my_lateral)
+	if _shortcut != null:
+		vehicle.drift_left_held = false
+		vehicle.drift_right_held = false
+	else:
+		_update_drift(offset, speed, angle, my_lateral)
+
+
+## Decides once per approach whether to take each shortcut ahead.
+func _choose_shortcut(offset: float) -> void:
+	if _shortcut != null:
+		return
+	for sc in track.shortcuts:
+		var ahead := track.wrapped_delta(offset, sc.start_offset)
+		if ahead > 0.0 and ahead < 90.0:
+			if _decided_for != sc:
+				_decided_for = sc
+				var chance := sc.ai_chance * difficulty.shortcut_chance * lerpf(0.7, 1.3, profile.aggression)
+				if _rng.randf() < chance:
+					_shortcut = sc
+					shortcuts_taken += 1
+			return
+	_decided_for = null
+
+
+## Distance along the committed shortcut (negative while still approaching).
+## Clears the shortcut when it's done or the entry was missed.
+func _shortcut_distance(pos: Vector3, offset: float) -> float:
+	if _shortcut == null:
+		return 0.0
+	var sc := _shortcut
+	var on := track.get_shortcut_at(pos)
+	var d: float
+	if on == sc:
+		d = sc.local_offset(track.to_local(pos))
+	else:
+		d = track.wrapped_delta(sc.start_offset, offset)
+		# Still on the main road well past the junction: we missed it.
+		if d > 60.0 and d < sc.span:
+			_shortcut = null
+			return 0.0
+		if d >= sc.span:
+			_shortcut = null # back on the main road after it
+			return 0.0
+	if d > sc.length - 2.0:
+		_shortcut = null
+	return d
+
+
+func _shortcut_target(distance: float, side_offset: float, fallback: Vector3) -> Vector3:
+	var sc := _shortcut
+	if distance <= 0.0:
+		return fallback
+	if distance >= sc.length:
+		return line.point_at(sc.end_offset + (distance - sc.length), profile.line_bias)
+	var right := sc.tangent_at(distance).cross(Vector3.UP).normalized()
+	var lane := clampf(side_offset, -sc.road_width * 0.25, sc.road_width * 0.25)
+	return track.to_global(sc.point_at(distance) + right * lane)
 
 
 ## Pinned against something (e.g. sideways on a wall): steering needs forward
@@ -139,6 +210,10 @@ func _update_unstick(delta: float, raw_steer: float) -> bool:
 	if _blocked_time > UNSTICK_DELAY:
 		_blocked_time = 0.0
 		_reverse_time = UNSTICK_DURATION
+		# Pinned while heading for a shortcut we're not on (e.g. wedged at the
+		# junction after a late turn-in): give it up and follow the main road.
+		if _shortcut != null and track.get_shortcut_at(vehicle.global_position) != _shortcut:
+			_shortcut = null
 	return false
 
 

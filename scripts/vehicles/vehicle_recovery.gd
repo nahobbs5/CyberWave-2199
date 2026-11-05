@@ -21,6 +21,11 @@ signal recovered(reason: String)
 ## stuck. Sideways creep (e.g. scraping along a wall) does not count as moving.
 @export var stuck_speed: float = 1.0
 @export var stuck_time: float = 3.0
+## A car trying to drive that gains less than no_progress_distance along the
+## track in no_progress_time is recovered too (catches cars rocking back and
+## forth against a wall, which never count as "stuck").
+@export var no_progress_time: float = 8.0
+@export var no_progress_distance: float = 15.0
 @export_group("Out of bounds")
 @export var kill_height: float = -15.0
 ## Distance beyond the road edge that counts as out of the playable area.
@@ -50,6 +55,8 @@ var last_reason: String = ""
 var _overturn_timer: float = 0.0
 var _stuck_timer: float = 0.0
 var _off_track_timer: float = 0.0
+var _no_progress_timer: float = 0.0
+var _progress_ref: float = -1.0
 var _cooldown: float = 0.0
 ## Distance travelled since the safe point last moved.
 var _travelled: float = 0.0
@@ -143,6 +150,16 @@ func _check_automatic(delta: float) -> void:
 		_overturn_timer = 0.0
 
 	var trying_to_move := vehicle.throttle_input > 0.1 or vehicle.brake_input > 0.1
+	if trying_to_move and vehicle.input_enabled:
+		var here := track.get_offset_at(pos)
+		if _progress_ref < 0.0 or absf(track.wrapped_delta(_progress_ref, here)) > no_progress_distance:
+			_progress_ref = here
+			_no_progress_timer = 0.0
+		else:
+			_no_progress_timer += delta
+			if _no_progress_timer > no_progress_time:
+				request_recovery("no progress")
+				return
 	if trying_to_move and absf(vehicle.forward_speed) < stuck_speed:
 		_stuck_timer += delta
 		if _stuck_timer > stuck_time:
@@ -182,3 +199,5 @@ func _clear_timers() -> void:
 	_overturn_timer = 0.0
 	_stuck_timer = 0.0
 	_off_track_timer = 0.0
+	_no_progress_timer = 0.0
+	_progress_ref = -1.0

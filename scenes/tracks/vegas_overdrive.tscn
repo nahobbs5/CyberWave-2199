@@ -1,0 +1,137 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/track/track_circuit.gd" id="1_track"]
+[ext_resource type="Script" path="res://scripts/track/track_shortcut.gd" id="2_shortcut"]
+[ext_resource type="Script" path="res://scripts/track/track_feature.gd" id="3_feature"]
+[ext_resource type="Script" path="res://scripts/track/vegas_scenery.gd" id="4_scenery"]
+
+[sub_resource type="ProceduralSkyMaterial" id="Sky_vegas"]
+sky_top_color = Color(0.03, 0.01, 0.08, 1)
+sky_horizon_color = Color(0.32, 0.08, 0.35, 1)
+ground_bottom_color = Color(0.02, 0.01, 0.04, 1)
+ground_horizon_color = Color(0.25, 0.06, 0.28, 1)
+sun_angle_max = 0.0
+
+[sub_resource type="Sky" id="Sky_res"]
+sky_material = SubResource("Sky_vegas")
+
+[sub_resource type="Environment" id="Environment_vegas"]
+background_mode = 2
+sky = SubResource("Sky_res")
+ambient_light_source = 2
+ambient_light_color = Color(0.4, 0.3, 0.55, 1)
+ambient_light_energy = 0.8
+reflected_light_source = 2
+tonemap_mode = 2
+glow_enabled = true
+glow_intensity = 1.0
+glow_bloom = 0.12
+fog_enabled = true
+fog_light_color = Color(0.2, 0.06, 0.25, 1)
+fog_density = 0.0016
+
+[node name="Track" type="Node3D"]
+script = ExtResource("1_track")
+control_points = PackedVector3Array(-150, 0, 23, -130.59, 0, 21.46, -111.18, 0, 19.93, -91.77, 0, 18.39, -72.36, 0, 16.85, -52.95, 0, 15.32, -33.54, 0, 13.78, -14.13, 0, 12.25, 5.28, 0, 10.71, 24.69, 0, 9.17, 44.1, 0, 7.64, 63.51, 0, 6.1, 82.92, 0, 4.56, 102.33, 0, 3.03, 116.27, 0, 3.53, 129.83, 0, 6.8, 142.48, 0, 12.68, 153.71, 0, 20.96, 163.07, 0, 31.29, 170.2, 0, 43.28, 178.58, 0, 61.24, 186.96, 0, 79.19, 195.33, 0, 97.14, 203.71, 0, 115.1, 212.09, 0, 133.05, 220.47, 0, 151, 228.85, 0, 168.96, 237.22, 0, 186.91, 245.6, 0, 204.86, 253.98, 0, 222.82, 262.36, 0, 240.77, 270.74, 0, 258.72, 276.61, 0, 274.76, 279.67, 0, 291.56, 279.83, 0, 308.63, 277.08, 0, 325.49, 271.5, 0, 341.62, 263.58, 0, 359.45, 255.66, 0, 377.27, 247.74, 0, 395.09, 239.81, 0, 412.92, 231.89, 0, 430.74, 223.97, 0, 448.56, 216.05, 0, 466.39, 208.13, 0, 484.21, 200.21, 0, 502.03, 192.29, 0, 519.86, 184.37, 0, 537.68, 179.27, 0, 546.56, 172.47, 0, 554.22, 164.25, 0, 560.34, 154.96, 0, 564.65, 144.98, 0, 566.97, 134.74, 0, 567.22, 115.86, 0, 565.73, 96.98, 0, 564.24, 78.1, 0, 562.74, 59.22, 0, 561.25, 40.34, 0, 559.76, 21.46, 0, 558.27, 13.2, 0, 556.84, 5.35, 0, 553.9, -1.81, 0, 549.55, -8.05, 0, 543.95, -13.14, 0, 537.3, -16.91, 0, 529.81, -19.22, 0, 521.76, -20, 0, 513.41, -20, 0, 494.84, -20, 0, 476.27, -20, 0, 457.7, -20, 0, 439.13, -20, 0, 420.55, -20, 0, 401.98, -20, 0, 383.41, -20, 0, 364.84, -20, 0, 346.27, -20.9, 0, 337.34, -23.55, 0, 328.76, -27.85, 0, 320.88, -33.63, 0, 314.01, -40.65, 0, 308.42, -48.65, 0, 304.34, -57.3, 0, 301.93, -66.25, 0, 301.28, -84.25, 0, 301.78, -102.25, 0, 302.28, -120.25, 0, 302.78, -138.25, 0, 303.28, -156.25, 0, 303.78, -164.85, 0, 304.86, -173.08, 0, 307.56, -180.65, 0, 311.79, -187.26, 0, 317.39, -192.67, 0, 324.16, -196.69, 0, 331.84, -199.17, 0, 340.14, -200, 0, 348.77, -200, 0, 368.41, -200, 0, 388.05, -200, 0, 407.69, -200, 0, 427.33, -200, 0, 446.97, -200, 0, 466.61, -200, 0, 486.25, -200, 0, 505.89, -200, 0, 525.54, -200, 0, 545.18, -200, 0, 564.82, -200, 0, 584.46, -200, 0, 604.1, -200, 0, 623.74, -201.09, 0, 634.66, -204.33, 0, 645.14, -209.59, 0, 654.77, -216.65, 0, 663.16, -225.24, 0, 669.99, -235.01, 0, 674.98, -245.58, 0, 677.93, -263.16, 0, 680.98, -280.75, 0, 684.04, -298.33, 0, 687.1, -315.92, 0, 690.16, -333.5, 0, 693.22, -351.09, 0, 696.28, -368.67, 0, 699.33, -386.26, 0, 702.39, -403.84, 0, 705.45, -416.29, 0, 706.3, -428.64, 0, 704.55, -440.37, 0, 700.29, -450.96, 0, 693.7, -466.13, 0, 681.9, -481.29, 0, 670.1, -496.46, 0, 658.31, -511.63, 0, 646.51, -526.8, 0, 634.71, -541.97, 0, 622.91, -557.14, 0, 611.12, -572.3, 0, 599.32, -587.47, 0, 587.52, -602.64, 0, 575.72, -617.81, 0, 563.93, -632.98, 0, 552.13, -648.15, 0, 540.33, -663.31, 0, 528.53, -670.12, 0, 522.13, -675.62, 0, 514.57, -679.62, 0, 506.12, -681.97, 0, 497.07, -682.6, 0, 487.75, -681.48, 0, 478.47, -678.66, 0, 469.56, -674.22, 0, 461.33, -663.23, 0, 444.84, -652.23, 0, 428.35, -641.24, 0, 411.85, -630.24, 0, 395.36, -619.25, 0, 378.87, -608.25, 0, 362.38, -597.26, 0, 345.89, -586.26, 0, 329.39, -575.27, 0, 312.9, -564.27, 0, 296.41, -560.48, 0, 289.77, -557.65, 0, 282.66, -551.82, 0, 264.44, -545.99, 0, 246.22, -540.16, 0, 228, -534.33, 0, 209.79, -528.5, 0, 191.57, -522.67, 0, 173.35, -516.84, 0, 155.13, -511.01, 0, 136.91, -505.18, 0, 118.69, -499.35, 0, 100.47, -493.52, 0, 82.25, -488.36, 0, 70.37, -480.95, 0, 59.74, -471.58, 0, 50.8, -460.62, 0, 43.89, -448.51, 0, 39.29, -435.73, 0, 37.19, -416.68, 0, 36.24, -397.63, 0, 35.3, -378.58, 0, 34.35, -359.54, 0, 33.41, -340.49, 0, 32.46, -321.44, 0, 31.51, -302.39, 0, 30.57, -283.34, 0, 29.62, -264.29, 0, 28.68, -245.24, 0, 27.73, -226.19, 0, 26.78, -207.15, 0, 25.84, -188.1, 0, 24.89, -169.05, 0, 23.95)
+road_width = 20.0
+checkpoint_count = 10
+crate_row_offsets = PackedFloat32Array(121, 531, 971, 1943, 2483)
+crate_lateral_positions = PackedFloat32Array(-7, -2.5, 2.5, 7)
+coin_offsets = PackedFloat32Array(210, 222, 708, 720, 941, 953, 1597, 1609, 2497, 2509)
+coin_laterals = PackedFloat32Array(3, 3, -3, -3, 3, 3, -3, -3, 3, 3)
+road_color = Color(0.09, 0.08, 0.12, 1)
+edge_line_color = Color(1, 0.2, 0.85, 1)
+ground_color = Color(0.05, 0.03, 0.08, 1)
+barrier_color = Color(0.16, 0.14, 0.22, 1)
+neon_left_color = Color(1, 0.15, 0.8, 1)
+neon_right_color = Color(0, 0.9, 1, 1)
+light_colors = PackedColorArray(1, 0.2, 0.85, 1, 0, 0.85, 1, 1, 1, 0.7, 0.3, 1)
+light_spacing = 110.0
+ground_margin = 450.0
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_vegas")
+
+[node name="Moonlight" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866025, -0.353553, 0.353553, 0, 0.707107, 0.707107, -0.5, -0.612372, 0.612372, 0, 80, 0)
+light_color = Color(0.65, 0.6, 1, 1)
+light_energy = 0.45
+
+[node name="LuxorShortcut" type="Node3D" parent="."]
+script = ExtResource("2_shortcut")
+control_points = PackedVector3Array(-480, 0, 671.1, -470, 0, 540, -520, 0, 420, -485, 0, 300, -518.4, 0, 160)
+road_width = 12.0
+speed_limit = 30.0
+ai_chance = 0.5
+coin_distances = PackedFloat32Array(200, 235, 270)
+display_name = "Luxor shortcut"
+
+[node name="BoostPadStrip1" type="Node3D" parent="."]
+script = ExtResource("3_feature")
+kind = 0
+offset = 0
+lateral = -4
+anchor_point = Vector3(-300, 0, 33)
+
+[node name="BoostPadStrip2" type="Node3D" parent="."]
+script = ExtResource("3_feature")
+kind = 0
+offset = 0
+lateral = 4
+anchor_point = Vector3(0, 0, 8)
+
+[node name="BoostPadBottom" type="Node3D" parent="."]
+script = ExtResource("3_feature")
+kind = 0
+offset = 0
+lateral = 0
+anchor_point = Vector3(-310, 0, 690)
+
+[node name="BoostRingTunnel" type="Node3D" parent="."]
+script = ExtResource("3_feature")
+kind = 1
+offset = 0
+lateral = 0
+anchor_point = Vector3(-200, 0, 500)
+boost_extra = 9.0
+boost_duration = 1.4
+boost_kick = 6.0
+
+[node name="EmpCasino1" type="Node3D" parent="."]
+script = ExtResource("3_feature")
+kind = 2
+offset = 0
+lateral = 5.5
+anchor_point = Vector3(-20, 0, 420)
+
+[node name="EmpCasino2" type="Node3D" parent="."]
+script = ExtResource("3_feature")
+kind = 2
+offset = 0
+lateral = -5.5
+anchor_point = Vector3(-110, 0, 304)
+
+[node name="EmpBottom" type="Node3D" parent="."]
+script = ExtResource("3_feature")
+kind = 2
+offset = 0
+lateral = 6
+anchor_point = Vector3(60, 0, 562)
+
+[node name="LuxorGate" type="Node3D" parent="."]
+script = ExtResource("3_feature")
+kind = 3
+offset = 60
+lateral = 0
+on_shortcut = "LuxorShortcut"
+width = 10.0
+
+[node name="BoostPadPyramid" type="Node3D" parent="."]
+script = ExtResource("3_feature")
+kind = 0
+offset = 240
+lateral = 0
+on_shortcut = "LuxorShortcut"
+
+[node name="Scenery" type="Node3D" parent="."]
+script = ExtResource("4_scenery")

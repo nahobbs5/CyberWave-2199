@@ -1,9 +1,14 @@
 class_name VehicleCosmetics
 extends RefCounted
-## Applies a vehicle's placeholder proportions and equipped cosmetics to the
-## shared placeholder car (GDD 9.4, 9.5). Purely visual. Everything added
-## lives under Body/Cosmetics, so applying again rebuilds it cleanly (used
-## by the garage preview when the player tries things on).
+## Gives the shared car scene a vehicle's model and its equipped cosmetics
+## (GDD 5.1, 9.4, 9.5). Purely visual.
+##
+## Model: VehicleData.model_scene (an imported .glb, see README "Vehicle
+## models") if set, else the procedural CarModelBuilder design for the
+## vehicle id, else the Phase 1 box car scaled by the vehicle's proportions.
+## Cosmetics attach to the model's anchors (PlateAnchor, DecalL/R,
+## ExhaustL/R, NeonL/R). Everything added lives under Body/Cosmetics, so
+## applying again rebuilds it cleanly (garage try-on).
 
 
 ## Full player look: proportions, paint, finish, stripes, decal, wheels,
@@ -13,7 +18,7 @@ static func apply(car: Node3D, vehicle: VehicleData, loadout: Dictionary, plate_
 	if body == null:
 		return
 	if vehicle != null:
-		apply_proportions(car, vehicle)
+		apply_model(car, vehicle)
 	var root := _fresh_root(body)
 	var factory := vehicle.factory_color if vehicle != null else Color(0.1, 0.12, 0.22)
 	var paint: CosmeticItem = loadout.get(CosmeticItem.Category.PAINT)
@@ -25,7 +30,38 @@ static func apply(car: Node3D, vehicle: VehicleData, loadout: Dictionary, plate_
 	_apply_wheels(car, loadout.get(CosmeticItem.Category.WHEELS))
 	add_plate(car, plate_text, loadout.get(CosmeticItem.Category.PLATE_FRAME))
 	_apply_underglow(car, root, loadout.get(CosmeticItem.Category.UNDERGLOW))
-	_add_exhaust(root, loadout.get(CosmeticItem.Category.EXHAUST))
+	_add_exhaust(car, root, loadout.get(CosmeticItem.Category.EXHAUST))
+
+
+## Puts the vehicle's model on the car (see the class notes for the order).
+static func apply_model(car: Node3D, vehicle: VehicleData) -> void:
+	var body := car.get_node_or_null("Body") as Node3D
+	if body == null or vehicle == null:
+		return
+	if vehicle.model_scene != null:
+		CarModelBuilder.remove_model(car)
+		CarModelBuilder.hide_placeholder(car)
+		body.scale = Vector3.ONE
+		var model := vehicle.model_scene.instantiate() as Node3D
+		model.name = "Model"
+		body.add_child(model)
+	elif CarDesigns.has_design(vehicle.id):
+		CarModelBuilder.build(car, vehicle.id)
+	else:
+		CarModelBuilder.remove_model(car)
+		CarModelBuilder.show_placeholder(car)
+		apply_proportions(car, vehicle)
+
+
+## Design id of the procedural model on this car, or "" (box car / .glb).
+static func model_design(car: Node3D) -> String:
+	var model := car.get_node_or_null("Body/Model")
+	return str(model.get_meta("design", "")) if model != null else ""
+
+
+## Plain paint colour on whatever body the car has (AI cars).
+static func paint_body(car: Node3D, color: Color) -> void:
+	_apply_paint(car, color, "gloss")
 
 
 static func apply_proportions(car: Node3D, vehicle: VehicleData) -> void:
@@ -51,16 +87,18 @@ static func apply_proportions(car: Node3D, vehicle: VehicleData) -> void:
 ## Rear license plate with its text and frame (GDD 9.5). AI cars use this
 ## on its own with their predefined plates.
 static func add_plate(car: Node3D, text: String, frame: CosmeticItem) -> void:
-	var chassis := car.get_node_or_null("Body/Chassis") as Node3D
-	if chassis == null:
-		return
-	var old := chassis.get_node_or_null("Plate")
+	var old := car.find_child("Plate", true, false)
 	if old != null:
 		old.free()
+	var parent := car.get_node_or_null("Body/Model/PlateAnchor") as Node3D
 	var plate := Node3D.new()
 	plate.name = "Plate"
-	plate.position = Vector3(0.0, -0.07, 2.104)
-	chassis.add_child(plate)
+	if parent == null:
+		parent = car.get_node_or_null("Body/Chassis") as Node3D
+		plate.position = Vector3(0.0, -0.07, 2.104)
+	if parent == null:
+		return
+	parent.add_child(plate)
 	var frame_color := frame.color if frame != null else Color(0.05, 0.05, 0.06)
 	var frame_style := frame.style if frame != null else "basic"
 	var frame_mesh := _box(Vector3(0.62, 0.2, 0.01), _material(frame_color, frame_style))
@@ -83,7 +121,8 @@ static func add_plate(car: Node3D, text: String, frame: CosmeticItem) -> void:
 
 
 static func get_plate_text(car: Node3D) -> String:
-	var label := car.get_node_or_null("Body/Chassis/Plate/Text") as Label3D
+	var plate := car.find_child("Plate", true, false)
+	var label := plate.get_node_or_null("Text") as Label3D if plate != null else null
 	return label.text if label != null else ""
 
 
@@ -95,6 +134,10 @@ static func _fresh_root(body: Node3D) -> Node3D:
 		old.free()
 	var root := Node3D.new()
 	root.name = "Cosmetics"
+	# Line up with the model so anchors and stripes match it.
+	var model := body.get_node_or_null("Model") as Node3D
+	if model != null:
+		root.position = model.position
 	body.add_child(root)
 	return root
 
@@ -116,13 +159,20 @@ static func paint_material(color: Color, finish: String) -> StandardMaterial3D:
 			mat.metallic = 1.0
 			mat.roughness = 0.04
 		_: # gloss
-			mat.metallic = 0.8
-			mat.roughness = 0.25
+			mat.metallic = 0.55
+			mat.roughness = 0.28
 	return mat
 
 
 static func _apply_paint(car: Node3D, color: Color, finish: String) -> void:
 	var mat := paint_material(color, finish)
+	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	var model := car.get_node_or_null("Body/Model")
+	if model != null:
+		# Procedural Paint mesh, or any .glb mesh whose name starts with "Paint".
+		for node in model.find_children("Paint*", "MeshInstance3D", true, false):
+			(node as MeshInstance3D).material_override = mat
+		return
 	for path in ["Body/Chassis", "Body/Nose"]:
 		var mesh := car.get_node_or_null(path) as MeshInstance3D
 		if mesh != null:
@@ -134,9 +184,29 @@ static func _add_stripes(car: Node3D, item: CosmeticItem) -> void:
 		var part := car.get_node_or_null(path)
 		if part != null and part.get_node_or_null("Stripes") != null:
 			part.get_node("Stripes").free()
+	var cos_root := car.get_node_or_null("Body/Cosmetics")
+	if cos_root != null and cos_root.get_node_or_null("Stripes") != null:
+		cos_root.get_node("Stripes").free()
 	if item == null or item.style == "none" or item.style == "":
 		return
 	var mat := _material(item.color, "stripe")
+	var design := model_design(car)
+	if design != "" or car.get_node_or_null("Body/Model") != null:
+		# Model cars: stripes follow the procedural body; .glb models skip them.
+		if design == "" or cos_root == null:
+			return
+		var stripes := MeshInstance3D.new()
+		stripes.name = "Stripes"
+		stripes.material_override = mat
+		if item.style == "side":
+			stripes.mesh = CarModelBuilder.side_stripe_mesh(design)
+		else:
+			var model_lanes: Array[float] = [0.0]
+			if item.style != "center":
+				model_lanes = [-0.22, 0.22]
+			stripes.mesh = CarModelBuilder.stripe_mesh(design, model_lanes, 0.3 if item.style == "center" else 0.16)
+		cos_root.add_child(stripes)
+		return
 	var chassis := car.get_node_or_null("Body/Chassis") as Node3D
 	var nose := car.get_node_or_null("Body/Nose") as Node3D
 	var cabin := car.get_node_or_null("Body/Cabin") as Node3D
@@ -172,14 +242,19 @@ static func _add_decal(car: Node3D, root: Node3D, item: CosmeticItem) -> void:
 		return
 	for side in [-1.0, 1.0]:
 		var label := Label3D.new()
+		var anchor := car.get_node_or_null("Body/Model/Decal%s" % ("L" if side < 0.0 else "R")) as Node3D
 		label.text = item.style
 		label.font_size = 72
 		label.pixel_size = 0.0045
 		label.outline_size = 8
 		label.modulate = item.color
 		label.double_sided = false
-		label.position = Vector3(side * 0.958, 0.0, 0.35)
-		label.rotation.y = side * PI * 0.5
+		if anchor != null:
+			# Model and Cosmetics are both children of Body.
+			label.transform = anchor.transform
+		else:
+			label.position = Vector3(side * 0.958, 0.0, 0.35)
+			label.rotation.y = side * PI * 0.5
 		root.add_child(label)
 
 
@@ -211,10 +286,19 @@ static func _apply_wheels(car: Node3D, item: CosmeticItem) -> void:
 static func _apply_underglow(car: Node3D, root: Node3D, item: CosmeticItem) -> void:
 	var on := item != null and item.style != "none"
 	var neon_mat: Material = _material(item.color, "neon") if on else null
-	for path in ["Body/NeonL", "Body/NeonR"]:
+	var has_model := car.get_node_or_null("Body/Model") != null
+	for path in (["Body/Model/NeonL", "Body/Model/NeonR"] if has_model else ["Body/NeonL", "Body/NeonR"]):
 		var strip := car.get_node_or_null(path) as MeshInstance3D
-		if strip != null:
+		if strip == null:
+			continue
+		if neon_mat != null:
 			strip.material_override = neon_mat
+		elif has_model:
+			strip.visible = false # underglow strips only show with an underglow item
+		else:
+			strip.material_override = null
+		if neon_mat != null:
+			strip.visible = true
 	if not on:
 		return
 	var light := OmniLight3D.new()
@@ -226,7 +310,7 @@ static func _apply_underglow(car: Node3D, root: Node3D, item: CosmeticItem) -> v
 	root.add_child(light)
 
 
-static func _add_exhaust(root: Node3D, item: CosmeticItem) -> void:
+static func _add_exhaust(car: Node3D, root: Node3D, item: CosmeticItem) -> void:
 	if item == null:
 		return
 	var sphere := SphereMesh.new()
@@ -238,8 +322,9 @@ static func _add_exhaust(root: Node3D, item: CosmeticItem) -> void:
 		var tip := MeshInstance3D.new()
 		tip.name = "ExhaustL" if side < 0.0 else "ExhaustR"
 		tip.mesh = sphere
-		tip.material_override = _material(item.color, "neon")
-		tip.position = Vector3(side * 0.45, -0.05, 2.13)
+		tip.material_override = _material(item.color, "chrome" if item.style == "metal" else "neon")
+		var anchor := car.get_node_or_null("Body/Model/Exhaust%s" % ("L" if side < 0.0 else "R")) as Node3D
+		tip.position = anchor.position if anchor != null else Vector3(side * 0.45, -0.05, 2.13)
 		root.add_child(tip)
 
 
@@ -268,8 +353,8 @@ static func _material(color: Color, style: String) -> StandardMaterial3D:
 	mat.albedo_color = color
 	match style:
 		"chrome":
-			mat.metallic = 1.0
-			mat.roughness = 0.08
+			mat.metallic = 0.7
+			mat.roughness = 0.18
 		"neon":
 			mat.emission_enabled = true
 			mat.emission = color

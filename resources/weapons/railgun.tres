@@ -2,10 +2,13 @@
 
 [ext_resource type="Script" path="res://scripts/combat/weapon_data.gd" id="1_rug2o"]
 
+[ext_resource type="Texture2D" path="res://assets/ui/weapons/railgun.png" id="2_icon"]
+
 [resource]
 script = ExtResource("1_rug2o")
 id = &"railgun"
 display_name = "Railgun"
+icon = ExtResource("2_icon")
 color = Color(0.2, 0.95, 1, 1)
 targeted = true
 effect = &"stagger"

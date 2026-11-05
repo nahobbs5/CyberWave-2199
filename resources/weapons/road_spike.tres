@@ -2,10 +2,13 @@
 
 [ext_resource type="Script" path="res://scripts/combat/weapon_data.gd" id="1_yt3vn"]
 
+[ext_resource type="Texture2D" path="res://assets/ui/weapons/road_spike.png" id="2_icon"]
+
 [resource]
 script = ExtResource("1_yt3vn")
 id = &"road_spike"
 display_name = "Road Spike"
+icon = ExtResource("2_icon")
 kind = 3
 color = Color(1, 0.85, 0.2, 1)
 effect = &"traction"

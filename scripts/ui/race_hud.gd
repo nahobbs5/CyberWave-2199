@@ -11,7 +11,7 @@ extends CanvasLayer
 
 const CYAN := Color(0.0, 0.95, 1.0)
 const MAGENTA := Color(1.0, 0.2, 0.85)
-const INFO_BELOW_SLOTS := Vector2(20, 96)
+const INFO_BELOW_SLOTS := Vector2(20, 124)
 const INFO_TOP := Vector2(20, 16)
 
 var race: RaceManager
@@ -41,8 +41,15 @@ var _results_refresh: float = 0.0
 
 var _combat_box: HBoxContainer
 var _info_box: VBoxContainer
+var minimap: Minimap
 var _slot_panels: Array[PanelContainer] = []
-var _slot_labels: Array[Label] = []
+## Per slot: the weapon picture, its key number, a charges badge, and the
+## name (shown only when a weapon has no picture).
+var _slot_icons: Array[TextureRect] = []
+var _slot_keys: Array[Label] = []
+var _slot_counts: Array[Label] = []
+var _slot_names: Array[Label] = []
+var _slot_text: Array[String] = ["1  EMPTY", "2  EMPTY"]
 var _lock_label: Label
 var _status_label: Label
 var _incoming_label: Label
@@ -71,6 +78,7 @@ func setup(manager: RaceManager) -> void:
 	race.racer_qualified.connect(_on_racer_qualified)
 	race.coins.coin_collected.connect(_on_coin_collected)
 	_mode_label.text = _mode_text()
+	minimap.setup(race)
 	_elim_label.visible = race.elimination != null
 	_combat_box.visible = race.combat_enabled()
 	_info_box.position = INFO_BELOW_SLOTS if race.combat_enabled() else INFO_TOP
@@ -85,8 +93,13 @@ func is_incoming_visible() -> bool:
 	return _incoming_label.visible
 
 
+## Text description of a slot ("1  Firewall", "2  EMPTY", "1  Triple Nitro  x3").
 func get_slot_text(slot: int) -> String:
-	return _slot_labels[slot].text
+	return _slot_text[slot]
+
+
+func get_slot_icon(slot: int) -> Texture2D:
+	return _slot_icons[slot].texture
 
 
 func is_results_visible() -> bool:
@@ -382,11 +395,17 @@ func _update_combat(delta: float) -> void:
 			weapon_text = weapon.display_name
 			if weapon.charges > 1:
 				weapon_text += "  x%d" % inventory.charges[i]
-		_slot_labels[i].text = "%d  %s" % [i + 1, weapon_text]
-		_slot_labels[i].add_theme_color_override("font_color",
-				weapon.color if weapon != null else Color(1, 1, 1, 0.3))
+		_slot_text[i] = "%d  %s" % [i + 1, weapon_text]
+		# The picture from the Weapon Arsenal art; the name only as a fallback.
+		var icon: Texture2D = weapon.icon if weapon != null else null
+		_slot_icons[i].texture = icon
+		_slot_names[i].visible = weapon != null and icon == null
+		_slot_names[i].text = weapon.display_name if weapon != null else ""
+		_slot_panels[i].tooltip_text = weapon.display_name if weapon != null else ""
+		_slot_keys[i].add_theme_color_override("font_color", Color.WHITE if weapon != null else Color(1, 1, 1, 0.3))
+		_slot_counts[i].text = "x%d" % inventory.charges[i] if weapon != null and weapon.charges > 1 else ""
 		var style := _slot_panels[i].get_theme_stylebox("panel") as StyleBoxFlat
-		style.border_color = (MAGENTA if is_selected else Color(1, 1, 1, 0.15))
+		style.border_color = (MAGENTA if is_selected else (weapon.color.darkened(0.3) if weapon != null else Color(1, 1, 1, 0.15)))
 		style.bg_color = Color(0.02, 0.01, 0.06, 0.8 if weapon != null else 0.35)
 
 	var targeting := car.targeting
@@ -568,8 +587,17 @@ func _build() -> void:
 	stack.add_child(_incoming_label)
 	stack.move_child(_incoming_label, 0)
 
-	# Weapon slots, top left. The bottom-right corner is kept clear for the
-	# minimap (GDD 11.5).
+	# Minimap, bottom right (GDD 11.5).
+	var map_anchor := Control.new()
+	map_anchor.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
+	map_anchor.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(map_anchor)
+	minimap = Minimap.new()
+	minimap.name = "Minimap"
+	minimap.position = -Minimap.MAP_SIZE - Vector2(20, 20)
+	map_anchor.add_child(minimap)
+
+	# Weapon slots, top left.
 	_combat_box = HBoxContainer.new()
 	_combat_box.position = Vector2(20, 16)
 	_combat_box.add_theme_constant_override("separation", 16)
@@ -587,13 +615,39 @@ func _build() -> void:
 		slot_style.set_content_margin_all(10)
 		slot_style.set_corner_radius_all(5)
 		panel.add_theme_stylebox_override("panel", slot_style)
-		panel.custom_minimum_size = Vector2(130, 46)
-		var slot_label := _label(16, Color.WHITE)
-		slot_label.text = "%d  EMPTY" % (i + 1)
-		panel.add_child(slot_label)
+		slot_style.set_content_margin_all(3)
+		panel.custom_minimum_size = Vector2(76, 76)
+		var slot_stack := Control.new()
+		slot_stack.custom_minimum_size = Vector2(70, 70)
+		panel.add_child(slot_stack)
+		var icon := TextureRect.new()
+		icon.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		slot_stack.add_child(icon)
+		var fallback := _label(12, Color.WHITE)
+		fallback.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		fallback.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		fallback.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		fallback.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		fallback.visible = false
+		slot_stack.add_child(fallback)
+		var key := _label(14, Color(1, 1, 1, 0.3))
+		key.text = str(i + 1)
+		key.position = Vector2(2, -2)
+		slot_stack.add_child(key)
+		var count := _label(16, Color(1.0, 0.85, 0.3))
+		count.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
+		count.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+		count.grow_vertical = Control.GROW_DIRECTION_BEGIN
+		count.offset_right = -2
+		slot_stack.add_child(count)
 		slots_row.add_child(panel)
 		_slot_panels.append(panel)
-		_slot_labels.append(slot_label)
+		_slot_icons.append(icon)
+		_slot_names.append(fallback)
+		_slot_keys.append(key)
+		_slot_counts.append(count)
 	var weapon_hint := _label(13, Color(1, 1, 1, 0.5))
 	weapon_hint.text = "1 / 2 select    Space fire"
 	slots_column.add_child(weapon_hint)

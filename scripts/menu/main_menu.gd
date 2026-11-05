@@ -10,6 +10,7 @@ var _buttons: Array[Button] = []
 
 func _ready() -> void:
 	InputSetup.ensure_actions()
+	Music.play(get_tree(), Music.MENU)
 	_build()
 	_buttons[0].grab_focus.call_deferred()
 

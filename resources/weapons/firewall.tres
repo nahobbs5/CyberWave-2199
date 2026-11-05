@@ -2,10 +2,13 @@
 
 [ext_resource type="Script" path="res://scripts/combat/weapon_data.gd" id="1_sv503"]
 
+[ext_resource type="Texture2D" path="res://assets/ui/weapons/firewall.png" id="2_icon"]
+
 [resource]
 script = ExtResource("1_sv503")
 id = &"firewall"
 display_name = "Firewall"
+icon = ExtResource("2_icon")
 kind = 5
 color = Color(1, 0.45, 0.15, 1)
 effect = &"shield"

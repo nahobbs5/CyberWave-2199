@@ -3,7 +3,8 @@ extends Node3D
 ## Track coins (GDD 9.2): collected automatically on contact by the player,
 ## worth one coin each, respawn every lap, at most 30 per race, never lost
 ## when hit. Placed near the racing line (track.coin_offsets, with a small
-## sideways offset each) so collecting them is a small detour, not a big one.
+## sideways offset each) so collecting them is a small detour, not a big one,
+## plus any bonus coins along shortcuts.
 ## AI cars don't take them.
 
 signal coin_collected(total: int)
@@ -35,6 +36,15 @@ func setup(track: TrackCircuit, line: RacingLine, player: VehicleController) -> 
 		add_child(coin)
 		coin.body_entered.connect(_on_body_entered.bind(coin))
 		_coins.append(coin)
+	# Bonus coins along shortcuts (GDD 8.8 "additional coins").
+	for sc in track.shortcuts:
+		for d in sc.coin_distances:
+			var coin := _make_coin()
+			var tangent := sc.tangent_at(d)
+			coin.transform = Transform3D(Basis.looking_at(tangent, Vector3.UP), track.to_global(sc.point_at(d)) + Vector3.UP * 1.0)
+			add_child(coin)
+			coin.body_entered.connect(_on_body_entered.bind(coin))
+			_coins.append(coin)
 
 
 func available_count() -> int:

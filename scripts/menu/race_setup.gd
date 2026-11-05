@@ -8,8 +8,6 @@ const GRAND_PRIX: Array[String] = [
 	"res://resources/grand_prix/american_circuit.tres",
 	"res://resources/grand_prix/world_circuit.tres",
 ]
-## Only the test circuit exists until Phase 6.
-const TRACKS: Array[String] = ["Test Circuit"]
 const ROSTER := "res://resources/racers/rival_roster.tres"
 const DIFFICULTIES: Array[String] = ["easy", "normal", "hard"]
 
@@ -28,6 +26,7 @@ var _start: Button
 
 func _ready() -> void:
 	InputSetup.ensure_actions()
+	Music.play(get_tree(), Music.MENU)
 	mode = GameSession.setup_mode
 	_build()
 	_restore()
@@ -58,8 +57,11 @@ func make_config() -> RaceConfig:
 	config.difficulty = load(Championship.DIFFICULTY_PATH % difficulty_id()) as AIDifficulty
 	config.total_laps = _laps.selected + 1
 	config.weapons_enabled = _weapons.button_pressed
-	config.track_name = TRACKS[_track.selected] if mode != RaceConfig.Mode.GRAND_PRIX else ""
+	if mode != RaceConfig.Mode.GRAND_PRIX:
+		config.track_name = TrackCatalog.names()[_track.selected]
+		config.track_scene = TrackCatalog.scene(config.track_name)
 	config.vehicle_id = vehicle().id
+	config.rival_plates = RaceConfig.random_plates(7, PlayerProfile.get_profile().plate_text)
 	return config
 
 
@@ -106,7 +108,7 @@ func _update_note() -> void:
 		RaceConfig.Mode.GRAND_PRIX:
 			var gp := load(GRAND_PRIX[_track.selected]) as GrandPrixData
 			lines.append("Races: " + ", ".join(gp.track_names))
-			lines.append("3 races, 3 laps each, saved between races. Every race uses the test circuit for now.")
+			lines.append("3 races, 3 laps each, saved between races. Tracks not built yet run on the test circuit.")
 			var best := PlayerProfile.get_profile().best_grand_prix(gp.id)
 			if best > 0:
 				lines.append("Your best result: P%d" % best)
@@ -115,7 +117,7 @@ func _update_note() -> void:
 		RaceConfig.Mode.ELIMINATION:
 			lines.append("Always 3 laps. The last two are out at each lap's midpoint gate.")
 		_:
-			var best := PlayerProfile.get_profile().best_for(TRACKS[_track.selected], _laps.selected + 1)
+			var best := PlayerProfile.get_profile().best_for(TrackCatalog.names()[_track.selected], _laps.selected + 1)
 			if best.has("race"):
 				lines.append("Personal best (%d laps): %s   best lap %s" % [_laps.selected + 1,
 						RaceProgress.format_time(float(best.race)), RaceProgress.format_time(float(best.get("lap", -1.0)))])
@@ -148,7 +150,7 @@ func _build() -> void:
 		for path in GRAND_PRIX:
 			_track.add_item((load(path) as GrandPrixData).display_name)
 	else:
-		for t in TRACKS:
+		for t in TrackCatalog.names():
 			_track.add_item(t)
 	_track.item_selected.connect(func(_i: int) -> void: _update_note())
 	left.add_child(_row("Championship" if mode == RaceConfig.Mode.GRAND_PRIX else "Track", _track))

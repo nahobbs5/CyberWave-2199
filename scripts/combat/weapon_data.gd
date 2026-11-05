@@ -9,6 +9,8 @@ enum Kind { PROJECTILE, GUIDED, AREA, HAZARD, SELF_BOOST, SHIELD }
 @export var display_name: String = "Weapon"
 @export var kind: Kind = Kind.PROJECTILE
 @export var color: Color = Color.WHITE
+## HUD slot picture (from the Weapon Arsenal concept art).
+@export var icon: Texture2D
 ## Uses lock-on targeting while selected (GDD 6.2).
 @export var targeted: bool = false
 ## Uses per pickup; the slot empties after the last one (e.g. Triple Nitro).

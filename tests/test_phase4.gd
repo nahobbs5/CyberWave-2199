@@ -35,6 +35,7 @@ func _run_all() -> void:
 	_test_save_load()
 	_test_elimination_rules()
 	_test_triple_nitro_inventory()
+	_test_rival_plates()
 	await _test_mode_select()
 	await _run("pause menu", _test_pause, _config(RaceConfig.Mode.VERSUS))
 	await _run("triple nitro in a race", _test_triple_nitro_race, _config(RaceConfig.Mode.VERSUS))
@@ -224,6 +225,28 @@ func _test_elimination_rules() -> void:
 	_check(out.size() == 2 and t.is_done() and t.active_racers().size() == 4, "lap 3: two left after the last gate")
 
 
+func _test_rival_plates() -> void:
+	_current = "rival plates"
+	print("- rival plates (no scene)")
+	var plates := RaceConfig.random_plates(7, "CW-2199")
+	var valid := RegEx.create_from_string("^[A-Z]{3}-[0-9]{3}$")
+	var ok := plates.size() == 7 and not plates.has("CW-2199")
+	for i in plates.size():
+		ok = ok and valid.search(plates[i]) != null and PlayerProfile.sanitize_plate(plates[i]) == plates[i]
+		ok = ok and plates.find(plates[i]) == i
+	_check(ok, "7 distinct valid plates, never the player's (%s)" % [plates])
+	_check(RaceConfig.random_plates(7) != RaceConfig.random_plates(7), "each series rolls new plates")
+	var c := Championship.create(load(GP1), "normal", true, load(ROSTER))
+	var first := c.make_race_config().rival_plates
+	c.record_race(_ids([0, 1, 2, 3, 4, 5, 6, -1]))
+	_check(first.size() == 7 and c.make_race_config().rival_plates == first, "Grand Prix keeps its plates race to race")
+	var data := c.to_dict()
+	_check(Championship.from_dict(data).rival_plates == first, "plates survive save / load")
+	data.erase("plates")
+	var old := Championship.from_dict(data)
+	_check(old != null and old.rival_plates.size() == 7, "an older save without plates gets new ones")
+
+
 func _test_triple_nitro_inventory() -> void:
 	_current = "triple nitro inventory"
 	print("- triple nitro inventory (no scene)")
@@ -261,12 +284,16 @@ func _test_mode_select() -> void:
 	_check(GameSession.current != null and GameSession.current.mode == RaceConfig.Mode.VERSUS
 			and GameSession.current.total_laps == 3 and GameSession.current.weapons_enabled, "Versus: default settings")
 	setup.queue_free()
+	var versus_plates := GameSession.current.rival_plates
+	_check(versus_plates.size() == 7, "Versus rolls 7 rival plates")
 	setup = await _open_setup(RaceConfig.Mode.ELIMINATION)
 	setup._laps.selected = 4
 	setup._difficulty.selected = 2
 	setup.start()
 	_check(GameSession.current.is_elimination() and GameSession.current.total_laps == 5
 			and GameSession.current.difficulty.resource_path.ends_with("hard.tres"), "Elimination with chosen settings")
+	_check(GameSession.current.rival_plates.size() == 7 and GameSession.current.rival_plates != versus_plates,
+			"a new set gets new plates")
 	setup.queue_free()
 	setup = await _open_setup(RaceConfig.Mode.GRAND_PRIX)
 	setup.start()

@@ -1,0 +1,72 @@
+class_name Music
+extends RefCounted
+## Background music that carries across scene changes. Static like
+## GameSession, so no autoload: one AudioStreamPlayer lives under the tree
+## root and crossfades between tracks. Asking for the track that's already
+## playing does nothing, so moving between menus doesn't restart the song.
+
+const MENU := "res://music/ikoliks_aj-cyberpunk-cyberpunk-music-614562.mp3"
+const GARAGE := "res://music/ikoliks-wings-of-hope-no-copyright-music-background-corporate-380579.mp3"
+
+const FADE := 0.6
+const SILENT_DB := -40.0
+
+static var _player: AudioStreamPlayer
+static var _path: String = ""
+static var _tween: Tween
+
+
+static func play(tree: SceneTree, path: String) -> void:
+	if path == _path:
+		return
+	_path = path
+	var player := _ensure_player(tree)
+	var stream := load(path) as AudioStream
+	if stream is AudioStreamMP3:
+		(stream as AudioStreamMP3).loop = true
+	_restart_tween(tree)
+	if player.playing:
+		_tween.tween_property(player, "volume_db", SILENT_DB, FADE * 0.5)
+	_tween.tween_callback(func() -> void:
+		player.stream = stream
+		player.volume_db = SILENT_DB
+		player.play())
+	_tween.tween_property(player, "volume_db", 0.0, FADE)
+
+
+static func stop(tree: SceneTree) -> void:
+	if _path == "":
+		return
+	_path = ""
+	var player := _ensure_player(tree)
+	_restart_tween(tree)
+	_tween.tween_property(player, "volume_db", SILENT_DB, FADE)
+	_tween.tween_callback(player.stop)
+
+
+## Path of the track playing (or fading in), "" when stopped.
+static func current_path() -> String:
+	return _path
+
+
+static func get_player() -> AudioStreamPlayer:
+	return _player if is_instance_valid(_player) else null
+
+
+static func _ensure_player(tree: SceneTree) -> AudioStreamPlayer:
+	if not is_instance_valid(_player):
+		GameSettings.ensure_loaded()
+		_player = AudioStreamPlayer.new()
+		_player.name = "MusicPlayer"
+		_player.bus = &"Music"
+		_player.process_mode = Node.PROCESS_MODE_ALWAYS
+		tree.root.add_child.call_deferred(_player)
+	return _player
+
+
+## Tweens run on the tree, not a scene node, so a scene change doesn't cut a fade.
+static func _restart_tween(tree: SceneTree) -> void:
+	if _tween != null and _tween.is_valid():
+		_tween.kill()
+	_tween = tree.create_tween()
+	_tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)

@@ -382,8 +382,11 @@ func _test_hud_layout(race: RaceManager) -> void:
 			"weapon slots are in the top left (%s in %s)" % [slot, view])
 	var info := hud._standings_label.get_global_rect()
 	_check(info.position.y >= slot.end.y, "race info sits below the slots")
-	# Bottom right is kept clear for the minimap.
+	# The minimap owns the bottom-right corner; nothing else sits there.
 	var corner := Rect2(view * 0.6, view * 0.4)
+	var map := hud.minimap
+	var map_rect := map.get_global_rect()
+	_check(map.is_visible_in_tree() and corner.encloses(map_rect), "minimap in the bottom-right corner (%s)" % map_rect)
 	var clashes: Array[String] = []
 	for layer in [hud, race.get_node_or_null("PrototypeHUD")]:
 		if layer == null:
@@ -391,9 +394,25 @@ func _test_hud_layout(race: RaceManager) -> void:
 		for node in (layer as Node).find_children("*", "Control", true, false):
 			var c := node as Control
 			var shows_something := (c is Label and (c as Label).text != "") or c is PanelContainer
-			if shows_something and c.is_visible_in_tree() and c.get_global_rect().intersects(corner):
+			if shows_something and c.is_visible_in_tree() and c.get_global_rect().intersects(map_rect):
 				clashes.append(c.name)
-	_check(clashes.is_empty(), "bottom-right corner is free for the minimap (%s)" % [clashes])
+	_check(clashes.is_empty(), "nothing overlaps the minimap (%s)" % [clashes])
+	_check(map.visible_racers().size() == 8, "a marker per racer")
+	var p := map.world_to_map(race.player.vehicle.global_position)
+	_check(Rect2(Vector2.ZERO, map.size).has_point(p), "the player is on the map (%s)" % p)
+	# Weapon slots show the weapon's picture rather than its name.
+	var weapons_ok := true
+	for w in race.weapon_manager.weapons:
+		weapons_ok = weapons_ok and w.icon != null
+	_check(weapons_ok, "every weapon has an icon")
+	var inv := race.player.vehicle.inventory
+	inv.clear()
+	inv.add(load(W["firewall"]))
+	await _frames(2)
+	_check(hud.get_slot_icon(0) == (load(W["firewall"]) as WeaponData).icon and hud.get_slot_icon(1) == null,
+			"slot 1 shows the Firewall picture, slot 2 is empty")
+	_check(not hud._slot_names[0].visible, "no weapon name text when there's a picture")
+	inv.clear()
 
 
 func _test_spike(race: RaceManager) -> void:

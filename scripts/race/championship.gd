@@ -26,6 +26,8 @@ var next_grid: Array[int] = []
 var vehicle_id: String = PlayerProfile.DEFAULT_VEHICLE
 ## Rival names in roster order, so a save shows who raced.
 var rival_names: PackedStringArray = PackedStringArray()
+## Rival plates by roster index, the same for the whole championship.
+var rival_plates: PackedStringArray = PackedStringArray()
 ## Coins already paid out this championship (GDD 13.2 rewards issued).
 var coins_awarded: int = 0
 var difficulty_id: String = "normal"
@@ -44,6 +46,7 @@ static func create(p_gp: GrandPrixData, p_difficulty_id: String, p_weapons: bool
 		count = mini(roster.rivals.size(), 7)
 		for profile in roster.rivals:
 			c.rival_names.append(profile.display_name)
+	c.rival_plates = RaceConfig.random_plates(7, PlayerProfile.get_profile().plate_text)
 	# Race 1: the seven rivals fill slots 1-7, the player starts eighth.
 	c.next_grid = RaceConfig.default_grid(count)
 	for id in c.next_grid:
@@ -122,6 +125,7 @@ func make_race_config() -> RaceConfig:
 	config.grid_order = next_grid.duplicate()
 	config.championship = self
 	config.vehicle_id = vehicle_id
+	config.rival_plates = rival_plates
 	return config
 
 
@@ -140,6 +144,7 @@ func to_dict() -> Dictionary:
 		"next_grid": next_grid,
 		"vehicle": vehicle_id,
 		"rivals": Array(rival_names),
+		"plates": Array(rival_plates),
 		"coins_awarded": coins_awarded,
 		"difficulty": difficulty_id,
 		"weapons": weapons_enabled,
@@ -167,6 +172,9 @@ static func from_dict(data: Dictionary) -> Championship:
 		c.next_grid.append(int(id))
 	c.vehicle_id = str(data.get("vehicle", c.vehicle_id))
 	c.rival_names = PackedStringArray(data.get("rivals", []))
+	c.rival_plates = PackedStringArray(data.get("plates", []))
+	if c.rival_plates.size() < 7: # saved before plates were random
+		c.rival_plates = RaceConfig.random_plates(7, PlayerProfile.get_profile().plate_text)
 	c.coins_awarded = int(data.get("coins_awarded", 0))
 	c.difficulty_id = str(data.get("difficulty", "normal"))
 	c.weapons_enabled = bool(data.get("weapons", true))
