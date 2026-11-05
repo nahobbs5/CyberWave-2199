@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="WeaponData" format=3]
+
+[ext_resource type="Script" path="res://scripts/combat/weapon_data.gd" id="1_6lq0x"]
+
+[resource]
+script = ExtResource("1_6lq0x")
+id = &"hunter_drone"
+display_name = "Hunter Drone"
+kind = 1
+color = Color(1, 0.25, 0.8, 1)
+targeted = true
+effect = &"stun"
+effect_duration = 0.8
+strips_item = true
+speed = 62.0
+lifetime = 8.0
+weight_front = 0.3
+weight_back = 1.5

@@ -25,14 +25,16 @@ anchor_right = 1.0
 offset_left = -380.0
 offset_top = 16.0
 offset_right = -20.0
-offset_bottom = 180.0
+offset_bottom = 220.0
 grow_horizontal = 0
 theme_override_font_sizes/font_size = 14
 text = "W/S  accelerate / brake-reverse
 A/D  steer
 Shift + A/D  drift (release Shift to boost)
 C    cycle camera
-R    reset vehicle"
+R    reset vehicle
+1/2  select weapon   Space  fire
+Esc  pause"
 horizontal_alignment = 2
 
 [node name="Notice" type="CenterContainer" parent="."]

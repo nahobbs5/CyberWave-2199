@@ -9,7 +9,10 @@ extends RigidBody3D
 ## Wheel nodes: RayCast3D children named "Wheel*" (front wheels "WheelF*"),
 ## each with a "Pivot" Node3D child holding the wheel mesh.
 
+## Drift boost fired (level 1-3).
 signal boost_started(level: int)
+## Non-drift boost fired (e.g. Nitro Overload).
+signal external_boost_started(label: String)
 signal boost_ended
 ## Emitted on a sudden large loss of forward speed (barrier hit, etc.).
 signal heavy_impact(speed_lost: float)
@@ -41,9 +44,13 @@ var ground_normal: Vector3 = Vector3.UP
 
 var boost_level: int = 0
 var boost_time_left: float = 0.0
+## What the current boost is called and its colour (for HUD and effects).
+var boost_label: String = ""
+var boost_color: Color = Color.WHITE
 
 var _boost_extra_speed: float = 0.0
 var _pending_kick: float = 0.0
+var _pending_speed_scale: float = 1.0
 var _has_pending_teleport: bool = false
 var _pending_teleport: Transform3D
 var _prev_forward_speed: float = 0.0
@@ -52,6 +59,10 @@ var _wheels: Array[RayCast3D] = []
 
 @onready var drift: DriftController = $DriftController
 @onready var recovery: VehicleRecovery = $VehicleRecovery
+## Optional combat nodes (absent cars just ignore weapons).
+@onready var status: StatusEffects = get_node_or_null("StatusEffects")
+@onready var inventory: ItemInventory = get_node_or_null("ItemInventory")
+@onready var targeting: TargetingSystem = get_node_or_null("TargetingSystem")
 
 
 func _ready() -> void:
@@ -121,7 +132,23 @@ func is_boosting() -> bool:
 
 
 func get_speed_cap() -> float:
-	return stats.top_speed + _boost_extra_speed
+	var multiplier := status.speed_multiplier() if status != null else 1.0
+	return (stats.top_speed + _boost_extra_speed) * multiplier
+
+
+## Keeps this fraction of the current speed on the next physics step (stuns).
+func scrub_speed(fraction_kept: float) -> void:
+	_pending_speed_scale = minf(_pending_speed_scale, clampf(fraction_kept, 0.0, 1.0))
+
+
+## A boost that isn't from drifting (Nitro Overload).
+func start_external_boost(extra_speed: float, duration: float, kick: float, label: String, color: Color) -> void:
+	boost_time_left = maxf(boost_time_left, duration)
+	_boost_extra_speed = maxf(_boost_extra_speed, extra_speed)
+	_pending_kick = maxf(_pending_kick, kick)
+	boost_label = label
+	boost_color = color
+	external_boost_started.emit(label)
 
 
 func start_boost(level: int) -> void:
@@ -134,6 +161,8 @@ func start_boost(level: int) -> void:
 	_boost_extra_speed = maxf(_boost_extra_speed, stats.boost_extra_speed[index])
 	# The kick is applied through the physics state on the next step.
 	_pending_kick = maxf(_pending_kick, stats.boost_kick[index])
+	boost_label = DriftController.LEVEL_NAMES[boost_level]
+	boost_color = DriftController.LEVEL_COLORS[boost_level]
 	boost_started.emit(level)
 
 
@@ -142,6 +171,7 @@ func clear_boost() -> void:
 	boost_level = 0
 	boost_time_left = 0.0
 	_boost_extra_speed = 0.0
+	boost_label = ""
 	if was_boosting:
 		boost_ended.emit()
 
@@ -153,6 +183,7 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 		state.linear_velocity = Vector3.ZERO
 		state.angular_velocity = Vector3.ZERO
 		_pending_kick = 0.0
+		_pending_speed_scale = 1.0
 		_prev_forward_speed = 0.0
 		forward_speed = 0.0
 		lateral_speed = 0.0
@@ -179,6 +210,17 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 		drift.cancel("collision")
 	_prev_forward_speed = forward_speed
 
+	# Status effects override the driver's inputs for this step.
+	if status != null:
+		if not status.can_drive():
+			throttle_input = 0.0
+			brake_input = 0.0
+			steer_input = 0.0
+		if not status.can_charge_drift():
+			drift_left_held = false
+			drift_right_held = false
+			drift.cancel("disrupted")
+
 	var boost_to_fire := drift.update(dt, drift_left_held, drift_right_held,
 			grounded_wheels >= 2, forward_speed, lateral_speed, stats)
 
@@ -195,6 +237,9 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 		if traction > 0.0:
 			velocity += fwd * _pending_kick
 		_pending_kick = 0.0
+	if _pending_speed_scale < 1.0:
+		velocity = Vector3(velocity.x * _pending_speed_scale, velocity.y, velocity.z * _pending_speed_scale)
+		_pending_speed_scale = 1.0
 	state.linear_velocity = velocity
 
 	if boost_to_fire > 0:
@@ -258,6 +303,8 @@ func _apply_drive(velocity: Vector3, fwd: Vector3, dt: float, traction: float) -
 func _apply_grip(velocity: Vector3, fwd: Vector3, dt: float, traction: float) -> Vector3:
 	var drifting := drift.is_drifting()
 	var grip_rate := stats.drift_grip if drifting else stats.grip
+	if status != null:
+		grip_rate *= status.grip_multiplier()
 	var retention := stats.drift_speed_retention if drifting else stats.grip_speed_retention
 
 	var normal := ground_normal

@@ -49,6 +49,7 @@ func _ready() -> void:
 	drift.drift_ended.connect(_on_drift_ended)
 	drift.drift_cancelled.connect(_on_drift_cancelled)
 	_vehicle.boost_started.connect(_on_boost_started)
+	_vehicle.external_boost_started.connect(func(_label: String) -> void: _play(_boost_player, "boost"))
 
 
 func _process(delta: float) -> void:
@@ -65,6 +66,9 @@ func _process(delta: float) -> void:
 		_glow.light_energy = 2.0 + float(drift.level)
 
 	var boosting := _vehicle.is_boosting()
+	if boosting:
+		_flame_material.albedo_color = _vehicle.boost_color
+		_flame_material.emission = _vehicle.boost_color
 	for flame in _flames:
 		flame.visible = boosting
 		if boosting:

@@ -5,6 +5,9 @@
 [ext_resource type="Script" path="res://scripts/vehicles/drift_controller.gd" id="3_drift"]
 [ext_resource type="Script" path="res://scripts/vehicles/vehicle_recovery.gd" id="4_recovery"]
 [ext_resource type="Script" path="res://scripts/vehicles/vehicle_feedback.gd" id="5_feedback"]
+[ext_resource type="Script" path="res://scripts/combat/status_effects.gd" id="6_status"]
+[ext_resource type="Script" path="res://scripts/combat/item_inventory.gd" id="7_inventory"]
+[ext_resource type="Script" path="res://scripts/combat/targeting_system.gd" id="8_targeting"]
 
 [sub_resource type="PhysicsMaterial" id="PhysicsMaterial_body"]
 friction = 0.2
@@ -210,6 +213,15 @@ script = ExtResource("3_drift")
 
 [node name="VehicleRecovery" type="Node" parent="."]
 script = ExtResource("4_recovery")
+
+[node name="StatusEffects" type="Node" parent="."]
+script = ExtResource("6_status")
+
+[node name="ItemInventory" type="Node" parent="."]
+script = ExtResource("7_inventory")
+
+[node name="TargetingSystem" type="Node" parent="."]
+script = ExtResource("8_targeting")
 
 [node name="Feedback" type="Node3D" parent="."]
 script = ExtResource("5_feedback")

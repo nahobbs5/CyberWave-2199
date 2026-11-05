@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="GrandPrixData" format=3]
+
+[ext_resource type="Script" path="res://scripts/race/grand_prix_data.gd" id="1_gp"]
+
+[resource]
+script = ExtResource("1_gp")
+id = "american_circuit"
+display_name = "Grand Prix 1 — American Circuit"
+track_names = PackedStringArray("The Stacks Grand Prix", "Six Flags New Orleans", "Vegas Overdrive")
+locations = PackedStringArray("Library of Congress, Washington, DC", "Louisiana", "Las Vegas, Nevada")
+track_scenes = PackedStringArray("res://scenes/tracks/test_circuit.tscn", "res://scenes/tracks/test_circuit.tscn", "res://scenes/tracks/test_circuit.tscn")

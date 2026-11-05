@@ -18,3 +18,9 @@ extends Resource
 @export_range(0.0, 1.0) var drift_chance: float = 0.65
 ## Target-speed adjustment per 200 m gap to the player (0 = no rubber-banding).
 @export_range(0.0, 0.3) var rubber_band: float = 0.03
+
+@export_group("Weapons")
+## Seconds between weapon decisions.
+@export var weapon_reaction: float = 0.4
+## Chance (0-1) of acting on each decision.
+@export_range(0.0, 1.0) var weapon_skill: float = 0.8

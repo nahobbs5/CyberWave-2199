@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="WeaponData" format=3]
+
+[ext_resource type="Script" path="res://scripts/combat/weapon_data.gd" id="1_sv503"]
+
+[resource]
+script = ExtResource("1_sv503")
+id = &"firewall"
+display_name = "Firewall"
+kind = 5
+color = Color(1, 0.45, 0.15, 1)
+effect = &"shield"
+effect_duration = 10.0
+lifetime = 10.0
+weight_front = 1.4
+weight_back = 0.6

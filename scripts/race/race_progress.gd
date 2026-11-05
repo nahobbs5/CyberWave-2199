@@ -8,6 +8,8 @@ extends RefCounted
 ## it, so their first crossing starts lap 1 rather than completing a lap.
 
 var vehicle: VehicleController
+## RaceConfig.PLAYER_ID or the rival's roster index (stable across a Grand Prix).
+var racer_id: int = RaceConfig.PLAYER_ID
 var display_name: String
 var color: Color
 var is_player: bool
@@ -20,7 +22,11 @@ var lap: int = 0
 var next_checkpoint: int = 0
 ## Valid gate crossings so far (including the first start-line crossing).
 var checkpoints_passed: int = 0
+## Out of the race: crossed the line, or was eliminated / classified.
 var finished: bool = false
+## Elimination mode: knocked out at a lap-midpoint checkpoint (also finished).
+var eliminated: bool = false
+var eliminated_lap: int = 0
 var finish_time: float = -1.0
 ## 1 = winner. 0 until finished.
 var finish_position: int = 0
@@ -88,6 +94,9 @@ func compute_distance(track: TrackCircuit) -> float:
 
 ## True when a is ahead of b in the standings.
 static func is_ahead(a: RaceProgress, b: RaceProgress) -> bool:
+	# Eliminated racers count as finished but always rank behind everyone still in.
+	if a.eliminated != b.eliminated:
+		return b.eliminated
 	if a.finished != b.finished:
 		return a.finished
 	if a.finished:

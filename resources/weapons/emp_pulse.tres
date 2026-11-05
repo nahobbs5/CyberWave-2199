@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="WeaponData" format=3]
+
+[ext_resource type="Script" path="res://scripts/combat/weapon_data.gd" id="1_wew4n"]
+
+[resource]
+script = ExtResource("1_wew4n")
+id = &"emp_pulse"
+display_name = "EMP Pulse"
+kind = 2
+color = Color(0.35, 0.6, 1, 1)
+effect = &"emp"
+effect_duration = 1.5
+weapon_lock_duration = 5.0
+radius = 22.0
+weight_front = 0.8

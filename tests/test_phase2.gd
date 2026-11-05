@@ -51,6 +51,8 @@ func _run(test_name: String, test: Callable, options: Dictionary) -> void:
 	race.auto_start = options.get("auto_start", true)
 	race.player_uses_autopilot = options.get("player_uses_autopilot", false)
 	race.total_laps = options.get("total_laps", 3)
+	# Phase 2 tests cover pure racing; Phase 3 tests cover weapons.
+	race.weapons_enabled = false
 	if options.get("oval", false):
 		(race.get_node("TestCircuit") as TrackCircuit).control_points = PackedVector3Array(OVAL)
 	root.add_child(race)

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="WeaponData" format=3]
+
+[ext_resource type="Script" path="res://scripts/combat/weapon_data.gd" id="1_8eo23"]
+
+[resource]
+script = ExtResource("1_8eo23")
+id = &"nitro_overload"
+display_name = "Nitro Overload"
+kind = 4
+color = Color(1, 0.5, 0.1, 1)
+effect_duration = 3.0
+boost_extra_speed = 10.0
+boost_kick = 4.0
+weight_front = 0.4
+weight_back = 1.6

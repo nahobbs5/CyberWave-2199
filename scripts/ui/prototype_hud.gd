@@ -52,8 +52,8 @@ func _process(delta: float) -> void:
 
 	var drift := _vehicle.drift
 	if _vehicle.is_boosting():
-		_drift_label.text = "BOOST  %s" % DriftController.LEVEL_NAMES[_vehicle.boost_level].to_upper()
-		_drift_label.modulate = DriftController.LEVEL_COLORS[_vehicle.boost_level]
+		_drift_label.text = "BOOST  %s" % _vehicle.boost_label.to_upper()
+		_drift_label.modulate = _vehicle.boost_color
 	elif drift.is_drifting():
 		_drift_label.text = "DRIFT %s  %.1fs  %s" % [
 			"L" if drift.direction < 0 else "R", drift.charge_time, DriftController.LEVEL_NAMES[drift.level]]
@@ -63,9 +63,10 @@ func _process(delta: float) -> void:
 		_drift_label.modulate = Color(1, 1, 1, 0.6)
 
 	var lap_time := _race_clock - _lap_start_time if _lap_start_time >= 0.0 else 0.0
-	if not show_lap_info:
-		_info_label.text = "Camera: %s" % _camera.get_profile().display_name
-	else:
+	# In races the top-left corner belongs to RaceHUD (weapon slots, race info);
+	# camera changes still show the centred notice.
+	_info_label.visible = show_lap_info
+	if show_lap_info:
 		_info_label.text = "Camera: %s\nLap %d   %s\nLast %s   Best %s" % [
 		_camera.get_profile().display_name, _lap_count + 1, _fmt(lap_time), _fmt(_last_lap_time), _fmt(_best_lap_time)]
 

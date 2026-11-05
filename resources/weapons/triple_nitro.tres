@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="WeaponData" format=3]
+
+[ext_resource type="Script" path="res://scripts/combat/weapon_data.gd" id="1_3nitro"]
+
+[resource]
+script = ExtResource("1_3nitro")
+id = &"triple_nitro"
+display_name = "Triple Nitro"
+kind = 4
+color = Color(1, 0.8, 0.15, 1)
+charges = 3
+effect_duration = 3.0
+boost_extra_speed = 10.0
+boost_kick = 4.0
+weight_front = 0.05
+weight_back = 0.7

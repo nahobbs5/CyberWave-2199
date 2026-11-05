@@ -10,6 +10,15 @@
 [ext_resource type="Resource" path="res://resources/cameras/close_chase.tres" id="8_close"]
 [ext_resource type="PackedScene" path="res://scenes/ui/prototype_hud.tscn" id="9_proto_hud"]
 [ext_resource type="Script" path="res://scripts/ui/race_hud.gd" id="10_race_hud"]
+[ext_resource type="Script" path="res://scripts/combat/weapon_manager.gd" id="11_weapons"]
+[ext_resource type="Script" path="res://scripts/combat/weapon_data.gd" id="12_weapon_data"]
+[ext_resource type="Resource" path="res://resources/weapons/railgun.tres" id="13_railgun"]
+[ext_resource type="Resource" path="res://resources/weapons/hunter_drone.tres" id="14_drone"]
+[ext_resource type="Resource" path="res://resources/weapons/emp_pulse.tres" id="15_emp"]
+[ext_resource type="Resource" path="res://resources/weapons/road_spike.tres" id="16_spike"]
+[ext_resource type="Resource" path="res://resources/weapons/nitro_overload.tres" id="17_nitro"]
+[ext_resource type="Resource" path="res://resources/weapons/firewall.tres" id="18_firewall"]
+[ext_resource type="Resource" path="res://resources/weapons/triple_nitro.tres" id="19_triple_nitro"]
 
 [node name="Race" type="Node3D"]
 script = ExtResource("1_race")
@@ -18,6 +27,10 @@ rival_roster = ExtResource("3_roster")
 difficulty = ExtResource("4_normal")
 
 [node name="TestCircuit" parent="." instance=ExtResource("5_track")]
+
+[node name="WeaponManager" type="Node3D" parent="."]
+script = ExtResource("11_weapons")
+weapons = Array[ExtResource("12_weapon_data")]([ExtResource("13_railgun"), ExtResource("14_drone"), ExtResource("15_emp"), ExtResource("16_spike"), ExtResource("17_nitro"), ExtResource("18_firewall"), ExtResource("19_triple_nitro")])
 
 [node name="ChaseCamera" type="Camera3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5, 120)

@@ -48,6 +48,12 @@ signal checkpoint_crossed(index: int, body: Node3D)
 @export var checkpoint_count: int = 8
 @export var checkpoint_depth: float = 4.0
 
+@export_group("Weapon Crates")
+## Track offsets of each row of crates (layout-specific; set in the scene).
+@export var crate_row_offsets: PackedFloat32Array = PackedFloat32Array()
+## Lateral positions (metres right of centre) of the crates in each row.
+@export var crate_lateral_positions: PackedFloat32Array = PackedFloat32Array([-6.0, -2.0, 2.0, 6.0])
+
 @export_group("Starting Grid")
 ## Distance from the start line back to the pole position slot.
 @export var grid_first_row_gap: float = 8.0

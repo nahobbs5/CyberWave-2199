@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="Cyberwave 2199"
-run/main_scene="res://scenes/race/race.tscn"
+run/main_scene="res://scenes/menu/mode_select.tscn"
 config/features=PackedStringArray("4.7", "Forward Plus")
 config/icon="res://icon.svg"
 

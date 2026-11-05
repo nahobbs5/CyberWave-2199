@@ -1,5 +1,5 @@
 # CYBERWAVE 2199
-## Game Design Document — Version 1.1
+## Game Design Document — Version 1.3
 
 **Status:** Development Baseline  
 **Engine:** Godot 4  
@@ -97,6 +97,7 @@ Both championships are available immediately.
 - Race 3: Starting grid follows Race 2 finishing order.
 - AI identities remain consistent across the championship.
 - Grid positions are based on the immediately preceding race, not cumulative points.
+- A race's result is fixed when the player finishes: racers still on track are classified in their current race order.
 
 ### Championship Points
 
@@ -364,11 +365,12 @@ Automatic targeting with lock-on is the standard system.
 
 | Weapon | Effect | Initial Duration |
 |---|---|---|
-| EMP Pulse | Disrupts nearby opponent electronics | 1.5s |
+| EMP Pulse | Disrupts nearby opponent electronics | 1.5s disruption, weapons offline 5s |
 | Hunter Drone | Pursues and stuns a target | 0.8s stun |
 | Holo Decoy | Creates a false vehicle | 8s lifetime |
 | Road Spike | Deploys electrified spikes | 12s lifetime, 1s traction penalty |
 | Nitro Overload | Temporary speed boost | 3s |
+| Triple Nitro | Three Nitro Overload charges in one slot, used one at a time | 3s per charge |
 | Gravity Mine | Creates a localized gravity pull | 12s lifetime, 1.5s pull |
 | Firewall | Blocks one incoming attack | Maximum 10s |
 | System Glitch | Interferes with HUD and steering | 2s |
@@ -397,6 +399,7 @@ Weapons may affect their owner **only when that makes sense for their mechanics*
 | Holo Decoy | No |
 | Road Spike | Yes |
 | Nitro Overload | No |
+| Triple Nitro | No |
 | Gravity Mine | Yes |
 | Firewall | No |
 | System Glitch | No |
@@ -416,6 +419,7 @@ Once armed, they follow the same collision and effect rules for every racer.
 - Players should receive incoming attack warnings when appropriate.
 - Powerful offensive weapons should be less common for race leaders.
 - Trailing racers may receive better opportunities for recovery and overtaking.
+- A landed Hunter Drone or Railgun hit knocks out the victim's selected weapon. Hits blocked by a Firewall or stun protection cost nothing.
 
 Weapon distribution will be tuned during testing.
 
@@ -1098,12 +1102,12 @@ Detailed artwork, weapons, cosmetics, and completed environments are not require
 # 20. Document Control
 
 **Project:** Cyberwave 2199  
-**Document Version:** 1.1  
+**Document Version:** 1.3  
 **Status:** Approved design baseline for initial development  
 **Engine:** Godot 4  
 **Initial Platform:** Windows PC  
 **Initial Mode:** Single-player  
-**Core Content:** 8 vehicles, 6 tracks, 11 weapons, 3 game modes  
+**Core Content:** 8 vehicles, 6 tracks, 12 weapons, 3 game modes  
 **Progression:** Coins and cosmetic customization  
 **Next Milestone:** First playable driving and racing prototype
 
@@ -1115,5 +1119,7 @@ Changes after Version 1.0 should be tracked as revisions rather than silently re
 |---|---|---|
 | 1.0 | — | Approved design baseline. |
 | 1.1 | 2026-11-05 | Keyboard drift changed from Q / E to holding Shift while steering with A / D, after Phase 1 testing found it more intuitive (§3.2, §4.1, §16, §19). Gamepad drift buttons unchanged. |
+| 1.2 | 2026-11-05 | After Phase 3 testing: Hunter Drone and Railgun hits knock out the victim's selected weapon (§6.5); the EMP Pulse keeps weapons offline for 5 s (§6.3). |
+| 1.3 | 2026-11-05 | Phase 4: added Triple Nitro, three Nitro charges in one slot (§6.3, §6.4). Grand Prix results are fixed at the player's finish, classifying racers still on track by current position (§2.2). |
 
-**End of Game Design Document — Version 1.1**
+**End of Game Design Document — Version 1.3**

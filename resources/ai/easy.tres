@@ -13,3 +13,5 @@ reaction_time = 0.22
 line_wander = 2.0
 drift_chance = 0.3
 rubber_band = 0.06
+weapon_reaction = 0.8
+weapon_skill = 0.5
