@@ -7,8 +7,8 @@ extends Resource
 @export var display_name: String = "Placeholder GT"
 
 @export_group("Top Speed and Acceleration")
-@export var top_speed: float = 55.0
-@export var acceleration: float = 17.0
+@export var top_speed: float = 44.0
+@export var acceleration: float = 14.0
 @export var reverse_top_speed: float = 14.0
 @export var reverse_acceleration: float = 10.0
 @export var brake_deceleration: float = 34.0
@@ -18,23 +18,23 @@ extends Resource
 
 @export_group("Handling")
 ## Maximum yaw rate at low-to-mid speed.
-@export var handling: float = 1.9
+@export var handling: float = 2.4
 ## Fraction of handling left at top speed.
-@export var high_speed_steer_factor: float = 0.5
+@export var high_speed_steer_factor: float = 0.72
 ## Speed at which steering reaches full authority.
 @export var steer_full_speed: float = 8.0
 ## How quickly yaw rate approaches its target (1/s).
-@export var steer_response: float = 9.0
+@export var steer_response: float = 14.0
 ## How quickly sideways velocity is removed (1/s).
-@export var grip: float = 9.0
+@export var grip: float = 12.0
 ## How much speed is kept when grip redirects velocity (0 = scrubbed, 1 = kept).
 @export_range(0.0, 1.0) var grip_speed_retention: float = 0.35
 
 @export_group("Drift")
 ## Base yaw rate into the drift.
-@export var drift: float = 0.95
+@export var drift: float = 1.4
 ## Extra / reduced yaw rate from steering into / against the drift.
-@export var drift_steer_influence: float = 0.55
+@export var drift_steer_influence: float = 0.6
 @export var drift_grip: float = 2.4
 @export_range(0.0, 1.0) var drift_speed_retention: float = 0.85
 @export var drift_min_speed: float = 12.0

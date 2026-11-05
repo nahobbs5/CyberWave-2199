@@ -1,5 +1,5 @@
 # CYBERWAVE 2199
-## Game Design Document — Version 1.0
+## Game Design Document — Version 1.1
 
 **Status:** Development Baseline  
 **Engine:** Godot 4  
@@ -184,8 +184,7 @@ The physics model should prioritize enjoyable racing over realistic tire simulat
 | A | Steer left |
 | S | Brake / Reverse |
 | D | Steer right |
-| Q | Drift left |
-| E | Drift right |
+| Shift (hold) + A / D | Drift left / right |
 | Space | Use selected weapon |
 | 1 | Select item slot 1 |
 | 2 | Select item slot 2 |
@@ -221,11 +220,11 @@ Control remapping is recommended.
 
 Drifting is a central driving skill.
 
-- Q initiates a left drift.
-- E initiates a right drift.
+- Holding Shift while steering left or right starts a drift in that direction.
+- The drift continues while Shift is held; steering does not switch its direction.
 - Steering input controls the slide.
 - Valid drifting accumulates boost charge.
-- Releasing the drift button ends the drift and activates the accumulated boost.
+- Releasing Shift (or the gamepad drift button) ends the drift and activates the accumulated boost.
 
 A valid drift requires actual lateral movement. Holding the drift button while driving straight does not generate charge.
 
@@ -950,7 +949,7 @@ Implement:
 - One controllable vehicle
 - Acceleration and braking
 - Steering
-- Q/E drifting
+- Shift drifting
 - Three drift boost levels
 - Close and Far Chase cameras
 - Manual and automatic recovery
@@ -1081,7 +1080,7 @@ It must include:
 1. One placeholder vehicle.
 2. One graybox test circuit.
 3. Acceleration, braking, and steering.
-4. Q/E drifting with Cyan, Magenta, and Gold boosts.
+4. Shift drifting with Cyan, Magenta, and Gold boosts.
 5. Close and Far Chase cameras.
 6. Seven functioning AI racers.
 7. Three laps with checkpoint validation.
@@ -1099,7 +1098,7 @@ Detailed artwork, weapons, cosmetics, and completed environments are not require
 # 20. Document Control
 
 **Project:** Cyberwave 2199  
-**Document Version:** 1.0  
+**Document Version:** 1.1  
 **Status:** Approved design baseline for initial development  
 **Engine:** Godot 4  
 **Initial Platform:** Windows PC  
@@ -1110,4 +1109,11 @@ Detailed artwork, weapons, cosmetics, and completed environments are not require
 
 Changes after Version 1.0 should be tracked as revisions rather than silently replacing established requirements.
 
-**End of Game Design Document — Version 1.0**
+## Revision History
+
+| Version | Date | Change |
+|---|---|---|
+| 1.0 | — | Approved design baseline. |
+| 1.1 | 2026-11-05 | Keyboard drift changed from Q / E to holding Shift while steering with A / D, after Phase 1 testing found it more intuitive (§3.2, §4.1, §16, §19). Gamepad drift buttons unchanged. |
+
+**End of Game Design Document — Version 1.1**

@@ -15,8 +15,11 @@ static func ensure_actions() -> void:
 	_add("brake", TRIGGER_DEADZONE, [KEY_S, KEY_DOWN], [], [[JOY_AXIS_TRIGGER_LEFT, 1.0]])
 	_add("steer_left", STEER_DEADZONE, [KEY_A, KEY_LEFT], [], [[JOY_AXIS_LEFT_X, -1.0]])
 	_add("steer_right", STEER_DEADZONE, [KEY_D, KEY_RIGHT], [], [[JOY_AXIS_LEFT_X, 1.0]])
-	_add("drift_left", 0.5, [KEY_Q], [JOY_BUTTON_LEFT_SHOULDER], [])
-	_add("drift_right", 0.5, [KEY_E], [JOY_BUTTON_RIGHT_SHOULDER], [])
+	# Keyboard: hold Shift and steer (A/D) to drift that way.
+	# Gamepad keeps dedicated left/right drift buttons (GDD 3.3).
+	_add("drift", 0.5, [KEY_SHIFT], [], [])
+	_add("drift_left", 0.5, [], [JOY_BUTTON_LEFT_SHOULDER], [])
+	_add("drift_right", 0.5, [], [JOY_BUTTON_RIGHT_SHOULDER], [])
 	_add("cycle_camera", 0.5, [KEY_C], [JOY_BUTTON_BACK], [])
 	_add("reset_vehicle", 0.5, [KEY_R], [JOY_BUTTON_Y], [])
 

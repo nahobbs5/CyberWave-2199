@@ -30,7 +30,7 @@ grow_horizontal = 0
 theme_override_font_sizes/font_size = 14
 text = "W/S  accelerate / brake-reverse
 A/D  steer
-Q/E  drift left / right (release to boost)
+Shift + A/D  drift (release Shift to boost)
 C    cycle camera
 R    reset vehicle"
 horizontal_alignment = 2

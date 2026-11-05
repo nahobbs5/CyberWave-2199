@@ -9,8 +9,11 @@ const MAIN_SCENE := "res://scenes/main.tscn"
 const DT := 1.0 / 60.0
 const ACTIONS: Array[StringName] = [
 	&"accelerate", &"brake", &"steer_left", &"steer_right",
-	&"drift_left", &"drift_right", &"cycle_camera", &"reset_vehicle",
+	&"drift", &"drift_left", &"drift_right", &"cycle_camera", &"reset_vehicle",
 ]
+## Keyboard-only and gamepad-only actions (everything else needs both).
+const KEYBOARD_ONLY: Array[StringName] = [&"drift"]
+const GAMEPAD_ONLY: Array[StringName] = [&"drift_left", &"drift_right"]
 
 var _passed: int = 0
 var _failed: int = 0
@@ -35,6 +38,7 @@ func _run_all() -> void:
 	await _run("auto recovery: stuck", _test_auto_stuck)
 	await _run("auto recovery: out of bounds", _test_out_of_bounds)
 	await _run("scripted driver completes a lap", _test_scripted_lap)
+	await _run("shift + A/D keyboard drift", _test_shift_drift_keys)
 	print("\n%d checks passed, %d failed" % [_passed, _failed])
 	quit(1 if _failed > 0 else 0)
 
@@ -114,7 +118,7 @@ func _test_drift_logic() -> void:
 
 	# Holding the button with no sideways motion gives no charge (GDD 4.1).
 	drift.update(DT, true, false, true, 30.0, 0.0, stats)
-	_check(drift.direction == -1, "Q should start a left drift")
+	_check(drift.direction == -1, "left input should start a left drift")
 	for i in 120:
 		drift.update(DT, true, false, true, 30.0, 0.2, stats)
 	_check(is_zero_approx(drift.charge_time), "straight-line drift must not charge")
@@ -173,8 +177,10 @@ func _test_input_actions(_main: Node) -> void:
 		for event in InputMap.action_get_events(action):
 			has_key = has_key or event is InputEventKey
 			has_pad = has_pad or event is InputEventJoypadButton or event is InputEventJoypadMotion
-		_check(has_key, "%s has a keyboard binding" % action)
-		_check(has_pad, "%s has a gamepad binding" % action)
+		if not GAMEPAD_ONLY.has(action):
+			_check(has_key, "%s has a keyboard binding" % action)
+		if not KEYBOARD_ONLY.has(action):
+			_check(has_pad, "%s has a gamepad binding" % action)
 
 
 func _test_track_queries(main: Node) -> void:
@@ -233,6 +239,27 @@ func _test_steering(main: Node) -> void:
 	await _frames(60)
 	forward = -car.global_transform.basis.z
 	_check(forward.dot(right0) < 0.0, "steer left turns back left (dot %.2f)" % forward.dot(right0))
+	Input.action_release(&"steer_left")
+
+	# Handling floor: at ~126 km/h, one second of full lock turns >= 1.5 rad
+	# (the pre-tightening handling managed ~1.2).
+	# Done on open ground so barriers can't interfere.
+	car.recovery.auto_recovery_enabled = false
+	car.player_controlled = false
+	car.teleport(Transform3D(Basis.IDENTITY, Vector3(-400.0, 0.9, 400.0)))
+	await _frames(30)
+	var guard := 0
+	while car.forward_speed < 35.0 and guard < 600:
+		car.throttle_input = 1.0
+		await physics_frame
+		guard += 1
+	var start_forward := -car.global_transform.basis.z
+	car.steer_input = 1.0
+	for i in 60:
+		car.throttle_input = 1.0 if car.forward_speed < 35.0 else 0.0
+		await physics_frame
+	var turned := start_forward.angle_to(-car.global_transform.basis.z)
+	_check(turned >= 1.5, "1 s full lock at 126 km/h turns >= 1.5 rad (got %.2f)" % turned)
 
 
 func _test_drift_boost_sim(main: Node) -> void:
@@ -395,3 +422,50 @@ func _test_scripted_lap(main: Node) -> void:
 	_check(hud.get_lap_count() >= 1, "lap completed within 90 s (%.1f s)" % (frames / 60.0))
 	_check(reasons.is_empty(), "no recoveries needed during the lap (%s)" % [reasons])
 	print("    scripted lap took %.1f s of simulated time" % (frames / 60.0))
+
+
+func _key_event(key: Key, pressed: bool, shift: bool) -> void:
+	var event := InputEventKey.new()
+	event.physical_keycode = key
+	event.pressed = pressed
+	event.shift_pressed = shift
+	Input.parse_input_event(event)
+
+
+## Real key events: Shift + D starts a right drift, Shift alone keeps it,
+## releasing Shift ends it, and Shift without steering never drifts.
+func _test_shift_drift_keys(main: Node) -> void:
+	var car := _car(main)
+	car.recovery.auto_recovery_enabled = false
+	car.teleport(Transform3D(Basis.IDENTITY, Vector3(-400.0, 0.9, 0.0)))
+	await _frames(40)
+	Input.action_press(&"accelerate")
+	await _frames(120)
+
+	_key_event(KEY_SHIFT, true, true)
+	await _frames(30)
+	_check(not car.drift.is_drifting(), "Shift without steering does not drift")
+
+	_key_event(KEY_D, true, true)
+	await _frames(10)
+	_check(Input.is_action_pressed(&"steer_right"), "D still steers while Shift is held")
+	_check(car.drift.direction == 1, "Shift + D starts a right drift (dir %d)" % car.drift.direction)
+
+	_key_event(KEY_D, false, true)
+	_key_event(KEY_A, true, true)
+	await _frames(20)
+	_check(car.drift.direction == 1, "counter-steering with A keeps the right drift")
+	_key_event(KEY_A, false, true)
+	await _frames(20)
+	_check(car.drift.direction == 1, "Shift alone keeps the drift going")
+
+	_key_event(KEY_SHIFT, false, false)
+	await _frames(3)
+	_check(not car.drift.is_drifting(), "releasing Shift ends the drift")
+
+	_key_event(KEY_A, true, false)
+	_key_event(KEY_SHIFT, true, true)
+	await _frames(10)
+	_check(car.drift.direction == -1, "Shift pressed while holding A starts a left drift")
+	_key_event(KEY_SHIFT, false, false)
+	_key_event(KEY_A, false, false)

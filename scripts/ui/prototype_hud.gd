@@ -54,7 +54,7 @@ func _process(delta: float) -> void:
 			"L" if drift.direction < 0 else "R", drift.charge_time, DriftController.LEVEL_NAMES[drift.level]]
 		_drift_label.modulate = DriftController.LEVEL_COLORS[drift.level]
 	else:
-		_drift_label.text = "DRIFT  (hold Q / E in a corner)"
+		_drift_label.text = "DRIFT  (hold Shift + A / D in a corner)"
 		_drift_label.modulate = Color(1, 1, 1, 0.6)
 
 	var lap_time := _race_clock - _lap_start_time if _lap_start_time >= 0.0 else 0.0

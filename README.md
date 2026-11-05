@@ -1,10 +1,10 @@
 # CyberWave-2199
 
 Single-player 3D arcade combat racing game for Godot 4 (GDScript, Jolt Physics).
-The authoritative design is [`docs/Game Design Document.md`](docs/Game%20Design%20Document.md) (GDD v1.0).
+The authoritative design is [`docs/Game Design Document.md`](docs/Game%20Design%20Document.md) (GDD v1.1).
 
 **Current milestone: Phase 1, the driving prototype** (GDD §16). Drive one placeholder car around a
-graybox test circuit, with Q/E drifting, three boost levels, two chase cameras and vehicle recovery.
+graybox test circuit, with Shift drifting, three boost levels, two chase cameras and vehicle recovery.
 Weapons, AI, menus and cosmetics are deliberately not implemented yet.
 
 Open the project in Godot 4.7 and press **F5**. The main scene is `scenes/main.tscn`.
@@ -16,7 +16,7 @@ Open the project in Godot 4.7 and press **F5**. The main scene is `scenes/main.t
 | Accelerate | W / Up | RT / R2 |
 | Brake / Reverse | S / Down | LT / L2 |
 | Steer | A / D, Left / Right | Left stick |
-| Drift left / right | Q / E | LB / L1, RB / R1 |
+| Drift | Hold Shift + A / D | LB / L1 (left), RB / R1 (right) |
 | Cycle camera (Far ↔ Close) | C | View / Touchpad |
 | Reset vehicle | R | Y / Triangle |
 
@@ -27,10 +27,11 @@ Actions are registered at startup by `scripts/core/input_setup.gd`. Any action y
 
 ### Drifting
 
-- At speed (over 12 m/s, about 43 km/h), hold **Q** or **E** to drift left or right. Steering into the drift tightens it, and steering against it widens it.
+- At speed (over 12 m/s, about 43 km/h), hold **Shift** and steer with **A** or **D**. The steering direction when the drift starts picks left or right; after that, keep Shift held and steer to shape it (into the drift tightens it, against it widens it). Shift while driving straight does nothing.
+- Shift drifting replaced the original Q/E binding in GDD v1.1 (see its Revision History).
 - Charge only builds while the car is grounded and sliding sideways.
 - **Cyan** at 1 s, **Magenta** at 2.5 s, **Gold** at 4 s of valid drifting.
-- **Releasing** the button fires the boost. Higher levels give more speed for longer.
+- **Releasing** Shift (or the bumper) fires the boost. Higher levels give more speed for longer.
 - Leaving the ground pauses charging. Staying airborne for more than 1.5 s, hitting something hard, or slowing well below drift speed cancels the drift with no boost.
 - Feedback: rear-wheel sparks and an undercarriage glow in the current level's colour, a tone for each level, exhaust flames and a FOV kick while boosting, and the HUD charge bar.
 

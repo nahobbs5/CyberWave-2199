@@ -16,6 +16,9 @@ signal heavy_impact(speed_lost: float)
 ## Emitted after a teleport/recovery has been applied.
 signal teleported
 
+## Steering needed to pick a direction when starting a Shift drift.
+const SHIFT_DRIFT_STEER_THRESHOLD := 0.3
+
 @export var stats: VehicleStats
 ## When true, inputs are read from the InputMap each physics frame.
 ## AI (Phase 2) sets this to false and writes the *_input fields directly.
@@ -80,6 +83,16 @@ func _read_player_input() -> void:
 	steer_input = Input.get_axis("steer_left", "steer_right")
 	drift_left_held = Input.is_action_pressed("drift_left")
 	drift_right_held = Input.is_action_pressed("drift_right")
+	if Input.is_action_pressed("drift"):
+		# Shift drift: steering picks the direction when the drift starts;
+		# after that, Shift alone keeps it going (steering just shapes it).
+		if drift.is_drifting():
+			drift_left_held = drift_left_held or drift.direction < 0
+			drift_right_held = drift_right_held or drift.direction > 0
+		elif steer_input <= -SHIFT_DRIFT_STEER_THRESHOLD:
+			drift_left_held = true
+		elif steer_input >= SHIFT_DRIFT_STEER_THRESHOLD:
+			drift_right_held = true
 
 
 ## Moves the car on the next physics step and clears all motion.
