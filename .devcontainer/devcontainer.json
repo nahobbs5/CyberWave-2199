@@ -1,0 +1,24 @@
+{
+  "name": "claude-code-codex-sandbox-Cyberwave-2199",
+  "build": { "dockerfile": "Dockerfile" },
+  "remoteUser": "node",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached",
+  "workspaceFolder": "/workspace",
+  "mounts": [
+    "source=claude-config,target=/home/node/.claude,type=volume",
+    "source=codex-config,target=/home/node/.codex,type=volume"
+
+  ],
+  "containerEnv": {
+    "ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY}"
+  },
+  "postCreateCommand": "codegraph init -i || true",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "anthropic.claude-code", 
+        "openai.chatgpt"
+      ] 
+    }
+  }
+}

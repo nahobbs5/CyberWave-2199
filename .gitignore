@@ -1,0 +1,21 @@
+.DS_Store
+node_modules/
+.claude/
+web-build/
+*.log
+
+# codegraph
+.codegraph/
+
+# Godot 4+ specific ignores
+.godot/
+/android/
+
+
+# local env (see .env.example)
+.env
+.env.local
+
+#Reference
+reference files/
+
