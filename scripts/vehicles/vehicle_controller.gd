@@ -23,6 +23,9 @@ const SHIFT_DRIFT_STEER_THRESHOLD := 0.3
 ## When true, inputs are read from the InputMap each physics frame.
 ## AI (Phase 2) sets this to false and writes the *_input fields directly.
 @export var player_controlled: bool = true
+## The human racer's car (gets audio cues and the camera). Stays true after the
+## player finishes and the autopilot takes over.
+@export var is_player: bool = true
 
 var throttle_input: float = 0.0
 var brake_input: float = 0.0
@@ -99,6 +102,18 @@ func _read_player_input() -> void:
 func teleport(target: Transform3D) -> void:
 	_pending_teleport = target
 	_has_pending_teleport = true
+
+
+## Placeholder paint so racers are distinguishable (not a cosmetic system).
+func set_body_color(color: Color) -> void:
+	var paint := StandardMaterial3D.new()
+	paint.albedo_color = color
+	paint.metallic = 0.8
+	paint.roughness = 0.25
+	for path in ["Body/Chassis", "Body/Nose"]:
+		var mesh := get_node_or_null(path) as MeshInstance3D
+		if mesh != null:
+			mesh.material_override = paint
 
 
 func is_boosting() -> bool:

@@ -1,0 +1,85 @@
+[gd_resource type="Resource" script_class="RivalRoster" format=3]
+
+[ext_resource type="Script" path="res://scripts/race/racer_profile.gd" id="1_i1q6q"]
+[ext_resource type="Script" path="res://scripts/race/rival_roster.gd" id="2_g5d4e"]
+
+[sub_resource type="Resource" id="Resource_pgn00"]
+resource_name = "The Technician"
+script = ExtResource("1_i1q6q")
+display_name = "The Technician"
+color = Color(0.2, 0.85, 1, 1)
+drift_tendency = 0.9
+aggression = 0.35
+precision_wander = 0.4
+
+[sub_resource type="Resource" id="Resource_iqljy"]
+resource_name = "The Aggressor"
+script = ExtResource("1_i1q6q")
+display_name = "The Aggressor"
+archetype = "Aggressor"
+color = Color(1, 0.25, 0.2, 1)
+line_bias = 0.8
+corner_speed_bias = 1.02
+drift_tendency = 0.8
+aggression = 1.0
+precision_wander = 1.1
+
+[sub_resource type="Resource" id="Resource_110sa"]
+resource_name = "The Drifter"
+script = ExtResource("1_i1q6q")
+display_name = "The Drifter"
+archetype = "Drifter"
+color = Color(1, 0.2, 0.85, 1)
+line_bias = -0.6
+corner_speed_bias = 0.98
+drift_tendency = 1.6
+
+[sub_resource type="Resource" id="Resource_f2eb1"]
+resource_name = "The Strategist"
+script = ExtResource("1_i1q6q")
+display_name = "The Strategist"
+archetype = "Strategist"
+color = Color(0.55, 0.4, 1, 1)
+line_bias = 0.4
+corner_speed_bias = 0.97
+drift_tendency = 0.9
+aggression = 0.3
+precision_wander = 0.7
+
+[sub_resource type="Resource" id="Resource_fqcuu"]
+resource_name = "The Daredevil"
+script = ExtResource("1_i1q6q")
+display_name = "The Daredevil"
+archetype = "Daredevil"
+color = Color(1, 0.6, 0.1, 1)
+line_bias = -1.0
+corner_speed_bias = 1.05
+drift_tendency = 1.2
+aggression = 0.8
+precision_wander = 1.4
+
+[sub_resource type="Resource" id="Resource_8facc"]
+resource_name = "The Speedster"
+script = ExtResource("1_i1q6q")
+display_name = "The Speedster"
+archetype = "Speedster"
+color = Color(0.3, 1, 0.4, 1)
+line_bias = 1.2
+drift_tendency = 0.7
+aggression = 0.75
+precision_wander = 0.9
+
+[sub_resource type="Resource" id="Resource_gopx8"]
+resource_name = "The Opportunist"
+script = ExtResource("1_i1q6q")
+display_name = "The Opportunist"
+archetype = "Opportunist"
+color = Color(1, 0.9, 0.3, 1)
+line_bias = -0.3
+corner_speed_bias = 0.99
+aggression = 0.65
+precision_wander = 0.9
+
+[resource]
+script = ExtResource("2_g5d4e")
+rivals = Array[ExtResource("1_i1q6q")]([SubResource("Resource_pgn00"), SubResource("Resource_iqljy"), SubResource("Resource_110sa"), SubResource("Resource_f2eb1"), SubResource("Resource_fqcuu"), SubResource("Resource_8facc"), SubResource("Resource_gopx8")])

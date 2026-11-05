@@ -5,7 +5,7 @@ extends SceneTree
 ## Exit code 0 = all checks passed. These test logic and physics outcomes,
 ## not how the game looks or feels.
 
-const MAIN_SCENE := "res://scenes/main.tscn"
+const MAIN_SCENE := "res://scenes/free_drive.tscn"
 const DT := 1.0 / 60.0
 const ACTIONS: Array[StringName] = [
 	&"accelerate", &"brake", &"steer_left", &"steer_right",

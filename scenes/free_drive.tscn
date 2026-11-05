@@ -1,6 +1,6 @@
 [gd_scene format=3]
 
-[ext_resource type="Script" path="res://scripts/prototype_main.gd" id="1_main"]
+[ext_resource type="Script" path="res://scripts/free_drive.gd" id="1_main"]
 [ext_resource type="PackedScene" path="res://scenes/tracks/test_circuit.tscn" id="2_track"]
 [ext_resource type="PackedScene" path="res://scenes/vehicles/placeholder_car.tscn" id="3_car"]
 [ext_resource type="Script" path="res://scripts/camera/chase_camera.gd" id="4_camera"]
@@ -8,7 +8,7 @@
 [ext_resource type="Resource" path="res://resources/cameras/close_chase.tres" id="6_close"]
 [ext_resource type="PackedScene" path="res://scenes/ui/prototype_hud.tscn" id="8_hud"]
 
-[node name="Main" type="Node3D"]
+[node name="FreeDrive" type="Node3D"]
 script = ExtResource("1_main")
 
 [node name="TestCircuit" parent="." instance=ExtResource("2_track")]

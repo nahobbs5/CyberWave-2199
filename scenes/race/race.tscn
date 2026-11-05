@@ -1,0 +1,33 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/race/race_manager.gd" id="1_race"]
+[ext_resource type="PackedScene" path="res://scenes/vehicles/placeholder_car.tscn" id="2_car"]
+[ext_resource type="Resource" path="res://resources/racers/rival_roster.tres" id="3_roster"]
+[ext_resource type="Resource" path="res://resources/ai/normal.tres" id="4_normal"]
+[ext_resource type="PackedScene" path="res://scenes/tracks/test_circuit.tscn" id="5_track"]
+[ext_resource type="Script" path="res://scripts/camera/chase_camera.gd" id="6_camera"]
+[ext_resource type="Resource" path="res://resources/cameras/far_chase.tres" id="7_far"]
+[ext_resource type="Resource" path="res://resources/cameras/close_chase.tres" id="8_close"]
+[ext_resource type="PackedScene" path="res://scenes/ui/prototype_hud.tscn" id="9_proto_hud"]
+[ext_resource type="Script" path="res://scripts/ui/race_hud.gd" id="10_race_hud"]
+
+[node name="Race" type="Node3D"]
+script = ExtResource("1_race")
+car_scene = ExtResource("2_car")
+rival_roster = ExtResource("3_roster")
+difficulty = ExtResource("4_normal")
+
+[node name="TestCircuit" parent="." instance=ExtResource("5_track")]
+
+[node name="ChaseCamera" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5, 120)
+current = true
+script = ExtResource("6_camera")
+far_chase = ExtResource("7_far")
+close_chase = ExtResource("8_close")
+
+[node name="PrototypeHUD" parent="." instance=ExtResource("9_proto_hud")]
+show_lap_info = false
+
+[node name="RaceHUD" type="CanvasLayer" parent="."]
+script = ExtResource("10_race_hud")

@@ -1,0 +1,7 @@
+[gd_resource type="Resource" script_class="AIDifficulty" format=3]
+
+[ext_resource type="Script" path="res://scripts/ai/ai_difficulty.gd" id="1_diff"]
+
+[resource]
+script = ExtResource("1_diff")
+display_name = "Normal"

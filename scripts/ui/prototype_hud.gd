@@ -2,6 +2,10 @@ class_name PrototypeHUD
 extends CanvasLayer
 ## Minimal Phase 1 debug HUD: speed, drift charge, boost, camera, lap timer,
 ## recovery notices and a controls hint. Not the final race HUD (GDD 11.5).
+## In races, RaceHUD handles laps, so show_lap_info is turned off there.
+
+## Show the distance-based free-drive lap timer.
+@export var show_lap_info: bool = true
 
 var _vehicle: VehicleController
 var _camera: ChaseCamera
@@ -41,7 +45,8 @@ func _process(delta: float) -> void:
 	if _vehicle == null:
 		return
 	_race_clock += delta
-	_update_laps()
+	if show_lap_info:
+		_update_laps()
 
 	_speed_label.text = "%d km/h" % roundi(absf(_vehicle.forward_speed) * 3.6)
 
@@ -58,7 +63,10 @@ func _process(delta: float) -> void:
 		_drift_label.modulate = Color(1, 1, 1, 0.6)
 
 	var lap_time := _race_clock - _lap_start_time if _lap_start_time >= 0.0 else 0.0
-	_info_label.text = "Camera: %s\nLap %d   %s\nLast %s   Best %s" % [
+	if not show_lap_info:
+		_info_label.text = "Camera: %s" % _camera.get_profile().display_name
+	else:
+		_info_label.text = "Camera: %s\nLap %d   %s\nLast %s   Best %s" % [
 		_camera.get_profile().display_name, _lap_count + 1, _fmt(lap_time), _fmt(_last_lap_time), _fmt(_best_lap_time)]
 
 	if _notice_time > 0.0:

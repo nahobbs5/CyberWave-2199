@@ -105,6 +105,9 @@ func _on_boost_started(level: int) -> void:
 
 
 func _play(player: AudioStreamPlayer, tone: String) -> void:
+	# Only the human player's car makes UI-style cues; AI cars would be a cacophony.
+	if not _vehicle.is_player:
+		return
 	if _tones.has(tone):
 		player.stream = _tones[tone]
 		player.play()

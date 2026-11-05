@@ -6,13 +6,16 @@ extends Node3D
 ## Builds the road surface, edge and centre markings, collidable barriers with
 ## neon strips, a ground slab, a start gantry and trackside lights. It also
 ## answers track-space questions (nearest offset, safe respawn transforms) for
-## recovery now and checkpoints/AI later.
+## recovery, checkpoints, the starting grid and AI racing lines.
 ##
 ## Generated nodes are rebuilt on load and are not saved into the scene, so
 ## edit the exported values (or control points) rather than the generated
 ## children. Runs in the editor too so the layout is visible while editing.
 
 const GENERATED_PREFIX := "_Gen"
+
+## Emitted when a vehicle enters checkpoint gate index (0 = start/finish line).
+signal checkpoint_crossed(index: int, body: Node3D)
 
 ## Centre-line control points in local space (closed loop, driven in order).
 @export var control_points: PackedVector3Array = PackedVector3Array([
@@ -32,9 +35,23 @@ const GENERATED_PREFIX := "_Gen"
 @export var barrier_height: float = 1.4
 @export var barrier_thickness: float = 1.0
 ## Distance along the circuit where the start/finish line sits.
-@export var start_line_offset: float = 40.0
-## Where the player spawns, measured back from the start line.
+@export var start_line_offset: float = 60.0
+## Where the free-drive car spawns, measured back from the start line.
 @export var spawn_distance_behind_line: float = 15.0
+
+@export_group("Checkpoints")
+## Evenly spaced gates; gate 0 is the start/finish line (GDD 14.3).
+@export var checkpoint_count: int = 8
+@export var checkpoint_depth: float = 4.0
+
+@export_group("Starting Grid")
+## Distance from the start line back to the pole position slot.
+@export var grid_first_row_gap: float = 8.0
+@export var grid_row_spacing: float = 9.0
+## Extra setback of the right-hand slot in each row (staggered grid).
+@export var grid_stagger: float = 4.5
+@export var grid_lateral: float = 4.0
+@export_group("")
 @export var ground_size: float = 1400.0
 @export var light_spacing: float = 90.0
 
@@ -69,6 +86,7 @@ func rebuild() -> void:
 	_build_barriers()
 	_build_start_gantry()
 	_build_lights()
+	_build_checkpoints()
 
 
 # --- Track-space queries -------------------------------------------------
@@ -124,6 +142,22 @@ func get_spawn_offset() -> float:
 
 func get_spawn_transform() -> Transform3D:
 	return get_safe_transform(get_spawn_offset())
+
+
+func get_checkpoint_offset(index: int) -> float:
+	return wrap_offset(start_line_offset + float(index) * length / float(checkpoint_count))
+
+
+## Grid slot 0 is pole position; slots alternate left/right, rows going back.
+func get_grid_offset(slot: int) -> float:
+	var row := slot / 2
+	var setback := grid_first_row_gap + float(row) * grid_row_spacing + (grid_stagger if slot % 2 == 1 else 0.0)
+	return wrap_offset(start_line_offset - setback)
+
+
+func get_grid_transform(slot: int) -> Transform3D:
+	var lateral := grid_lateral if slot % 2 == 1 else -grid_lateral
+	return get_safe_transform(get_grid_offset(slot), lateral)
 
 
 # --- Generation ------------------------------------------------------------
@@ -401,3 +435,33 @@ func _build_lights() -> void:
 		light.omni_range = 32.0
 		light.position = center + right * side * (road_width * 0.5 + 2.0) + Vector3(0.0, 6.0, 0.0)
 		holder.add_child(light)
+
+
+func _build_checkpoints() -> void:
+	var holder := Node3D.new()
+	_add_generated(holder, "Checkpoints")
+	for i in checkpoint_count:
+		var offset := get_checkpoint_offset(i)
+		var center := curve.sample_baked(offset)
+		var a := curve.sample_baked(wrap_offset(offset - 1.0))
+		var b := curve.sample_baked(wrap_offset(offset + 1.0))
+		var tangent := Vector3(b.x - a.x, 0.0, b.z - a.z).normalized()
+		var gate := Area3D.new()
+		gate.name = "Checkpoint%d" % i
+		gate.collision_layer = 0
+		gate.collision_mask = 2 # vehicles
+		gate.monitorable = false
+		gate.transform = Transform3D(Basis.looking_at(tangent, Vector3.UP), center + Vector3(0.0, 2.5, 0.0))
+		var shape := CollisionShape3D.new()
+		var box := BoxShape3D.new()
+		# Wider than the road so a car scraping the barrier still registers.
+		box.size = Vector3(road_width + barrier_thickness * 2.0 + 4.0, 6.0, checkpoint_depth)
+		shape.shape = box
+		gate.add_child(shape)
+		holder.add_child(gate)
+		if not Engine.is_editor_hint():
+			gate.body_entered.connect(_on_checkpoint_body_entered.bind(i))
+
+
+func _on_checkpoint_body_entered(body: Node3D, index: int) -> void:
+	checkpoint_crossed.emit(index, body)

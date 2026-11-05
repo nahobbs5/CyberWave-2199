@@ -1,5 +1,6 @@
 extends Node3D
-## Phase 1 driving prototype: wires the track, player car, camera and HUD.
+## Free-drive sandbox (Phase 1 prototype): one car, no race rules.
+## Wires the track, car, camera and HUD.
 
 @onready var track: TrackCircuit = $TestCircuit
 @onready var car: VehicleController = $PlayerCar
