@@ -18,6 +18,8 @@ const PLAYER_ID := -1
 ## Racer ids by grid slot (slot 0 = pole): PLAYER_ID or a rival roster index.
 ## Empty = rivals in roster order with the player last.
 @export var grid_order: Array[int] = []
+## Player's vehicle id; empty = the profile's selected vehicle.
+@export var vehicle_id: String = ""
 
 ## Grand Prix only: the championship this race belongs to.
 var championship: Championship

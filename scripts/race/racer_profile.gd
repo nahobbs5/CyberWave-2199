@@ -6,6 +6,8 @@ extends Resource
 @export var display_name: String = "Rival"
 @export var archetype: String = "Technician"
 @export var color: Color = Color(0.8, 0.8, 0.8)
+## Predefined license plate (GDD 9.5: AI use their own plates).
+@export var plate_text: String = "RIVAL"
 ## Preferred offset from the racing line in metres (+ = right).
 @export var line_bias: float = 0.0
 ## Multiplies the difficulty's corner speed (risk taking).

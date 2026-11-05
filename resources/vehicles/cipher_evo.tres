@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="VehicleData" format=3]
+
+[ext_resource type="Script" path="res://scripts/vehicles/vehicle_data.gd" id="1_data"]
+[ext_resource type="Resource" path="res://resources/vehicles/stats/cipher_evo_stats.tres" id="2_stats"]
+
+[resource]
+script = ExtResource("1_data")
+id = "cipher_evo"
+display_name = "Cipher EVO"
+vehicle_type = "Prototype"
+character = "High skill ceiling: sharp, fast and loose. Less grip, slower off the line."
+stats = ExtResource("2_stats")
+factory_color = Color(0.9, 0.1, 0.75, 1)
+body_scale = Vector3(1.06, 0.8, 1)
+cabin_scale = Vector3(0.8, 0.75, 0.85)
+spoiler_scale = Vector3(1.3, 1.2, 1.3)

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="VehicleData" format=3]
+
+[ext_resource type="Script" path="res://scripts/vehicles/vehicle_data.gd" id="1_data"]
+[ext_resource type="Resource" path="res://resources/vehicles/stats/nexus_x_stats.tres" id="2_stats"]
+
+[resource]
+script = ExtResource("1_data")
+id = "nexus_x"
+display_name = "Nexus X"
+vehicle_type = "Super Coupe"
+character = "Strong acceleration out of every corner; tops out early."
+stats = ExtResource("2_stats")
+factory_color = Color(0.95, 0.75, 0.05, 1)
+body_scale = Vector3(1.02, 0.92, 0.98)
+cabin_scale = Vector3(0.9, 0.9, 0.9)
+spoiler_scale = Vector3(1.15, 1.4, 1)

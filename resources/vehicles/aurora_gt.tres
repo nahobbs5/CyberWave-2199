@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="VehicleData" format=3]
+
+[ext_resource type="Script" path="res://scripts/vehicles/vehicle_data.gd" id="1_data"]
+[ext_resource type="Resource" path="res://resources/vehicles/stats/aurora_gt_stats.tres" id="2_stats"]
+
+[resource]
+script = ExtResource("1_data")
+id = "aurora_gt"
+display_name = "Aurora GT"
+vehicle_type = "Executive Coupe"
+character = "Smooth, precise handling. Grippy and calm, a little less top end."
+stats = ExtResource("2_stats")
+factory_color = Color(0.75, 0.78, 0.82, 1)
+body_scale = Vector3(0.98, 0.95, 1.03)
+cabin_scale = Vector3(1, 0.95, 1.1)
+spoiler_scale = Vector3(0.8, 1, 0.8)

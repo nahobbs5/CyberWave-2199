@@ -27,6 +27,8 @@ signal racer_eliminated(racer: RaceProgress)
 signal racer_qualified(racer: RaceProgress, spots_left: int)
 ## Grand Prix: this race's result was recorded (and saved).
 signal championship_updated(championship: Championship)
+## The player's coins and records for this race were granted and saved.
+signal rewards_granted(summary: Dictionary)
 
 enum State { GRID, COUNTDOWN, RACING, FINISHED }
 
@@ -62,6 +64,12 @@ var wrong_way: bool = false
 var elimination: EliminationTracker
 ## Grand Prix only.
 var championship: Championship
+## The player's vehicle (GDD 5.1).
+var player_vehicle: VehicleData
+var coins: TrackCoins
+## Filled in when the player's race ends: reward lines, coin totals,
+## personal bests and newly affordable cosmetics (GDD 11.7).
+var reward_summary: Dictionary = {}
 
 var _by_vehicle: Dictionary = {}
 var _countdown_time: float = 0.0
@@ -82,6 +90,10 @@ func _ready() -> void:
 	_apply_config()
 	track.checkpoint_crossed.connect(_on_checkpoint_crossed)
 	_spawn_grid()
+	coins = TrackCoins.new()
+	coins.name = "TrackCoins"
+	add_child(coins)
+	coins.setup(track, line, player.vehicle)
 	if config.is_elimination():
 		elimination = EliminationTracker.new(racers, track.checkpoint_count / 2)
 		_build_elimination_gate()
@@ -92,6 +104,13 @@ func _ready() -> void:
 	camera.set_target(player.vehicle)
 	prototype_hud.setup(player.vehicle, camera, track)
 	race_hud.setup(self)
+	HudScaler.apply(race_hud, GameSettings.hud_scale)
+	HudScaler.apply(prototype_hud, GameSettings.hud_scale)
+	if GameSettings.motion_blur:
+		var blur := SpeedBlur.new()
+		blur.name = "SpeedBlur"
+		blur.vehicle = player.vehicle
+		add_child(blur)
 	var pause_menu := PauseMenu.new()
 	pause_menu.name = "PauseMenu"
 	add_child(pause_menu)
@@ -151,13 +170,13 @@ func continue_after_results() -> void:
 	if championship == null:
 		GameSession.start_race(get_tree(), config)
 	elif championship.is_complete():
-		GameSession.to_mode_select(get_tree())
+		GameSession.to_main_menu(get_tree())
 	else:
 		GameSession.start_race(get_tree(), championship.make_race_config())
 
 
 func quit_to_menu() -> void:
-	GameSession.to_mode_select(get_tree())
+	GameSession.to_main_menu(get_tree())
 
 
 func _apply_config() -> void:
@@ -174,6 +193,12 @@ func _apply_config() -> void:
 	# The elimination schedule is built around three laps (GDD 2.3).
 	total_laps = 3 if config.is_elimination() else config.total_laps
 	championship = config.championship if config.mode == RaceConfig.Mode.GRAND_PRIX else null
+	var vehicle_id := config.vehicle_id
+	if championship != null:
+		vehicle_id = championship.vehicle_id
+	if vehicle_id == "":
+		vehicle_id = PlayerProfile.get_profile().selected_vehicle
+	player_vehicle = VehicleCatalog.by_id(vehicle_id)
 	if config.track_scene != null and config.track_scene.resource_path != track.scene_file_path:
 		var old := track
 		track = config.track_scene.instantiate() as TrackCircuit
@@ -212,6 +237,8 @@ func _spawn_grid() -> void:
 		if not is_player:
 			profile = rivals[id] if id < rivals.size() else RacerProfile.new()
 		car.name = "Player" if is_player else "AI%d" % (id + 1)
+		if is_player and player_vehicle != null:
+			car.stats = player_vehicle.stats
 		car.is_player = is_player
 		car.player_controlled = is_player and not player_uses_autopilot
 		add_child(car)
@@ -219,7 +246,12 @@ func _spawn_grid() -> void:
 		car.recovery.set_track(track, track.get_grid_offset(slot))
 		car.input_enabled = false
 		var color := player_color if is_player else profile.color
-		car.set_body_color(color)
+		if is_player:
+			var p := PlayerProfile.get_profile()
+			VehicleCosmetics.apply(car, player_vehicle, p.loadout_for(player_vehicle.id), p.plate_text)
+		else:
+			car.set_body_color(color)
+			VehicleCosmetics.add_plate(car, profile.plate_text, null)
 		var racer_name := "You" if is_player else profile.display_name
 		var progress := RaceProgress.new(car, racer_name, color, is_player, slot,
 				track.checkpoint_count, total_laps)
@@ -334,6 +366,8 @@ func _on_checkpoint_crossed(index: int, body: Node3D) -> void:
 				_eliminate(out)
 		&"lap":
 			lap_completed.emit(racer)
+			if racer.is_player:
+				coins.respawn() # track coins come back every lap (GDD 9.2)
 		&"finish":
 			lap_completed.emit(racer)
 			_finish_count += 1
@@ -455,9 +489,14 @@ func _on_player_finished() -> void:
 	if _player_done:
 		return
 	_player_done = true
+	coins.collecting = false
 	_update_positions()
+	var reward := {}
 	if championship != null:
-		_record_championship()
+		reward = _record_championship()
+	else:
+		reward = RaceRewards.compute(player.finish_position, not player.eliminated, coins.collected)
+	_grant_rewards(reward)
 	if player.eliminated:
 		_set_state(State.FINISHED)
 		player_finished.emit(player)
@@ -471,18 +510,49 @@ func _on_player_finished() -> void:
 
 
 ## Grand Prix: classify the field at the player's finish, award points and
-## save before the next race (GDD 2.2).
-func _record_championship() -> void:
+## save before the next race (GDD 2.2). The coins for this race are written
+## into the championship save first, so a crash can lose them but never pay
+## them twice (GDD 13.2). Returns the race's reward.
+func _record_championship() -> Dictionary:
 	_classify_remaining()
 	var order: Array[int] = []
 	for racer in get_standings():
 		order.append(racer.racer_id)
 	championship.record_race(order)
+	var won := championship.is_complete() and championship.standings()[0] == RaceConfig.PLAYER_ID
+	var reward := RaceRewards.compute(player.finish_position, true, coins.collected, won)
+	championship.coins_awarded += int(reward.total)
 	if championship.is_complete():
+		var ranking := championship.standings()
+		PlayerProfile.get_profile().record_grand_prix(championship.gp.id,
+				ranking.find(RaceConfig.PLAYER_ID) + 1, int(championship.points.get(RaceConfig.PLAYER_ID, 0)))
 		Championship.clear_save()
 	else:
 		championship.save()
 	championship_updated.emit(championship)
+	return reward
+
+
+## Pays out the race's coins and records personal bests (GDD 9.3, 11.7).
+func _grant_rewards(reward: Dictionary) -> void:
+	var profile := PlayerProfile.get_profile()
+	var before := profile.coins
+	profile.add_coins(int(reward.total))
+	var bests := {"race": false, "lap": false}
+	if not player.eliminated and player.finish_time > 0.0:
+		bests = profile.record_race_time(config.track_name, total_laps, player.finish_time, player.best_lap)
+	profile.save()
+	reward_summary = {
+		"lines": reward.lines,
+		"total": reward.total,
+		"coins_before": before,
+		"coins_after": profile.coins,
+		"track_coins": coins.collected,
+		"best_race": bests.race,
+		"best_lap": bests.lap,
+		"affordable": profile.newly_affordable(before),
+	}
+	rewards_granted.emit(reward_summary)
 
 
 func _update_positions() -> void:

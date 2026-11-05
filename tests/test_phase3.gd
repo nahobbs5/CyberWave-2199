@@ -21,6 +21,10 @@ var _current: String = ""
 
 
 func _initialize() -> void:
+	# Never touch the real profile or settings: races now pay out coins.
+	PlayerProfile.save_path = "user://test_phase3_profile.json"
+	GameSettings.path = "user://test_phase3_settings.cfg"
+	PlayerProfile.delete_save()
 	_run_all.call_deferred()
 
 

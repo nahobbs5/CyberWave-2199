@@ -1,13 +1,14 @@
 extends SceneTree
 ## Phase 4 headless checks: championship points and tiebreaks, save / load,
-## elimination rules, Triple Nitro charges, the pause menu, the mode select
+## elimination rules, Triple Nitro charges, the pause menu, the main menu and race setup
 ## screen, and complete Versus, Grand Prix (3 races, with save / continue)
 ## and Elimination events. Run from the project root:
 ##   godot --headless --import
 ##   godot --headless --fixed-fps 60 -s res://tests/test_phase4.gd
 
 const RACE_SCENE := "res://scenes/race/race.tscn"
-const MODE_SELECT := "res://scenes/menu/mode_select.tscn"
+const MAIN_MENU := "res://scenes/menu/main_menu.tscn"
+const RACE_SETUP := "res://scenes/menu/race_setup.tscn"
 const GP1 := "res://resources/grand_prix/american_circuit.tres"
 const ROSTER := "res://resources/racers/rival_roster.tres"
 const TEST_SAVE := "user://test_phase4_gp.json"
@@ -18,6 +19,10 @@ var _current: String = ""
 
 
 func _initialize() -> void:
+	# Never touch the real profile or settings: races now pay out coins.
+	PlayerProfile.save_path = "user://test_phase4_profile.json"
+	GameSettings.path = "user://test_phase4_settings.cfg"
+	PlayerProfile.delete_save()
 	_run_all.call_deferred()
 
 
@@ -168,7 +173,7 @@ func _test_save_load() -> void:
 	_check(loaded.points == c.points, "cumulative points")
 	_check(loaded.results.size() == 1 and _ids(loaded.results[0]) == _ids([2, -1, 0, 1, 3, 4, 5, 6]), "completed results")
 	_check(loaded.next_grid == c.next_grid, "next starting grid")
-	_check(loaded.rival_names == c.rival_names and loaded.vehicle_id == "placeholder_gt", "rival identities and vehicle")
+	_check(loaded.rival_names == c.rival_names and loaded.vehicle_id == "v8_specter", "rival identities and vehicle")
 	_check(loaded.difficulty_id == "hard" and not loaded.weapons_enabled and loaded.coins_awarded == 0, "settings and coins")
 	loaded.record_race(_ids([0, 1, 2, 3, 4, 5, 6, -1]))
 	loaded.record_race(_ids([0, 1, 2, 3, 4, 5, 6, -1]))
@@ -242,27 +247,33 @@ func _test_triple_nitro_inventory() -> void:
 # --- scenes ----------------------------------------------------------------------
 
 func _test_mode_select() -> void:
-	_current = "mode select"
-	print("- mode select")
+	_current = "menus and race setup"
+	print("- main menu and race setup")
 	Championship.clear_save()
 	GameSession.current = null
-	var menu := (load(MODE_SELECT) as PackedScene).instantiate() as ModeSelect
+	var menu := (load(MAIN_MENU) as PackedScene).instantiate() as MainMenu
 	root.add_child(menu)
 	await process_frame
 	_check(not menu.has_continue(), "no Continue Grand Prix without a save")
-	menu.start_versus()
+	menu.queue_free()
+	var setup := await _open_setup(RaceConfig.Mode.VERSUS)
+	setup.start()
 	_check(GameSession.current != null and GameSession.current.mode == RaceConfig.Mode.VERSUS
 			and GameSession.current.total_laps == 3 and GameSession.current.weapons_enabled, "Versus: default settings")
-	menu._laps.selected = 4
-	menu._difficulty.selected = 2
-	menu.start_elimination()
+	setup.queue_free()
+	setup = await _open_setup(RaceConfig.Mode.ELIMINATION)
+	setup._laps.selected = 4
+	setup._difficulty.selected = 2
+	setup.start()
 	_check(GameSession.current.is_elimination() and GameSession.current.total_laps == 5
 			and GameSession.current.difficulty.resource_path.ends_with("hard.tres"), "Elimination with chosen settings")
-	menu.start_grand_prix(0)
+	setup.queue_free()
+	setup = await _open_setup(RaceConfig.Mode.GRAND_PRIX)
+	setup.start()
 	_check(GameSession.current.is_grand_prix() and Championship.has_save(), "starting a Grand Prix saves it")
-	menu.queue_free()
+	setup.queue_free()
 	await process_frame
-	var again := (load(MODE_SELECT) as PackedScene).instantiate() as ModeSelect
+	var again := (load(MAIN_MENU) as PackedScene).instantiate() as MainMenu
 	root.add_child(again)
 	await process_frame
 	_check(again.has_continue(), "Continue Grand Prix appears when a save exists")
@@ -274,6 +285,14 @@ func _test_mode_select() -> void:
 	await process_frame
 	Championship.clear_save()
 	GameSession.current = null
+
+
+func _open_setup(mode: RaceConfig.Mode) -> RaceSetup:
+	GameSession.setup_mode = mode
+	var setup := (load(RACE_SETUP) as PackedScene).instantiate() as RaceSetup
+	root.add_child(setup)
+	await process_frame
+	return setup
 
 
 func _test_pause(race: RaceManager) -> void:
@@ -377,7 +396,7 @@ func _test_grand_prix() -> void:
 			else:
 				_check(c.is_complete() and Championship.load_saved() == null, "championship complete, save cleared")
 				_check(hud.get_results_title().begins_with("CHAMPIONSHIP FINAL"), "final standings shown")
-				_check(hud.get_continue_text() == "Back to mode select", "then back to mode select")
+				_check(hud.get_continue_text() == "Back to main menu", "then back to the main menu")
 				var s := c.standings()
 				var sorted_ok := true
 				for i in range(1, s.size()):

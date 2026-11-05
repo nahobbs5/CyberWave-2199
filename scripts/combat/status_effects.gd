@@ -178,7 +178,7 @@ func _process(delta: float) -> void:
 		else:
 			_spin = move_toward(_spin, roundf(_spin / TAU) * TAU, delta * 12.0)
 		body.rotation.y = _spin
-	var flicker := 0.5 + 0.5 * sin(Time.get_ticks_msec() * 0.03)
+	var flicker := 0.7 if GameSettings.reduced_flashing else 0.5 + 0.5 * sin(Time.get_ticks_msec() * 0.03)
 	if has(&"emp"):
 		_status_light.light_color = Color(0.3, 0.6, 1.0)
 		_status_light.light_energy = 3.0 * flicker

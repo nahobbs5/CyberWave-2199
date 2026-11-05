@@ -3,8 +3,10 @@ extends Camera3D
 ## Shared chase camera controller for Far and Close Chase (GDD 10).
 ##
 ## Each view is a CameraProfile resource. C / gamepad View cycles views, and
-## the choice is saved to user://settings.cfg so it persists between sessions.
-## (A Phase 5 SettingsManager should take over that file.)
+## the choice is saved to user://settings.cfg so it persists between sessions
+## (GameSettings keeps its own sections in the same file).
+## Camera shake on impacts, stuns and boosts is scaled by the accessibility
+## setting GameSettings.camera_shake (0 turns it off).
 
 signal profile_changed(profile: CameraProfile)
 
@@ -22,6 +24,9 @@ var profiles: Array[CameraProfile] = []
 var profile_index: int = 0
 
 var _direction: Vector3 = Vector3.FORWARD
+## Current shake (0..1), decays quickly.
+var _shake: float = 0.0
+var _shake_time: float = 0.0
 
 
 func _ready() -> void:
@@ -41,10 +46,52 @@ func get_profile() -> CameraProfile:
 
 
 func set_target(vehicle: VehicleController) -> void:
+	if target != null and is_instance_valid(target):
+		for pair in _shake_sources():
+			if (pair[0] as Signal).is_connected(pair[1]):
+				(pair[0] as Signal).disconnect(pair[1])
 	target = vehicle
 	if target != null and not target.teleported.is_connected(snap):
 		target.teleported.connect(snap)
+	if target != null:
+		for pair in _shake_sources():
+			if not (pair[0] as Signal).is_connected(pair[1]):
+				(pair[0] as Signal).connect(pair[1])
 	snap()
+
+
+## Adds camera shake (0..1), scaled by the accessibility setting.
+func add_shake(amount: float) -> void:
+	_shake = clampf(maxf(_shake, amount * GameSettings.camera_shake), 0.0, 1.0)
+
+
+func get_shake() -> float:
+	return _shake
+
+
+func _shake_sources() -> Array:
+	var out := [
+		[target.heavy_impact, _on_heavy_impact],
+		[target.boost_started, _on_boost_shake],
+	]
+	if target.status != null:
+		out.append([target.status.effect_started, _on_effect_shake])
+	return out
+
+
+func _on_heavy_impact(speed_lost: float) -> void:
+	add_shake(clampf(speed_lost / 25.0, 0.2, 0.8))
+
+
+func _on_boost_shake(level: int) -> void:
+	add_shake(0.1 + 0.08 * level)
+
+
+func _on_effect_shake(effect: StringName, _duration: float) -> void:
+	if effect == &"stun" or effect == &"stagger":
+		add_shake(0.6)
+	elif effect == &"emp" or effect == &"traction":
+		add_shake(0.3)
 
 
 func cycle_profile() -> void:
@@ -83,6 +130,17 @@ func _physics_process(delta: float) -> void:
 	var desired := _avoid_collision(_desired_position(p, speed_ratio), p)
 	global_position = global_position.lerp(desired, 1.0 - exp(-p.position_smoothing * delta))
 	_look(p)
+	if _shake > 0.001:
+		_shake_time += delta
+		var t := _shake_time * 40.0
+		rotate_object_local(Vector3.RIGHT, sin(t * 1.3) * 0.02 * _shake)
+		rotate_object_local(Vector3.UP, sin(t * 0.9 + 1.7) * 0.025 * _shake)
+		h_offset = sin(t * 1.1) * 0.25 * _shake
+		v_offset = cos(t * 1.5) * 0.18 * _shake
+		_shake = maxf(0.0, _shake - delta * 2.5)
+	else:
+		h_offset = 0.0
+		v_offset = 0.0
 
 	var target_fov := p.fov + p.speed_fov_gain * speed_ratio
 	if target.is_boosting():

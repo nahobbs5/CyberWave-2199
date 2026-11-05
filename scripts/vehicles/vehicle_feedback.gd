@@ -34,6 +34,8 @@ func _ready() -> void:
 		flame.material_override = _flame_material
 		flame.visible = false
 	_glow.visible = false
+	_cue_player.bus = &"SFX"
+	_boost_player.bus = &"SFX"
 
 	_tones = {
 		"level_1": _make_tone(660.0, 0.14),

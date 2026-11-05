@@ -4,7 +4,9 @@ extends CanvasLayer
 ## READY / SET / GO, wrong-way warning, results screen, and (with weapons on)
 ## two weapon slots, target lock, incoming-attack warning, active effects and
 ## hit feedback. Mode extras: Elimination info (GDD 11.6) and Grand Prix
-## points / standings on the results screen (GDD 11.7). Speed and drift
+## points / standings / next grid on the results screen (GDD 11.7), plus the
+## coin counter and the coins, personal bests and newly affordable
+## cosmetics earned in the race. Speed and drift
 ## charge come from PrototypeHUD underneath.
 
 const CYAN := Color(0.0, 0.95, 1.0)
@@ -49,6 +51,11 @@ var _combat_notice_time: float = 0.0
 var _cue_player: AudioStreamPlayer
 var _tones: Dictionary = {}
 var _was_incoming: bool = false
+var _coin_label: Label
+var _coin_pulse: float = 0.0
+var _rewards_label: Label
+var _grid_box: VBoxContainer
+var _grid_label: Label
 
 
 func _ready() -> void:
@@ -62,6 +69,7 @@ func setup(manager: RaceManager) -> void:
 	race.player_finished.connect(_on_player_finished)
 	race.racer_eliminated.connect(_on_racer_eliminated)
 	race.racer_qualified.connect(_on_racer_qualified)
+	race.coins.coin_collected.connect(_on_coin_collected)
 	_mode_label.text = _mode_text()
 	_elim_label.visible = race.elimination != null
 	_combat_box.visible = race.combat_enabled()
@@ -134,6 +142,10 @@ func _process(delta: float) -> void:
 	_lap_label.text = "LAP %d / %d" % [p.display_lap(), race.total_laps]
 	var shown_time := p.finish_time if p.finished else race.race_time
 	_time_label.text = "TIME " + RaceProgress.format_time(shown_time)
+	_coin_label.text = "COINS  %d" % race.coins.collected
+	if _coin_pulse > 0.0:
+		_coin_pulse -= delta
+		_coin_label.scale = Vector2.ONE * (1.0 + 0.25 * maxf(_coin_pulse, 0.0) / 0.3)
 
 	var lines: PackedStringArray = []
 	for racer in race.get_standings():
@@ -196,7 +208,7 @@ func _on_player_finished(racer: RaceProgress) -> void:
 	if c == null:
 		_continue_button.text = "Race again"
 	elif c.is_complete():
-		_continue_button.text = "Back to mode select"
+		_continue_button.text = "Back to main menu"
 	else:
 		_continue_button.text = "Next race: %s" % c.current_track_name()
 	_menu_button.visible = c == null or not c.is_complete()
@@ -204,8 +216,47 @@ func _on_player_finished(racer: RaceProgress) -> void:
 	_menu_button.disabled = true
 	_buttons_delay = 1.5
 	_standings_box.visible = c != null
+	_grid_box.visible = c != null and not c.is_complete()
+	_fill_rewards()
 	_results_panel.visible = true
 	_fill_results()
+
+
+func get_rewards_text() -> String:
+	return _rewards_label.text
+
+
+func _on_coin_collected(total: int) -> void:
+	_coin_pulse = 0.3
+	_play("coin")
+	if total >= TrackCoins.MAX_PER_RACE:
+		_show_combat_notice("COIN LIMIT REACHED", Color(1.0, 0.8, 0.2))
+
+
+## Coins earned, personal bests and newly affordable cosmetics.
+func _fill_rewards() -> void:
+	var r := race.reward_summary
+	if r.is_empty():
+		_rewards_label.text = ""
+		return
+	var parts: PackedStringArray = []
+	for line in r.lines:
+		parts.append("%s +%d" % [line[0], line[1]])
+	var text := "COINS  +%d   (%s)   BALANCE %d" % [r.total, "  ".join(parts) if not parts.is_empty() else "none", r.coins_after]
+	var bests: PackedStringArray = []
+	if r.best_race:
+		bests.append("race time")
+	if r.best_lap:
+		bests.append("lap")
+	if not bests.is_empty():
+		text += "\nNEW PERSONAL BEST: " + " and ".join(bests)
+	var affordable: Array = r.affordable
+	if not affordable.is_empty():
+		var names: PackedStringArray = []
+		for item in affordable.slice(0, 4):
+			names.append((item as CosmeticItem).display_name)
+		text += "\nNow affordable in the Garage: " + ", ".join(names) + ("..." if affordable.size() > 4 else "")
+	_rewards_label.text = text
 
 
 func _results_heading() -> String:
@@ -284,6 +335,15 @@ func _fill_results() -> void:
 		_results_grid.add_child(_cell(last, color, 18))
 	if c != null:
 		_fill_championship(c)
+		_fill_next_grid(c)
+
+
+## Grand Prix: who starts where next race (the order this race finished).
+func _fill_next_grid(c: Championship) -> void:
+	var lines: PackedStringArray = []
+	for i in c.next_grid.size():
+		lines.append("%d  %s" % [i + 1, _name_of(c.next_grid[i])])
+	_grid_label.text = "\n".join(lines)
 
 
 func _fill_championship(c: Championship) -> void:
@@ -351,7 +411,9 @@ func _update_combat(delta: float) -> void:
 	_status_label.text = "  ".join(effects)
 
 	var incoming := race.weapon_manager.is_incoming(car) and not race.player.finished
-	_incoming_label.visible = incoming and int(Time.get_ticks_msec() / 150) % 2 == 0
+	# Reduced flashing (GDD 11.9): a steady warning instead of a blinking one.
+	var blink_on := GameSettings.reduced_flashing or int(Time.get_ticks_msec() / 150) % 2 == 0
+	_incoming_label.visible = incoming and blink_on
 	if incoming and not _was_incoming:
 		_play("incoming")
 	_was_incoming = incoming
@@ -423,7 +485,9 @@ func _build() -> void:
 	_elim_label = _label(16, Color(1.0, 0.45, 0.5))
 	_elim_label.visible = false
 	_standings_label = _label(15, Color(1, 1, 1, 0.8))
-	for label in [_mode_label, _position_label, _lap_label, _time_label, _elim_label, _standings_label]:
+	_coin_label = _label(18, Color(1.0, 0.82, 0.3))
+	_coin_label.pivot_offset = Vector2(0, 10)
+	for label in [_mode_label, _position_label, _lap_label, _time_label, _coin_label, _elim_label, _standings_label]:
 		_info_box.add_child(label)
 
 	var center := CenterContainer.new()
@@ -478,11 +542,19 @@ func _build() -> void:
 	_championship_grid.columns = 3
 	_championship_grid.add_theme_constant_override("h_separation", 20)
 	_standings_box.add_child(_championship_grid)
+	_grid_box = VBoxContainer.new()
+	_grid_box.visible = false
+	tables.add_child(_grid_box)
+	_grid_box.add_child(_cell("NEXT GRID", CYAN, 16))
+	_grid_label = _label(16, Color(1, 1, 1, 0.85))
+	_grid_box.add_child(_grid_label)
+	_rewards_label = _label(16, Color(1.0, 0.82, 0.3))
+	results_box.add_child(_rewards_label)
 	var buttons := HBoxContainer.new()
 	buttons.add_theme_constant_override("separation", 12)
 	results_box.add_child(buttons)
 	_continue_button = UIStyle.button("Race again", func() -> void: race.continue_after_results())
-	_menu_button = UIStyle.button("Quit to mode select", func() -> void: race.quit_to_menu())
+	_menu_button = UIStyle.button("Main menu", func() -> void: race.quit_to_menu())
 	buttons.add_child(_continue_button)
 	buttons.add_child(_menu_button)
 	var hint := _label(13, Color(1, 1, 1, 0.5))
@@ -541,6 +613,7 @@ func _build() -> void:
 	# Placeholder audio cues (GDD 12: important events are audible too).
 	_cue_player = AudioStreamPlayer.new()
 	_cue_player.volume_db = -8.0
+	_cue_player.bus = &"SFX"
 	add_child(_cue_player)
 	_tones = {
 		"pickup": VehicleFeedback._make_tone(990.0, 0.09),
@@ -548,6 +621,7 @@ func _build() -> void:
 		"hurt": VehicleFeedback._make_tone(0.0, 0.3, 0.35, true),
 		"blocked": VehicleFeedback._make_tone(520.0, 0.15),
 		"incoming": VehicleFeedback._make_tone(740.0, 0.25),
+		"coin": VehicleFeedback._make_tone(1568.0, 0.06, 0.22),
 	}
 
 

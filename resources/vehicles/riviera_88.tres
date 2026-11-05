@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="VehicleData" format=3]
+
+[ext_resource type="Script" path="res://scripts/vehicles/vehicle_data.gd" id="1_data"]
+[ext_resource type="Resource" path="res://resources/vehicles/stats/riviera_88_stats.tres" id="2_stats"]
+
+[resource]
+script = ExtResource("1_data")
+id = "riviera_88"
+display_name = "Riviera 88"
+vehicle_type = "Luxury Roadster"
+character = "Responsive cornering and eager drifts; modest top speed."
+stats = ExtResource("2_stats")
+factory_color = Color(0.05, 0.55, 0.55, 1)
+body_scale = Vector3(0.96, 0.9, 0.95)
+cabin_scale = Vector3(0.85, 0.55, 0.8)
+spoiler_scale = Vector3(0, 0, 0)

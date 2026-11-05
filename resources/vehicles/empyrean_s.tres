@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="VehicleData" format=3]
+
+[ext_resource type="Script" path="res://scripts/vehicles/vehicle_data.gd" id="1_data"]
+[ext_resource type="Resource" path="res://resources/vehicles/stats/empyrean_s_stats.tres" id="2_stats"]
+
+[resource]
+script = ExtResource("1_data")
+id = "empyrean_s"
+display_name = "Empyrean S"
+vehicle_type = "Hyper Luxury"
+character = "Highest top speed, but slower to turn and to get going."
+stats = ExtResource("2_stats")
+factory_color = Color(0.55, 0.05, 0.25, 1)
+body_scale = Vector3(1.04, 0.88, 1.1)
+cabin_scale = Vector3(0.95, 0.85, 1)
+spoiler_scale = Vector3(1.1, 1, 1.1)

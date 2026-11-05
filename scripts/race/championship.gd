@@ -23,19 +23,20 @@ var results: Array = []
 var points: Dictionary = {}
 ## Ids by grid slot for the next race (slot 0 = pole).
 var next_grid: Array[int] = []
-var vehicle_id: String = "placeholder_gt"
+var vehicle_id: String = PlayerProfile.DEFAULT_VEHICLE
 ## Rival names in roster order, so a save shows who raced.
 var rival_names: PackedStringArray = PackedStringArray()
-## Coins are Phase 5; kept in the save format already (GDD 2.2).
+## Coins already paid out this championship (GDD 13.2 rewards issued).
 var coins_awarded: int = 0
 var difficulty_id: String = "normal"
 var weapons_enabled: bool = true
 
 
 static func create(p_gp: GrandPrixData, p_difficulty_id: String, p_weapons: bool,
-		roster: RivalRoster) -> Championship:
+		roster: RivalRoster, p_vehicle_id: String = PlayerProfile.DEFAULT_VEHICLE) -> Championship:
 	var c := Championship.new()
 	c.gp = p_gp
+	c.vehicle_id = p_vehicle_id
 	c.difficulty_id = p_difficulty_id
 	c.weapons_enabled = p_weapons
 	var count := 7
@@ -120,6 +121,7 @@ func make_race_config() -> RaceConfig:
 		config.track_scene = load(gp.track_scenes[index]) as PackedScene
 	config.grid_order = next_grid.duplicate()
 	config.championship = self
+	config.vehicle_id = vehicle_id
 	return config
 
 

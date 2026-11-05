@@ -1,7 +1,7 @@
 class_name PauseMenu
 extends CanvasLayer
 ## Esc / gamepad Start pauses the whole race (physics, timers, AI) and shows
-## Resume / Restart race / Quit to mode select (GDD 3.2, 3.3). Runs while the
+## Resume / Restart race / Quit to main menu (GDD 3.2, 3.3). Runs while the
 ## tree is paused. Restart is disabled once a Grand Prix result is saved.
 
 var race: RaceManager
@@ -70,7 +70,7 @@ func _build() -> void:
 	box.add_child(_title)
 	_resume = UIStyle.button("Resume", close)
 	_restart = UIStyle.button("Restart race", func() -> void: race.restart())
-	_quit = UIStyle.button("Quit to mode select", func() -> void: race.quit_to_menu())
+	_quit = UIStyle.button("Quit to main menu", func() -> void: race.quit_to_menu())
 	for b in [_resume, _restart, _quit]:
 		box.add_child(b)
 	UIStyle.chain_focus([_resume, _restart, _quit])

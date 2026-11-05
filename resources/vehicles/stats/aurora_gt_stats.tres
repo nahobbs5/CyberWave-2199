@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="VehicleStats" format=3]
+
+[ext_resource type="Script" path="res://scripts/vehicles/vehicle_stats.gd" id="1_stats"]
+
+[resource]
+script = ExtResource("1_stats")
+display_name = "Aurora GT"
+top_speed = 43.5
+acceleration = 13.6
+handling = 2.5
+drift = 1.32
+grip = 13.0
+steer_response = 13.0

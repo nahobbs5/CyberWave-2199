@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="VehicleStats" format=3]
+
+[ext_resource type="Script" path="res://scripts/vehicles/vehicle_stats.gd" id="1_stats"]
+
+[resource]
+script = ExtResource("1_stats")
+display_name = "Nexus X"
+top_speed = 43.0
+acceleration = 15.8
+handling = 2.35
+drift = 1.38

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="VehicleData" format=3]
+
+[ext_resource type="Script" path="res://scripts/vehicles/vehicle_data.gd" id="1_data"]
+[ext_resource type="Resource" path="res://resources/vehicles/stats/valkyrie_r_stats.tres" id="2_stats"]
+
+[resource]
+script = ExtResource("1_data")
+id = "valkyrie_r"
+display_name = "Valkyrie R"
+vehicle_type = "Performance Sedan"
+character = "Balanced, predictable control. Drifts are steady and easy to hold."
+stats = ExtResource("2_stats")
+factory_color = Color(0.2, 0.22, 0.24, 1)
+body_scale = Vector3(1, 1.08, 1.05)
+cabin_scale = Vector3(1, 1.1, 1.25)
+spoiler_scale = Vector3(0.9, 1, 0.9)

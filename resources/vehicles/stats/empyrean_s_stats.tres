@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="VehicleStats" format=3]
+
+[ext_resource type="Script" path="res://scripts/vehicles/vehicle_stats.gd" id="1_stats"]
+
+[resource]
+script = ExtResource("1_stats")
+display_name = "Empyrean S"
+top_speed = 46.2
+acceleration = 13.0
+handling = 2.25
+drift = 1.35

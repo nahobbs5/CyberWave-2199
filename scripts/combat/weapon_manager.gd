@@ -246,12 +246,13 @@ func _spawn_crates() -> void:
 func spawn_flash(at: Vector3, color: Color) -> void:
 	var light := OmniLight3D.new()
 	light.light_color = color
-	light.light_energy = 6.0
+	# Reduced flashing (GDD 11.9): a dimmer, slower fade.
+	light.light_energy = 2.0 if GameSettings.reduced_flashing else 6.0
 	light.omni_range = 8.0
 	light.position = at
 	add_child(light)
 	var tween := light.create_tween()
-	tween.tween_property(light, "light_energy", 0.0, 0.3)
+	tween.tween_property(light, "light_energy", 0.0, 0.6 if GameSettings.reduced_flashing else 0.3)
 	tween.tween_callback(light.queue_free)
 
 
@@ -291,7 +292,7 @@ func _process(_delta: float) -> void:
 	if shown == null:
 		return
 	_reticle.global_position = shown.global_position + Vector3.UP * 1.0
-	var pulse := 1.0 + 0.08 * sin(Time.get_ticks_msec() * 0.015)
+	var pulse := 1.0 if GameSettings.reduced_flashing else 1.0 + 0.08 * sin(Time.get_ticks_msec() * 0.015)
 	if targeting.locked:
 		_reticle.scale = Vector3.ONE * pulse
 		_reticle_material.albedo_color = Color(1.0, 0.2, 0.85, 0.95)

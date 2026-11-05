@@ -4,7 +4,7 @@ extends Resource
 ## Speeds are m/s, rates are rad/s, accelerations are m/s².
 ## All numbers are first-pass prototype values and need playtesting.
 
-@export var display_name: String = "Placeholder GT"
+@export var display_name: String = "V8 Specter"
 
 @export_group("Top Speed and Acceleration")
 @export var top_speed: float = 44.0

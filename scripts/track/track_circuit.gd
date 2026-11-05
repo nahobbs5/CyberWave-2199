@@ -54,6 +54,12 @@ signal checkpoint_crossed(index: int, body: Node3D)
 ## Lateral positions (metres right of centre) of the crates in each row.
 @export var crate_lateral_positions: PackedFloat32Array = PackedFloat32Array([-6.0, -2.0, 2.0, 6.0])
 
+@export_group("Track Coins")
+## Distance along the track of each coin (GDD 9.2: up to 10 per lap keeps a
+## 3-lap race at the 30-coin cap).
+@export var coin_offsets: PackedFloat32Array = PackedFloat32Array()
+## Sideways offset of each coin from the racing line (m, + = right).
+@export var coin_laterals: PackedFloat32Array = PackedFloat32Array()
 @export_group("Starting Grid")
 ## Distance from the start line back to the pole position slot.
 @export var grid_first_row_gap: float = 8.0

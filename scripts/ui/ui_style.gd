@@ -54,3 +54,67 @@ static func chain_focus(buttons: Array) -> void:
 		var b := buttons[i] as Control
 		b.focus_neighbor_top = b.get_path_to(buttons[(i - 1 + buttons.size()) % buttons.size()])
 		b.focus_neighbor_bottom = b.get_path_to(buttons[(i + 1) % buttons.size()])
+
+
+## Full-screen dark background for menu screens.
+static func background(parent: Control) -> void:
+	var bg := ColorRect.new()
+	bg.color = Color(0.015, 0.008, 0.04)
+	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parent.add_child(bg)
+
+
+## Screen title on the left, coin balance on the right. Returns the coin label.
+static func header(parent: Container, title: String) -> Label:
+	var row := HBoxContainer.new()
+	parent.add_child(row)
+	row.add_child(label(title, 34, MAGENTA))
+	var spacer := Control.new()
+	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(spacer)
+	var coins := label("", 22, Color(1.0, 0.82, 0.3))
+	row.add_child(coins)
+	return coins
+
+
+## Horizontal bar for a 1-10 stat rating.
+static func stat_bar(rating: int) -> ProgressBar:
+	var bar := ProgressBar.new()
+	bar.min_value = 0
+	bar.max_value = 10
+	bar.value = rating
+	bar.show_percentage = false
+	bar.custom_minimum_size = Vector2(220, 14)
+	bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var fill := StyleBoxFlat.new()
+	fill.bg_color = MAGENTA
+	fill.set_corner_radius_all(2)
+	var back := StyleBoxFlat.new()
+	back.bg_color = Color(1, 1, 1, 0.08)
+	back.set_corner_radius_all(2)
+	bar.add_theme_stylebox_override("fill", fill)
+	bar.add_theme_stylebox_override("background", back)
+	return bar
+
+
+## Vehicle name, type, description and four stat bars, rebuilt in place.
+static func fill_vehicle_info(box: VBoxContainer, vehicle: VehicleData) -> void:
+	for child in box.get_children():
+		child.queue_free()
+	box.add_child(label(vehicle.display_name, 26, Color.WHITE))
+	box.add_child(label(vehicle.vehicle_type, 15, CYAN))
+	var desc := label(vehicle.character, 14, Color(1, 1, 1, 0.7))
+	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	desc.custom_minimum_size = Vector2(420, 0)
+	box.add_child(desc)
+	var names: Array = VehicleCatalog.STAT_RANGES.keys()
+	var values := VehicleCatalog.primary_stats(vehicle.stats)
+	for i in names.size():
+		var row := HBoxContainer.new()
+		var name_label := label(names[i], 15)
+		name_label.custom_minimum_size = Vector2(120, 0)
+		row.add_child(name_label)
+		row.add_child(stat_bar(VehicleCatalog.rating(names[i], values[i])))
+		box.add_child(row)
+	box.add_child(label("Top speed %d km/h" % roundi(vehicle.stats.top_speed * 3.6), 13, Color(1, 1, 1, 0.55)))

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="VehicleData" format=3]
+
+[ext_resource type="Script" path="res://scripts/vehicles/vehicle_data.gd" id="1_data"]
+[ext_resource type="Resource" path="res://resources/vehicles/stats/orbiter_stats.tres" id="2_stats"]
+
+[resource]
+script = ExtResource("1_data")
+id = "orbiter"
+display_name = "Orbiter"
+vehicle_type = "Aero Coupe"
+character = "Stable at high speed: keeps more steering flat out, drifts less."
+stats = ExtResource("2_stats")
+factory_color = Color(0.85, 0.88, 0.9, 1)
+body_scale = Vector3(1, 0.85, 1.08)
+cabin_scale = Vector3(0.9, 0.9, 1.25)
+spoiler_scale = Vector3(1.2, 1.6, 1.4)

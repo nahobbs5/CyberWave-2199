@@ -116,6 +116,13 @@ func teleport(target: Transform3D) -> void:
 
 
 ## Placeholder paint so racers are distinguishable (not a cosmetic system).
+## Swaps the driving stats after the car is in the tree (re-aims the wheel rays).
+func set_stats(new_stats: VehicleStats) -> void:
+	stats = new_stats if new_stats != null else VehicleStats.new()
+	for ray in _wheels:
+		ray.target_position = Vector3(0.0, -(stats.suspension_rest_length + stats.wheel_radius), 0.0)
+
+
 func set_body_color(color: Color) -> void:
 	var paint := StandardMaterial3D.new()
 	paint.albedo_color = color
