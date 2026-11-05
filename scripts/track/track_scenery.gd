@@ -18,7 +18,18 @@ var rng := RandomNumberGenerator.new()
 
 const TEXTURES := "res://assets/textures/polyhaven/%s/%s_%s_1k.jpg"
 
+const ROAD_CELL := 40.0
+## Scenery batch chunk size (m).
+const CHUNK := 250.0
+## Cast shadows from scenery (off by default; interiors with sun shafts turn it on).
+@export var cast_shadows: bool = false
+## Material keys that never cast shadows even when cast_shadows is on (glass).
+var no_shadow_keys: Array[String] = []
+
 var _batches: Dictionary = {}
+## Spatial index of road samples: Vector2i cell -> PackedFloat32Array of
+## (x, z, half_width) triples, for fast clear() / edge_distance() queries.
+var _road_cells: Dictionary = {}
 var _materials: Dictionary = {}
 var _root: Node3D
 
@@ -33,6 +44,7 @@ func place_on_track(p_track: TrackCircuit) -> void:
 	_root = Node3D.new()
 	_root.name = "Generated"
 	add_child(_root)
+	_build_road_index()
 	build()
 	_commit()
 
@@ -51,8 +63,48 @@ func at(offset: float, lateral: float = 0.0, height: float = 0.0) -> Transform3D
 
 ## True if a disc at a track-local point is clear of every road and barrier.
 func clear(local_pos: Vector3, radius: float) -> bool:
-	var world := track.to_global(local_pos)
-	return track.get_lateral_distance(world) > track.road_width * 0.5 + track.barrier_thickness + 1.0 + radius
+	return edge_distance(local_pos) > track.barrier_thickness + 1.0 + radius
+
+
+## Metres from a track-local point to the nearest road edge (main loop or
+## shortcut); negative on a road. Capped at about ROAD_CELL when far away.
+func edge_distance(local_pos: Vector3) -> float:
+	var cx := int(floor(local_pos.x / ROAD_CELL))
+	var cz := int(floor(local_pos.z / ROAD_CELL))
+	var best := ROAD_CELL * 1.5
+	for dz in range(-1, 2):
+		for dx in range(-1, 2):
+			var cell: PackedFloat32Array = _road_cells.get(Vector2i(cx + dx, cz + dz), PackedFloat32Array())
+			var i := 0
+			while i < cell.size():
+				var ex := local_pos.x - cell[i]
+				var ez := local_pos.z - cell[i + 1]
+				var d := sqrt(ex * ex + ez * ez) - cell[i + 2]
+				if d < best:
+					best = d
+				i += 3
+	return best
+
+
+func _build_road_index() -> void:
+	_road_cells.clear()
+	_index_curve(track.curve, track.road_width * 0.5)
+	for sc in track.shortcuts:
+		_index_curve(sc.curve, sc.road_width * 0.5)
+
+
+func _index_curve(curve: Curve3D, half: float) -> void:
+	var length := curve.get_baked_length()
+	var d := 0.0
+	while d <= length:
+		var p := curve.sample_baked(d)
+		var key := Vector2i(int(floor(p.x / ROAD_CELL)), int(floor(p.z / ROAD_CELL)))
+		var cell: PackedFloat32Array = _road_cells.get(key, PackedFloat32Array())
+		cell.append(p.x)
+		cell.append(p.z)
+		cell.append(half)
+		_road_cells[key] = cell
+		d += 2.5
 
 
 ## Clear test for a rectangle footprint (checks centre, corners and edge midpoints).
@@ -159,18 +211,21 @@ func add_flicker_light(pos: Vector3, color: Color, energy: float, light_range: f
 	return light
 
 
-func _st(key: String) -> SurfaceTool:
-	if not _batches.has(key):
+## Batches are split per material AND per CHUNK-metre square, so the renderer
+## can cull what's off screen and lights only touch nearby geometry.
+func _st(key: String, at: Vector3 = Vector3.ZERO) -> SurfaceTool:
+	var batch_key := "%s@%d,%d" % [key, int(floor(at.x / CHUNK)), int(floor(at.z / CHUNK))]
+	if not _batches.has(batch_key):
 		var st := SurfaceTool.new()
 		st.begin(Mesh.PRIMITIVE_TRIANGLES)
-		_batches[key] = st
-	return _batches[key]
+		_batches[batch_key] = st
+	return _batches[batch_key]
 
 
 # --- geometry ------------------------------------------------------------------
 
 func add_box(key: String, size: Vector3, xf: Transform3D) -> void:
-	var st := _st(key)
+	var st := _st(key, xf.origin)
 	var h := size * 0.5
 	var p := []
 	for i in 8:
@@ -182,7 +237,7 @@ func add_box(key: String, size: Vector3, xf: Transform3D) -> void:
 ## Vertical cylinder standing on xf.origin.
 func add_cyl(key: String, radius: float, height: float, xf: Transform3D, segments: int = 10,
 		top_radius: float = -1.0) -> void:
-	var st := _st(key)
+	var st := _st(key, xf.origin)
 	var r2 := radius if top_radius < 0.0 else top_radius
 	var c := xf * Vector3(0, height * 0.5, 0)
 	for i in segments:
@@ -203,7 +258,7 @@ func add_cone(key: String, radius: float, height: float, xf: Transform3D, segmen
 
 ## Square pyramid standing on xf.origin.
 func add_pyramid(key: String, half_base: float, height: float, xf: Transform3D) -> void:
-	var st := _st(key)
+	var st := _st(key, xf.origin)
 	var top := xf * Vector3(0, height, 0)
 	var c := xf * Vector3(0, height * 0.3, 0)
 	var b := [xf * Vector3(-half_base, 0, -half_base), xf * Vector3(half_base, 0, -half_base),
@@ -213,7 +268,7 @@ func add_pyramid(key: String, half_base: float, height: float, xf: Transform3D) 
 
 
 func add_sphere(key: String, radius: float, xf: Transform3D, rings: int = 6, segments: int = 10) -> void:
-	var st := _st(key)
+	var st := _st(key, xf.origin)
 	for r in rings:
 		var p0 := PI * r / rings
 		var p1 := PI * (r + 1) / rings
@@ -226,7 +281,7 @@ func add_sphere(key: String, radius: float, xf: Transform3D, rings: int = 6, seg
 
 ## Flat quad (both sides visible): w x h in the local XY plane.
 func add_panel(key: String, w: float, h: float, xf: Transform3D) -> void:
-	var st := _st(key)
+	var st := _st(key, xf.origin)
 	var a := xf * Vector3(-w * 0.5, 0, 0)
 	var b := xf * Vector3(w * 0.5, 0, 0)
 	var c := xf * Vector3(w * 0.5, h, 0)
@@ -323,11 +378,13 @@ func _quad(st: SurfaceTool, a: Vector3, b: Vector3, c: Vector3, d: Vector3, insi
 
 
 func _commit() -> void:
-	for key in _batches:
+	for batch_key in _batches:
+		var key: String = batch_key.get_slice("@", 0)
 		var mi := MeshInstance3D.new()
-		mi.name = "Batch_" + key
-		mi.mesh = (_batches[key] as SurfaceTool).commit()
+		mi.name = "Batch_" + batch_key.replace(",", "_")
+		mi.mesh = (_batches[batch_key] as SurfaceTool).commit()
 		mi.material_override = _materials.get(key)
-		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		var shadows := cast_shadows and not no_shadow_keys.has(key)
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if shadows else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		_root.add_child(mi)
 	_batches.clear()

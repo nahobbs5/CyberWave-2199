@@ -7,6 +7,7 @@ const TEST_CIRCUIT := "res://scenes/tracks/test_circuit.tscn"
 
 ## [name, scene path or "" (not built yet), location]
 const TRACKS := [
+	["The Stacks Grand Prix", "res://scenes/tracks/the_stacks.tscn", "Library of Congress, Washington, DC"],
 	["Six Flags New Orleans", "res://scenes/tracks/six_flags_new_orleans.tscn", "Louisiana"],
 	["Vegas Overdrive", "res://scenes/tracks/vegas_overdrive.tscn", "Las Vegas, Nevada"],
 	["Test Circuit", TEST_CIRCUIT, "Graybox"],

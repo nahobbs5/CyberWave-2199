@@ -28,7 +28,7 @@ func _go() -> void:
 	var counted := 0
 	for i in frames:
 		await process_frame
-		if i >= frames - 20:
+		if i >= frames - mini(20, frames / 2):
 			draws += RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_DRAW_CALLS_IN_FRAME)
 			prims += RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_PRIMITIVES_IN_FRAME)
 			objs += RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_OBJECTS_IN_FRAME)

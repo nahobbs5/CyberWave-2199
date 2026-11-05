@@ -27,13 +27,11 @@ static func build(scenery: TrackScenery, bounds: Rect2, cell: float = 7.0, ampli
 			var z := bounds.position.y + iz * cell
 			var h := noise.get_noise_2d(x, z) * amplitude + 0.35
 			# Dry, level banks along the roads (just below the road surface).
-			var off_road := track.get_lateral_distance(track.to_global(Vector3(x, 0, z))) - bank
+			var off_road := scenery.edge_distance(Vector3(x, 0, z)) - (bank - track.road_width * 0.5)
 			var t := clampf(off_road / 14.0, 0.0, 1.0)
 			heights[iz * nx + ix] = lerpf(-0.04, h, t * t * (3.0 - 2.0 * t))
-	var grass := SurfaceTool.new()
-	grass.begin(Mesh.PRIMITIVE_TRIANGLES)
-	var mud := SurfaceTool.new()
-	mud.begin(Mesh.PRIMITIVE_TRIANGLES)
+	# One grass and one mud mesh per chunk, so off-screen terrain is culled.
+	var tools := {}
 	for iz in nz - 1:
 		for ix in nx - 1:
 			var p := []
@@ -42,11 +40,18 @@ static func build(scenery: TrackScenery, bounds: Rect2, cell: float = 7.0, ampli
 				var gz: int = iz + c[1]
 				p.append(Vector3(bounds.position.x + gx * cell, heights[gz * nx + gx], bounds.position.y + gz * cell))
 			var avg: float = (p[0].y + p[1].y + p[2].y + p[3].y) * 0.25
-			var st := grass if avg > 0.25 else mud
+			var key := "%s@%d,%d" % ["g" if avg > 0.25 else "m", int(p[0].x / TrackScenery.CHUNK), int(p[0].z / TrackScenery.CHUNK)]
+			if not tools.has(key):
+				var nst := SurfaceTool.new()
+				nst.begin(Mesh.PRIMITIVE_TRIANGLES)
+				tools[key] = nst
+			var st: SurfaceTool = tools[key]
 			_tri(st, p[0], p[2], p[1])
 			_tri(st, p[0], p[3], p[2])
-	scenery.add_mesh_instance(grass.commit(), scenery.get_material(grass_key), "TerrainGrass")
-	scenery.add_mesh_instance(mud.commit(), scenery.get_material(mud_key), "TerrainMud")
+	for key in tools:
+		var is_grass := (key as String).begins_with("g")
+		scenery.add_mesh_instance((tools[key] as SurfaceTool).commit(),
+				scenery.get_material(grass_key if is_grass else mud_key), "Terrain_" + (key as String).replace(",", "_"))
 	var water := PlaneMesh.new()
 	water.size = bounds.size
 	var wi := scenery.add_mesh_instance(water, scenery.get_material(water_key), "FloodWater")

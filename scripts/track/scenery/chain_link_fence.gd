@@ -35,8 +35,7 @@ static func material() -> StandardMaterial3D:
 static func build(scenery: TrackScenery, points: PackedVector3Array, post_key: String, height: float = 2.6,
 		spacing: float = 3.0) -> void:
 	var rng := scenery.rng
-	var st := SurfaceTool.new()
-	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var tools := {}
 	var posts: Array[Vector3] = []
 	for i in points.size() - 1:
 		var a := points[i]
@@ -73,11 +72,17 @@ static func build(scenery: TrackScenery, points: PackedVector3Array, post_key: S
 		else:
 			top_a.y -= sag
 			top_b.y -= sag * rng.randf()
-		_quad(st, bottom_a, bottom_b, top_b, top_a, u, u + len / 1.5, 0.0, height / 1.5)
+		var key := Vector2i(int(a.x / TrackScenery.CHUNK), int(a.z / TrackScenery.CHUNK))
+		if not tools.has(key):
+			var nst := SurfaceTool.new()
+			nst.begin(Mesh.PRIMITIVE_TRIANGLES)
+			tools[key] = nst
+		_quad(tools[key], bottom_a, bottom_b, top_b, top_a, u, u + len / 1.5, 0.0, height / 1.5)
 		u += len / 1.5
 		if roll > 0.75:
 			scenery.add_box(post_key, Vector3(0.03, 0.03, len), Transform3D(Basis.looking_at((top_b - top_a).normalized(), Vector3.UP), (top_a + top_b) * 0.5 + Vector3(0, 0.25, 0)))
-	scenery.add_mesh_instance(st.commit(), material(), "ChainLink")
+	for key in tools:
+		scenery.add_mesh_instance((tools[key] as SurfaceTool).commit(), material(), "ChainLink")
 
 
 static func _quad(st: SurfaceTool, a: Vector3, b: Vector3, c: Vector3, d: Vector3, u0: float, u1: float, v0: float, v1: float) -> void:
