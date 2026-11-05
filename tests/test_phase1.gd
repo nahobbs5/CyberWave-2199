@@ -185,7 +185,7 @@ func _test_input_actions(_main: Node) -> void:
 
 func _test_track_queries(main: Node) -> void:
 	var track := _track(main)
-	_check(track.length > 1200.0 and track.length < 1500.0, "circuit length ~1.3 km (got %.0f)" % track.length)
+	_check(track.length > 2400.0 and track.length < 2900.0, "circuit length ~2.6 km (got %.0f)" % track.length)
 	var spawn := track.get_spawn_transform()
 	_check(track.is_on_road(spawn.origin), "spawn is on the road")
 	_check(absf(track.get_offset_at(spawn.origin) - track.get_spawn_offset()) < 1.5, "offset lookup round-trips")
@@ -406,7 +406,7 @@ func _test_scripted_lap(main: Node) -> void:
 	var reasons := []
 	car.recovery.recovered.connect(func(reason: String) -> void: reasons.append(reason))
 	car.player_controlled = false
-	var max_frames := 60 * 90
+	var max_frames := 60 * 150
 	var frames := 0
 	while hud.get_lap_count() < 1 and frames < max_frames:
 		await physics_frame
@@ -419,7 +419,7 @@ func _test_scripted_lap(main: Node) -> void:
 		var target_speed := 26.0
 		car.throttle_input = 1.0 if car.forward_speed < target_speed else 0.0
 		car.brake_input = 0.5 if car.forward_speed > target_speed + 4.0 else 0.0
-	_check(hud.get_lap_count() >= 1, "lap completed within 90 s (%.1f s)" % (frames / 60.0))
+	_check(hud.get_lap_count() >= 1, "lap completed within 150 s (%.1f s)" % (frames / 60.0))
 	_check(reasons.is_empty(), "no recoveries needed during the lap (%s)" % [reasons])
 	print("    scripted lap took %.1f s of simulated time" % (frames / 60.0))
 

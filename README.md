@@ -43,10 +43,23 @@ Actions are registered at startup by `scripts/core/input_setup.gd`. Any action y
 - **R** (or gamepad Y) resets you to the last point on the track you legitimately drove through, about 6 m behind it, upright and stopped. Resets can never move you forward, so they can't be used as shortcuts.
 - Automatic recovery happens when the car is:
   - upside down or on its side for 1.5 s,
-  - stuck (pressing throttle or brake while barely moving) for 3 s,
+  - stuck (pressing throttle or brake while barely moving forward or back; sliding sideways along a wall counts as stuck) for 3 s,
   - below the world, or
-  - more than 25 m off the road edge for 2 s.
+  - outside the circuit (more than 3 m past the road edge, i.e. beyond the barrier) for 1 s.
 - The respawn spot is checked for other vehicles and shifts sideways or back if it is occupied.
+
+### The test circuit
+
+The test circuit is a 2.6 km graybox loop driven clockwise:
+- a 600 m main straight into a tight right hairpin (T1),
+- a left-right pair (T2–T3), where T3 is a long 133° right-hander made for drifting,
+- flowing esses (T4–T6) into a 95° drift corner (T7),
+- a fast kink (T8) onto a 500 m back straight,
+- a double-right hairpin (T9–T10), then a left (T11) onto the main straight.
+
+The two long straights ending in hard braking are the main overtaking spots.
+
+The layout is the `control_points` list on `scenes/tracks/test_circuit.tscn`, sampled from straights and arcs. Barriers have a 4 m invisible collider above the 1.4 m visible wall, so cars can't be launched out of the circuit.
 
 ### Racing
 
@@ -108,7 +121,7 @@ docs/                        GDD
   - A low centre of mass and a gentle upright assist (on the ground and while truly airborne) resist flipping.
   - AI drive the same car: `AIController` sets `player_controlled = false` and writes `throttle_input`, `steer_input` and the drift buttons. Difficulty never changes car stats (GDD §7.2).
 - **Drifting** (`DriftController`) is pure logic, fed by the vehicle each physics step, so it is unit-testable. Its signals drive the HUD and effects.
-- **Recovery** (`VehicleRecovery`) keeps `last_safe_offset` (distance along the track) and only accepts forward steps under 25 m. It works the same for AI cars. `total_progress` feeds the free-drive lap timer; races use checkpoints.
+- **Recovery** (`VehicleRecovery`) keeps `last_safe_offset` (distance along the track). It only accepts a forward move if the car actually travelled about that far (+15 m slack), so teleports and shortcuts never count, but missed updates (airborne, scraping a wall) do. It works the same for AI cars. `total_progress` feeds the free-drive lap timer; races use checkpoints.
 - **The racing line** (`RacingLine`) is built once per race and shared by every AI driver:
   - A shortest-path pass cuts the corners, then a minimum-curvature pass rounds off the apexes.
   - A safe speed is computed for every point from the car's handling, with a braking pass so the AI slows before corners.
@@ -161,18 +174,26 @@ The exit code is non-zero if anything fails. These checks do **not** judge how t
 
 ## Status and known issues
 
-**Verified (2026-11-05):** 91 Phase 1 and 159 Phase 2 headless checks pass on Godot 4.7.2 (Linux build). In simulated Normal races all 8 cars finish 3 laps in about 1:37–1:42, with typical laps of 31–32 s and no recoveries. Easy laps are about 35 s and Hard about 30 s; one Hard run had a single stuck-car recovery after a pile-up. Phase 2 has **not** been played on screen yet.
+**Verified (2026-11-05):** 91 Phase 1 and 159 Phase 2 headless checks pass on Godot 4.7.2 (Linux build). On the redesigned 2.6 km circuit, simulated races run with no recoveries at any difficulty. AI earn roughly 2–18 drift boosts each per race.
 
-- **The AI almost never drifts on the test circuit.** With the tightened handling, nearly every corner can be taken flat out. The only tight bend, the S-curve hairpin, is too short to earn even Cyan, so skipping the drift is the correct choice. AI drifting is verified on a test oval with long tight ends. A more technical circuit would give both you and the AI reasons to drift.
-- **AI pace is untested against a human.** Normal laps at about 31.5 s may be quick or slow for you. Tune `speed_factor` in `resources/ai/*.tres`.
+| AI difficulty | Typical lap | 3-lap race (all 8 AI) |
+|---|---|---|
+| Easy | about 71 s | 3:33–3:42 |
+| Normal | about 64 s | 3:12–3:27 |
+| Hard | about 61 s | 3:01–3:25 |
+
+The racing has **not** been played on screen yet.
+
+- **AI pace is untested against a human.** Normal laps at about 64 s may be quick or slow for you. Tune `speed_factor` in `resources/ai/*.tres`.
 - **Enter and gamepad A** restart from the results screen through Godot's default `ui_accept` action, which also includes Space. Space becomes the weapon key in Phase 3, so restart should get its own action then.
 
 - **Tuning is first-pass.** Every number in `VehicleStats` and the camera profiles is a starting point (GDD §18 leaves these to playtesting): speeds, grip, drift yaw, boost strength, suspension and camera smoothing.
 - **Camera jitter on high-refresh monitors.** The camera updates in `_physics_process` (60 Hz). Physics interpolation is not enabled yet.
 - **Placeholder feedback only.** Sparks are emissive spheres, the audio cues are generated sine tones, and there are no tyre or engine sounds yet.
 - **The free-drive lap timer is distance-based.** Races use real checkpoints.
-- **Safe-point tracking ignores jumps over 25 m.** A car flung far along the track keeps its old safe point until it resets. That is correct for anti-shortcut purposes, but may need softening once tracks have jumps.
-- **Races are short for the GDD race-length target.** A Normal-pace three-lap race takes about 1:40, against the GDD §15.2 target of 4 to 6 minutes. The circuit needs to be longer, which could be done together with a more technical layout.
-- **The track is flat.** No elevation, ramps or banking yet.
+- **Race length:** AI finish a Normal race in about 3:15. A human finishing mid-pack will likely take about 3:30–4:00, near the low end of the GDD §15.2 target of 4–6 minutes. Lengthen the layout or raise the lap count if races feel short.
+- **Scene load takes about 1.2 s** of generation (track meshes and colliders about 0.8 s, racing line about 0.4 s) before the countdown. That's acceptable for now, but could later be cached or baked.
+- **The Aggressor wins most simulated races.** Its personality never backs off behind slower cars, which pays off in AI-only races. Balancing rivals is Phase 6 work.
+- **The track is flat.** No elevation, ramps or banking yet. The road is visual only; the ground slab provides collision, so elevation will need road colliders.
 - **No pause** (Esc), weapons, menus, cosmetics or pre-race camera sweep yet. These come in later phases.
 - **Rival names are placeholders** ("The Technician", etc.), following GDD §7.3. AI cars show a floating name tag.

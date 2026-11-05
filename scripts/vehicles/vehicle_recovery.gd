@@ -5,7 +5,9 @@ extends Node
 ## Tracks the last point on the circuit the car legitimately drove through.
 ## Resets always return there (minus a small backoff), so resetting can never
 ## move a car forward, and therefore can't be used as a shortcut.
-## total_progress doubles as the Phase 1 lap measure until checkpoints exist.
+## A forward move along the track is only accepted if the car actually
+## travelled that far, so teleports and shortcuts never advance the safe point.
+## total_progress feeds the free-drive lap timer.
 
 signal recovered(reason: String)
 
@@ -15,13 +17,16 @@ signal recovered(reason: String)
 @export var overturn_up_dot: float = 0.35
 @export var overturn_time: float = 1.5
 @export_group("Stuck")
+## Forward/backward speed below which a car that is trying to move counts as
+## stuck. Sideways creep (e.g. scraping along a wall) does not count as moving.
 @export var stuck_speed: float = 1.0
 @export var stuck_time: float = 3.0
 @export_group("Out of bounds")
 @export var kill_height: float = -15.0
 ## Distance beyond the road edge that counts as out of the playable area.
-@export var off_track_margin: float = 25.0
-@export var off_track_time: float = 2.0
+## (The barrier sits just past the road edge, so this means "outside the circuit".)
+@export var off_track_margin: float = 3.0
+@export var off_track_time: float = 1.0
 @export_group("Placement")
 ## Metres behind the last safe point to respawn.
 @export var reset_backoff: float = 6.0
@@ -29,9 +34,11 @@ signal recovered(reason: String)
 @export var reset_cooldown: float = 1.0
 ## Collision layer(s) used by vehicles, checked so we never respawn inside a racer.
 @export_flags_3d_physics var vehicle_layer: int = 2
-## Largest forward jump in track offset accepted per update. Bigger jumps
-## (cutting across, being thrown) are ignored so progress can't be skipped.
-@export var max_forward_step: float = 25.0
+## Track distance allowed beyond the distance the car actually travelled
+## (covers corner cutting and measuring error). Gaining more than this
+## without travelling it (teleports, shortcuts) is never accepted.
+@export var progress_slack: float = 15.0
+## Largest backward move accepted per update.
 @export var max_backward_step: float = 25.0
 
 var track: TrackCircuit
@@ -44,6 +51,8 @@ var _overturn_timer: float = 0.0
 var _stuck_timer: float = 0.0
 var _off_track_timer: float = 0.0
 var _cooldown: float = 0.0
+## Distance travelled since the safe point last moved.
+var _travelled: float = 0.0
 
 @onready var vehicle: VehicleController = get_parent() as VehicleController
 
@@ -52,6 +61,7 @@ func set_track(new_track: TrackCircuit, start_offset: float) -> void:
 	track = new_track
 	last_safe_offset = start_offset
 	total_progress = 0.0
+	_travelled = 0.0
 	_clear_timers()
 
 
@@ -65,6 +75,8 @@ func _physics_process(delta: float) -> void:
 	if track == null or vehicle == null:
 		return
 	_cooldown = maxf(0.0, _cooldown - delta)
+	var v := vehicle.linear_velocity
+	_travelled += Vector2(v.x, v.z).length() * delta
 	_update_safe_point()
 	if auto_recovery_enabled and _cooldown <= 0.0:
 		_check_automatic(delta)
@@ -78,6 +90,7 @@ func request_recovery(reason: String) -> bool:
 	var target := _find_clear_transform(last_safe_offset - backoff)
 	last_safe_offset = track.wrap_offset(last_safe_offset - backoff)
 	total_progress -= backoff
+	_travelled = 0.0
 	vehicle.drift.cancel("recovery")
 	vehicle.clear_boost()
 	vehicle.teleport(target)
@@ -97,10 +110,13 @@ func _update_safe_point() -> void:
 		return
 	var offset := track.get_offset_at(pos)
 	var step := track.wrapped_delta(last_safe_offset, offset)
-	if step > max_forward_step or step < -max_backward_step:
+	# Missed updates (airborne, scraping the edge) are fine: the car really
+	# covered that distance. A teleport or shortcut didn't.
+	if step > _travelled + progress_slack or step < -max_backward_step:
 		return
 	last_safe_offset = offset
 	total_progress += step
+	_travelled = 0.0
 
 
 func _check_automatic(delta: float) -> void:
@@ -127,8 +143,7 @@ func _check_automatic(delta: float) -> void:
 		_overturn_timer = 0.0
 
 	var trying_to_move := vehicle.throttle_input > 0.1 or vehicle.brake_input > 0.1
-	var planar_speed := Vector2(vehicle.linear_velocity.x, vehicle.linear_velocity.z).length()
-	if trying_to_move and planar_speed < stuck_speed:
+	if trying_to_move and absf(vehicle.forward_speed) < stuck_speed:
 		_stuck_timer += delta
 		if _stuck_timer > stuck_time:
 			request_recovery("stuck")

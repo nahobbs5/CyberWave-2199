@@ -6,13 +6,21 @@ extends Node
 ## Speed: tracks the line's safe speed, scaled by difficulty and personality.
 ## Drifting: holds drift through suitable corners, releases at the exit
 ## for a boost. Traffic: pulls out around slower cars ahead and avoids
-## driving into them. Recovery is left to the car's VehicleRecovery.
+## driving into them. Unsticking: reverses away from walls; resets after
+## longer failures are left to the car's VehicleRecovery.
 
 ## Cars ahead closer than this (plus speed-based lookahead) are considered.
 const TRAFFIC_BASE_RANGE := 10.0
 ## Lateral distance under which a car ahead blocks our line.
 const TRAFFIC_LANE_WIDTH := 2.7
 const PASS_OFFSET := 3.6
+## Seconds of failing to move forward before reversing out.
+const UNSTICK_DELAY := 0.8
+const UNSTICK_DURATION := 1.2
+## Don't start drifting more than this far off the line (metres).
+const DRIFT_MAX_LINE_ERROR := 2.5
+## Release a drift when this close to the road edge (metres).
+const DRIFT_EDGE_MARGIN := 2.0
 
 var vehicle: VehicleController
 var track: TrackCircuit
@@ -35,6 +43,8 @@ var _time: float = 0.0
 var _zone: int = -1
 var _drift_this_zone: bool = false
 var _rng := RandomNumberGenerator.new()
+var _blocked_time: float = 0.0
+var _reverse_time: float = 0.0
 
 
 func setup(p_vehicle: VehicleController, p_track: TrackCircuit, p_line: RacingLine,
@@ -66,9 +76,11 @@ func _physics_process(delta: float) -> void:
 	var right := forward.cross(Vector3.UP)
 	var speed := maxf(vehicle.forward_speed, 0.0)
 	var offset := track.get_offset_at(pos)
+	var road_right := track.get_tangent_at(offset).cross(Vector3.UP).normalized()
+	var my_lateral := (pos - track.get_center_at(offset)).dot(road_right)
 
 	# --- traffic ---
-	var traffic := _scan_traffic(pos, forward, right, speed)
+	var traffic := _scan_traffic(pos, forward, right, speed, my_lateral)
 	var desired_avoid: float = traffic["avoid"]
 	_avoid = move_toward(_avoid, desired_avoid, 5.0 * delta)
 
@@ -84,6 +96,9 @@ func _physics_process(delta: float) -> void:
 	_steer = move_toward(_steer, raw_steer, delta / maxf(difficulty.reaction_time, 0.01))
 	vehicle.steer_input = _steer
 
+	if _update_unstick(delta, raw_steer):
+		return
+
 	# --- speed ---
 	var lead := 3.0 + speed * 0.3
 	var target_speed := line.speed_at(offset + lead) * difficulty.speed_factor \
@@ -98,29 +113,55 @@ func _physics_process(delta: float) -> void:
 		vehicle.brake_input = 0.0
 	elif error < -1.5:
 		vehicle.throttle_input = 0.0
-		vehicle.brake_input = clampf(-error / 5.0, 0.25, 1.0)
+		vehicle.brake_input = clampf(-error / 3.0, 0.3, 1.0)
 	else:
 		vehicle.throttle_input = 0.35
 		vehicle.brake_input = 0.0
 
-	_update_drift(offset, speed, angle)
+	_update_drift(offset, speed, angle, my_lateral)
 
 
-func _update_drift(offset: float, speed: float, angle: float) -> void:
+## Pinned against something (e.g. sideways on a wall): steering needs forward
+## speed to turn the car, so back out with the nose swinging toward the
+## target. Returns true while reversing (inputs already written).
+func _update_unstick(delta: float, raw_steer: float) -> bool:
+	if _reverse_time > 0.0:
+		_reverse_time -= delta
+		vehicle.throttle_input = 0.0
+		vehicle.brake_input = 1.0
+		# Reversing flips which way steering yaws the car.
+		vehicle.steer_input = -signf(raw_steer) if absf(raw_steer) > 0.05 else 0.0
+		vehicle.drift_left_held = false
+		vehicle.drift_right_held = false
+		return true
+	var trying := vehicle.throttle_input > 0.5
+	_blocked_time = _blocked_time + delta if trying and vehicle.forward_speed < 2.0 else 0.0
+	if _blocked_time > UNSTICK_DELAY:
+		_blocked_time = 0.0
+		_reverse_time = UNSTICK_DURATION
+	return false
+
+
+func _update_drift(offset: float, speed: float, angle: float, my_lateral: float) -> void:
 	var zone := line.drift_zone_at(offset)
 	if zone != _zone:
 		_zone = zone
 		_drift_this_zone = zone >= 0 and _rng.randf() < difficulty.drift_chance * profile.drift_tendency
 	var want_drift := _drift_this_zone and zone >= 0 and absf(angle) < 0.7
+	# Let go before the wall (keeps any charge earned as a boost).
+	if absf(my_lateral) > track.road_width * 0.5 - DRIFT_EDGE_MARGIN:
+		want_drift = false
 	if not vehicle.drift.is_drifting():
-		want_drift = want_drift and speed > vehicle.stats.drift_min_speed + 4.0
+		var line_error := absf(my_lateral - line.lateral_at(offset) - profile.line_bias)
+		want_drift = want_drift and speed > vehicle.stats.drift_min_speed + 4.0 \
+				and line_error < DRIFT_MAX_LINE_ERROR and absf(angle) < 0.35
 	var direction := int(line.drift_zones[zone].z) if zone >= 0 else 0
 	vehicle.drift_left_held = want_drift and direction < 0
 	vehicle.drift_right_held = want_drift and direction > 0
 
 
 ## Returns {avoid: lateral metres, max_speed: m/s cap from the car ahead}.
-func _scan_traffic(pos: Vector3, forward: Vector3, right: Vector3, speed: float) -> Dictionary:
+func _scan_traffic(pos: Vector3, forward: Vector3, right: Vector3, speed: float, my_lateral: float) -> Dictionary:
 	var result := {"avoid": 0.0, "max_speed": INF}
 	var range_ahead := TRAFFIC_BASE_RANGE + speed * 0.6
 	var nearest := INF
@@ -143,7 +184,6 @@ func _scan_traffic(pos: Vector3, forward: Vector3, right: Vector3, speed: float)
 		if closing < -0.5:
 			continue # pulling away from us
 		# Pass on the side with more room relative to where the line puts us.
-		var my_lateral := line.lateral_at(track.get_offset_at(pos)) + _avoid
 		var pass_dir := -signf(side) if absf(side) > 0.6 else (-1.0 if my_lateral > 0.0 else 1.0)
 		result["avoid"] = pass_dir * PASS_OFFSET * lerpf(0.6, 1.0, profile.aggression)
 		# Don't ram: close to the car ahead, match its speed unless we're aggressive.

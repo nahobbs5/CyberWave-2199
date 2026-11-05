@@ -18,11 +18,12 @@ const GENERATED_PREFIX := "_Gen"
 signal checkpoint_crossed(index: int, body: Node3D)
 
 ## Centre-line control points in local space (closed loop, driven in order).
+## The first point is distance 0; the start line sits start_line_offset after it.
+## Scenes override this (test_circuit.tscn holds the real layout); the default
+## is a simple oval so a bare TrackCircuit still builds something drivable.
 @export var control_points: PackedVector3Array = PackedVector3Array([
-	Vector3(0, 0, 100), Vector3(0, 0, -150), Vector3(40, 0, -230), Vector3(130, 0, -240),
-	Vector3(190, 0, -180), Vector3(180, 0, -90), Vector3(120, 0, -40), Vector3(150, 0, 40),
-	Vector3(230, 0, 80), Vector3(250, 0, 170), Vector3(190, 0, 240), Vector3(90, 0, 230),
-	Vector3(40, 0, 180),
+	Vector3(0, 0, 120), Vector3(0, 0, -120), Vector3(40, 0, -160), Vector3(80, 0, -120),
+	Vector3(80, 0, 120), Vector3(40, 0, 160),
 ]):
 	set(value):
 		control_points = value
@@ -33,6 +34,9 @@ signal checkpoint_crossed(index: int, body: Node3D)
 		_queue_rebuild()
 @export var sample_spacing: float = 3.0
 @export var barrier_height: float = 1.4
+## Invisible collision height of the barriers. Taller than the visible wall so
+## a car hitting it sideways can't climb over and leave the circuit.
+@export var barrier_collision_height: float = 4.0
 @export var barrier_thickness: float = 1.0
 ## Distance along the circuit where the start/finish line sits.
 @export var start_line_offset: float = 60.0
@@ -52,7 +56,8 @@ signal checkpoint_crossed(index: int, body: Node3D)
 @export var grid_stagger: float = 4.5
 @export var grid_lateral: float = 4.0
 @export_group("")
-@export var ground_size: float = 1400.0
+## Ground extends this far beyond the layout's bounds on every side.
+@export var ground_margin: float = 300.0
 @export var light_spacing: float = 90.0
 
 var curve: Curve3D
@@ -211,22 +216,32 @@ func _add_generated(node: Node, node_name: String) -> void:
 
 
 func _build_ground() -> void:
+	# Size the slab to the layout's bounds plus a margin on every side.
+	var points := curve.get_baked_points()
+	var lo := Vector2(INF, INF)
+	var hi := Vector2(-INF, -INF)
+	for p in points:
+		lo = Vector2(minf(lo.x, p.x), minf(lo.y, p.z))
+		hi = Vector2(maxf(hi.x, p.x), maxf(hi.y, p.z))
+	var center := (lo + hi) * 0.5
+	var extent := (hi - lo) + Vector2.ONE * ground_margin * 2.0
+
 	var body := StaticBody3D.new()
 	body.collision_layer = 1
 	body.collision_mask = 0
 	var shape := CollisionShape3D.new()
 	var box := BoxShape3D.new()
-	box.size = Vector3(ground_size, 2.0, ground_size)
+	box.size = Vector3(extent.x, 2.0, extent.y)
 	shape.shape = box
-	shape.position = Vector3(110.0, -1.0, 0.0)
+	shape.position = Vector3(center.x, -1.0, center.y)
 	body.add_child(shape)
 
 	var mesh_instance := MeshInstance3D.new()
 	var plane := PlaneMesh.new()
-	plane.size = Vector2(ground_size, ground_size)
+	plane.size = extent
 	plane.material = _material(Color(0.05, 0.05, 0.08), 0.0, 0.95)
 	mesh_instance.mesh = plane
-	mesh_instance.position = Vector3(110.0, 0.0, 0.0)
+	mesh_instance.position = Vector3(center.x, 0.0, center.y)
 	body.add_child(mesh_instance)
 	_add_generated(body, "Ground")
 
@@ -316,9 +331,9 @@ func _build_barriers() -> void:
 			wall_lengths.append(padded)
 			var shape := CollisionShape3D.new()
 			var box := BoxShape3D.new()
-			box.size = Vector3(barrier_thickness, barrier_height, padded)
+			box.size = Vector3(barrier_thickness, barrier_collision_height, padded)
 			shape.shape = box
-			shape.transform = xf
+			shape.transform = xf.translated(Vector3(0.0, (barrier_collision_height - barrier_height) * 0.5, 0.0))
 			body.add_child(shape)
 
 	# Visuals: one multimesh for walls and one per neon colour for the top strips.

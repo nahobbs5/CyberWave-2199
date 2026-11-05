@@ -165,7 +165,8 @@ func _compute_speeds(stats: VehicleStats) -> void:
 		# Solve v = R * h * (1 - falloff * v / top) for v.
 		speeds[i] = minf(top, radius * h / (1.0 + radius * h * falloff / top))
 	# Backward pass: be slow enough to brake into every corner.
-	var decel := stats.brake_deceleration * 0.5
+	# Plan on well under full braking so the AI has margin to react.
+	var decel := stats.brake_deceleration * 0.4
 	for _pass in 2:
 		for n in count:
 			var i := count - 1 - n

@@ -213,7 +213,7 @@ func _test_full_race(race: RaceManager) -> void:
 	var order_errors := 0
 	var samples := 0
 	var frames := 0
-	var limit := 60 * 240
+	var limit := 60 * 360
 	while frames < limit and not race.racers.all(func(r: RaceProgress) -> bool: return r.finished):
 		await physics_frame
 		frames += 1
@@ -229,6 +229,7 @@ func _test_full_race(race: RaceManager) -> void:
 				samples += 1
 				if _reference_distance(race, a) + 8.0 < _reference_distance(race, b):
 					order_errors += 1
+					if order_errors <= 8: print("    mismatch t=%.0f %s dist=%.0f ref=%.0f next=%d off=%.0f | %s dist=%.0f ref=%.0f next=%d off=%.0f" % [race.race_time, a.display_name, a.race_distance, _reference_distance(race, a), a.next_checkpoint, race.track.get_offset_at(a.vehicle.global_position), b.display_name, b.race_distance, _reference_distance(race, b), b.next_checkpoint, race.track.get_offset_at(b.vehicle.global_position)])
 	print("    race took %.1f s simulated" % (frames / 60.0))
 	_check(race.racers.all(func(r: RaceProgress) -> bool: return r.finished), "all 8 racers finished")
 	var positions := {}
