@@ -45,12 +45,6 @@ func _build() -> void:
 	var title := UIStyle.heading("CYBERWAVE 2199", 56, UIStyle.MAGENTA)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(title)
-	var profile := PlayerProfile.get_profile()
-	var vehicle := VehicleCatalog.by_id(profile.selected_vehicle)
-	var info := UIStyle.label("%s   ·   %d coins   ·   plate %s" % [vehicle.display_name, profile.coins, profile.plate_text],
-			15, Color(1, 1, 1, 0.6))
-	info.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	box.add_child(info)
 	box.add_child(Control.new())
 
 	var saved := Championship.load_saved()

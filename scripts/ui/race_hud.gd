@@ -53,6 +53,10 @@ func setup(manager: RaceManager) -> void:
 	race.racer_eliminated.connect(_on_racer_eliminated)
 	race.racer_qualified.connect(_on_racer_qualified)
 	race.coins.coin_collected.connect(_on_coin_collected)
+	var trick := race.player.vehicle.trick if race.player != null else null
+	if trick != null:
+		trick.trick_started.connect(func() -> void: _play("trick"))
+		trick.trick_landed.connect(func() -> void: _play("trick_land"))
 	results.continue_pressed.connect(func() -> void: race.continue_after_results())
 	results.menu_pressed.connect(func() -> void: race.quit_to_menu())
 	info.mode_label.text = _mode_text()
@@ -365,4 +369,6 @@ func _build() -> void:
 		"blocked": VehicleFeedback._make_tone(520.0, 0.15),
 		"incoming": VehicleFeedback._make_tone(740.0, 0.25),
 		"coin": VehicleFeedback._make_tone(1568.0, 0.06, 0.22),
+		"trick": VehicleFeedback._make_tone(880.0, 0.08, 0.2),
+		"trick_land": VehicleFeedback._make_tone(1760.0, 0.12, 0.25),
 	}

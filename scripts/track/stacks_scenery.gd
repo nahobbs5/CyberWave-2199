@@ -232,12 +232,13 @@ func _reading_room() -> void:
 			var t0 := TAU * i / 28.0
 			var t1 := TAU * (i + 1) / 28.0
 			var q := func(a: float, t: float) -> Vector3: return c + Vector3(cos(t) * cos(a) * r, drum_h + sin(a) * r * 0.75, sin(t) * cos(a) * r)
-			var key := "ceiling" if (i + k) % 2 == 0 else "paint%d" % (k % 4)
+			# Cream coffers with two bands of painted panels.
+			var key := "paint%d" % (i % 4) if (k == 2 or k == 5) and i % 2 == 0 else "ceiling"
 			if k == rings - 1:
 				key = "oculus"
 			var st := _st(key, c)
 			_quad(st, q.call(a0, t0), q.call(a0, t1), q.call(a1, t1), q.call(a1, t0), c + Vector3(0, drum_h, 0))
-			if i % 4 == 0:
+			if i % 2 == 0:
 				var p0: Vector3 = q.call(a0, t0)
 				var p1: Vector3 = q.call(a1, t0)
 				add_box("gold", Vector3(0.6, 0.6, p0.distance_to(p1) + 0.2), Transform3D(Basis.looking_at((p1 - p0).normalized(), Vector3.UP), (p0 + p1) * 0.5))
@@ -269,20 +270,28 @@ func _courtyard(from_offset: float, to_offset: float) -> void:
 	while d < span:
 		var o := from_offset + d
 		var center := at(o)
-		# Stone paving from façade to façade.
-		add_box("stone", Vector3(52.0, 0.02, 4.05), center.translated_local(Vector3(0, 0.008, 0)))
+		# Stone paving from façade to façade (outside the reading room's drum).
+		if _outside_rotunda(center.origin, 2.0):
+			add_box("stone", Vector3(52.0, 0.02, 4.05), center.translated_local(Vector3(0, 0.008, 0)))
 		for side: float in [-1.0, 1.0]:
 			var face := at(o, side * 26.0)
-			if clear(face.origin, 1.0):
+			if clear(face.origin, 1.0) and _outside_rotunda(face.origin, 3.0):
 				add_box("marble", Vector3(2.0, 3.0, 4.05), face.translated_local(Vector3(0, 1.5, 0)))
 				add_box("plaster", Vector3(2.0, 17.0, 4.05), face.translated_local(Vector3(side * 0.2, 11.5, 0)))
 				add_box("gold", Vector3(2.6, 0.6, 4.05), face.translated_local(Vector3(0, 20.2, 0)))
 				# Windows glowing with interior light, three storeys.
 				if n % 3 == 1:
 					for storey in 3:
-						add_box("glass", Vector3(0.2, 2.6, 2.0), face.translated_local(Vector3(-side * 1.05, 5.0 + storey * 5.0, 0)))
+						var win := face.translated_local(Vector3(-side * 1.05, 5.0 + storey * 5.0, 0))
+						add_box("glass", Vector3(0.2, 2.6, 2.0), win)
+						add_box("marble", Vector3(0.3, 0.35, 2.8), win.translated_local(Vector3(-side * 0.05, 1.55, 0)))
+						add_box("marble", Vector3(0.3, 0.25, 2.6), win.translated_local(Vector3(-side * 0.05, -1.45, 0)))
+				elif n % 3 == 0:
+					# Marble pilaster between the window columns.
+					add_box("marble", Vector3(0.6, 16.0, 1.4), face.translated_local(Vector3(-side * 1.2, 11.0, 0)))
+					add_box("gold", Vector3(0.8, 0.5, 1.8), face.translated_local(Vector3(-side * 1.25, 18.8, 0)))
 			var hedge := at(o, side * 13.0)
-			if clear(hedge.origin, 0.8):
+			if clear(hedge.origin, 0.8) and _outside_rotunda(hedge.origin, 1.0):
 				add_box("hedge", Vector3(1.4, 1.2, 4.05), hedge.translated_local(Vector3(0, 0.6, 0)))
 			if n % 7 == 3:
 				var lamp := at(o, side * 11.0)
@@ -303,6 +312,10 @@ func _courtyard(from_offset: float, to_offset: float) -> void:
 			var step := at(from_offset + span * 0.66 - 6.0 + s * 1.5, side * (half + 6.0))
 			if clear(step.origin, 2.0):
 				add_box("marble", Vector3(8.0, 0.25 * (s + 1), 1.5), step.translated_local(Vector3(0, 0.125 * (s + 1), 0)))
+
+
+func _outside_rotunda(p: Vector3, margin: float) -> bool:
+	return Vector2(p.x - ROTUNDA.x, p.z - ROTUNDA.z).length() > ROTUNDA_RADIUS + margin
 
 
 # --- Card catalogue ----------------------------------------------------------------------

@@ -39,6 +39,11 @@ func _run_all() -> void:
 	var cars := _config(3)
 	cars.rival_vehicles = PackedStringArray(["aurora_gt", "orbiter", "riviera_88", "valkyrie_r", "nexus_x", "cipher_evo", "empyrean_s"])
 	await _run("rivals drive their own cars", _test_rival_cars, cars, false)
+	var flags := _config(1)
+	flags.track_name = "Six Flags New Orleans"
+	flags.track_scene = load("res://scenes/tracks/six_flags_new_orleans.tscn")
+	flags.difficulty = load("res://resources/ai/hard.tres") as AIDifficulty
+	await _run("ramp tricks", _test_tricks, flags, false)
 	await _run("results screen", _test_results, _config(1), true)
 	_fresh()
 	print("\n%d checks passed, %d failed" % [_passed, _failed])
@@ -219,6 +224,55 @@ func _test_stacks_rename() -> void:
 
 
 # --- races ---------------------------------------------------------------------------
+
+func _test_tricks(race: RaceManager) -> void:
+	var keys := InputMap.action_get_events(&"trick")
+	var has_e := keys.any(func(e: InputEvent) -> bool: return e is InputEventKey and (e as InputEventKey).physical_keycode == KEY_E or e is InputEventKey and (e as InputEventKey).keycode == KEY_E)
+	var has_x := keys.any(func(e: InputEvent) -> bool: return e is InputEventJoypadButton and (e as InputEventJoypadButton).button_index == JOY_BUTTON_X)
+	_check(has_e and has_x, "Trick is E / gamepad X")
+	var car := race.player.vehicle
+	var trick := car.trick
+	_check(trick != null and not trick.try_trick(), "no trick without a ramp")
+	# Without a trick: ramp, jump, land -> no boost.
+	var landed := trick.tricks_landed
+	trick.on_ramp()
+	car.teleport(car.global_transform.translated(Vector3.UP * 3.0))
+	await _physics(90)
+	_check(trick.tricks_landed == landed and car.boost_label != "Trick", "no trick, no boost")
+	# With a trick.
+	trick.on_ramp()
+	car.teleport(car.global_transform.translated(Vector3.UP * 4.0))
+	await _physics(3)
+	_check(car.grounded_wheels == 0 and trick.try_trick() and car.is_tricking(), "a trick starts in the air after a ramp")
+	await _physics(12)
+	var mid := absf(trick.body_angle())
+	_check(mid > 0.3, "the car spins (%.2f rad)" % mid)
+	var got_boost := false
+	for i in 120:
+		await physics_frame
+		if car.is_boosting() and car.boost_label == "Trick":
+			got_boost = true
+			break
+	_check(got_boost and trick.tricks_landed == landed + 1, "landing gives the Trick boost")
+	_check(absf(trick.body_angle()) < 0.01 and not car.is_tricking(), "spin finished, body back to normal")
+	# AI on Hard trick off the ramps during a lap.
+	var ai_tricks := 0
+	var frames := 0
+	while frames < 60 * 120 and ai_tricks == 0:
+		await physics_frame
+		frames += 1
+		if frames % 60 == 0:
+			ai_tricks = 0
+			for racer in race.racers:
+				if not racer.is_player:
+					ai_tricks += racer.vehicle.trick.tricks_landed
+	_check(ai_tricks > 0, "AI land tricks off the ramps (%d after %.0f s)" % [ai_tricks, frames / 60.0])
+
+
+func _physics(count: int) -> void:
+	for i in count:
+		await physics_frame
+
 
 func _test_rival_cars(race: RaceManager) -> void:
 	var wrong: PackedStringArray = []

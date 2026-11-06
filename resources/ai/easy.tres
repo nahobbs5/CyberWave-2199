@@ -12,6 +12,7 @@ steer_gain = 2.2
 reaction_time = 0.22
 line_wander = 2.0
 drift_chance = 0.3
+trick_chance = 0.3
 shortcut_chance = 0.5
 rubber_band = 0.06
 weapon_reaction = 0.8

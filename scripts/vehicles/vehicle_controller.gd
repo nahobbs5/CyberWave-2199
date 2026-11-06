@@ -63,6 +63,12 @@ var _wheels: Array[RayCast3D] = []
 @onready var status: StatusEffects = get_node_or_null("StatusEffects")
 @onready var inventory: ItemInventory = get_node_or_null("ItemInventory")
 @onready var targeting: TargetingSystem = get_node_or_null("TargetingSystem")
+## Ramp tricks (created in _ready).
+var trick: VehicleTrick
+
+
+func is_tricking() -> bool:
+	return trick != null and trick.is_tricking()
 
 
 func _ready() -> void:
@@ -76,6 +82,9 @@ func _ready() -> void:
 			_wheels.append(ray)
 	if _wheels.is_empty():
 		push_error("VehicleController: no Wheel* RayCast3D children found.")
+	trick = VehicleTrick.new()
+	trick.name = "VehicleTrick"
+	add_child(trick)
 
 
 func _physics_process(delta: float) -> void:

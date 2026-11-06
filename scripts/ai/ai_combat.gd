@@ -15,6 +15,10 @@ var difficulty: AIDifficulty
 
 var _think: float = 0.0
 var _held: Array[float] = [0.0, 0.0]
+## Seconds since this car last dropped a hazard (spaces out a Triple Spike).
+var _since_hazard: float = 99.0
+## Minimum gap between hazard drops.
+const HAZARD_GAP := 1.5
 var _rng := RandomNumberGenerator.new()
 
 
@@ -34,6 +38,7 @@ func _physics_process(delta: float) -> void:
 	var inventory := vehicle.inventory
 	for i in ItemInventory.SLOT_COUNT:
 		_held[i] = _held[i] + delta if inventory.slots[i] != null else 0.0
+	_since_hazard += delta
 	if not manager.can_fight(vehicle) or inventory.is_empty():
 		return
 	_think -= delta
@@ -56,6 +61,8 @@ func _physics_process(delta: float) -> void:
 			best_slot = i
 	if best_slot >= 0 and best_score >= 1.0:
 		inventory.select(best_slot)
+		if inventory.slots[best_slot].kind == WeaponData.Kind.HAZARD:
+			_since_hazard = 0.0
 		inventory.request_use()
 		return
 	# Nothing to fire yet: keep a targeted weapon selected so a lock can build.
@@ -85,6 +92,8 @@ func _score(weapon: WeaponData, selected: bool, held: float) -> float:
 		WeaponData.Kind.AREA:
 			return 1.3 if _opponents_within(weapon.radius * 0.85) > 0 else 0.0
 		WeaponData.Kind.HAZARD:
+			if _since_hazard < HAZARD_GAP:
+				return 0.0
 			if _opponent_behind(40.0):
 				return 1.2
 			return 1.0 if held > 20.0 * patience else 0.0

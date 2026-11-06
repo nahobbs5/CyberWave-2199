@@ -306,7 +306,9 @@ func _on_body_entered(body: Node3D) -> void:
 			car.scrub_speed(smash_speed_kept)
 			_smash()
 		Kind.JUMP_RAMP:
-			pass # counted only
+			# Opens the trick window (E / gamepad X in the air).
+			if car.trick != null:
+				car.trick.on_ramp()
 		Kind.WATER:
 			pass # handled every frame in _physics_process
 	_cooldowns[car] = 1.5

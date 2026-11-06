@@ -48,7 +48,6 @@ func select_category(c: CosmeticItem.Category) -> void:
 
 func try_on(item: CosmeticItem) -> void:
 	_trying[item.category] = item
-	_message.text = "Trying on %s" % item.display_name
 	_refresh_preview()
 
 
@@ -189,7 +188,6 @@ func _build() -> void:
 	_plate.add_theme_font_size_override("font_size", 18)
 	_plate.text_changed.connect(set_plate)
 	plate_row.add_child(_plate)
-	plate_row.add_child(UIStyle.label("shared by every car, 8 max", 13, Color(1, 1, 1, 0.5)))
 
 	var right := VBoxContainer.new()
 	right.add_theme_constant_override("separation", 10)
@@ -214,6 +212,6 @@ func _build() -> void:
 	_items = VBoxContainer.new()
 	_items.add_theme_constant_override("separation", 6)
 	scroll.add_child(_items)
-	_message = UIStyle.label("Click a name to try it on.", 15, Color(1.0, 0.82, 0.3))
+	_message = UIStyle.label("", 15, Color(1.0, 0.82, 0.3))
 	right.add_child(_message)
 	right.add_child(UIStyle.button("Back", func() -> void: GameSession.to_main_menu(get_tree())))

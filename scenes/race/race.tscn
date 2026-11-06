@@ -19,6 +19,7 @@
 [ext_resource type="Resource" path="res://resources/weapons/nitro_overload.tres" id="17_nitro"]
 [ext_resource type="Resource" path="res://resources/weapons/firewall.tres" id="18_firewall"]
 [ext_resource type="Resource" path="res://resources/weapons/triple_nitro.tres" id="19_triple_nitro"]
+[ext_resource type="Resource" path="res://resources/weapons/triple_spike.tres" id="20_triple_spike"]
 
 [node name="Race" type="Node3D"]
 script = ExtResource("1_race")
@@ -30,7 +31,7 @@ difficulty = ExtResource("4_normal")
 
 [node name="WeaponManager" type="Node3D" parent="."]
 script = ExtResource("11_weapons")
-weapons = Array[ExtResource("12_weapon_data")]([ExtResource("13_railgun"), ExtResource("14_drone"), ExtResource("15_emp"), ExtResource("16_spike"), ExtResource("17_nitro"), ExtResource("18_firewall"), ExtResource("19_triple_nitro")])
+weapons = Array[ExtResource("12_weapon_data")]([ExtResource("13_railgun"), ExtResource("14_drone"), ExtResource("15_emp"), ExtResource("16_spike"), ExtResource("17_nitro"), ExtResource("18_firewall"), ExtResource("19_triple_nitro"), ExtResource("20_triple_spike")])
 
 [node name="ChaseCamera" type="Camera3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5, 120)

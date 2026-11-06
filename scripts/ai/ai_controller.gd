@@ -67,6 +67,18 @@ func setup(p_vehicle: VehicleController, p_track: TrackCircuit, p_line: RacingLi
 	vehicle.player_controlled = false
 	if not vehicle.boost_started.is_connected(_on_boost_started):
 		vehicle.boost_started.connect(_on_boost_started)
+	if vehicle.trick != null and not vehicle.trick.ramp_entered.is_connected(_on_ramp):
+		vehicle.trick.ramp_entered.connect(_on_ramp)
+
+
+## Over a jump ramp: maybe do a trick, a moment later (in the air).
+func _on_ramp() -> void:
+	if _rng.randf() >= difficulty.trick_chance:
+		return
+	var delay := _rng.randf_range(0.05, 0.25)
+	get_tree().create_timer(delay, false, true).timeout.connect(func() -> void:
+		if is_instance_valid(vehicle) and vehicle.trick != null:
+			vehicle.trick.try_trick())
 
 
 func _physics_process(delta: float) -> void:

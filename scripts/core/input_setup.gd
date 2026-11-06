@@ -24,6 +24,8 @@ const DEFAULTS := {
 	&"cycle_camera": [0.5, [KEY_C], [JOY_BUTTON_BACK], []],
 	&"reset_vehicle": [0.5, [KEY_R], [JOY_BUTTON_Y], []],
 	&"use_weapon": [0.5, [KEY_SPACE], [JOY_BUTTON_A], []],
+	# Ramp tricks: press in the air after a jump ramp.
+	&"trick": [0.5, [KEY_E], [JOY_BUTTON_X], []],
 	&"select_slot_1": [0.5, [KEY_1], [JOY_BUTTON_DPAD_LEFT], []],
 	&"select_slot_2": [0.5, [KEY_2], [JOY_BUTTON_DPAD_RIGHT], []],
 	&"pause": [0.5, [KEY_ESCAPE], [JOY_BUTTON_START], []],
@@ -39,6 +41,7 @@ const REMAPPABLE := [
 	[&"drift_left", "Drift left", false, true],
 	[&"drift_right", "Drift right", false, true],
 	[&"use_weapon", "Use weapon", true, true],
+	[&"trick", "Trick (off a ramp)", true, true],
 	[&"select_slot_1", "Weapon slot 1", true, true],
 	[&"select_slot_2", "Weapon slot 2", true, true],
 	[&"cycle_camera", "Cycle camera", true, true],

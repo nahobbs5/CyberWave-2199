@@ -264,6 +264,12 @@ func _test_triple_nitro_inventory() -> void:
 	inv.add(triple)
 	inv.take_selected()
 	_check(inv.lose_item() == triple and inv.is_empty() and inv.charges[0] == 0, "a stripping hit takes every remaining charge")
+	var tspike := load("res://resources/weapons/triple_spike.tres") as WeaponData
+	_check(tspike.kind == WeaponData.Kind.HAZARD and tspike.charges == 3 and tspike.weight_front > tspike.weight_back,
+			"Triple Spike: a 3-charge hazard, mostly for leaders")
+	inv.add(tspike)
+	inv.take_selected()
+	_check(inv.lose_item() == tspike and inv.is_empty(), "a hit knocks out the remaining spikes")
 	inv.free()
 
 
@@ -384,6 +390,20 @@ func _test_triple_nitro_race(race: RaceManager) -> void:
 	_check(kicks == 3, "three separate boosts (%d)" % kicks)
 	_check(me.inventory.is_empty(), "slot empty after the third")
 	_check(not wm.use_weapon(me), "nothing left to fire")
+	# Triple Spike: three charges, one Road Spike per press.
+	var spikes := func() -> int: return wm.get_children().filter(func(n: Node) -> bool: return n is RoadSpike and (n as RoadSpike).shooter == me).size()
+	var before: int = spikes.call()
+	me.inventory.add(load("res://resources/weapons/triple_spike.tres"))
+	await _frames(5)
+	_check(race.race_hud.get_slot_text(0).contains("Triple Spike  x3"), "HUD shows Triple Spike x3 (%s)" % race.race_hud.get_slot_text(0))
+	var counts: Array[int] = []
+	for i in 3:
+		wm.use_weapon(me)
+		counts.append(me.inventory.charges[0])
+		await _frames(10)
+	_check(counts == _ids([2, 1, 0]) and me.inventory.is_empty(), "x3 -> x2 -> x1 -> empty (%s)" % [counts])
+	_check(spikes.call() - before == 3, "one spike per press (%d)" % (spikes.call() - before))
+	_check(wm.weapons.any(func(w: WeaponData) -> bool: return w.id == &"triple_spike"), "Triple Spike is in the crate pool")
 
 
 func _test_versus(race: RaceManager) -> void:
