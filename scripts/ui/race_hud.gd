@@ -24,6 +24,7 @@ var announcer: HudAnnouncer
 var items: ItemSlots
 var results: ResultsScreen
 var minimap: Minimap
+var wind_lines: SlipstreamLines
 
 # Kept for the existing tests.
 var _coin_label: Label
@@ -54,6 +55,9 @@ func setup(manager: RaceManager) -> void:
 	race.racer_qualified.connect(_on_racer_qualified)
 	race.coins.coin_collected.connect(_on_coin_collected)
 	var trick := race.player.vehicle.trick if race.player != null else null
+	if race.player != null:
+		race.player.vehicle.slipstream_boost.connect(func() -> void: _play("slipstream"))
+		wind_lines.vehicle = race.player.vehicle
 	if trick != null:
 		trick.trick_started.connect(func() -> void: _play("trick"))
 		trick.trick_landed.connect(func() -> void: _play("trick_land"))
@@ -160,7 +164,6 @@ func _process(delta: float) -> void:
 	if race.elimination != null:
 		_update_elimination()
 
-	announcer.wrong_way.visible = race.wrong_way
 	if race.combat_enabled():
 		items.refresh(race, delta)
 		var incoming := race.weapon_manager.is_incoming(p.vehicle) and not p.finished
@@ -203,7 +206,7 @@ func _track_position(delta: float) -> void:
 # --- race events ------------------------------------------------------------------
 
 func _on_countdown_tick(text: String) -> void:
-	announcer.announce(text, 1.0 if text != "GO" else 0.8, CYAN if text != "GO" else MAGENTA)
+	announcer.announce(text, 1.0 if text != "START" else 0.8, CYAN if text != "START" else MAGENTA)
 
 
 func _on_lap_completed(racer: RaceProgress) -> void:
@@ -330,6 +333,11 @@ func _build() -> void:
 	standings = StandingsPanel.new()
 	_left_column.add_child(standings)
 
+	# Wind streaks while drafting, behind everything else.
+	wind_lines = SlipstreamLines.new()
+	add_child(wind_lines)
+	move_child(wind_lines, 0)
+
 	announcer = HudAnnouncer.new()
 	add_child(announcer)
 
@@ -370,5 +378,6 @@ func _build() -> void:
 		"incoming": VehicleFeedback._make_tone(740.0, 0.25),
 		"coin": VehicleFeedback._make_tone(1568.0, 0.06, 0.22),
 		"trick": VehicleFeedback._make_tone(880.0, 0.08, 0.2),
+		"slipstream": VehicleFeedback._make_tone(0.0, 0.25, 0.12, true),
 		"trick_land": VehicleFeedback._make_tone(1760.0, 0.12, 0.25),
 	}

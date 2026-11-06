@@ -49,6 +49,9 @@ const WET_LINGER := 0.3
 @export var boost_extra: float = 7.0
 @export var boost_duration: float = 1.0
 @export var boost_kick: float = 4.0
+## Boosters only: put item boxes on this pad or ring. Ramps always carry a
+## row of item boxes along the lip.
+@export var item_boxes: bool = false
 ## Breakable barriers rebuild after this long.
 @export var rebuild_time: float = 8.0
 ## Fraction of speed kept when smashing through a breakable barrier.
@@ -85,6 +88,30 @@ func place_on_track(track: TrackCircuit) -> void:
 		xf = track.global_transform.affine_inverse() * track.get_safe_transform(d, lateral, 0.0)
 	transform = xf
 	_rebuild_visuals()
+
+
+## Where this feature's item boxes go (global transforms; empty for none).
+## Ramps: a row across the top of the ramp, so cars grab them at take-off.
+## Boosters with item_boxes: two boxes side by side on the pad / in the ring.
+func item_box_transforms() -> Array[Transform3D]:
+	var locals: Array[Vector3] = []
+	match kind:
+		Kind.JUMP_RAMP:
+			var count := maxi(2, roundi(width / 4.5))
+			var spacing := width / count
+			for i in count:
+				var x := (float(i) - (count - 1) * 0.5) * spacing
+				locals.append(Vector3(x, ramp_height + 1.1, -length * 0.5 + 1.5))
+		Kind.BOOST_PAD:
+			if item_boxes:
+				locals.append_array([Vector3(-1.3, 1.1, 0.0), Vector3(1.3, 1.1, 0.0)])
+		Kind.BOOST_RING:
+			if item_boxes:
+				locals.append_array([Vector3(-1.5, 1.1, 0.0), Vector3(1.5, 1.1, 0.0)])
+	var out: Array[Transform3D] = []
+	for p in locals:
+		out.append(global_transform * Transform3D(Basis(), p))
+	return out
 
 
 func is_broken() -> bool:

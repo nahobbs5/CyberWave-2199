@@ -3,7 +3,7 @@ extends VBoxContainer
 ## Upper-centre race announcements: READY / SET / GO, FINAL LAP!, NEW BEST
 ## LAP!, FINISH!, QUALIFIED, POSITION feed... Each one pops in, holds and
 ## fades, high enough to keep the road clear. Also holds the persistent
-## warnings (WRONG WAY, INCOMING) and the Elimination feed line.
+## warnings (INCOMING) and the Elimination feed line.
 
 const FADE_IN := 0.12
 const FADE_OUT := 0.3
@@ -11,7 +11,6 @@ const FADE_OUT := 0.3
 var incoming: Label
 var main: Label
 var sub: Label
-var wrong_way: Label
 var feed: Label
 
 var _time_left: float = 0.0
@@ -31,7 +30,6 @@ func _init() -> void:
 	main = _line(UIStyle.heading("", 60, UIStyle.CYAN))
 	main.add_theme_constant_override("outline_size", 10)
 	sub = _line(UIStyle.stat("", 24, Color.WHITE))
-	wrong_way = _line(UIStyle.heading("WRONG WAY", 40, UIStyle.DANGER))
 	feed = _line(UIStyle.stat("", 26, Color.WHITE))
 
 

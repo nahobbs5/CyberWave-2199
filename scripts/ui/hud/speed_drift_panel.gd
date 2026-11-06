@@ -91,6 +91,12 @@ func _process(delta: float) -> void:
 		else:
 			state_label.text = "CHARGING"
 			state_label.add_theme_color_override("font_color", UIStyle.MAGENTA)
+	elif vehicle.in_slipstream or vehicle.slipstream_charge > 0.0:
+		# Drafting behind someone: the slipstream meter fills.
+		drift_percent.text = ""
+		drift_title.add_theme_color_override("font_color", UIStyle.MUTED)
+		state_label.text = "SLIPSTREAM  %d%%" % roundi(vehicle.slipstream_charge * 100.0)
+		state_label.add_theme_color_override("font_color", Slipstream.BOOST_COLOR)
 	else:
 		drift_percent.text = ""
 		drift_title.add_theme_color_override("font_color", UIStyle.MUTED)

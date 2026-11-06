@@ -77,7 +77,7 @@ The layout is the `control_points` list on `scenes/tracks/test_circuit.tscn`, sa
 
 ### Racing
 
-- **Grid:** seven AI rivals fill slots 1–7 and you start last (GDD §2.1). Controls are locked during READY / SET / GO; there are no false-start penalties.
+- **Grid:** seven AI rivals fill slots 1–7 and you start last (GDD §2.1). Controls are locked during the 3 / 2 / 1 / START countdown; there are no false-start penalties. A start-light board on the gantry over the line lights one lamp per beep: three reds, then green on START (lights out 4 s later).
 - **Checkpoints:** 8 evenly spaced gates, with gate 0 at the start/finish line. A gate only counts if it is the next one in order. Skipping ahead, reversing through gates, or a recovery teleport never adds progress. Crossing the line after every gate completes a lap.
 - **Positions** are live: finishers in finishing order, everyone else by distance raced since their last valid gate.
 - **When you finish,** the results screen shows the standings and fills in as the AI cross the line. Your car switches to autopilot.
@@ -107,7 +107,7 @@ The layout is the `control_points` list on `scenes/tracks/test_circuit.tscn`, sa
 ### Menus
 
 - **Main menu** (GDD §11.2): the Cyberwave 2199 logo (`assets/logo/`) above the title, then Continue Grand Prix (only when one is saved), Grand Prix, Versus, Practice, Garage, Settings, Credits, Exit.
-- **Boot splash:** the logo's skyline and sun (`assets/logo/splash_skyline.png`) on black while the game loads.
+- **Boot splash:** the logo's skyline and sun (`assets/logo/splash_skyline.png`) on black while the game loads. The app/window icon is a square crop of the same skyline (`assets/logo/app_icon.png`). A Windows .exe icon (.ico) gets set in the export preset when you export.
 - **Credits:** the game, music, sound, fonts, textures and sky, weapon art and engine, with a Back button (Esc / B also goes back).
 - **Race setup** (GDD §11.3): track (only the test circuit for now) or championship, vehicle picker with a rotating preview of your car (paint, cosmetics and plate), stats, AI difficulty, laps (Versus), weapons on/off, Start race. It remembers your last choices and shows your personal best (Versus) or best championship finish (Grand Prix).
   - **A Grand Prix keeps the car you started it with** for all three races (the GDD saves the player vehicle with the championship).
@@ -190,6 +190,10 @@ The GDD prices basic paint (100), plate frames (250), wheels (500) and premium f
 - **Grand Prix** (`user://grand_prix_save.json`): as in Phase 4, now also written atomically, with the coins already awarded.
 - To start over, delete those files (on Windows they're in `%APPDATA%\Godot\app_userdata\Cyberwave 2199\`).
 
+### Slipstream
+
+Tuck in close behind another car to draft it. You're in its **slipstream** when it's 2–16 m ahead of you, no more than about a car width to either side of your line, heading the same way, you're doing at least 72 km/h, and both cars are on the ground. A meter fills while you stay there: 1.4 s close up (6 m), up to 2.2 s at the back of the tow. When it's full you get a short **Slipstream** boost (+4.5 m/s for 1.2 s, milder than a Cyan drift boost) to slingshot past; out of the tow the meter drains. After a slipstream boost there's a 2 s wait before the meter can fill again. Every car can draft, rivals included (they draft each other and you). The speed panel shows **SLIPSTREAM** and the meter's percentage, faint wind streaks rush in from the screen edges (off with Reduced flashing), and the boost shows SLIPSTREAM! with a whoosh. Rules and tuning: `scripts/race/slipstream.gd`.
+
 ### Ramp tricks
 
 Going over a **jump ramp** (three on Six Flags New Orleans, one in The Stacks) opens a trick window. Press **Trick** (E / gamepad X) while you're in the air, or just as you leave the lip, and the car spins a full turn; land it and you get a short cyan **Trick** boost (+6 m/s for 1 s, a little weaker than a Cyan drift boost). The spin is visual only (body and wheels), so your heading, physics and the camera aren't affected. The HUD shows TRICK! and TRICK BOOST!, with a tone. AI rivals trick too: 30% of the time on Easy, 60% on Normal, 90% on Hard (`trick_chance` in `resources/ai/*.tres`). Logic in `scripts/vehicles/vehicle_trick.gd`.
@@ -202,7 +206,7 @@ The race HUD is built from small parts in `scripts/ui/hud/`, coordinated by `Rac
 |---|---|
 | Top left | Race panel: mode / track, a large **position** (pulses cyan with POSITION UP! when you gain a place, orange when you lose one), lap, race time, and your coins as the count with a coin symbol. Elimination info below |
 | Left | Compact live standings, your row in magenta; only racers still in the race. At large HUD scales it shows the rows around you, or hides if it can't fit three |
-| Top centre | Announcements that pop in and fade: READY / SET / GO, LAP, FINAL LAP!, NEW BEST LAP!, 1ST PLACE! (taking the lead from lap 2, at most every 10 s), FINISH!, QUALIFIED, plus WRONG WAY, INCOMING and the elimination feed |
+| Top centre | Announcements that pop in and fade: 3 / 2 / 1 / START, LAP, FINAL LAP!, NEW BEST LAP!, 1ST PLACE! (taking the lead from lap 2, at most every 10 s), FINISH!, QUALIFIED, plus WRONG WAY, INCOMING and the elimination feed |
 | Top right | Item slots, lock-on, effects and combat notices |
 | Bottom left | Speed (cyan, km/h) and the drift meter: DRIFT CHARGE with a percentage, the bar in the current tier's colour with a growing glow, BOOST READY once a boost is banked, and the boost draining while you boost. The speed pops when a boost starts |
 | Bottom right | Minimap |
@@ -222,9 +226,9 @@ There are no control instructions on the HUD; the controls (from your current bi
 | Races on The Stacks | Cyber Dreams by Lilex (loops) | `music/lilex-cyber-dreams-314323.mp3` |
 | Races on Six Flags New Orleans | Race Winner by TheBoysBeats (loops) | `music/theboysbeats-the-boy-s-beats-race-winner-282390.mp3` |
 | Races on Vegas Overdrive | Heavy Racing by SPmusic (loops) | `music/spmusic-heavy-racing-151129.mp3` |
-| Race start | Countdown beeps on READY / SET / GO | `sounds/freesound_community-short-beep-countdown-81121.mp3` |
+| Race start | Countdown beeps on 3 / 2 / 1 / START, one per start light | `sounds/freesound_community-short-beep-countdown-81121.mp3` |
 
-Music carries across menu screens without restarting and crossfades when the track changes (`scripts/core/music.gd`); each built track has its own race music (set in `TrackCatalog`, `scripts/track/track_catalog.gd`), which starts with the race; the test circuit and free drive have none, so the music fades out. **On the final lap** (when you start it, in races of 2+ laps, Elimination included) the race music speeds up 15%, pitch and all, over about 0.4 s; restarting or leaving the race puts it back to normal. The countdown clip has four beeps a second apart; it starts 1 s in so the last three land on READY, SET and GO. Music plays on the Music bus and effects on the SFX bus, so the Settings sliders control each. Tracks by ikoliks / ikoliks_aj, Lilex, TheBoysBeats, SPmusic and freesound_community.
+Music carries across menu screens without restarting and crossfades when the track changes (`scripts/core/music.gd`); each built track has its own race music (set in `TrackCatalog`, `scripts/track/track_catalog.gd`), which starts with the race; the test circuit and free drive have none, so the music fades out. **On the final lap** (when you start it, in races of 2+ laps, Elimination included) the race music speeds up 15%, pitch and all, over about 0.4 s; restarting or leaving the race puts it back to normal. The countdown clip has four beeps a second apart, played from the start: one beep per start light and word (3, 2, 1, START). Music plays on the Music bus and effects on the SFX bus, so the Settings sliders control each. Tracks by ikoliks / ikoliks_aj, Lilex, TheBoysBeats, SPmusic and freesound_community.
 
 ### Tracks
 
@@ -312,6 +316,7 @@ A 3.2 km night circuit (shortened from 4.4 km after your first drive) with 20 m 
 - **AI shortcuts:** each AI decides once per approach (the shortcut's `ai_chance` × the difficulty's `shortcut_chance` × aggression), then follows the shortcut at its own safe speeds and rejoins the racing line. If it gets pinned while still heading for a shortcut it isn't on (a late turn-in), it gives up and follows the main road.
 - **Junction design:** a shortcut should leave at a gentle angle (the Luxor one turns in about 55°). A first version peeled off at nearly 110° and trapped a car in the wedge between the roads.
 - **`TrackFeature`**: boost pads, boost rings, EMP puddles, breakable barriers, **jump ramps** and **water**, placed by distance (or near a layout point) on the main road or a shortcut. Every kind is lit and marked so it reads at speed.
+  - **Item boxes:** every jump ramp carries a row of "?" crates just above its lip (about one per 4.5 m of width), so you grab one at take-off. A boost pad or ring gets two crates when its `item_boxes` box is ticked in the Inspector. Currently ticked: The Stacks' Gallery pad and Rotunda ring, Six Flags' Coaster Run pad, and Vegas' second Strip pad and tunnel ring.
   - **Jump ramp:** a solid wedge (`length` × `width`, lip of `ramp_height`) that the wheels drive up. Put them on straights at full road width. On the Coaster Run a car at full speed gets about 1.6 s of air and 4 m of height, and lands on its wheels.
   - **Water:** standing water makes cars **wet**: top speed ×0.88 and grip ×0.75 while in it (and for 0.3 s after), with spray from the rear wheels and "WET" in the effects line. A Firewall doesn't keep you dry; wet stacks with EMP and Road Spike effects.
 - **`TrackScenery`**: base class for a track's set dressing (`VegasScenery`, `SixFlagsScenery`, `StacksScenery`), with shared helpers such as `add_ferris_wheel`, `add_palm`, `textured()` (Poly Haven PBR sets mapped triplanar, so generated geometry needs no UVs) and `add_flicker_light()`.
@@ -319,7 +324,7 @@ A 3.2 km night circuit (shortened from 4.4 km after your first drive) with 20 m 
   - `SceneryTerrain`: overgrown, waterlogged terrain with level banks along the roads
   - `WoodenCoaster`: a lattice coaster along any 3D path, with steel gantries where it crosses a road
   - `ChainLinkFence`: damaged fencing with a procedural chain-link texture
-  - `TreeBuilder`: a procedural forest. A few tree meshes (lofted bark tubes plus needle clumps: crooked, pine, bare, snag) are built once, then scattered as MultiMesh instances in 350 m chunks with a visibility range, so thousands of trees cost a few draw calls.
+  - `TreeBuilder`: a procedural forest. A few tree meshes (lofted bark tubes plus needle clumps: crooked, pine, bare, snag) are built once, then scattered as MultiMesh instances in 200 m chunks with a visibility range (300 m past the chunk), so thousands of trees cost a few draw calls.
   - `SceneryTerrain` also takes an optional `carve` function (ravines under bridges) and can skip the flood water.
   - `HallBuilder`: an interior hall along a stretch of road: marble wainscot, plaster walls, pilasters, open arched window bays or bookshelf bays, a coffered painted ceiling and chandeliers. Plus a stand-alone `bookcase()`.
 - **Track look exports** also cover `neon_energy` and `edge_line_energy` (racing-edge brightness), `faded_markings`, `ground_visible`, and `road_texture` / `barrier_texture` / `ground_texture`. Geometry is merged into a few batched meshes, one per material, and it skips anything that would overlap a road. It builds in the editor too.
@@ -328,7 +333,7 @@ A 3.2 km night circuit (shortened from 4.4 km after your first drive) with 20 m 
 
 ### Weapons
 
-Drive through a "?" crate to collect a random weapon into your first free slot. With both slots full, crates stay in place for someone else. Crates respawn after 3 s, in 5 rows of 4 around the lap.
+Drive through a "?" crate to collect a random weapon into your first free slot. With both slots full, crates stay in place for someone else. Crates respawn after 3 s, in 5 rows of 4 around the lap, plus the item boxes on jump ramps and some boosters.
 
 | Weapon | How it works | Effect on the victim |
 |---|---|---|

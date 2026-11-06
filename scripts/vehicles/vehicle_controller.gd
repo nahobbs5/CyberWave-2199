@@ -14,6 +14,8 @@ signal boost_started(level: int)
 ## Non-drift boost fired (e.g. Nitro Overload).
 signal external_boost_started(label: String)
 signal boost_ended
+## A slipstream boost fired (see Slipstream).
+signal slipstream_boost
 ## Emitted on a sudden large loss of forward speed (barrier hit, etc.).
 signal heavy_impact(speed_lost: float)
 ## Emitted after a teleport/recovery has been applied.
@@ -44,6 +46,9 @@ var ground_normal: Vector3 = Vector3.UP
 
 var boost_level: int = 0
 var boost_time_left: float = 0.0
+## Slipstream meter 0..1 and whether we're in someone's tow (set by Slipstream).
+var slipstream_charge: float = 0.0
+var in_slipstream: bool = false
 ## What the current boost is called and its colour (for HUD and effects).
 var boost_label: String = ""
 var boost_color: Color = Color.WHITE

@@ -235,12 +235,21 @@ func _aim(user: VehicleController, weapon: WeaponData, from: Vector3, forward: V
 func _spawn_crates() -> void:
 	for row in track.crate_row_offsets:
 		for lateral in track.crate_lateral_positions:
-			var crate := WeaponCrate.new()
-			crate.manager = self
-			crate.respawn_time = crate_respawn_time
-			crate.transform = track.get_safe_transform(row, lateral, 1.1)
-			add_child(crate)
-			crates.append(crate)
+			_add_crate(track.get_safe_transform(row, lateral, 1.1))
+	# Item boxes on ramps and on boosters that ask for them.
+	for child in track.get_children():
+		if child is TrackFeature:
+			for xf in (child as TrackFeature).item_box_transforms():
+				_add_crate(xf)
+
+
+func _add_crate(xf: Transform3D) -> void:
+	var crate := WeaponCrate.new()
+	crate.manager = self
+	crate.respawn_time = crate_respawn_time
+	crate.transform = xf
+	add_child(crate)
+	crates.append(crate)
 
 
 func spawn_flash(at: Vector3, color: Color) -> void:

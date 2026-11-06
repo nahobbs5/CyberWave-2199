@@ -32,9 +32,12 @@ signal rewards_granted(summary: Dictionary)
 
 enum State { GRID, COUNTDOWN, RACING, FINISHED }
 
-const COUNTDOWN_WORDS: Array[String] = ["READY", "SET", "GO"]
+## One word per beep and per start light: three reds, then green.
+const COUNTDOWN_WORDS: Array[String] = ["3", "2", "1", "START"]
 const COUNTDOWN_SOUND := preload("res://sounds/freesound_community-short-beep-countdown-81121.mp3")
-const COUNTDOWN_SOUND_OFFSET := 1.0
+const COUNTDOWN_SOUND_OFFSET := 0.0
+## The start lights go out this long after START.
+const START_LIGHTS_HOLD := 4.0
 
 ## Overrides the exports below. Null = GameSession.current, else the exports.
 @export var config: RaceConfig
@@ -60,6 +63,8 @@ var race_time: float = 0.0
 var racers: Array[RaceProgress] = []
 var player: RaceProgress
 var line: RacingLine
+## Drafting behind other cars (see Slipstream).
+var slipstream := Slipstream.new()
 ## VehicleStats -> RacingLine (see line_for()).
 var _lines_by_stats: Dictionary = {}
 ## Player is driving against the track direction.
@@ -81,6 +86,8 @@ var countdown_sound: AudioStreamPlayer
 var _countdown_index: int = -1
 var _finish_count: int = 0
 var _wrong_way_time: float = 0.0
+## The neon sign hung over the road while the player drives the wrong way.
+var wrong_way_sign: WrongWaySign
 var _player_done: bool = false
 
 @onready var track: TrackCircuit = $TestCircuit
@@ -97,6 +104,8 @@ func _ready() -> void:
 	countdown_sound.stream = COUNTDOWN_SOUND
 	countdown_sound.bus = &"SFX"
 	add_child(countdown_sound)
+	wrong_way_sign = WrongWaySign.new()
+	add_child(wrong_way_sign)
 	_apply_config()
 	var race_music := TrackCatalog.music(config.track_name)
 	if race_music == "":
@@ -139,8 +148,8 @@ func _ready() -> void:
 func start_countdown() -> void:
 	_countdown_time = 0.0
 	_countdown_index = -1
-	# The clip beeps every second, four times; skip the first so the last
-	# three land on READY, SET and GO.
+	track.set_start_lights(0)
+	# The clip beeps every second, four times: one beep per word and light.
 	countdown_sound.play(COUNTDOWN_SOUND_OFFSET)
 	_set_state(State.COUNTDOWN)
 
@@ -234,8 +243,11 @@ func _physics_process(delta: float) -> void:
 			_update_countdown(delta)
 		State.RACING, State.FINISHED:
 			race_time += delta
+			if race_time >= START_LIGHTS_HOLD and track.start_lights() != 0:
+				track.set_start_lights(0)
 			_update_positions()
 			_update_rubber_band()
+			slipstream.update(racers, delta)
 			_update_wrong_way(delta)
 
 
@@ -390,6 +402,7 @@ func _update_countdown(delta: float) -> void:
 		return
 	_countdown_index = index
 	if index < COUNTDOWN_WORDS.size():
+		track.set_start_lights(index + 1)
 		countdown_tick.emit(COUNTDOWN_WORDS[index])
 	if index >= COUNTDOWN_WORDS.size() - 1:
 		_start_race()
@@ -636,3 +649,4 @@ func _update_wrong_way(delta: float) -> void:
 	var backwards := car.linear_velocity.dot(tangent) < -3.0 and heading.dot(tangent) < -0.3
 	_wrong_way_time = _wrong_way_time + delta if backwards else 0.0
 	wrong_way = state == State.RACING and _wrong_way_time > 0.75
+	wrong_way_sign.update(track, car, wrong_way and not player.finished, delta)

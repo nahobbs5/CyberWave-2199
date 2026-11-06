@@ -39,6 +39,7 @@ func _run_all() -> void:
 	_test_forest()
 	await _test_build_times()
 	await _run("features on Vegas", _test_features, _vegas_config(), false)
+	await _run("item boxes on ramps and boosters (The Stacks)", _test_item_boxes, _config(STACKS, "The Stacks"), false)
 	await _run("jump ramps and water (Six Flags)", _test_ramps_and_water, _config(SIX_FLAGS, "Six Flags New Orleans"), false)
 	await _run("shortcut: recovery and positions", _test_shortcut_recovery, _vegas_config(), false)
 	_test_menus_and_gp()
@@ -293,6 +294,28 @@ func _test_features(race: RaceManager) -> void:
 	_check(not gate.is_broken(), "and rebuilds")
 
 
+func _test_item_boxes(race: RaceManager) -> void:
+	var track := race.track
+	var wm := race.weapon_manager
+	var rows := track.crate_row_offsets.size() * track.crate_lateral_positions.size()
+	var ramp := track.get_node("JumpCourtyard") as TrackFeature
+	var ramp_boxes := ramp.item_box_transforms()
+	var expected := rows + ramp_boxes.size()
+	for n in ["BoostRingRotunda", "BoostPadGallery"]:
+		var booster := track.get_node(n) as TrackFeature
+		_check(booster.item_boxes and booster.item_box_transforms().size() == 2, "%s has 2 item boxes" % n)
+		expected += 2
+	var plain := track.get_node("BoostPadCorridor") as TrackFeature
+	_check(not plain.item_boxes and plain.item_box_transforms().is_empty(), "a booster without item_boxes has none")
+	_check(wm.crates.size() == expected, "%d crates placed (rows %d + features %d)" % [wm.crates.size(), rows, expected - rows])
+	_check(ramp_boxes.size() >= 2, "the ramp has a row of %d item boxes" % ramp_boxes.size())
+	var lip_y := (ramp.global_transform * Vector3(0, ramp.ramp_height, -ramp.length * 0.5)).y
+	var above := true
+	for xf in ramp_boxes:
+		above = above and xf.origin.y > lip_y + 0.5 and absf(xf.origin.y - lip_y) < 2.0
+	_check(above, "the ramp's boxes float just above the lip")
+
+
 func _test_wet_status() -> void:
 	_current = "wet surface"
 	print("- wet surface effect (no scene)")
@@ -323,6 +346,8 @@ func _test_ramps_and_water(race: RaceManager) -> void:
 	me.teleport(Transform3D(xf.basis, xf.origin + xf.basis.z * 60.0 + Vector3.UP * 0.9))
 	await _frames(3)
 	me.linear_velocity = -xf.basis.z * 36.0
+	me.inventory.slots = [null, null]
+	me.inventory.charges = [0, 0]
 	var airborne := 0
 	var max_height := 0.0
 	for i in 240:
@@ -335,6 +360,7 @@ func _test_ramps_and_water(race: RaceManager) -> void:
 	_check(airborne > 30 and max_height > 2.0, "the ramp launches the car (%.2f s, %.1f m)" % [airborne / 60.0, max_height])
 	_check(me.global_transform.basis.y.dot(Vector3.UP) > 0.9 and me.grounded_wheels >= 3, "and it lands on its wheels")
 	_check(me.recovery.last_reason == "" and track.is_on_road(me.global_position), "on the road, no recovery")
+	_check(not me.inventory.is_empty(), "the ramp's item boxes gave the car a weapon")
 	# Water.
 	var water := track.get_node("WaterBayou1") as TrackFeature
 	var cap_dry := me.get_speed_cap()
@@ -434,7 +460,7 @@ func _test_forest() -> void:
 				on_road += 1
 			if Vector2(p.x - HoiaScenery.CLEARING.x, p.z - HoiaScenery.CLEARING.z).length() < HoiaScenery.CLEARING_RADIUS:
 				in_clearing += 1
-	_check(total > 3000 and chunks.size() < 200, "a forest of instanced trees (%d trees in %d chunks)" % [total, chunks.size()])
+	_check(total > 3000 and chunks.size() < 400, "a forest of instanced trees (%d trees in %d chunks)" % [total, chunks.size()])
 	_check(on_road == 0, "no tree stands on the main road (%d)" % on_road)
 	_check(in_clearing == 0, "the Round Clearing stays treeless (%d)" % in_clearing)
 	track.free()

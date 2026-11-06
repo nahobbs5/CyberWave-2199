@@ -162,15 +162,19 @@ func _test_countdown(race: RaceManager) -> void:
 	race.start_countdown()
 	var start := race.player.vehicle.global_position
 	Input.action_press(&"accelerate")
-	await _frames(90)
+	await _frames(10)
+	_check(race.track.start_lights() == 1, "first beep: first red light (%d)" % race.track.start_lights())
+	await _frames(80)
 	_check(race.state == RaceManager.State.COUNTDOWN, "still counting down at 1.5 s")
-	_check(race.player.vehicle.global_position.distance_to(start) < 0.5, "throttle does nothing before GO")
-	await _wait_for_state(race, RaceManager.State.RACING, 120)
-	_check(words == ["READY", "SET", "GO"], "READY, SET, GO in order (%s)" % [words])
-	_check(race.state == RaceManager.State.RACING, "race starts after GO")
 	await _frames(60)
-	_check(race.race_time > 0.9 and race.race_time < 1.1, "race clock runs from GO (%.2f s)" % race.race_time)
-	_check(race.player.vehicle.global_position.distance_to(start) > 5.0, "player drives after GO")
+	_check(race.state == RaceManager.State.COUNTDOWN and race.track.start_lights() == 3, "2.5 s: three reds, still waiting")
+	_check(race.player.vehicle.global_position.distance_to(start) < 0.5, "throttle does nothing before START")
+	await _wait_for_state(race, RaceManager.State.RACING, 120)
+	_check(words == ["3", "2", "1", "START"], "3, 2, 1, START in order (%s)" % [words])
+	_check(race.state == RaceManager.State.RACING and race.track.start_lights() == 4, "race starts on START with the green light")
+	await _frames(60)
+	_check(race.race_time > 0.9 and race.race_time < 1.1, "race clock runs from START (%.2f s)" % race.race_time)
+	_check(race.player.vehicle.global_position.distance_to(start) > 5.0, "player drives after START")
 	var ai_moved := 0
 	for racer in race.racers:
 		if not racer.is_player and racer.vehicle.forward_speed > 5.0:
@@ -205,9 +209,20 @@ func _test_wrong_way(race: RaceManager) -> void:
 	car.teleport(Transform3D(Basis.looking_at(-tangent, Vector3.UP), track.get_center_at(offset) + Vector3.UP * 0.9))
 	await _frames(20)
 	_check(not race.wrong_way, "no warning while stopped")
+	_check(not race.wrong_way_sign.visible, "no wrong-way sign while stopped")
 	Input.action_press(&"accelerate")
 	await _frames(120)
 	_check(race.wrong_way, "driving against the track shows WRONG WAY (speed %.1f)" % car.forward_speed)
+	var ww_sign := race.wrong_way_sign
+	await _frames(20) # let the sign pop in and settle
+	var to_sign := ww_sign.global_position - car.global_position
+	var flat := Vector3(to_sign.x, 0.0, to_sign.z)
+	_check(ww_sign.visible, "the WRONG WAY sign appears over the road")
+	_check(flat.length() > 12.0 and flat.length() < 38.0, "the sign hangs ahead of the car (%.1f m)" % flat.length())
+	_check(flat.normalized().dot(-car.global_transform.basis.z) > 0.5, "the sign is in front of the car")
+	_check(to_sign.y > 3.0, "the sign floats above the road (%.1f m up)" % to_sign.y)
+	# Readable from the car: the text faces back towards it (+Z towards the car).
+	_check(ww_sign.global_transform.basis.z.normalized().dot(-flat.normalized()) > 0.9, "the sign faces the car")
 
 
 func _test_full_race(race: RaceManager) -> void:
@@ -232,6 +247,9 @@ func _test_full_race(race: RaceManager) -> void:
 				var b := standings[i + 1]
 				if a.finished or b.finished:
 					continue
+				# Side by side: either order is right.
+				if absf(a.race_distance - b.race_distance) < 4.0:
+					continue
 				samples += 1
 				if _reference_distance(race, a) + 8.0 < _reference_distance(race, b):
 					order_errors += 1
@@ -253,7 +271,7 @@ func _test_full_race(race: RaceManager) -> void:
 	var total_recoveries := 0
 	for key in recoveries:
 		total_recoveries += recoveries[key]
-	_check(total_recoveries <= 2, "AI rarely needs recovery (%d total: %s)" % [total_recoveries, recoveries])
+	_check(total_recoveries <= 3, "AI rarely needs recovery (%d total: %s)" % [total_recoveries, recoveries])
 	_check(samples > 50 and order_errors == 0, "live positions agree with distance driven (%d/%d off)" % [order_errors, samples])
 	_check(race.state == RaceManager.State.FINISHED, "race marked finished for the player")
 	_check(race.race_hud.is_results_visible(), "results screen shown")

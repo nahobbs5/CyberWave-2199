@@ -536,6 +536,39 @@ func _multimesh(mesh: Mesh, mat: Material, transforms: Array[Transform3D], z_sca
 	return instance
 
 
+const START_LIGHTS_TEXTURE := "res://assets/ui/Racing Start Light Assembly.png"
+const START_LIGHTS_SHADER := "res://assets/ui/start_lights.gdshader"
+const GANTRY_IDLE_COLOR := Color(1.0, 0.4, 0.9)
+## Where the solid housing sits inside the start-light image (UV): its bottom
+## edge, and the ends of the side pipes (x from the edge, y = pipe centre).
+const BOARD_HOUSING_BOTTOM_UV := 0.753
+const BOARD_PIPE_UV := Vector2(0.04, 0.43)
+
+var _start_board: ShaderMaterial
+var _gantry_light: OmniLight3D
+var _start_lights: int = 0
+
+
+## Start lights on the gantry: 0 = all off, 1-3 = red lamps lit, 4 = green
+## (go). The gantry's light follows (red, then green, then back to neon).
+func set_start_lights(count: int) -> void:
+	_start_lights = clampi(count, 0, 4)
+	if _start_board != null:
+		_start_board.set_shader_parameter("lit_count", _start_lights)
+	if _gantry_light != null:
+		match _start_lights:
+			0:
+				_gantry_light.light_color = GANTRY_IDLE_COLOR
+			4:
+				_gantry_light.light_color = Color(0.2, 1.0, 0.35)
+			_:
+				_gantry_light.light_color = Color(1.0, 0.12, 0.08)
+
+
+func start_lights() -> int:
+	return _start_lights
+
+
 func _build_start_gantry() -> void:
 	var holder := Node3D.new()
 	_add_generated(holder, "StartGantry")
@@ -584,11 +617,42 @@ func _build_start_gantry() -> void:
 	sign_strip.position = Vector3(0.0, 8.0, 0.65)
 	holder.add_child(sign_strip)
 	var light := OmniLight3D.new()
-	light.light_color = Color(1.0, 0.4, 0.9)
+	light.light_color = GANTRY_IDLE_COLOR
 	light.light_energy = 4.0
 	light.omni_range = 26.0
 	light.position = Vector3(0.0, 6.0, 0.0)
 	holder.add_child(light)
+	_gantry_light = light
+	# The start-light board on top of the beam, facing the grid (+Z, behind
+	# the line).
+	var board := MeshInstance3D.new()
+	board.name = "StartLights"
+	var quad := QuadMesh.new()
+	var board_w := minf(span * 0.9, 16.0)
+	var board_h := board_w / 3.0
+	quad.size = Vector2(board_w, board_h)
+	board.mesh = quad
+	# The image has transparent margins: rest the housing itself on the beam.
+	var beam_top := 8.7
+	board.position = Vector3(0.0, beam_top + board_h * (BOARD_HOUSING_BOTTOM_UV - 0.5), 0.62)
+	# Posts from the beam up to the board's side pipes.
+	var pipe_y := board.position.y + board_h * (0.5 - BOARD_PIPE_UV.y)
+	for side in [-1.0, 1.0]:
+		var strut := MeshInstance3D.new()
+		var strut_mesh := BoxMesh.new()
+		strut_mesh.size = Vector3(0.35, pipe_y - beam_top + 0.2, 0.35)
+		strut.mesh = strut_mesh
+		strut.material_override = pillar_mat
+		strut.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		strut.position = Vector3(side * board_w * (0.5 - BOARD_PIPE_UV.x), (beam_top + pipe_y + 0.2) * 0.5, 0.45)
+		holder.add_child(strut)
+	board.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_start_board = ShaderMaterial.new()
+	_start_board.shader = load(START_LIGHTS_SHADER) as Shader
+	_start_board.set_shader_parameter("board", load(START_LIGHTS_TEXTURE) as Texture2D)
+	_start_board.set_shader_parameter("lit_count", _start_lights)
+	board.material_override = _start_board
+	holder.add_child(board)
 
 
 func _build_lights() -> void:

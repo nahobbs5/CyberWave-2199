@@ -79,6 +79,7 @@ kind = 0
 offset = 0
 lateral = 4
 anchor_point = Vector3(0, 0, 8)
+item_boxes = true
 
 [node name="BoostPadBottom" type="Node3D" parent="."]
 script = ExtResource("3_feature")
@@ -96,6 +97,7 @@ anchor_point = Vector3(-200, 0, 500)
 boost_extra = 9.0
 boost_duration = 1.4
 boost_kick = 6.0
+item_boxes = true
 
 [node name="EmpCasino1" type="Node3D" parent="."]
 script = ExtResource("3_feature")

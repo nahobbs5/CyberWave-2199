@@ -2,7 +2,7 @@ class_name TreeBuilder
 extends RefCounted
 ## Procedural forest for a TrackScenery. A handful of tree meshes are built
 ## once (lofted bark tubes along a 3D path, plus foliage clumps), then
-## scattered as MultiMesh instances in 350 m chunks, so thousands of trees
+## scattered as MultiMesh instances in 200 m chunks, so thousands of trees
 ## cost a few draw calls and off-screen chunks are culled. Visual only.
 ##
 ## Kinds:
@@ -14,11 +14,11 @@ extends RefCounted
 ## - "snag": a broken dead trunk.
 
 const KINDS: Array[String] = ["crooked", "pine", "bare", "snag"]
-const VARIANTS := 3
+const VARIANTS := 2
 ## Instances further than this from the camera are hidden (fog hides them).
-const VISIBLE_RANGE := 420.0
+const VISIBLE_RANGE := 300.0
 ## Trees are grouped per kind and variant into square chunks this size (m).
-const CHUNK := 350.0
+const CHUNK := 200.0
 
 var scenery: TrackScenery
 var bark_key: String
@@ -81,7 +81,8 @@ func commit() -> void:
 		mmi.multimesh = mm
 		mmi.position = centre
 		mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		mmi.visibility_range_end = VISIBLE_RANGE + CHUNK
+		# Measured to the chunk centre: add half the chunk's diagonal.
+		mmi.visibility_range_end = VISIBLE_RANGE + CHUNK * 0.71
 		scenery.add_node(mmi)
 	_placed.clear()
 
@@ -109,7 +110,7 @@ func _build_mesh(kind: String) -> ArrayMesh:
 				Vector3(0, 5.0 + lift, -reach - 0.45), Vector3(0, 7.5 + lift, -reach - 0.3),
 				Vector3(0.1, h * 0.6, -reach - 0.25), Vector3(0.15, h, -reach - 0.2)])
 			_tube(bark, path, r * 1.15, r * 0.35, 8)
-			_canopy(leaves, Vector3(0.15, h, -reach - 0.2), h * 0.18, 5)
+			_canopy(leaves, Vector3(0.15, h, -reach - 0.2), h * 0.18, 4)
 			has_leaves = true
 		"pine":
 			var h := _rng.randf_range(20.0, 27.0)
@@ -119,7 +120,7 @@ func _build_mesh(kind: String) -> ArrayMesh:
 				var t := i / 5.0
 				path.append(Vector3(0, h * t, 0) + lean * t * t)
 			_tube(bark, path, _rng.randf_range(0.3, 0.42), 0.1, 7)
-			_canopy(leaves, Vector3(0, h, 0) + lean, h * 0.2, 6)
+			_canopy(leaves, Vector3(0, h, 0) + lean, h * 0.2, 4)
 			has_leaves = true
 		"bare":
 			var h := _rng.randf_range(9.0, 14.0)
@@ -206,8 +207,8 @@ func _canopy(st: SurfaceTool, top: Vector3, spread: float, clumps: int) -> void:
 
 
 func _blob(st: SurfaceTool, c: Vector3, radii: Vector3) -> void:
-	var rings := 4
-	var segs := 7
+	var rings := 3
+	var segs := 6
 	var pts: Array[PackedVector3Array] = []
 	for i in rings + 1:
 		var phi := PI * i / rings

@@ -31,6 +31,7 @@ func _run_all() -> void:
 	_test_fonts()
 	_test_ordinals()
 	_test_rival_cars_rules()
+	_test_slipstream_rules()
 	await _test_credits()
 	await _test_cups()
 	_test_stacks_rename()
@@ -40,6 +41,7 @@ func _run_all() -> void:
 	var cars := _config(3)
 	cars.rival_vehicles = PackedStringArray(["aurora_gt", "orbiter", "riviera_88", "valkyrie_r", "nexus_x", "cipher_evo", "empyrean_s"])
 	await _run("rivals drive their own cars", _test_rival_cars, cars, false)
+	await _run("slipstream in a race", _test_slipstream_race, _config(3), false)
 	var flags := _config(1)
 	flags.track_name = "Six Flags New Orleans"
 	flags.track_scene = load("res://scenes/tracks/six_flags_new_orleans.tscn")
@@ -226,6 +228,7 @@ func _test_practice_minimap() -> void:
 		var car := practice.get("car") as VehicleController
 		_check(Rect2(Vector2.ZERO, map.size).has_point(map.world_to_map(car.global_position)), "your car is on it")
 		_check(map.visible_racers().is_empty(), "no rivals in Practice")
+		_check(car.slipstream_charge == 0.0 and not car.in_slipstream, "no slipstream on your own")
 	practice.queue_free()
 	await process_frame
 
@@ -244,6 +247,56 @@ func _test_stacks_rename() -> void:
 
 
 # --- races ---------------------------------------------------------------------------
+
+func _test_slipstream_rules() -> void:
+	_current = "slipstream rules"
+	print("- slipstream rules (no scene)")
+	var me := Transform3D.IDENTITY # facing -Z
+	var fast := Vector3(0, 0, -30)
+	var at := func(x: float, z: float, facing: Vector3 = Vector3.FORWARD) -> Transform3D:
+		return Transform3D(Basis.looking_at(facing, Vector3.UP), Vector3(x, 0, z))
+	_check(Slipstream.tow_rate(me, fast, at.call(0.0, -8.0), fast) > 0.0, "8 m straight behind at speed: in the tow")
+	_check(Slipstream.tow_rate(me, fast, at.call(4.0, -8.0), fast) == 0.0, "4 m off to the side: not")
+	_check(Slipstream.tow_rate(me, fast, at.call(3.0, 0.0), fast) == 0.0, "alongside: not")
+	_check(Slipstream.tow_rate(me, fast, at.call(0.0, 8.0), fast) == 0.0, "the other car behind you: not")
+	_check(Slipstream.tow_rate(me, fast, at.call(0.0, -20.0), fast) == 0.0, "20 m back: too far")
+	_check(Slipstream.tow_rate(me, Vector3(0, 0, -15), at.call(0.0, -8.0), fast) == 0.0, "too slow: not")
+	_check(Slipstream.tow_rate(me, fast, at.call(0.0, -8.0, Vector3.BACK), -fast) == 0.0, "facing the other way: not")
+	var close := Slipstream.tow_rate(me, fast, at.call(0.0, -Slipstream.CLOSE_GAP), fast)
+	var far := Slipstream.tow_rate(me, fast, at.call(0.0, -15.0), fast)
+	_check(is_equal_approx(1.0 / close, Slipstream.FILL_CLOSE) and far < close, "fills in %.1f s close up, slower further back" % (1.0 / close))
+
+
+func _test_slipstream_race(race: RaceManager) -> void:
+	var me := race.player.vehicle
+	var leader: VehicleController = null
+	for racer in race.racers:
+		if not racer.is_player:
+			leader = racer.vehicle
+			break
+	# Let the leader get up to speed, then hold the player 7 m behind it.
+	var frames := 0
+	while leader.forward_speed < 24.0 and frames < 60 * 20:
+		await physics_frame
+		frames += 1
+	var boosts := [0]
+	me.slipstream_boost.connect(func() -> void: boosts[0] += 1)
+	var saw_label := false
+	var saw_charge := 0.0
+	for i in 60 * 4:
+		me.global_transform = leader.global_transform.translated_local(Vector3(0, 0, 7.0))
+		me.linear_velocity = leader.linear_velocity
+		await physics_frame
+		saw_charge = maxf(saw_charge, me.slipstream_charge)
+		if race.prototype_hud.speed_panel.get_state_text().begins_with("SLIPSTREAM"):
+			saw_label = true
+		if boosts[0] > 0:
+			break
+	_check(saw_charge > 0.3, "the meter fills behind a car (%.2f)" % saw_charge)
+	_check(saw_label, "the HUD says SLIPSTREAM")
+	_check(boosts[0] == 1 and me.is_boosting() and me.boost_label == "Slipstream", "then a Slipstream boost")
+	_check(race.race_hud.wind_lines.vehicle == me, "wind lines follow the player")
+
 
 func _test_tricks(race: RaceManager) -> void:
 	var keys := InputMap.action_get_events(&"trick")

@@ -1,5 +1,5 @@
 # CYBERWAVE 2199
-## Game Design Document — Version 2.0
+## Game Design Document — Version 2.1
 
 **Status:** Development Baseline  
 **Engine:** Godot 4  
@@ -794,7 +794,7 @@ Additional information:
 ## 11.8 Race Presentation
 
 - Brief pre-race camera sweep
-- READY / SET / GO countdown
+- 3 / 2 / 1 / START countdown, with a four-lamp start-light board on the start gantry (three reds, then green), one lamp per beep
 - No false-start penalties
 - Position-change feedback
 - Distinct drift boost effects
@@ -1130,7 +1130,7 @@ Detailed artwork, weapons, cosmetics, and completed environments are not require
 # 20. Document Control
 
 **Project:** Cyberwave 2199  
-**Document Version:** 2.0  
+**Document Version:** 2.1  
 **Status:** Approved design baseline for initial development  
 **Engine:** Godot 4  
 **Initial Platform:** Windows PC  
@@ -1156,5 +1156,6 @@ Changes after Version 1.0 should be tracked as revisions rather than silently re
 | 1.8 | 2026-11-06 | The Stacks Grand Prix built at about 2.9 km, at sunset with one open-air courtyard (§8.1). The American Circuit is playable; the World Circuit is locked as "coming soon" until its tracks are built (§2.2). |
 | 1.9 | 2026-11-06 | Championships are now cups chosen Mario Kart style: American Cup (USA-map trophy) and World Cup (globe). Versus picks a cup, then one of its tracks. The Stacks Grand Prix renamed The Stacks. American Cup order is now Vegas Overdrive, Six Flags New Orleans, The Stacks (§2.2, §8.1). |
 | 2.0 | 2026-11-06 | Hoia Baciu Run built at about 3.2 km: moonlit, foggy, dirt road, crooked trees (§8.4). The World Cup stays locked until its other two tracks exist. Final-lap music speed-up (§12). |
+| 2.1 | 2026-11-06 | Countdown is now 3 / 2 / 1 / START with a start-light board on the gantry, one lamp per beep (§11.8). |
 
-**End of Game Design Document — Version 2.0**
+**End of Game Design Document — Version 2.1**
