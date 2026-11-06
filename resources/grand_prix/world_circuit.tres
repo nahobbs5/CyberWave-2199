@@ -5,7 +5,9 @@
 [resource]
 script = ExtResource("1_gp")
 id = "world_circuit"
-display_name = "Grand Prix 2 — World Circuit"
+display_name = "World Cup"
+emblem = "globe"
 track_names = PackedStringArray("Hoia Baciu Run", "Catacombs Descent", "Arashiyama Circuit")
 locations = PackedStringArray("Romania", "Paris, France", "Kyoto, Japan")
 track_scenes = PackedStringArray("res://scenes/tracks/test_circuit.tscn", "res://scenes/tracks/test_circuit.tscn", "res://scenes/tracks/test_circuit.tscn")
+locked = true

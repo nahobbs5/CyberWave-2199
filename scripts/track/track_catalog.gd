@@ -5,12 +5,15 @@ extends RefCounted
 
 const TEST_CIRCUIT := "res://scenes/tracks/test_circuit.tscn"
 
-## [name, scene path or "" (not built yet), location]
+## [name, scene path or "" (not built yet), location, race music or "" (none)]
 const TRACKS := [
-	["The Stacks Grand Prix", "res://scenes/tracks/the_stacks.tscn", "Library of Congress, Washington, DC"],
-	["Six Flags New Orleans", "res://scenes/tracks/six_flags_new_orleans.tscn", "Louisiana"],
-	["Vegas Overdrive", "res://scenes/tracks/vegas_overdrive.tscn", "Las Vegas, Nevada"],
-	["Test Circuit", TEST_CIRCUIT, "Graybox"],
+	["The Stacks", "res://scenes/tracks/the_stacks.tscn", "Library of Congress, Washington, DC",
+			"res://music/lilex-cyber-dreams-314323.mp3"],
+	["Six Flags New Orleans", "res://scenes/tracks/six_flags_new_orleans.tscn", "Louisiana",
+			"res://music/theboysbeats-the-boy-s-beats-race-winner-282390.mp3"],
+	["Vegas Overdrive", "res://scenes/tracks/vegas_overdrive.tscn", "Las Vegas, Nevada",
+			"res://music/spmusic-heavy-racing-151129.mp3"],
+	["Test Circuit", TEST_CIRCUIT, "Graybox", ""],
 ]
 
 
@@ -30,6 +33,22 @@ static func scene_path(track_name: String) -> String:
 
 static func scene(track_name: String) -> PackedScene:
 	return load(scene_path(track_name)) as PackedScene
+
+
+## Location line for a track ("" if unknown).
+static func location(track_name: String) -> String:
+	for t in TRACKS:
+		if t[0] == track_name:
+			return t[2]
+	return ""
+
+
+## Race music for a track ("" for none).
+static func music(track_name: String) -> String:
+	for t in TRACKS:
+		if t[0] == track_name:
+			return t[3]
+	return ""
 
 
 static func is_built(track_name: String) -> bool:

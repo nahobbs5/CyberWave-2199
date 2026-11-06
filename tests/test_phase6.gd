@@ -11,6 +11,7 @@ const RACE_SCENE := "res://scenes/race/race.tscn"
 const CAR_SCENE := "res://scenes/vehicles/placeholder_car.tscn"
 const VEGAS := "res://scenes/tracks/vegas_overdrive.tscn"
 const SIX_FLAGS := "res://scenes/tracks/six_flags_new_orleans.tscn"
+const STACKS := "res://scenes/tracks/the_stacks.tscn"
 
 var _passed: int = 0
 var _failed: int = 0
@@ -32,11 +33,13 @@ func _run_all() -> void:
 	_test_wet_status()
 	await _test_layout(VEGAS, "Vegas Overdrive", 3000.0, 3400.0, 9, 90.0)
 	await _test_layout(SIX_FLAGS, "Six Flags New Orleans", 2900.0, 3300.0, 10, 80.0)
+	await _test_layout(STACKS, "The Stacks", 2700.0, 2950.0, 5, 80.0)
+	await _test_build_times()
 	await _run("features on Vegas", _test_features, _vegas_config(), false)
 	await _run("jump ramps and water (Six Flags)", _test_ramps_and_water, _config(SIX_FLAGS, "Six Flags New Orleans"), false)
 	await _run("shortcut: recovery and positions", _test_shortcut_recovery, _vegas_config(), false)
 	_test_menus_and_gp()
-	for track in [[VEGAS, "Vegas Overdrive"], [SIX_FLAGS, "Six Flags New Orleans"]]:
+	for track in [[VEGAS, "Vegas Overdrive"], [SIX_FLAGS, "Six Flags New Orleans"], [STACKS, "The Stacks"]]:
 		var forced := _config(track[0], track[1])
 		forced.total_laps = 1
 		await _run("%s: everyone takes the shortcut (1 lap)" % track[1], _test_forced_shortcut, forced, true)
@@ -363,15 +366,36 @@ func _test_menus_and_gp() -> void:
 	_check(TrackCatalog.names().has("Vegas Overdrive") and TrackCatalog.scene_path("Vegas Overdrive") == VEGAS, "Vegas is in the track list")
 	var gp := load("res://resources/grand_prix/american_circuit.tres") as GrandPrixData
 	var c := Championship.create(gp, "normal", true, load("res://resources/racers/rival_roster.tres"))
-	c.race_index = 2
+	c.race_index = 0
 	var config := c.make_race_config()
 	_check(config.track_name == "Vegas Overdrive" and config.track_scene.resource_path == VEGAS,
-			"American Circuit race 3 runs on Vegas Overdrive")
+			"American Cup race 1 runs on Vegas Overdrive")
 	c.race_index = 1
 	config = c.make_race_config()
 	_check(config.track_name == "Six Flags New Orleans" and config.track_scene.resource_path == SIX_FLAGS,
-			"American Circuit race 2 runs on Six Flags New Orleans")
+			"American Cup race 2 runs on Six Flags New Orleans")
 	_check(TrackCatalog.scene_path("Six Flags New Orleans") == SIX_FLAGS, "Six Flags is in the track list")
+	_check(TrackCatalog.scene_path("The Stacks") == STACKS, "The Stacks is in the track list")
+	c.race_index = 2
+	config = c.make_race_config()
+	_check(config.track_name == "The Stacks" and config.track_scene.resource_path == STACKS,
+			"American Cup race 3 runs on The Stacks")
+	var world := load("res://resources/grand_prix/world_circuit.tres") as GrandPrixData
+	_check(world.locked and not gp.locked, "World Circuit is locked (coming soon); American is playable")
+
+
+## Each track's scenery builds quickly (headless, no rendering).
+func _test_build_times() -> void:
+	_current = "scenery build times"
+	print("- scenery build times")
+	for path in [VEGAS, SIX_FLAGS, STACKS]:
+		var t0 := Time.get_ticks_msec()
+		var track := (load(path) as PackedScene).instantiate() as TrackCircuit
+		root.add_child(track)
+		var ms := Time.get_ticks_msec() - t0
+		_check(ms < 5000, "%s builds in under 5 s (%d ms)" % [path.get_file(), ms])
+		track.queue_free()
+		await process_frame
 
 
 func _test_forced_shortcut(race: RaceManager) -> void:
@@ -421,6 +445,6 @@ func _test_full_race(race: RaceManager) -> void:
 	_check(taken > 0, "the AI used the shortcut (%d times)" % taken)
 	_check(recoveries[0] <= 4, "few recoveries (%d)" % recoveries[0])
 	var winner := race.get_standings()[0]
-	_check(winner.finish_time > 200.0 and winner.finish_time < 285.0, "about a 4-minute race: %s" % RaceProgress.format_time(winner.finish_time))
+	_check(winner.finish_time > 180.0 and winner.finish_time < 285.0, "a 3-4 minute race: %s" % RaceProgress.format_time(winner.finish_time))
 	var map := race.race_hud.minimap
 	_check(map.shortcut_count() == 1, "the minimap draws the shortcut")

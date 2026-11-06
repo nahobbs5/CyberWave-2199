@@ -62,6 +62,11 @@ func build() -> void:
 	material("toy", Color(0.35, 0.28, 0.3), 0.0, 0.0, 0.9)
 	material("jester_face", Color(0.62, 0.6, 0.55), 0.0, 0.0, 0.85)
 	material("jester_red", Color(0.45, 0.08, 0.07), 0.0, 0.0, 0.85)
+	material("algae", Color(0.13, 0.2, 0.08), 0.0, 0.1, 0.35)
+	material("tube_orange", Color(0.5, 0.25, 0.1), 0.0, 0.0, 0.8)
+	material("tube_blue", Color(0.17, 0.25, 0.35), 0.0, 0.0, 0.8)
+	material("container_red", Color(0.32, 0.12, 0.08), 0.0, 0.3, 0.8)
+	material("container_blue", Color(0.12, 0.18, 0.24), 0.0, 0.3, 0.8)
 	# Water: standing flood water off the road, and thin puddles on it.
 	var flood := StandardMaterial3D.new()
 	flood.albedo_color = Color(0.05, 0.07, 0.07)
@@ -88,6 +93,9 @@ func build() -> void:
 	_water_park()
 	_backlot()
 	_bayou()
+	_water_park_detail()
+	_backlot_detail()
+	_bayou_detail()
 	_dead_woods()
 	_debris()
 	_signs_and_codes()
@@ -474,7 +482,8 @@ func _bayou() -> void:
 	var b := track.curve.get_closest_offset(BAYOU_TO)
 	var d := a
 	while d < b:
-		add_box("planks", Vector3(track.road_width - 0.8, 0.03, 1.0), at(d).translated_local(Vector3(0, 0.035, 0)))
+		if rng.randf() > 0.06:
+			add_box("planks", Vector3(track.road_width - 0.8, 0.03, 1.0), at(d).translated_local(Vector3(0, 0.035, 0)))
 		d += 1.4
 	d = a
 	while d < b:
@@ -566,3 +575,127 @@ func _lamps() -> void:
 				add_flicker_light(pole * Vector3(-side * 1.6, 8.6, 0), SODIUM, 1.8, 22.0, 0.25)
 		d += 80.0
 		i += 1
+
+
+# --- rest of the lap: detail pass ---------------------------------------------------
+
+## Water park: pool rims with drained, algae-slick bottoms, lifeguard stands,
+## loose inner tubes, deck weeds and the faded WAVE POOL sign.
+func _water_park_detail() -> void:
+	var pools: Array[Vector3] = [Vector3(-300, 0, 560), Vector3(-430, 0, 470), Vector3(-260, 0, 440), Vector3(-480, 0, 590),
+			Vector3(-380, 0, 640), Vector3(-560, 0, 520)]
+	for i in pools.size():
+		var c := pools[i]
+		var xf := xform(c, rng.randf_range(-0.3, 0.3))
+		var w := 22.0
+		var dd := 14.0
+		if not clear_rect(xf, w + 6.0, dd + 6.0):
+			continue
+		# Coping stones, a drained pool bottom with algae and a black puddle.
+		for side: float in [-1.0, 1.0]:
+			add_box("tiles", Vector3(w + 2.0, 0.5, 1.0), xf.translated_local(Vector3(0, 0.25, side * (dd * 0.5 + 0.5))))
+			add_box("tiles", Vector3(1.0, 0.5, dd), xf.translated_local(Vector3(side * (w * 0.5 + 0.5), 0.25, 0)))
+		if i >= 4:
+			add_box("algae", Vector3(w, 0.05, dd), xf.translated_local(Vector3(0, 0.05, 0)))
+			add_box("puddle", Vector3(w * 0.45, 0.06, dd * 0.5), xf.translated_local(Vector3(w * 0.15, 0.08, 1.0)))
+		# Lifeguard stand on the deck.
+		var stand := xf.translated_local(Vector3(w * 0.5 + 2.5, 0, -dd * 0.25))
+		for k in 4:
+			var leg := Vector3(-0.6 + (k % 2) * 1.2, 1.6, -0.6 + (k / 2) * 1.2)
+			add_box("peel_white", Vector3(0.15, 3.2, 0.15), stand.translated_local(leg))
+		add_box("peel_white", Vector3(1.6, 0.15, 1.6), stand.translated_local(Vector3(0, 3.2, 0)))
+		add_box("peel_white", Vector3(1.6, 1.0, 0.1), stand.translated_local(Vector3(0, 3.8, 0.75)))
+		add_box("canvas", Vector3(2.0, 0.08, 2.0), stand.translated_local(Vector3(0, 5.2, 0)).rotated_local(Vector3.RIGHT, 0.4))
+		# Inner tubes dumped around the pool.
+		for t in 3:
+			var tp := c + Vector3(rng.randf_range(-w, w) * 0.6, 0, rng.randf_range(-dd, dd) * 0.8)
+			if clear(tp, 1.2):
+				add_cyl("tube_orange" if t % 2 == 0 else "tube_blue", 0.9, 0.35, xform(tp + Vector3(0, 0.12, 0)).rotated_local(Vector3.RIGHT, rng.randf_range(-0.3, 0.3)), 10)
+		_weeds(c + Vector3(w * 0.5 + 1.5, 0, dd * 0.5 + 1.5), 2.0)
+		_weeds(c - Vector3(w * 0.5 + 1.5, 0, dd * 0.5 + 1.5), 2.0)
+	# WAVE POOL sign on two rusted posts, letters faded and one board hanging.
+	var sign_at := SLIDE_TOWER + Vector3(40, 0, -30)
+	if clear(sign_at, 6.0):
+		var sxf := xform(sign_at, PI * 0.25)
+		for side: float in [-1.0, 1.0]:
+			add_box("rust_metal", Vector3(0.3, 7.0, 0.3), sxf.translated_local(Vector3(side * 4.5, 3.5, 0)))
+		add_box("peel_white", Vector3(10.0, 2.4, 0.2), sxf.translated_local(Vector3(0, 6.0, 0)))
+		add_box("peel", Vector3(4.0, 1.2, 0.15), sxf.translated_local(Vector3(2.5, 3.7, 0.05)).rotated_local(Vector3.FORWARD, 0.35))
+		_label("WAVE POOL", sxf.translated_local(Vector3(0, 6.0, 0.12)), Color(0.32, 0.42, 0.55), 0.05)
+
+
+## Backlot: maintenance-yard vehicles, stacked shipping containers and fallen
+## light poles between the warehouses.
+func _backlot_detail() -> void:
+	var yard: Array[Vector3] = [Vector3(-600, 0, 210), Vector3(-560, 0, 380), Vector3(-620, 0, 40), Vector3(-540, 0, 520)]
+	for y in yard:
+		if not clear(y, 12.0):
+			continue
+		# Containers, some stacked and one toppled.
+		for k in 3:
+			var cxf := xform(y + Vector3(k * 3.2 - 3.2, 0, rng.randf_range(-1.0, 1.0)), rng.randf_range(-0.05, 0.05))
+			var key := "container_red" if (k + int(y.x)) % 2 == 0 else "container_blue"
+			add_box(key, Vector3(2.5, 2.6, 12.0), cxf.translated_local(Vector3(0, 1.3, 0)))
+			_flood_line(cxf, Vector3(2.5, 0, 12.0), 1.2)
+			if k == 1:
+				add_box("corrugated", Vector3(2.5, 2.6, 12.0), cxf.translated_local(Vector3(0, 3.9, 0)).rotated_local(Vector3.UP, 0.08))
+		var tipped := xform(y + Vector3(9.0, 0, 6.0), rng.randf() * TAU).rotated_local(Vector3.FORWARD, PI * 0.5)
+		add_box("container_blue", Vector3(2.6, 2.5, 12.0), tipped.translated_local(Vector3(1.3, 0, 0)))
+		# A maintenance truck and a flatbed.
+		var truck := xform(y + Vector3(-10.0, 0, -8.0), rng.randf() * TAU)
+		add_box("peel_white", Vector3(2.2, 2.0, 2.4), truck.translated_local(Vector3(0, 1.4, -2.2)))
+		add_box("rust", Vector3(2.3, 0.9, 6.4), truck.translated_local(Vector3(0, 0.75, 0)))
+		add_box("dark", Vector3(2.0, 0.9, 0.08), truck.translated_local(Vector3(0, 1.9, -3.42)))
+		for w in 4:
+			add_cyl("dark", 0.45, 0.35, truck.translated_local(Vector3(-1.2 + (w % 2) * 2.4, 0.45, -2.0 + (w / 2) * 3.8)).rotated_local(Vector3.FORWARD, PI * 0.5), 8)
+		_wreck(y + Vector3(14.0, 0, -12.0))
+	# Light poles knocked flat by the storm, heads in the weeds.
+	var d := 40.0
+	while d < track.length:
+		var side := 1.0 if int(d) % 2 == 0 else -1.0
+		var base := at(d, side * (track.road_width * 0.5 + 14.0))
+		var p := base.origin
+		if p.x < -400.0 and clear(p, 9.0):
+			var lie := base.rotated_local(Vector3.UP, rng.randf_range(0.6, 2.4))
+			add_cyl("rust_metal", 0.22, 10.0, lie.translated_local(Vector3(0, 0.25, 0)).rotated_local(Vector3.FORWARD, PI * 0.5), 6, 0.15)
+			add_box("rust_metal", Vector3(0.6, 0.35, 1.2), lie.translated_local(Vector3(-10.0, 0.3, 0)))
+			_weeds(p, 1.5)
+		d += 110.0
+
+
+## Bayou: broken boardwalk railings, a half-sunk skiff and a bait-shack ruin.
+func _bayou_detail() -> void:
+	var a := track.curve.get_closest_offset(BAYOU_FROM)
+	var b := track.curve.get_closest_offset(BAYOU_TO)
+	var d := a
+	while d < b:
+		for side: float in [-1.0, 1.0]:
+			if rng.randf() < 0.3:
+				continue # gaps where the rail washed away
+			var rail := at(d + 9.0, side * (track.road_width * 0.5 + 2.2))
+			var sag := rng.randf_range(-0.25, 0.25) if rng.randf() < 0.3 else 0.0
+			add_box("wood", Vector3(0.12, 0.18, 17.5), rail.translated_local(Vector3(0, 2.1, 0)).rotated_local(Vector3.RIGHT, sag))
+			if rng.randf() < 0.6:
+				add_box("wood", Vector3(0.1, 0.15, 17.5), rail.translated_local(Vector3(0, 1.2, 0)))
+		d += 18.0
+	# Half-sunk skiff off the boardwalk.
+	var mid := (a + b) * 0.5
+	var boat := at(mid, -(track.road_width * 0.5 + 16.0))
+	if clear(boat.origin, 4.0):
+		var hull := boat.rotated_local(Vector3.UP, 0.7).rotated_local(Vector3.RIGHT, 0.25).rotated_local(Vector3.FORWARD, 0.2)
+		add_box("peel_white", Vector3(2.0, 0.9, 5.5), hull.translated_local(Vector3(0, -0.1, 0)))
+		add_box("dark", Vector3(1.6, 0.1, 4.8), hull.translated_local(Vector3(0, 0.36, 0)))
+		add_pyramid("peel_white", 1.0, 1.6, hull.translated_local(Vector3(0, -0.1, -3.4)).rotated_local(Vector3.RIGHT, -PI * 0.5))
+	# Bait shack: three standing walls, a fallen tin roof, a faded sign.
+	var shack := at(a + (b - a) * 0.3, track.road_width * 0.5 + 18.0)
+	if clear_rect(shack, 10.0, 8.0):
+		var sx := shack.rotated_local(Vector3.UP, 0.15)
+		add_box("planks", Vector3(8.0, 3.2, 0.25), sx.translated_local(Vector3(0, 1.6, -3.0)))
+		add_box("planks", Vector3(0.25, 3.2, 6.0), sx.translated_local(Vector3(-4.0, 1.6, 0)))
+		add_box("planks", Vector3(0.25, 2.2, 3.5), sx.translated_local(Vector3(4.0, 1.1, -1.2)).rotated_local(Vector3.FORWARD, 0.18))
+		add_box("corrugated", Vector3(8.6, 0.08, 6.6), sx.translated_local(Vector3(0.6, 1.4, 0.4)).rotated_local(Vector3.FORWARD, 0.32))
+		_flood_line(sx, Vector3(8.0, 0, 6.0), 1.0)
+		_label("LIVE BAIT", sx.translated_local(Vector3(-1.0, 2.7, -2.85)), Color(0.55, 0.5, 0.42), 0.03)
+		_x_code(sx.translated_local(Vector3(1.8, 1.8, -2.85)), 0.7)
+		for k in 2:
+			add_box("rust_metal", Vector3(1.0, 1.2, 1.0), sx.translated_local(Vector3(2.0 + k * 1.3, 0.6, 4.0)).rotated_local(Vector3.UP, k * 0.4))

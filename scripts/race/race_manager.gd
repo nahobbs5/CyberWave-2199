@@ -60,6 +60,8 @@ var race_time: float = 0.0
 var racers: Array[RaceProgress] = []
 var player: RaceProgress
 var line: RacingLine
+## VehicleStats -> RacingLine (see line_for()).
+var _lines_by_stats: Dictionary = {}
 ## Player is driving against the track direction.
 var wrong_way: bool = false
 ## Elimination mode only.
@@ -90,13 +92,17 @@ var _player_done: bool = false
 
 func _ready() -> void:
 	InputSetup.ensure_actions()
-	Music.stop(get_tree())
 	countdown_sound = AudioStreamPlayer.new()
 	countdown_sound.name = "CountdownSound"
 	countdown_sound.stream = COUNTDOWN_SOUND
 	countdown_sound.bus = &"SFX"
 	add_child(countdown_sound)
 	_apply_config()
+	var race_music := TrackCatalog.music(config.track_name)
+	if race_music == "":
+		Music.stop(get_tree())
+	else:
+		Music.play(get_tree(), race_music)
 	track.checkpoint_crossed.connect(_on_checkpoint_crossed)
 	_spawn_grid()
 	coins = TrackCoins.new()
@@ -236,6 +242,8 @@ func _physics_process(delta: float) -> void:
 func _spawn_grid() -> void:
 	var stats := _probe_stats()
 	line = RacingLine.new(track, stats)
+	_lines_by_stats.clear()
+	_lines_by_stats[stats] = line
 	var rivals: Array[RacerProfile] = []
 	if rival_roster != null:
 		rivals = rival_roster.rivals
@@ -249,8 +257,12 @@ func _spawn_grid() -> void:
 		if not is_player:
 			profile = rivals[id] if id < rivals.size() else RacerProfile.new()
 		car.name = "Player" if is_player else "AI%d" % (id + 1)
+		var rival_vehicle: VehicleData = null
 		if is_player and player_vehicle != null:
 			car.stats = player_vehicle.stats
+		elif not is_player:
+			rival_vehicle = _rival_vehicle(id)
+			car.stats = rival_vehicle.stats
 		car.is_player = is_player
 		car.player_controlled = is_player and not player_uses_autopilot
 		add_child(car)
@@ -262,9 +274,9 @@ func _spawn_grid() -> void:
 			var p := PlayerProfile.get_profile()
 			VehicleCosmetics.apply(car, player_vehicle, p.loadout_for(player_vehicle.id), p.plate_text)
 		else:
-			# Rivals all drive the V8 Specter (the racing line is tuned for it),
-			# each in their own colour and plate.
-			VehicleCosmetics.apply_model(car, VehicleCatalog.by_id(PlayerProfile.DEFAULT_VEHICLE))
+			# Rivals drive the car rolled for this series (real model and
+			# stats), painted in their own colour, with their own plate.
+			VehicleCosmetics.apply_model(car, rival_vehicle)
 			car.set_body_color(color)
 			var plate := profile.plate_text
 			if config != null and id >= 0 and id < config.rival_plates.size():
@@ -306,6 +318,24 @@ func _grid_order() -> Array[int]:
 	return grid
 
 
+## The series' car for a rival (roster index), else the V8 Specter.
+func _rival_vehicle(id: int) -> VehicleData:
+	var vehicle: VehicleData = null
+	if config != null and id >= 0 and id < config.rival_vehicles.size():
+		vehicle = VehicleCatalog.by_id(config.rival_vehicles[id])
+	return vehicle if vehicle != null else VehicleCatalog.by_id(PlayerProfile.DEFAULT_VEHICLE)
+
+
+## The racing line with speeds for these stats (one per car model, sharing
+## the base line's path).
+func line_for(stats: VehicleStats) -> RacingLine:
+	if stats == null:
+		return line
+	if not _lines_by_stats.has(stats):
+		_lines_by_stats[stats] = line.for_stats(stats)
+	return _lines_by_stats[stats]
+
+
 func _probe_stats() -> VehicleStats:
 	var probe := car_scene.instantiate() as VehicleController
 	var stats := probe.stats
@@ -317,7 +347,7 @@ func _attach_ai(car: VehicleController, profile: RacerProfile, slot: int) -> AIC
 	var ai := AIController.new()
 	ai.name = "AIController"
 	car.add_child(ai)
-	ai.setup(car, track, line, profile, difficulty, random_seed + slot * 7919)
+	ai.setup(car, track, line_for(car.stats), profile, difficulty, random_seed + slot * 7919)
 	return ai
 
 
@@ -328,7 +358,8 @@ func _attach_ai_combat(racer: RaceProgress) -> void:
 	var combat := AICombat.new()
 	combat.name = "AICombat"
 	racer.vehicle.add_child(combat)
-	combat.setup(racer.vehicle, weapon_manager, line, ai.profile, difficulty, random_seed + racer.grid_slot * 104729)
+	combat.setup(racer.vehicle, weapon_manager, line_for(racer.vehicle.stats), ai.profile, difficulty,
+			random_seed + racer.grid_slot * 104729)
 
 
 func _add_name_tag(car: VehicleController, text: String, color: Color) -> void:

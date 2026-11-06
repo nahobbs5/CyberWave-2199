@@ -1,10 +1,14 @@
 extends SceneTree
 func _initialize() -> void:
-	for path in ["res://scenes/tracks/the_stacks.tscn"]:
+	_go.call_deferred()
+func _go() -> void:
+	for path in ["res://scenes/tracks/the_stacks.tscn", "res://scenes/tracks/six_flags_new_orleans.tscn", "res://scenes/tracks/vegas_overdrive.tscn"]:
 		var t0 := Time.get_ticks_msec()
 		var track := (load(path) as PackedScene).instantiate() as TrackCircuit
 		root.add_child(track)
-		var gen := track.get_node("Scenery/Generated")
-		print("BUILD ", path.get_file(), " ", Time.get_ticks_msec() - t0, " ms, len ", track.length, " shortcut ", track.shortcuts.size(), " gen nodes ", gen.get_child_count())
+		var gens := track.find_children("Generated", "", true, false)
+		var n := 0
+		for g in gens: n += g.get_child_count()
+		print("BUILD ", path.get_file(), " ", Time.get_ticks_msec() - t0, " ms, len ", track.length, " shortcut ", track.shortcuts.size(), " gen ", gens.size(), " children ", n)
 		track.free()
 	quit()

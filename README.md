@@ -16,7 +16,7 @@ Phases 1–5 are unchanged apart from the models.
 
 Open the project in Godot 4.7 and press **F5** for the main menu (`scenes/menu/main_menu.tscn`).
 Running `scenes/race/race.tscn` directly (**F6**) still starts a Versus race using the `Race` node's Inspector settings and your selected car.
-**Free drive (practice)** on the main menu opens the Phase 1 sandbox (`scenes/free_drive.tscn`) with your car; Esc returns from it.
+**Practice** on the main menu opens the Phase 1 sandbox (`scenes/free_drive.tscn`) with your car; Esc returns from it.
 
 ## Controls
 
@@ -85,18 +85,17 @@ The layout is the `control_points` list on `scenes/tracks/test_circuit.tscn`, sa
 
 ### Game modes
 
-All races use the test circuit for now. Grand Prix races carry the real track names, and each championship's
-track list is data (`resources/grand_prix/*.tres`), so the Phase 6 tracks can be dropped in.
+**Cups (Mario Kart style).** Grand Prix and Versus start on a **cup screen**: one big card per cup with its trophy (drawn in code: the **American Cup** has a map of the USA on it, the **World Cup** a globe), its three races and, in Grand Prix, your best finish. Grand Prix then goes to the setup screen and races the whole cup; Versus first shows the cup's **tracks** as cards (each with its outline, location and your best time) and you pick one. Back (or Esc / B) steps back one screen. The **American Cup is fully playable**: Vegas Overdrive, then Six Flags New Orleans, then The Stacks. The **World Cup** is greyed out as "coming soon" until its tracks are built (`locked = true` on the resource). Each cup is data (`resources/grand_prix/*.tres`, listed in `GrandPrixData.CUPS`); its `emblem` picks the trophy picture. The Test Circuit isn't in a cup: it's the Practice track.
 
 - **Versus** (GDD §2.1): one race, you start eighth. When you finish, the results fill in as the AI cross the line. **Race again** or **Quit to mode select**.
-- **Grand Prix** (GDD §2.2): *American Circuit* or *World Circuit*, three races of three laps each.
+- **Grand Prix** (GDD §2.2): the *American Cup* (the *World Cup* is coming soon), three races of three laps each.
   - Points are 15-12-10-8-6-4-2-1. Ties are broken by most wins, then most second places, then the order in the most recent race.
   - Race 1 starts the seven rivals in slots 1–7 with you last. Each later grid is the previous race's finishing order, not the points order. Rivals keep their names, colours and personalities all season.
   - **The race result is fixed when you cross the line:** anyone still racing is classified in their current order. That way you never have to wait for the field, and the points always match what the results screen shows.
   - The results screen shows your race points and the championship standings, then **Next race**. After race 3 it shows the final standings with the champion highlighted.
   - **Saving:** the championship is saved to `user://grand_prix_save.json` when it starts and after every race. If you quit midway, **Continue Grand Prix** appears on the mode screen. The save holds the championship, results, points, next grid, vehicle, rival identities, settings and a coins field (coins are Phase 5). It's deleted once the championship is complete. Starting a new Grand Prix replaces it.
   - **Restart race** (pause menu) replays the current race, but only until you finish it: once the result is saved it can't be rerolled.
-- **Elimination** (GDD §2.3): always three laps.
+- **Elimination** (GDD §2.3): picked as the **Race type** on the Versus setup screen (Standard / Elimination; Versus reopens on the one you used last). Always three laps.
   - A red **ELIMINATION** arch marks checkpoint 4 (the lap midpoint).
   - On each lap, racers qualify in the order they cross it: 6 on lap 1, 4 on lap 2, 2 on lap 3. The moment the last place is taken, everyone else still racing is out. There's no timer, and the start/finish line never eliminates anyone.
   - Eliminated cars stop colliding with active racers and stop fighting at once, then shrink away and disappear. Their positions are 7–8, 5–6 and 3–4, ordered by how far they'd got.
@@ -106,7 +105,8 @@ track list is data (`resources/grand_prix/*.tres`), so the Phase 6 tracks can be
 
 ### Menus
 
-- **Main menu** (GDD §11.2): Continue Grand Prix (only when one is saved), Versus, Grand Prix, Elimination, Garage, Settings, Free drive (practice), Exit.
+- **Main menu** (GDD §11.2): Continue Grand Prix (only when one is saved), Grand Prix, Versus, Practice, Garage, Settings, Credits, Exit.
+- **Credits:** the game, music, sound, fonts, textures and sky, weapon art and engine, with a Back button (Esc / B also goes back).
 - **Race setup** (GDD §11.3): track (only the test circuit for now) or championship, vehicle picker with a rotating preview of your car (paint, cosmetics and plate), stats, AI difficulty, laps (Versus), weapons on/off, Start race. It remembers your last choices and shows your personal best (Versus) or best championship finish (Grand Prix).
   - **A Grand Prix keeps the car you started it with** for all three races (the GDD saves the player vehicle with the championship).
 - **Garage** (GDD §11.4): rotating preview, vehicle stats, license plate editor, the 8 cosmetic categories, your coin balance.
@@ -114,7 +114,7 @@ track list is data (`resources/grand_prix/*.tres`), so the Phase 6 tracks can be
   - The **license plate** is one text for every car: up to 8 characters (letters, digits, spaces, dashes), saved as you type.
 - **Settings** (GDD §11.9): every change applies and saves immediately.
   - **HUD scale** 75–150%, **motion blur** (off by default; a subtle edge blur at high speed and during boosts, the centre stays sharp), **camera shake** 0–100% (impacts, stuns, boosts), **reduced flashing** (the INCOMING warning stays steady instead of blinking; weapon flashes, status lights and the lock reticle are calmer).
-  - **Audio:** Master, Music and Sound effects. There's no music yet, so the Music slider has nothing to control until Phase 6.
+  - **Audio:** Master, Music and Sound effects. The Music slider controls menu and race music.
   - **Controls:** press a binding, then the new key, gamepad button or stick direction within 5 seconds. A rebind replaces all of that action's keyboard inputs (so W + Up becomes just your new key) or all of its gamepad inputs. If another action already uses that input, you get a note (both keep working). **Reset controls to defaults** undoes all rebinds.
   - HUD scale and motion blur take effect from the next race.
 
@@ -146,7 +146,7 @@ The models share the car scene's physics, wheels and effects; only the body chan
 | Valkyrie R | Predictable, steady drifts | 43.8 | 14.2 | 2.42 | 1.36 |
 | Cipher EVO | Sharp and loose: less grip, slow off the line | 44.8 | 13.4 | 2.56 | 1.56 |
 
-Speeds are m/s, acceleration m/s², handling and drift rad/s. The AI rivals all drive the V8 Specter model and stats (so the racing line and AI pace stay as tuned), each in their own colour. Rival license plates are random (like `KRX-417`), rolled once per series: they stay the same through Race again / Restart in Versus and Elimination, and for a whole Grand Prix (saved with it). Your plate defaults to `CW-2199` until you change it in the Garage.
+Speeds are m/s, acceleration m/s², handling and drift rad/s. Each rival drives a **random car** from the eight, with its real model and stats, painted in the rival's own colour. Like the plates, the cars are rolled once per series. The AI get a racing line per car model: the path is worked out once and only the speeds and drift zones are recomputed for each car's stats, so loading barely changes. Rival license plates are random (like `KRX-417`), rolled once per series: they stay the same through Race again / Restart in Versus and Elimination, and for a whole Grand Prix (saved with it). Your plate defaults to `CW-2199` until you change it in the Garage.
 
 #### Vehicle models
 
@@ -213,13 +213,30 @@ There are no control instructions on the HUD; the controls (from your current bi
 |---|---|---|
 | Main menu, race setup, settings | Main theme (loops) | `music/ikoliks_aj-cyberpunk-cyberpunk-music-614562.mp3` |
 | Garage | Wings of Hope (loops) | `music/ikoliks-wings-of-hope-no-copyright-music-background-corporate-380579.mp3` |
+| Races on The Stacks | Cyber Dreams by Lilex (loops) | `music/lilex-cyber-dreams-314323.mp3` |
+| Races on Six Flags New Orleans | Race Winner by TheBoysBeats (loops) | `music/theboysbeats-the-boy-s-beats-race-winner-282390.mp3` |
+| Races on Vegas Overdrive | Heavy Racing by SPmusic (loops) | `music/spmusic-heavy-racing-151129.mp3` |
 | Race start | Countdown beeps on READY / SET / GO | `sounds/freesound_community-short-beep-countdown-81121.mp3` |
 
-Music carries across menu screens without restarting and crossfades when the track changes (`scripts/core/music.gd`); races and free drive have no music yet, so it fades out when one starts. The countdown clip has four beeps a second apart; it starts 1 s in so the last three land on READY, SET and GO. Music plays on the Music bus and effects on the SFX bus, so the Settings sliders control each. Tracks by ikoliks / ikoliks_aj and freesound_community.
+Music carries across menu screens without restarting and crossfades when the track changes (`scripts/core/music.gd`); each built track has its own race music (set in `TrackCatalog`, `scripts/track/track_catalog.gd`), which starts with the race; the test circuit and free drive have none, so the music fades out. The countdown clip has four beeps a second apart; it starts 1 s in so the last three land on READY, SET and GO. Music plays on the Music bus and effects on the SFX bus, so the Settings sliders control each. Tracks by ikoliks / ikoliks_aj, Lilex, TheBoysBeats, SPmusic and freesound_community.
 
 ### Tracks
 
-The race setup screen lists **Six Flags New Orleans**, **Vegas Overdrive** and the **Test Circuit**. In a Grand Prix, American Circuit races 2 and 3 are Six Flags and Vegas; the other Grand Prix races still run on the test circuit under their real names until those tracks are built.
+The American Cup holds **Vegas Overdrive**, **Six Flags New Orleans** and **The Stacks**, raced in that order in Grand Prix. The **Test Circuit** is used for Practice. Best times saved under the old name "The Stacks Grand Prix" carry over to The Stacks.
+
+#### The Stacks (GDD §8.1)
+
+A 2.9 km technical circuit through the Library of Congress **at sunset**. It's mostly indoors, with one open-air courtyard. The road is a 16 m polished marble floor with gold and white racing neon.
+
+- **Great Hall** (start/finish): a 24 m high marble hall with windows on both sides, twin grand staircases, statues on pedestals, red velvet banners and chandeliers. A chicane leads out.
+- **Gallery:** the long straight, with bookshelves to the east and tall arched windows to the west. The low sun throws shafts of light across the floor through the window openings. Boost pad.
+- **Archive stacks** (shortcut): a narrow 11 m lane between towering bookcases under a low ceiling, with a smashable book cart and bonus coins. It's about 100 m shorter than the main road.
+- **Main Reading Room:** one big sweep round the domed rotunda: a ring of marble columns, a drum wall with arched windows, a balcony with statues, a ribbed, painted dome with a glowing oculus, and rings of reading desks with green lamps. A boost ring.
+- **Courtyard:** an open-air straight under the sunset sky between the building's façades, with lit windows, hedges, lanterns, a fountain and a jump ramp over a low stair.
+- **Card-catalogue corridor** and the long north hall back to the start. Boost pad.
+- No water or EMP: it's a clean, technical track. 5 crate rows and 10 coins per lap.
+- **Lighting:** a low gold sun with shadows, the `qwantani_sunset` sky, warm volumetric fog (Forward+ only), SSR on the floor, chandeliers and emissive windows.
+- Everything is built from code (`StacksScenery`, `HallBuilder`), with Poly Haven marble, parquet, velvet and stone textures and a generated book-spine texture.
 
 #### Six Flags New Orleans (GDD §8.2)
 
@@ -238,7 +255,11 @@ Representative section (full detail, ready for your review):
 - **Flooded Midway:** the S-bends between boarded-up game booths with torn awnings, standing in flood water. A wrecked carousel with fallen horses, and the park's faded jester billboard.
 - **Coaster Run:** a **massive wooden lattice coaster** (about 1 km of track) runs alongside the road, then **crosses over it twice** on steel gantries (17 m clearance). It has a lift hill, a turnaround and a return run with a collapsed section. A jump ramp sits halfway along the straight.
 
-The rest of the lap (water park shortcut, backlot, bayou boardwalk) has a lighter pass for now: terrain, fences, debris, flood lines and lamps. It keeps its jump ramps, water patches, EMP puddle and smashable fence.
+The rest of the lap now has the same treatment:
+- **Water park shortcut:** the slide tower, tiled pools with coping (some flooded black, some drained to an algae-slick bottom), lifeguard stands with torn canopies, dumped inner tubes, deck weeds and a faded WAVE POOL sign.
+- **Backlot:** rusted stage warehouses with flood lines and X-codes, stacked and toppled shipping containers, maintenance trucks, wrecks, and light poles knocked flat into the weeds.
+- **Bayou boardwalk:** planks with gaps (cosmetic; the road stays solid), broken and sagging railings, cypress with Spanish moss over black water, a half-sunk skiff and a LIVE BAIT shack ruin with a fallen tin roof.
+It keeps its jump ramps, water patches, EMP puddle and smashable fence.
 
 **Needed assets.** None were supplied, so every prop is a procedural placeholder. These GLB models (Y-up, metres) would raise the fidelity most:
 - a coaster train car
@@ -273,11 +294,12 @@ A 3.2 km night circuit (shortened from 4.4 km after your first drive) with 20 m 
 - **`TrackFeature`**: boost pads, boost rings, EMP puddles, breakable barriers, **jump ramps** and **water**, placed by distance (or near a layout point) on the main road or a shortcut. Every kind is lit and marked so it reads at speed.
   - **Jump ramp:** a solid wedge (`length` × `width`, lip of `ramp_height`) that the wheels drive up. Put them on straights at full road width. On the Coaster Run a car at full speed gets about 1.6 s of air and 4 m of height, and lands on its wheels.
   - **Water:** standing water makes cars **wet**: top speed ×0.88 and grip ×0.75 while in it (and for 0.3 s after), with spray from the rear wheels and "WET" in the effects line. A Firewall doesn't keep you dry; wet stacks with EMP and Road Spike effects.
-- **`TrackScenery`**: base class for a track's set dressing (`VegasScenery`, `SixFlagsScenery`), with shared helpers such as `add_ferris_wheel`, `add_palm`, `textured()` (Poly Haven PBR sets mapped triplanar, so generated geometry needs no UVs) and `add_flicker_light()`.
+- **`TrackScenery`**: base class for a track's set dressing (`VegasScenery`, `SixFlagsScenery`, `StacksScenery`), with shared helpers such as `add_ferris_wheel`, `add_palm`, `textured()` (Poly Haven PBR sets mapped triplanar, so generated geometry needs no UVs) and `add_flicker_light()`.
 - **Reusable scenery builders** (`scripts/track/scenery/`):
   - `SceneryTerrain`: overgrown, waterlogged terrain with level banks along the roads
   - `WoodenCoaster`: a lattice coaster along any 3D path, with steel gantries where it crosses a road
   - `ChainLinkFence`: damaged fencing with a procedural chain-link texture
+  - `HallBuilder`: an interior hall along a stretch of road: marble wainscot, plaster walls, pilasters, open arched window bays or bookshelf bays, a coffered painted ceiling and chandeliers. Plus a stand-alone `bookcase()`.
 - **Track look exports** also cover `neon_energy` and `edge_line_energy` (racing-edge brightness), `faded_markings`, `ground_visible`, and `road_texture` / `barrier_texture` / `ground_texture`. Geometry is merged into a few batched meshes, one per material, and it skips anything that would overlap a road. It builds in the editor too.
 - **Look:** road, edge, barrier, neon and light colours are exports on each track, and corners tighter than `corner_sign_radius` get chevron signs automatically.
 - Each track scene carries its own sky, fog and lighting (`WorldEnvironment`).
@@ -518,7 +540,16 @@ The exit code is non-zero if anything fails. These checks do **not** judge how t
 
 ## Credits
 
-Environment textures and the Six Flags sky are from [Poly Haven](https://polyhaven.com) (CC0, public domain): asphalt_04, road_damaged, rust_coarse_01, rusty_metal_02, rusty_corrugated_iron, concrete_moss, dirty_concrete, peeling_painted_wall, wood_peeling_paint_weathered, distressed_painted_planks, brown_mud_leaves_01, bark_willow, dirty_tiles, painted_worn_brick, withered_grass, sparse_grass, and the kloofendal_overcast_puresky HDRI. They live in `assets/textures/polyhaven/` (colour, normal and roughness at 1K) and `assets/sky/`.
+- **Game:** Cyberwave 2199 by Nathan Hobbs.
+- **Music:** "Cyberpunk" by ikoliks_aj (main theme), "Wings of Hope" by ikoliks (garage), "Cyber Dreams" by Lilex (The Stacks), "Race Winner" by TheBoysBeats (Six Flags New Orleans), "Heavy Racing" by SPmusic (Vegas Overdrive).
+- **Sound:** short beep countdown by freesound_community.
+- **Fonts:** Oxanium and Rajdhani, SIL Open Font License 1.1 (`assets/fonts/`).
+- **Weapon icons:** from the Weapon Arsenal concept art.
+- **Engine:** Godot Engine, MIT License.
+
+The in-game Credits screen (`scripts/menu/credits.gd`) shows the same list.
+
+Environment textures and the track skies are from [Poly Haven](https://polyhaven.com) (CC0, public domain): asphalt_04, road_damaged, rust_coarse_01, rusty_metal_02, rusty_corrugated_iron, concrete_moss, dirty_concrete, peeling_painted_wall, wood_peeling_paint_weathered, distressed_painted_planks, brown_mud_leaves_01, bark_willow, dirty_tiles, painted_worn_brick, withered_grass, sparse_grass, marble_01, herringbone_parquet, velour_velvet, monastery_stone_floor, and the kloofendal_overcast_puresky and qwantani_sunset_puresky HDRIs. They live in `assets/textures/polyhaven/` (colour, normal and roughness at 1K) and `assets/sky/`.
 
 ## Status and known issues
 
@@ -539,10 +570,10 @@ The racing has **not** been played on screen yet.
 - **Scenery is visual only and fairly blocky:** generic buildings away from the landmarks are plain boxes with neon roof lines.
 - **Menus are only partly checked on screen.** I've looked at the main menu and garage in screenshots (the garage overflowed at 1280×720 and is fixed; the project's base resolution is now 1280×720). The race setup, settings, pause and results screens, the Grand Prix standings and the Elimination HUD are still only checked headless.
 - **Cosmetics and the 3D preview haven't been seen either.** Stripes, decals, plates and rims are positioned by hand on the placeholder body; the Riviera's lowered cabin and the other proportions may leave stripes or decals slightly off.
-- **Vehicle balance is a first pass.** The stat spread follows each car's GDD character but hasn't been driven. AI always drive the V8 Specter.
+- **Vehicle balance is a first pass.** The stat spread follows each car's GDD character but hasn't been driven. Rivals now drive random cars with real stats, so a Hard rival in a fast car is quicker than one in a slow car; the field varies from series to series.
 - **Prices and payouts are first guesses** where the GDD gives none (stripes, decals, underglow, exhaust, metallic and matte finishes). At roughly 30–75 coins per race, the 1,000-coin Chrome finish takes 15+ races.
 - **Not in Phase 5:** the optional first-time tutorial (GDD §11.9, not chosen for this phase), the race presentation items in GDD §11.8 (pre-race camera sweep, position-change feedback, podium ceremony), music, and dragging to rotate the preview.
-- **Five tracks are still to build.** Races on them use the test circuit under their real names.
+- **Three tracks are still to build** (the World Cup), so that cup is locked as "coming soon".
 - **Grand Prix classification at your finish** gives racers still on track their current position. The GDD doesn't specify this; it avoids waiting for the field.
 - **Only 6 of the GDD's 11 weapons** exist so far, plus Triple Nitro. Holo Decoy, Gravity Mine, System Glitch, Cyber Leech and Swarm Bots are Phase 6 content; the data-driven setup should make adding them straightforward.
 - **Combat balance is untested against a human:** crate odds, durations, the 22 m EMP radius and the Railgun's speed. The Railgun hits about half its shots in AI races. The AI often spend a held Firewall pre-emptively rather than saving it.

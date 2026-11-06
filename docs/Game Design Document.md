@@ -1,5 +1,5 @@
 # CYBERWAVE 2199
-## Game Design Document — Version 1.7
+## Game Design Document — Version 1.8
 
 **Status:** Development Baseline  
 **Engine:** Godot 4  
@@ -69,17 +69,17 @@ The race concludes when the player finishes or is otherwise removed from competi
 
 ## 2.2 Grand Prix
 
-Two championships, each consisting of three consecutive races.
+Two cups, each a championship of three consecutive races. As in Mario Kart, Grand Prix and Versus both start by choosing a cup; Versus then picks one of that cup's tracks.
 
-### Grand Prix 1 — American Circuit
+### American Cup (trophy: a map of the USA)
 
 | Race | Track | Location |
 |---|---|---|
-| 1 | The Stacks Grand Prix | Library of Congress, Washington, DC |
+| 1 | Vegas Overdrive | Las Vegas, Nevada |
 | 2 | Six Flags New Orleans | Louisiana |
-| 3 | Vegas Overdrive | Las Vegas, Nevada |
+| 3 | The Stacks | Library of Congress, Washington, DC |
 
-### Grand Prix 2 — World Circuit
+### World Cup (trophy: a globe)
 
 | Race | Track | Location |
 |---|---|---|
@@ -87,7 +87,7 @@ Two championships, each consisting of three consecutive races.
 | 2 | Catacombs Descent | Paris, France |
 | 3 | Arashiyama Circuit | Kyoto, Japan |
 
-Both championships are available immediately.
+The American Cup is playable now that all three of its tracks are built. The World Cup is listed as "coming soon" and can't be started until its tracks exist.
 
 ### Starting Grid
 
@@ -499,13 +499,15 @@ AI must support:
 
 Six tracks are included at launch.
 
-## 8.1 The Stacks Grand Prix
+## 8.1 The Stacks
 
 **Location:** Library of Congress, Washington, DC
 
 A fictionalized racing circuit through monumental halls, archive corridors, marble chambers, and interconnected interior spaces.
 
 **Identity:** Tight corners, dramatic interiors, technical driving.
+
+Built at about 2.9 km, set at sunset. Mostly indoor: the Great Hall (start/finish), a long gallery with tall west windows, the narrow archive stacks (the shortcut), the domed Main Reading Room as one big sweep, and a card-catalogue corridor. One stretch runs outdoors through an open-air courtyard, with a jump over a low stair. No water or EMP hazards.
 
 ## 8.2 Six Flags New Orleans
 
@@ -515,7 +517,7 @@ An abandoned amusement park with overgrown pathways, flooded sections, roller co
 
 **Identity:** Jumps, environmental hazards, alternate routes.
 
-Built at about 3.1 km: two jump ramps on straights, a jump on the water-park shortcut, and standing water that makes cars slightly slower and less grippy while they're in it.
+Built at about 3.1 km as a realistic post-Katrina ruin (stormy overcast, fog, rusted rides, flood lines): two jump ramps on straights, a jump on the water-park shortcut, and standing water that makes cars slightly slower and less grippy while they're in it.
 
 ## 8.3 Vegas Overdrive
 
@@ -586,7 +588,7 @@ The track concept art suggests one signature dynamic event per track. They are r
 
 | Track | Proposed special |
 |---|---|
-| The Stacks Grand Prix | Archive Lockdown: dynamic route changes |
+| The Stacks | Archive Lockdown: dynamic route changes |
 | Six Flags New Orleans | Flooded sections and coaster hazards |
 | Vegas Overdrive | Fountain show water barriers, collapsing signage, EMP security, police response |
 | Hoia Baciu Run | Phantom Signal: false routes and visual distortions |
@@ -1124,7 +1126,7 @@ Detailed artwork, weapons, cosmetics, and completed environments are not require
 # 20. Document Control
 
 **Project:** Cyberwave 2199  
-**Document Version:** 1.7  
+**Document Version:** 1.8  
 **Status:** Approved design baseline for initial development  
 **Engine:** Godot 4  
 **Initial Platform:** Windows PC  
@@ -1147,5 +1149,7 @@ Changes after Version 1.0 should be tracked as revisions rather than silently re
 | 1.5 | 2026-11-05 | Phase 6 (first part): track specials from the concept art recorded as proposals, not requirements (§8.9). Vegas Overdrive built at about 4.4 km, with the Luxor shortcut through the pyramid (§8.3, §8.8). |
 | 1.6 | 2026-11-05 | After playtesting Vegas: shortened to about 3.2 km with a roughly 500 m opening straight (§8.3). HUD weapon slots show weapon pictures; the minimap sits bottom right (§11.5). |
 | 1.7 | 2026-11-05 | Six Flags New Orleans built at about 3.1 km (§8.2). Jump ramps and standing water defined as track features (§8.7). |
+| 1.8 | 2026-11-06 | The Stacks Grand Prix built at about 2.9 km, at sunset with one open-air courtyard (§8.1). The American Circuit is playable; the World Circuit is locked as "coming soon" until its tracks are built (§2.2). |
+| 1.9 | 2026-11-06 | Championships are now cups chosen Mario Kart style: American Cup (USA-map trophy) and World Cup (globe). Versus picks a cup, then one of its tracks. The Stacks Grand Prix renamed The Stacks. American Cup order is now Vegas Overdrive, Six Flags New Orleans, The Stacks (§2.2, §8.1). |
 
-**End of Game Design Document — Version 1.7**
+**End of Game Design Document — Version 1.8**

@@ -171,6 +171,20 @@ func record_race_time(track_name: String, laps: int, race_time: float, best_lap:
 	return result
 
 
+## Track renames: best times saved under an old name move to the new one.
+const TRACK_RENAMES := {"The Stacks Grand Prix": "The Stacks"}
+
+
+func _rename_track_bests() -> void:
+	for key in personal_bests.keys():
+		var parts := str(key).split("|")
+		if parts.size() == 2 and TRACK_RENAMES.has(parts[0]):
+			var new_key := best_key(TRACK_RENAMES[parts[0]], int(parts[1]))
+			if not personal_bests.has(new_key):
+				personal_bests[new_key] = personal_bests[key]
+			personal_bests.erase(key)
+
+
 func record_grand_prix(gp_id: String, position: int, points: int) -> void:
 	gp_results.append({"championship": gp_id, "position": position, "points": points,
 			"date": Time.get_date_string_from_system()})
@@ -222,6 +236,7 @@ func _read(data: Dictionary) -> void:
 	var pb: Variant = data.get("personal_bests", {})
 	if pb is Dictionary:
 		personal_bests = pb
+		_rename_track_bests()
 	var gp: Variant = data.get("grand_prix_results", [])
 	if gp is Array:
 		gp_results = gp

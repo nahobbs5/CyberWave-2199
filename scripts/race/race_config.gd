@@ -23,6 +23,9 @@ const PLAYER_ID := -1
 ## Rival license plates by roster index, rolled once per series (a Versus /
 ## Elimination set or a Grand Prix). Empty = the roster's own plates.
 @export var rival_plates: PackedStringArray = PackedStringArray()
+## Rival car (vehicle id) by roster index, rolled once per series like the
+## plates. Empty = the V8 Specter.
+@export var rival_vehicles: PackedStringArray = PackedStringArray()
 
 ## Grand Prix only: the championship this race belongs to.
 var championship: Championship
@@ -49,6 +52,16 @@ static func random_plates(count: int, avoid: String = "") -> PackedStringArray:
 		if plate != avoid and not plates.has(plate):
 			plates.append(plate)
 	return plates
+
+
+## `count` random cars from the catalogue (each rival picks on its own, so
+## two may drive the same model).
+static func random_vehicles(count: int) -> PackedStringArray:
+	var all := VehicleCatalog.all()
+	var ids := PackedStringArray()
+	for i in count:
+		ids.append(all[randi() % all.size()].id)
+	return ids
 
 
 func is_elimination() -> bool:

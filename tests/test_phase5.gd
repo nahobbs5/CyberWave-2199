@@ -353,7 +353,7 @@ func _test_menus() -> void:
 	for b in menu.find_children("*", "Button", true, false):
 		if (b as Button).visible:
 			labels.append((b as Button).text)
-	for wanted in ["Versus", "Grand Prix", "Elimination", "Garage", "Settings", "Exit"]:
+	for wanted in ["Grand Prix", "Versus", "Practice", "Garage", "Settings", "Credits", "Exit"]:
 		_check(labels.has(wanted), "main menu has %s" % wanted)
 	menu.queue_free()
 

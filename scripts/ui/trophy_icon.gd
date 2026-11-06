@@ -1,0 +1,134 @@
+class_name TrophyIcon
+extends Control
+## A cup's trophy, drawn in code: gold bowl, two handles, stem and a
+## two-step base, with the cup's emblem on the bowl. "usa" is a silhouette
+## of the lower 48 states; "globe" is a little globe. Locked cups are grey
+## with a padlock.
+
+const GOLD := Color(1.0, 0.8, 0.22)
+const GOLD_DARK := Color(0.72, 0.5, 0.08)
+const GOLD_LIGHT := Color(1.0, 0.95, 0.65)
+const EMBLEM_BG := Color(0.08, 0.14, 0.42)
+
+## Outline of the contiguous USA as (longitude, latitude), clockwise from
+## the north-west corner of Washington state. Simplified; for an icon.
+const USA_LON_LAT: Array[Vector2] = [
+	Vector2(-124.7, 48.4), Vector2(-123.0, 49.0), Vector2(-110.0, 49.0), Vector2(-95.2, 49.0),
+	Vector2(-94.8, 49.4), Vector2(-92.0, 48.4), Vector2(-89.6, 48.0), Vector2(-88.0, 47.2),
+	Vector2(-84.8, 46.5), Vector2(-84.0, 45.9), Vector2(-83.2, 45.0), Vector2(-82.5, 43.0),
+	Vector2(-83.1, 42.1), Vector2(-81.0, 42.3), Vector2(-79.0, 42.8), Vector2(-79.0, 43.3),
+	Vector2(-76.5, 44.2), Vector2(-75.0, 45.0), Vector2(-71.5, 45.0), Vector2(-70.3, 45.9),
+	Vector2(-69.2, 47.4), Vector2(-67.8, 47.1), Vector2(-67.8, 45.7), Vector2(-67.0, 44.8),
+	Vector2(-68.8, 44.3), Vector2(-70.0, 43.7), Vector2(-70.7, 42.7), Vector2(-70.0, 41.8),
+	Vector2(-71.0, 41.5), Vector2(-71.9, 41.3), Vector2(-73.7, 40.9), Vector2(-74.0, 40.5),
+	Vector2(-74.1, 39.7), Vector2(-74.9, 38.9), Vector2(-75.1, 38.3), Vector2(-75.6, 37.6),
+	Vector2(-76.0, 36.9), Vector2(-75.5, 35.6), Vector2(-75.6, 35.2), Vector2(-76.5, 34.7),
+	Vector2(-77.9, 33.9), Vector2(-79.2, 33.2), Vector2(-80.4, 32.4), Vector2(-81.1, 31.7),
+	Vector2(-81.4, 30.4), Vector2(-80.6, 28.4), Vector2(-80.0, 26.7), Vector2(-80.4, 25.2),
+	Vector2(-81.1, 25.1), Vector2(-81.8, 26.1), Vector2(-82.6, 27.9), Vector2(-82.8, 29.2),
+	Vector2(-84.0, 30.1), Vector2(-85.3, 29.7), Vector2(-86.5, 30.4), Vector2(-88.5, 30.4),
+	Vector2(-89.6, 30.2), Vector2(-89.4, 29.0), Vector2(-90.1, 29.1), Vector2(-91.3, 29.3),
+	Vector2(-93.8, 29.7), Vector2(-94.7, 29.4), Vector2(-96.5, 28.3), Vector2(-97.2, 27.6),
+	Vector2(-97.4, 26.0), Vector2(-99.1, 26.4), Vector2(-99.5, 27.5), Vector2(-100.3, 28.6),
+	Vector2(-101.4, 29.8), Vector2(-102.4, 29.8), Vector2(-103.1, 29.0), Vector2(-104.5, 29.6),
+	Vector2(-106.5, 31.8), Vector2(-108.2, 31.8), Vector2(-108.2, 31.3), Vector2(-111.1, 31.3),
+	Vector2(-114.8, 32.5), Vector2(-117.1, 32.5), Vector2(-118.5, 34.0), Vector2(-120.6, 34.6),
+	Vector2(-121.9, 36.6), Vector2(-122.5, 37.8), Vector2(-123.7, 38.9), Vector2(-124.2, 40.4),
+	Vector2(-124.2, 42.0), Vector2(-124.0, 43.7), Vector2(-124.0, 46.3),
+]
+
+var emblem: String = ""
+var locked: bool = false
+
+
+func _init(p_emblem: String = "", p_locked: bool = false, side: float = 120.0) -> void:
+	emblem = p_emblem
+	locked = p_locked
+	custom_minimum_size = Vector2.ONE * side
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+
+## The USA outline projected (x = lon * cos 38 deg, y = -lat) and fitted
+## into `rect`, keeping its shape.
+static func usa_polygon(rect: Rect2) -> PackedVector2Array:
+	var raw := PackedVector2Array()
+	var squash := cos(deg_to_rad(38.0))
+	var lo := Vector2(INF, INF)
+	var hi := Vector2(-INF, -INF)
+	for p in USA_LON_LAT:
+		var q := Vector2(p.x * squash, -p.y)
+		raw.append(q)
+		lo = lo.min(q)
+		hi = hi.max(q)
+	var span := hi - lo
+	var s := minf(rect.size.x / span.x, rect.size.y / span.y)
+	var offset := rect.position + (rect.size - span * s) * 0.5
+	var out := PackedVector2Array()
+	for q in raw:
+		out.append(offset + (q - lo) * s)
+	return out
+
+
+func _draw() -> void:
+	var w := minf(size.x, size.y)
+	var o := (size - Vector2.ONE * w) * 0.5
+	var gold := GOLD if not locked else Color(0.55, 0.55, 0.6)
+	var dark := GOLD_DARK if not locked else Color(0.35, 0.35, 0.4)
+	var light := GOLD_LIGHT if not locked else Color(0.8, 0.8, 0.85)
+	# Handles behind the bowl.
+	for side in [-1.0, 1.0]:
+		var c := o + Vector2(w * (0.5 + side * 0.33), w * 0.3)
+		draw_arc(c, w * 0.11, 0.0, TAU, 28, dark, w * 0.045, true)
+		draw_arc(c, w * 0.11, 0.0, TAU, 28, gold, w * 0.025, true)
+	# Bowl: a cup shape narrowing to the stem.
+	var bowl := PackedVector2Array()
+	var top := w * 0.1
+	var bottom := w * 0.6
+	for i in 17:
+		var t := float(i) / 16.0
+		var x := lerpf(0.2, 0.8, t)
+		var bulge := sin(t * PI)
+		var y := top + (bottom - top) * (0.15 + 0.85 * bulge)
+		bowl.append(o + Vector2(w * x, y if i != 0 and i != 16 else top))
+	bowl.reverse()
+	bowl.append(o + Vector2(w * 0.2, top))
+	bowl.append(o + Vector2(w * 0.8, top))
+	draw_colored_polygon(bowl, gold)
+	draw_polyline(bowl + PackedVector2Array([bowl[0]]), dark, maxf(1.5, w * 0.015), true)
+	# Rim and shine.
+	draw_rect(Rect2(o + Vector2(w * 0.18, top - w * 0.025), Vector2(w * 0.64, w * 0.05)), light)
+	draw_line(o + Vector2(w * 0.235, top + w * 0.06), o + Vector2(w * 0.255, top + w * 0.26), Color(light, 0.8), maxf(1.5, w * 0.02), true)
+	# Stem and base.
+	draw_rect(Rect2(o + Vector2(w * 0.45, bottom - w * 0.02), Vector2(w * 0.1, w * 0.16)), dark)
+	draw_rect(Rect2(o + Vector2(w * 0.32, w * 0.74), Vector2(w * 0.36, w * 0.08)), gold)
+	draw_rect(Rect2(o + Vector2(w * 0.26, w * 0.82), Vector2(w * 0.48, w * 0.1)), dark)
+	draw_rect(Rect2(o + Vector2(w * 0.26, w * 0.82), Vector2(w * 0.48, w * 0.025)), gold)
+	# Emblem on the bowl.
+	var badge := Rect2(o + Vector2(w * 0.265, w * 0.14), Vector2(w * 0.47, w * 0.32))
+	match emblem:
+		"usa":
+			var poly := usa_polygon(badge.grow(-w * 0.015))
+			var fill := EMBLEM_BG if not locked else Color(0.25, 0.25, 0.3)
+			draw_colored_polygon(poly, fill)
+			draw_polyline(poly + PackedVector2Array([poly[0]]), light, maxf(1.0, w * 0.01), true)
+		"globe":
+			var c := badge.get_center()
+			var r := minf(badge.size.x, badge.size.y) * 0.5
+			draw_circle(c, r, EMBLEM_BG if not locked else Color(0.25, 0.25, 0.3))
+			var line_w := maxf(1.0, w * 0.01)
+			draw_arc(c, r, 0.0, TAU, 32, light, line_w, true)
+			draw_line(c - Vector2(r, 0), c + Vector2(r, 0), light, line_w, true)
+			for k in [0.45, 0.85]:
+				var pts := PackedVector2Array()
+				for i in 17:
+					var a := -PI * 0.5 + PI * float(i) / 16.0
+					pts.append(c + Vector2(cos(a) * r * k, sin(a) * r))
+				draw_polyline(pts, light, line_w, true)
+				var mirrored := PackedVector2Array()
+				for p in pts:
+					mirrored.append(Vector2(2.0 * c.x - p.x, p.y))
+				draw_polyline(mirrored, light, line_w, true)
+	if locked:
+		var lc := o + Vector2(w * 0.5, w * 0.52)
+		draw_arc(lc - Vector2(0, w * 0.06), w * 0.07, PI, TAU, 16, Color(0.9, 0.9, 0.95), w * 0.025, true)
+		draw_rect(Rect2(lc - Vector2(w * 0.1, w * 0.06), Vector2(w * 0.2, w * 0.15)), Color(0.9, 0.9, 0.95))

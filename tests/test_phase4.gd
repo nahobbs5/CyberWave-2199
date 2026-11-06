@@ -278,6 +278,8 @@ func _test_mode_select() -> void:
 	root.add_child(menu)
 	await process_frame
 	_check(not menu.has_continue(), "no Continue Grand Prix without a save")
+	var order := ", ".join(menu.button_texts())
+	_check(order == "Grand Prix, Versus, Practice, Garage, Settings, Credits, Exit", "main menu order (%s)" % order)
 	menu.queue_free()
 	var setup := await _open_setup(RaceConfig.Mode.VERSUS)
 	setup.start()
@@ -286,6 +288,19 @@ func _test_mode_select() -> void:
 	setup.queue_free()
 	var versus_plates := GameSession.current.rival_plates
 	_check(versus_plates.size() == 7, "Versus rolls 7 rival plates")
+	var cars_ok := GameSession.current.rival_vehicles.size() == 7
+	for id in GameSession.current.rival_vehicles:
+		cars_ok = cars_ok and VehicleCatalog.by_id(id).id == id
+	_check(cars_ok, "and 7 rival cars from the catalogue (%s)" % [GameSession.current.rival_vehicles])
+	# Elimination is a Versus race type now.
+	setup = await _open_setup(RaceConfig.Mode.VERSUS)
+	_check(setup._race_type != null and setup._race_type.selected == 0, "Versus setup has a Race type, Standard first")
+	setup.set_race_type(1)
+	_check(not setup._laps_row.visible and setup._title.text.begins_with("ELIMINATION"), "picking Elimination hides laps and retitles")
+	setup.start()
+	_check(GameSession.current.is_elimination(), "Race type Elimination starts an Elimination race")
+	_check(GameSession.last_versus_mode() == RaceConfig.Mode.ELIMINATION, "Versus reopens on the race type used last")
+	setup.queue_free()
 	setup = await _open_setup(RaceConfig.Mode.ELIMINATION)
 	setup._laps.selected = 4
 	setup._difficulty.selected = 2
@@ -295,7 +310,21 @@ func _test_mode_select() -> void:
 	_check(GameSession.current.rival_plates.size() == 7 and GameSession.current.rival_plates != versus_plates,
 			"a new set gets new plates")
 	setup.queue_free()
+	# Grand Prix: pick a cup first (Mario Kart style).
+	GameSession.setup_mode = RaceConfig.Mode.GRAND_PRIX
+	GameSession.cup_path = ""
+	var cups := (load("res://scenes/menu/cup_select.tscn") as PackedScene).instantiate() as CupSelect
+	root.add_child(cups)
+	await process_frame
+	_check(cups.cards.size() == 2 and not cups.cards[0].disabled and cups.cards[1].disabled,
+			"American Cup pickable, World Cup locked (coming soon)")
+	cups.pick(1)
+	_check(GameSession.cup_path == "", "a locked cup can't be picked")
+	cups.pick(0)
+	_check(GameSession.cup_path == GrandPrixData.CUPS[0], "picking the American Cup")
+	cups.queue_free()
 	setup = await _open_setup(RaceConfig.Mode.GRAND_PRIX)
+	_check(setup.cup.id == "american_circuit" and setup.summary_text() == "AMERICAN CUP", "setup shows the American Cup")
 	setup.start()
 	_check(GameSession.current.is_grand_prix() and Championship.has_save(), "starting a Grand Prix saves it")
 	setup.queue_free()
@@ -312,6 +341,8 @@ func _test_mode_select() -> void:
 	await process_frame
 	Championship.clear_save()
 	GameSession.current = null
+	GameSession.cup_path = ""
+	GameSession.track_name = ""
 
 
 func _open_setup(mode: RaceConfig.Mode) -> RaceSetup:

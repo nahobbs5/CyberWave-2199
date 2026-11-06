@@ -1,11 +1,19 @@
 class_name MainMenu
 extends Control
-## Main menu (GDD 11.2): Versus, Grand Prix, Continue Grand Prix (when a
-## championship is saved), Elimination, Garage, Settings, Exit. Free drive is
-## an extra for practising.
+## Main menu (GDD 11.2): Continue Grand Prix (only when a championship is
+## saved), Grand Prix, Versus (Standard or Elimination, picked on the setup
+## screen), Practice (free drive), Garage, Settings, Credits, Exit.
 
 var _continue_button: Button
 var _buttons: Array[Button] = []
+
+
+## Visible button labels, top to bottom (tests).
+func button_texts() -> PackedStringArray:
+	var out := PackedStringArray()
+	for b in _buttons:
+		out.append(b.text)
+	return out
 
 
 func _ready() -> void:
@@ -50,16 +58,16 @@ func _build() -> void:
 	_continue_button.visible = saved != null
 	if saved != null:
 		_continue_button.text = "Continue Grand Prix  (%s, race %d / %d)" % [
-				saved.gp.display_name.get_slice(" — ", 1), saved.race_index + 1, saved.race_count()]
+				saved.gp.display_name, saved.race_index + 1, saved.race_count()]
 	var tree := get_tree()
 	var entries: Array[Button] = [
 		_continue_button,
-		UIStyle.button("Versus", func() -> void: GameSession.to_race_setup(tree, RaceConfig.Mode.VERSUS)),
-		UIStyle.button("Grand Prix", func() -> void: GameSession.to_race_setup(tree, RaceConfig.Mode.GRAND_PRIX)),
-		UIStyle.button("Elimination", func() -> void: GameSession.to_race_setup(tree, RaceConfig.Mode.ELIMINATION)),
+		UIStyle.button("Grand Prix", func() -> void: GameSession.to_cup_select(tree, RaceConfig.Mode.GRAND_PRIX)),
+		UIStyle.button("Versus", func() -> void: GameSession.to_cup_select(tree, GameSession.last_versus_mode())),
+		UIStyle.button("Practice", func() -> void: GameSession.to_free_drive(tree)),
 		UIStyle.button("Garage", func() -> void: GameSession.to_garage(tree)),
 		UIStyle.button("Settings", func() -> void: GameSession.to_settings(tree)),
-		UIStyle.button("Free drive (practice)", func() -> void: GameSession.to_free_drive(tree)),
+		UIStyle.button("Credits", func() -> void: GameSession.to_credits(tree)),
 		UIStyle.button("Exit", func() -> void: tree.quit()),
 	]
 	for b in entries:

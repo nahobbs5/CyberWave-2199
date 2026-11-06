@@ -30,8 +30,15 @@ func _run_all() -> void:
 	GameSession.scene_changes_enabled = false
 	_test_fonts()
 	_test_ordinals()
+	_test_rival_cars_rules()
+	await _test_credits()
+	await _test_cups()
+	_test_stacks_rename()
 	await _run("HUD in a race", _test_hud, _config(3), false)
 	await _run("layout at HUD scale 1.0 and 1.5", _test_layout, _config(3), false)
+	var cars := _config(3)
+	cars.rival_vehicles = PackedStringArray(["aurora_gt", "orbiter", "riviera_88", "valkyrie_r", "nexus_x", "cipher_evo", "empyrean_s"])
+	await _run("rivals drive their own cars", _test_rival_cars, cars, false)
 	await _run("results screen", _test_results, _config(1), true)
 	_fresh()
 	print("\n%d checks passed, %d failed" % [_passed, _failed])
@@ -110,7 +117,140 @@ func _test_ordinals() -> void:
 	_check(", ".join(got) == "1ST, 2ND, 3RD, 4TH, 8TH, 11TH, 12TH, 13TH, 21ST, 22ND", "placement ordinals (%s)" % ", ".join(got))
 
 
+func _test_rival_cars_rules() -> void:
+	_current = "rival cars"
+	print("- rival cars (no scene)")
+	var ids := RaceConfig.random_vehicles(7)
+	var ok := ids.size() == 7
+	for id in ids:
+		ok = ok and VehicleCatalog.by_id(id).id == id
+	_check(ok, "7 random cars from the catalogue (%s)" % [ids])
+	var c := Championship.create(load("res://resources/grand_prix/american_circuit.tres"), "normal", true,
+			load("res://resources/racers/rival_roster.tres"))
+	var first := c.make_race_config().rival_vehicles
+	c.record_race(_ids([0, 1, 2, 3, 4, 5, 6, -1]))
+	_check(first.size() == 7 and c.make_race_config().rival_vehicles == first, "Grand Prix keeps the cars race to race")
+	var data := c.to_dict()
+	_check(Championship.from_dict(data).rival_vehicles == first, "cars survive save / load")
+	data.erase("vehicles")
+	_check(Championship.from_dict(data).rival_vehicles.size() == 7, "an older save gets cars on load")
+
+
+func _ids(values: Array) -> Array[int]:
+	var out: Array[int] = []
+	for v in values:
+		out.append(int(v))
+	return out
+
+
+func _test_credits() -> void:
+	_current = "credits"
+	print("- credits")
+	var credits := (load("res://scenes/menu/credits.tscn") as PackedScene).instantiate() as Credits
+	root.add_child(credits)
+	await _frames(2)
+	var text := credits.get_text()
+	for wanted in ["Nathan Hobbs", "ikoliks_aj", "Wings of Hope", "freesound_community", "Oxanium", "Rajdhani", "Poly Haven", "Godot"]:
+		_check(text.contains(wanted), "credits mention %s" % wanted)
+	_check(credits.back_button != null and credits.back_button.has_focus(), "Back is focused")
+	var labels := credits.find_children("*", "Label", true, false).filter(func(n: Node) -> bool: return (n as Label).text.contains("Poly Haven"))
+	_check(not labels.is_empty(), "the credits are on screen")
+	credits.queue_free()
+	await process_frame
+
+
+func _test_cups() -> void:
+	_current = "cups"
+	print("- cup and track screens")
+	var poly := TrophyIcon.usa_polygon(Rect2(0, 0, 100, 60))
+	_check(poly.size() >= 60 and not Geometry2D.triangulate_polygon(poly).is_empty(), "USA map is a valid shape (%d points)" % poly.size())
+	var american := GrandPrixData.cup_by_path(GrandPrixData.CUPS[0])
+	_check(american.display_name == "American Cup" and american.emblem == "usa", "American Cup with the USA trophy")
+	_check(GrandPrixData.cup_by_path(GrandPrixData.CUPS[1]).display_name == "World Cup", "World Cup")
+	# Versus: cup, then track.
+	GameSession.setup_mode = RaceConfig.Mode.VERSUS
+	GameSession.cup_path = ""
+	GameSession.track_name = ""
+	var cups := (load("res://scenes/menu/cup_select.tscn") as PackedScene).instantiate() as CupSelect
+	root.add_child(cups)
+	await _frames(2)
+	var trophy := cups.cards[0].find_child("Trophy", true, false) as TrophyIcon
+	_check(trophy != null and trophy.emblem == "usa" and not trophy.locked, "the American card shows its trophy")
+	_check(cups.cards[0].has_focus(), "first cup focused")
+	cups.pick(0)
+	_check(GameSession.cup_path == GrandPrixData.CUPS[0], "Versus: cup picked")
+	cups.queue_free()
+	var tracks := (load("res://scenes/menu/track_select.tscn") as PackedScene).instantiate() as TrackSelect
+	root.add_child(tracks)
+	await _frames(2)
+	_check(tracks.cards.size() == 3, "three track cards")
+	var outlines_ok := true
+	for card in tracks.cards:
+		var thumb := card.find_child("Thumbnail", true, false) as TrackThumbnail
+		outlines_ok = outlines_ok and thumb != null and thumb.outline.size() >= 3
+	_check(outlines_ok, "every track card has its outline")
+	tracks.pick(0)
+	_check(GameSession.track_name == "Vegas Overdrive", "picking a track: Vegas is first (%s)" % GameSession.track_name)
+	tracks.queue_free()
+	var setup := (load("res://scenes/menu/race_setup.tscn") as PackedScene).instantiate() as RaceSetup
+	root.add_child(setup)
+	await _frames(2)
+	var config := setup.make_config()
+	_check(config.track_name == "Vegas Overdrive" and config.track_scene.resource_path.ends_with("vegas_overdrive.tscn"),
+			"race setup races the picked track")
+	_check(setup.summary_text() == "AMERICAN CUP  ·  VEGAS OVERDRIVE", "setup shows the cup and track (%s)" % setup.summary_text())
+	setup.queue_free()
+	GameSession.cup_path = ""
+	GameSession.track_name = ""
+	await process_frame
+
+
+func _test_stacks_rename() -> void:
+	_current = "rename"
+	_check(TrackCatalog.names().has("The Stacks") and not TrackCatalog.names().has("The Stacks Grand Prix"), "the track is just The Stacks")
+	var p := PlayerProfile.get_profile()
+	p.personal_bests = {"The Stacks Grand Prix|3": {"race": 200.0, "lap": 65.0}}
+	p.save()
+	PlayerProfile._instance = null
+	var loaded := PlayerProfile.get_profile()
+	_check(loaded.best_for("The Stacks", 3).get("race", 0.0) == 200.0 and not loaded.personal_bests.has("The Stacks Grand Prix|3"),
+			"old Stacks best times carry over")
+	_fresh()
+
+
 # --- races ---------------------------------------------------------------------------
+
+func _test_rival_cars(race: RaceManager) -> void:
+	var wrong: PackedStringArray = []
+	for racer in race.racers:
+		if racer.is_player:
+			continue
+		var want := VehicleCatalog.by_id(race.config.rival_vehicles[racer.racer_id])
+		if racer.vehicle.stats != want.stats:
+			wrong.append("%s stats" % racer.display_name)
+		var ai := race.get_ai(racer)
+		if ai == null or ai.line != race.line_for(want.stats):
+			wrong.append("%s line" % racer.display_name)
+	_check(wrong.is_empty(), "each rival drives its series car with a line for it (%s)" % ", ".join(wrong))
+	var fast := VehicleCatalog.by_id("valkyrie_r").stats
+	var slow := VehicleCatalog.by_id("riviera_88").stats
+	var a := race.line_for(fast)
+	var b := race.line_for(slow)
+	_check(a.points == race.line.points and b.points == race.line.points, "per-car lines share the base path")
+	_check(a.speeds != b.speeds, "but have their own speeds")
+	_check(race.line_for(fast) == a, "lines are cached per car")
+	# A few seconds of racing: everyone moves.
+	var start := {}
+	for racer in race.racers:
+		start[racer] = racer.vehicle.global_position
+	for i in 240:
+		await physics_frame
+	var stuck: PackedStringArray = []
+	for racer in race.racers:
+		if not racer.is_player and racer.vehicle.global_position.distance_to(start[racer]) < 20.0:
+			stuck.append(racer.display_name)
+	_check(stuck.is_empty(), "every rival gets going (%s)" % ", ".join(stuck))
+
 
 func _test_hud(race: RaceManager) -> void:
 	var hud := race.race_hud

@@ -5,7 +5,8 @@
 [resource]
 script = ExtResource("1_gp")
 id = "american_circuit"
-display_name = "Grand Prix 1 — American Circuit"
-track_names = PackedStringArray("The Stacks Grand Prix", "Six Flags New Orleans", "Vegas Overdrive")
-locations = PackedStringArray("Library of Congress, Washington, DC", "Louisiana", "Las Vegas, Nevada")
-track_scenes = PackedStringArray("res://scenes/tracks/the_stacks.tscn", "res://scenes/tracks/six_flags_new_orleans.tscn", "res://scenes/tracks/vegas_overdrive.tscn")
+display_name = "American Cup"
+emblem = "usa"
+track_names = PackedStringArray("Vegas Overdrive", "Six Flags New Orleans", "The Stacks")
+locations = PackedStringArray("Las Vegas, Nevada", "Louisiana", "Library of Congress, Washington, DC")
+track_scenes = PackedStringArray("res://scenes/tracks/vegas_overdrive.tscn", "res://scenes/tracks/six_flags_new_orleans.tscn", "res://scenes/tracks/the_stacks.tscn")

@@ -36,17 +36,35 @@ var _centers: PackedVector3Array = PackedVector3Array()
 var _rights: PackedVector3Array = PackedVector3Array()
 
 
+## With `source`, reuses that line's path (the slow relaxation) and only
+## works out speeds and drift zones for `stats`; see for_stats().
 func _init(p_track: TrackCircuit, stats: VehicleStats, edge_margin: float = 2.4,
-		p_spacing: float = 3.0, iterations: int = 300) -> void:
+		p_spacing: float = 3.0, iterations: int = 300, source: RacingLine = null) -> void:
 	track = p_track
-	count = maxi(16, int(track.length / p_spacing))
-	spacing = track.length / float(count)
-	limit = track.road_width * 0.5 - edge_margin
-	_sample_track()
-	_relax(iterations)
-	_compute_curvature()
+	if source != null:
+		count = source.count
+		spacing = source.spacing
+		limit = source.limit
+		lateral = source.lateral
+		points = source.points
+		curvature = source.curvature
+		_centers = source._centers
+		_rights = source._rights
+	else:
+		count = maxi(16, int(track.length / p_spacing))
+		spacing = track.length / float(count)
+		limit = track.road_width * 0.5 - edge_margin
+		_sample_track()
+		_relax(iterations)
+		_compute_curvature()
 	_compute_speeds(stats)
 	_find_drift_zones()
+
+
+## The same path with speeds and drift zones for another car's stats (cheap:
+## no relaxation). Packed arrays are copy-on-write, so the path is shared.
+func for_stats(stats: VehicleStats) -> RacingLine:
+	return RacingLine.new(track, stats, 0.0, spacing, 0, self)
 
 
 # --- Queries -----------------------------------------------------------------

@@ -1,7 +1,7 @@
 @tool
 class_name StacksScenery
 extends TrackScenery
-## The Stacks Grand Prix (GDD 8.1): racing through the Library of Congress at
+## The Stacks (GDD 8.1): racing through the Library of Congress at
 ## sunset. Monumental marble halls with painted coffered ceilings, gilded
 ## trim and chandeliers; tall west windows letting long shafts of low gold
 ## light across the floor; galleries of bookshelves; the narrow archive
@@ -28,8 +28,9 @@ const PAINT: Array[Color] = [Color(0.42, 0.55, 0.72), Color(0.8, 0.62, 0.38), Co
 
 func build() -> void:
 	textured("marble", "marble_01", Color(0.95, 0.92, 0.88), 3.0, 0.25)
-	textured("plaster", "patterned_plaster_wall", Color(0.92, 0.84, 0.72), 3.0, 0.8)
-	textured("ceiling", "patterned_plaster_wall", Color(0.95, 0.9, 0.8), 4.0, 0.9)
+	# Smooth warm plaster (the patterned texture read as brick at speed).
+	material("plaster", Color(0.86, 0.76, 0.6), 0.0, 0.0, 0.75)
+	material("ceiling", Color(0.9, 0.82, 0.66), 0.0, 0.0, 0.8)
 	textured("velvet", "velour_velvet", Color(0.75, 0.12, 0.14), 2.0, 0.9)
 	textured("stone", "monastery_stone_floor", Color(0.85, 0.8, 0.72), 3.0, 0.8)
 	textured("parquet", "herringbone_parquet", Color(0.8, 0.68, 0.55), 2.0, 0.35)
@@ -181,8 +182,10 @@ func _archive_stacks() -> void:
 		for side: float in [-1.0, 1.0]:
 			var pos := center + right * side * (sc.road_width * 0.5 + 2.2)
 			if clear(pos, 0.5) or edge_distance(pos) > 1.0:
-				HallBuilder.bookcase(self, Transform3D(basis * Basis(Vector3.UP, side * PI * 0.5), pos), 3.0, 7.5)
-		add_box("wood", Vector3(sc.road_width + 6.0, 0.5, 3.0), Transform3D(basis, center + Vector3(0, 9.5, 0)))
+				HallBuilder.bookcase(self, Transform3D(basis * Basis(Vector3.UP, -side * PI * 0.5), pos), 3.0, 7.5)
+		add_box("ceiling", Vector3(sc.road_width + 6.0, 0.5, 3.05), Transform3D(basis, center + Vector3(0, 9.5, 0)))
+		if n % 2 == 0:
+			add_box("gold", Vector3(sc.road_width + 6.0, 0.3, 0.4), Transform3D(basis, center + Vector3(0, 9.15, 0)))
 		if n % 5 == 0:
 			add_box("candle", Vector3(0.6, 0.3, 0.6), Transform3D(basis, center + Vector3(0, 9.1, 0)))
 			add_light(center + Vector3(0, 8.5, 0), Color(1.0, 0.8, 0.55), 2.2, 18.0)
