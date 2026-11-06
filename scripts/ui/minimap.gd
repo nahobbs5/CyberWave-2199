@@ -11,7 +11,11 @@ const PADDING := 12.0
 ## Rivals closer than this (m) get a ring.
 const NEAR_DISTANCE := 40.0
 
+## The race (rivals, elimination gate); null in Practice.
 var race: RaceManager
+var track: TrackCircuit
+## The car drawn as the arrow.
+var player_car: VehicleController
 
 var _main: PackedVector2Array = PackedVector2Array()
 var _shortcuts: Array[PackedVector2Array] = []
@@ -28,7 +32,13 @@ func _init() -> void:
 
 func setup(manager: RaceManager) -> void:
 	race = manager
-	var track := race.track
+	setup_track(manager.track, manager.player.vehicle if manager.player != null else null)
+
+
+## Practice: just the track and your car (no rivals).
+func setup_track(p_track: TrackCircuit, car: VehicleController) -> void:
+	track = p_track
+	player_car = car
 	_main = _sample(track, track.curve, 8.0, true)
 	_shortcuts.clear()
 	for sc in track.shortcuts:
@@ -52,7 +62,7 @@ func setup(manager: RaceManager) -> void:
 
 ## Map position (in this control) of a world position.
 func world_to_map(world: Vector3) -> Vector2:
-	var local := race.track.to_local(world)
+	var local := track.to_local(world)
 	return _origin + (Vector2(local.x, local.z) - _bounds_min) * _scale
 
 
@@ -95,16 +105,15 @@ func _to_map(points: PackedVector2Array) -> PackedVector2Array:
 
 
 func _process(_delta: float) -> void:
-	if race != null and visible:
+	if track != null and visible:
 		queue_redraw()
 
 
 func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, MAP_SIZE), Color(0.06, 0.02, 0.12, 0.62))
 	draw_rect(Rect2(Vector2.ZERO, MAP_SIZE), Color(UIStyle.MAGENTA, 0.55), false, 1.0)
-	if race == null or _main.size() < 2:
+	if track == null or _main.size() < 2:
 		return
-	var track := race.track
 	for line in _shortcuts:
 		var mapped := _to_map(line)
 		draw_polyline(mapped, Color(0.35, 0.3, 0.45, 0.9), 5.0, true)
@@ -113,9 +122,9 @@ func _draw() -> void:
 	draw_polyline(main, Color(0.22, 0.16, 0.32, 0.9), 7.0, true)
 	draw_polyline(main, Color(0.62, 0.42, 0.85, 0.85), 2.0, true)
 	_draw_tick(track, track.start_line_offset, Color.WHITE, 4.0)
-	if race.elimination != null:
+	if race != null and race.elimination != null:
 		_draw_tick(track, track.get_checkpoint_offset(race.elimination.gate_index), Color(1.0, 0.2, 0.3))
-	var me: Vector3 = race.player.vehicle.global_position if race.player != null else Vector3.INF
+	var me: Vector3 = player_car.global_position if is_instance_valid(player_car) else Vector3.INF
 	for racer in visible_racers():
 		if racer.is_player:
 			continue
@@ -124,10 +133,11 @@ func _draw() -> void:
 			draw_arc(at, 7.0, 0.0, TAU, 20, Color(1, 1, 1, 0.45), 1.2, true)
 		draw_circle(at, 4.5, Color(0.0, 0.0, 0.0, 0.8))
 		draw_circle(at, 3.5, racer.color.lightened(0.35))
-	if race.player != null and not race.player.eliminated:
-		var car := race.player.vehicle
+	var out := race != null and race.player != null and race.player.eliminated
+	if is_instance_valid(player_car) and not out:
+		var car := player_car
 		var p := world_to_map(car.global_position)
-		var fwd3 := race.track.global_transform.basis.inverse() * -car.global_transform.basis.z
+		var fwd3 := track.global_transform.basis.inverse() * -car.global_transform.basis.z
 		var fwd := Vector2(fwd3.x, fwd3.z).normalized()
 		if fwd == Vector2.ZERO:
 			fwd = Vector2.UP

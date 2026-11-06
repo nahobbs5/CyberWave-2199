@@ -36,3 +36,21 @@ static func cup_by_path(path: String) -> GrandPrixData:
 
 func race_count() -> int:
 	return track_names.size()
+
+
+## True if this track of the cup has its own scene (not the test circuit).
+func is_track_built(index: int) -> bool:
+	return TrackCatalog.is_built(track_names[index])
+
+
+## Whether the cup can be picked: Grand Prix needs it unlocked; Versus only
+## needs one built track (a locked cup's finished tracks are raceable).
+func is_open(grand_prix: bool) -> bool:
+	if not locked:
+		return true
+	if grand_prix:
+		return false
+	for i in track_names.size():
+		if is_track_built(i):
+			return true
+	return false

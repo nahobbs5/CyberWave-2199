@@ -7,10 +7,12 @@ extends RefCounted
 ## reflective water plane so the hollows read as flooded.
 
 
-## bounds: track-local XZ rectangle. cell: grid size in metres.
+## bounds: track-local XZ rectangle. cell: grid size in metres. water_key ""
+## skips the flood plane. carve (optional) is func(x, z) -> float, added to the
+## height everywhere, even under roads (ravines under bridges).
 static func build(scenery: TrackScenery, bounds: Rect2, cell: float = 7.0, amplitude: float = 2.2,
 		water_level: float = -0.12, grass_key: String = "terrain_grass", mud_key: String = "terrain_mud",
-		water_key: String = "terrain_water", seed_value: int = 1) -> void:
+		water_key: String = "terrain_water", seed_value: int = 1, carve: Callable = Callable()) -> void:
 	var track := scenery.track
 	var noise := FastNoiseLite.new()
 	noise.seed = seed_value
@@ -29,7 +31,10 @@ static func build(scenery: TrackScenery, bounds: Rect2, cell: float = 7.0, ampli
 			# Dry, level banks along the roads (just below the road surface).
 			var off_road := scenery.edge_distance(Vector3(x, 0, z)) - (bank - track.road_width * 0.5)
 			var t := clampf(off_road / 14.0, 0.0, 1.0)
-			heights[iz * nx + ix] = lerpf(-0.04, h, t * t * (3.0 - 2.0 * t))
+			var final_h := lerpf(-0.04, h, t * t * (3.0 - 2.0 * t))
+			if carve.is_valid():
+				final_h += float(carve.call(x, z))
+			heights[iz * nx + ix] = final_h
 	# One grass and one mud mesh per chunk, so off-screen terrain is culled.
 	var tools := {}
 	for iz in nz - 1:
@@ -52,6 +57,8 @@ static func build(scenery: TrackScenery, bounds: Rect2, cell: float = 7.0, ampli
 		var is_grass := (key as String).begins_with("g")
 		scenery.add_mesh_instance((tools[key] as SurfaceTool).commit(),
 				scenery.get_material(grass_key if is_grass else mud_key), "Terrain_" + (key as String).replace(",", "_"))
+	if water_key == "":
+		return
 	var water := PlaneMesh.new()
 	water.size = bounds.size
 	var wi := scenery.add_mesh_instance(water, scenery.get_material(water_key), "FloodWater")

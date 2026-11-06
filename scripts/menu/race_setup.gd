@@ -243,12 +243,18 @@ func _resolve_selection() -> void:
 	var setup := PlayerProfile.get_profile().last_setup
 	cup_path = GameSession.cup_path if GameSession.cup_path != "" else str(setup.get("cup", ""))
 	cup = GrandPrixData.cup_by_path(cup_path)
-	if cup == null or cup.locked:
+	if cup == null or not cup.is_open(mode == RaceConfig.Mode.GRAND_PRIX):
 		cup_path = GrandPrixData.CUPS[0]
 		cup = GrandPrixData.cup_by_path(cup_path)
 	track_name = GameSession.track_name if GameSession.track_name != "" else str(setup.get("track_name", ""))
-	if not cup.track_names.has(track_name):
+	var index := cup.track_names.find(track_name)
+	if index < 0 or (cup.locked and not cup.is_track_built(index)):
+		# First raceable track of the cup.
 		track_name = cup.track_names[0]
+		for i in cup.track_names.size():
+			if not cup.locked or cup.is_track_built(i):
+				track_name = cup.track_names[i]
+				break
 
 
 ## Versus race type: 0 = Standard, 1 = Elimination.

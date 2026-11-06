@@ -20,7 +20,7 @@ func _ready() -> void:
 	var last := str(PlayerProfile.get_profile().last_setup.get("cup", GrandPrixData.CUPS[0]))
 	var focus := cards[0]
 	for i in cups.size():
-		if GrandPrixData.CUPS[i] == last and not cups[i].locked:
+		if GrandPrixData.CUPS[i] == last and cups[i].is_open(is_grand_prix()):
 			focus = cards[i]
 	focus.grab_focus.call_deferred()
 
@@ -32,7 +32,7 @@ func is_grand_prix() -> bool:
 ## Picks cup `index` (ignored for locked cups) and moves on.
 func pick(index: int) -> void:
 	var cup := cups[index]
-	if cup.locked:
+	if not cup.is_open(is_grand_prix()):
 		return
 	GameSession.cup_path = GrandPrixData.CUPS[index]
 	var setup := PlayerProfile.get_profile().last_setup
@@ -90,31 +90,35 @@ func _card(index: int) -> Button:
 	var card := UIStyle.button("", pick.bind(index))
 	card.name = "Cup%d" % (index + 1)
 	card.custom_minimum_size = Vector2(380, 430)
-	card.disabled = cup.locked
+	var shut := not cup.is_open(is_grand_prix())
+	card.disabled = shut
 	var box := VBoxContainer.new()
 	box.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT, Control.PRESET_MODE_MINSIZE, 16)
 	box.alignment = BoxContainer.ALIGNMENT_CENTER
 	box.add_theme_constant_override("separation", 6)
 	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	card.add_child(box)
-	var trophy := TrophyIcon.new(cup.emblem, cup.locked, 190.0)
+	var trophy := TrophyIcon.new(cup.emblem, shut, 190.0)
 	trophy.name = "Trophy"
 	trophy.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	box.add_child(trophy)
-	var name_label := UIStyle.heading(cup.display_name.to_upper(), 30, UIStyle.GOLD if not cup.locked else UIStyle.MUTED)
+	var name_label := UIStyle.heading(cup.display_name.to_upper(), 30, UIStyle.GOLD if not shut else UIStyle.MUTED)
 	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(name_label)
-	for track in cup.track_names:
-		var l := UIStyle.stat(track, 17, Color.WHITE if not cup.locked else UIStyle.MUTED)
+	for i in cup.track_names.size():
+		var track_open := not shut and (not cup.locked or cup.is_track_built(i))
+		var l := UIStyle.stat(cup.track_names[i], 17, Color.WHITE if track_open else UIStyle.MUTED)
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		box.add_child(l)
 	var footer := ""
-	if cup.locked:
+	if shut:
 		footer = "COMING SOON"
+	elif cup.locked:
+		footer = "More tracks coming soon"
 	elif is_grand_prix():
 		var best := PlayerProfile.get_profile().best_grand_prix(cup.id)
 		footer = "Best finish: %s" % ResultsScreen.ordinal(best) if best > 0 else "Not won yet"
-	var foot := UIStyle.stat(footer, 15, UIStyle.CYAN if not cup.locked else UIStyle.MUTED)
+	var foot := UIStyle.stat(footer, 15, UIStyle.CYAN if not shut else UIStyle.MUTED)
 	foot.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(foot)
 	for c in box.find_children("*", "Control", true, false):

@@ -1,5 +1,5 @@
 # CYBERWAVE 2199
-## Game Design Document — Version 1.8
+## Game Design Document — Version 2.0
 
 **Status:** Development Baseline  
 **Engine:** Godot 4  
@@ -537,6 +537,8 @@ An eerie forest with twisted trees, heavy fog, abandoned structures, and unsettl
 
 **Identity:** Visibility challenges, winding roads, atmosphere.
 
+Built at about 3.2 km on a foggy, moonlit night (no rain) along a dirt road. Dense pines and Hoia Baciu's crooked, S-bent trees close in on the road. Landmarks: a carved wooden start arch, a forest graveyard with a chapel ruin, a stone viaduct over a ravine, two hairpins past a bog, a ruined red-stone castle whose gatehouse and courtyard are the shortcut, a ruined keep on a rise, and the Round Clearing (the treeless meadow of the legend) as a wide, fast sweep.
+
 ## 8.5 Catacombs Descent
 
 **Location:** Paris, France
@@ -818,6 +820,8 @@ An optional first-time tutorial should introduce driving, drifting, weapons, and
 The soundtrack should blend synthwave, electronic racing music, and darker industrial elements.
 
 Each track should have its own musical identity.
+
+On the final lap (races of two or more laps) the race music plays 15% faster, pitch and all.
 
 Sound categories include:
 - Vehicle engines
@@ -1126,7 +1130,7 @@ Detailed artwork, weapons, cosmetics, and completed environments are not require
 # 20. Document Control
 
 **Project:** Cyberwave 2199  
-**Document Version:** 1.8  
+**Document Version:** 2.0  
 **Status:** Approved design baseline for initial development  
 **Engine:** Godot 4  
 **Initial Platform:** Windows PC  
@@ -1151,5 +1155,6 @@ Changes after Version 1.0 should be tracked as revisions rather than silently re
 | 1.7 | 2026-11-05 | Six Flags New Orleans built at about 3.1 km (§8.2). Jump ramps and standing water defined as track features (§8.7). |
 | 1.8 | 2026-11-06 | The Stacks Grand Prix built at about 2.9 km, at sunset with one open-air courtyard (§8.1). The American Circuit is playable; the World Circuit is locked as "coming soon" until its tracks are built (§2.2). |
 | 1.9 | 2026-11-06 | Championships are now cups chosen Mario Kart style: American Cup (USA-map trophy) and World Cup (globe). Versus picks a cup, then one of its tracks. The Stacks Grand Prix renamed The Stacks. American Cup order is now Vegas Overdrive, Six Flags New Orleans, The Stacks (§2.2, §8.1). |
+| 2.0 | 2026-11-06 | Hoia Baciu Run built at about 3.2 km: moonlit, foggy, dirt road, crooked trees (§8.4). The World Cup stays locked until its other two tracks exist. Final-lap music speed-up (§12). |
 
-**End of Game Design Document — Version 1.8**
+**End of Game Design Document — Version 2.0**

@@ -391,8 +391,12 @@ func _test_triple_nitro_race(race: RaceManager) -> void:
 	_check(me.inventory.is_empty(), "slot empty after the third")
 	_check(not wm.use_weapon(me), "nothing left to fire")
 	# Triple Spike: three charges, one Road Spike per press.
-	var spikes := func() -> int: return wm.get_children().filter(func(n: Node) -> bool: return n is RoadSpike and (n as RoadSpike).shooter == me).size()
-	var before: int = spikes.call()
+	# Count spikes as they're dropped (rivals behind may run over them at once).
+	var dropped := [0]
+	var on_child := func(n: Node) -> void:
+		if n is RoadSpike and (n as RoadSpike).shooter == me:
+			dropped[0] += 1
+	wm.child_entered_tree.connect(on_child)
 	me.inventory.add(load("res://resources/weapons/triple_spike.tres"))
 	await _frames(5)
 	_check(race.race_hud.get_slot_text(0).contains("Triple Spike  x3"), "HUD shows Triple Spike x3 (%s)" % race.race_hud.get_slot_text(0))
@@ -402,7 +406,8 @@ func _test_triple_nitro_race(race: RaceManager) -> void:
 		counts.append(me.inventory.charges[0])
 		await _frames(10)
 	_check(counts == _ids([2, 1, 0]) and me.inventory.is_empty(), "x3 -> x2 -> x1 -> empty (%s)" % [counts])
-	_check(spikes.call() - before == 3, "one spike per press (%d)" % (spikes.call() - before))
+	wm.child_entered_tree.disconnect(on_child)
+	_check(dropped[0] == 3, "one spike per press (%d)" % dropped[0])
 	_check(wm.weapons.any(func(w: WeaponData) -> bool: return w.id == &"triple_spike"), "Triple Spike is in the crate pool")
 
 

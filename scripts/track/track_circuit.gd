@@ -85,6 +85,8 @@ signal checkpoint_crossed(index: int, body: Node3D)
 @export var edge_line_energy: float = 1.5
 ## Faded centre markings: most dashes worn away, the rest dull.
 @export var faded_markings: bool = false
+## Draw the centre dashes at all (off for dirt roads).
+@export var centre_markings: bool = true
 ## Hide the flat ground slab's visual (scenery supplies its own terrain);
 ## the collision slab always stays.
 @export var ground_visible: bool = true
@@ -379,7 +381,7 @@ func _build_road() -> void:
 		_strip_quad(road, s0, s1, -half, half, 0.02)
 		_strip_quad(edges, s0, s1, -half, -half + 0.4, 0.04)
 		_strip_quad(edges, s0, s1, half - 0.4, half, 0.04)
-		if i % 4 < 2 and (not faded_markings or (i * 7919) % 13 < 5):
+		if centre_markings and i % 4 < 2 and (not faded_markings or (i * 7919) % 13 < 5):
 			_strip_quad(dashes, s0, s1, -0.15, 0.15, 0.04)
 
 	# Shortcut roads sit a few millimetres higher where they overlap the main one.

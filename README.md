@@ -106,7 +106,8 @@ The layout is the `control_points` list on `scenes/tracks/test_circuit.tscn`, sa
 
 ### Menus
 
-- **Main menu** (GDD §11.2): the title, then Continue Grand Prix (only when one is saved), Grand Prix, Versus, Practice, Garage, Settings, Credits, Exit.
+- **Main menu** (GDD §11.2): the Cyberwave 2199 logo (`assets/logo/`) above the title, then Continue Grand Prix (only when one is saved), Grand Prix, Versus, Practice, Garage, Settings, Credits, Exit.
+- **Boot splash:** the logo's skyline and sun (`assets/logo/splash_skyline.png`) on black while the game loads.
 - **Credits:** the game, music, sound, fonts, textures and sky, weapon art and engine, with a Back button (Esc / B also goes back).
 - **Race setup** (GDD §11.3): track (only the test circuit for now) or championship, vehicle picker with a rotating preview of your car (paint, cosmetics and plate), stats, AI difficulty, laps (Versus), weapons on/off, Start race. It remembers your last choices and shows your personal best (Versus) or best championship finish (Grand Prix).
   - **A Grand Prix keeps the car you started it with** for all three races (the GDD saves the player vehicle with the championship).
@@ -243,6 +244,20 @@ A 2.9 km technical circuit through the Library of Congress **at sunset**. It's m
 - **Lighting:** a low gold sun with shadows, the `qwantani_sunset` sky, warm volumetric fog (Forward+ only), SSR on the floor, chandeliers and emissive windows.
 - Everything is built from code (`StacksScenery`, `HallBuilder`), with Poly Haven marble, parquet, velvet and stone textures and a generated book-spine texture.
 
+#### Hoia Baciu Run (GDD §8.4)
+
+World Cup race 1. A 3.2 km winding **dirt road through Romania's haunted forest on a foggy, moonlit night** (no rain). The road is 15 m wide with no centre line, and cold blue-white racing neon dimmed to read through the fog.
+
+- **Start:** under a carved wooden archway with lanterns and red banners.
+- **Crooked Forest:** four S-bends through a grove of Hoia's bent trees. Their trunks leave the ground sideways, curl up in a J/S bend and rise tall and straight, all bowing the same way.
+- **Graveyard:** a straight beside a railed forest cemetery with leaning crosses, headstones, candles and a chapel ruin.
+- **Viaduct:** a stone-arched bridge over a ravine with a stream. Boost pad.
+- **Hairpins:** two hairpins through dense pines beside a black bog with faint marsh lights. The bog has an EMP puddle.
+- **Castle:** the main road swings round a ruined red-stone castle. The **shortcut** (11 m) goes through the east gatehouse, past a timber barricade (smashable), across the rubble courtyard and out of the west gate through a boost ring. About 120 m shorter, with three bonus coins. A ruined keep on a rocky rise, with lit windows, stands out across the lap, with the moon low behind it.
+- **Round Clearing:** after a jump over a fallen-log mound, the road sweeps round the treeless meadow of the legend, ringed by bowing trees and old stones. Boost pad.
+- **Atmosphere:** the misty_pines HDRI darkened as the distant forest, dense blue-grey fog with low ground fog (plus volumetric fog in Forward+), cold moonlight with shadows, warm lanterns along the road (steady with Reduced flashing). Nothing supernatural, just lights in the fog.
+- **Trees:** about 7,000, built by `TreeBuilder` and instanced. It mixes crooked trees, tall misty pines, bare twisted trees and dead snags, densest by the road and thinning into the fog. Ferns, boulders, logs and stumps fill the ground.
+
 #### Six Flags New Orleans (GDD §8.2)
 
 A 3.1 km circuit through a **realistic, eerie, abandoned amusement park**, after the real park left to rot after Hurricane Katrina. It goes for believable decay, not supernatural effects. The only clean light is the illegal racing neon on the barriers, dimmed to fit the scene. The road is 18 m wide.
@@ -304,6 +319,8 @@ A 3.2 km night circuit (shortened from 4.4 km after your first drive) with 20 m 
   - `SceneryTerrain`: overgrown, waterlogged terrain with level banks along the roads
   - `WoodenCoaster`: a lattice coaster along any 3D path, with steel gantries where it crosses a road
   - `ChainLinkFence`: damaged fencing with a procedural chain-link texture
+  - `TreeBuilder`: a procedural forest. A few tree meshes (lofted bark tubes plus needle clumps: crooked, pine, bare, snag) are built once, then scattered as MultiMesh instances in 350 m chunks with a visibility range, so thousands of trees cost a few draw calls.
+  - `SceneryTerrain` also takes an optional `carve` function (ravines under bridges) and can skip the flood water.
   - `HallBuilder`: an interior hall along a stretch of road: marble wainscot, plaster walls, pilasters, open arched window bays or bookshelf bays, a coffered painted ceiling and chandeliers. Plus a stand-alone `bookcase()`.
 - **Track look exports** also cover `neon_energy` and `edge_line_energy` (racing-edge brightness), `faded_markings`, `ground_visible`, and `road_texture` / `barrier_texture` / `ground_texture`. Geometry is merged into a few batched meshes, one per material, and it skips anything that would overlap a road. It builds in the editor too.
 - **Look:** road, edge, barrier, neon and light colours are exports on each track, and corners tighter than `corner_sign_radius` get chevron signs automatically.
@@ -555,7 +572,7 @@ The exit code is non-zero if anything fails. These checks do **not** judge how t
 
 The in-game Credits screen (`scripts/menu/credits.gd`) shows the same list.
 
-Environment textures and the track skies are from [Poly Haven](https://polyhaven.com) (CC0, public domain): asphalt_04, road_damaged, rust_coarse_01, rusty_metal_02, rusty_corrugated_iron, concrete_moss, dirty_concrete, peeling_painted_wall, wood_peeling_paint_weathered, distressed_painted_planks, brown_mud_leaves_01, bark_willow, dirty_tiles, painted_worn_brick, withered_grass, sparse_grass, marble_01, herringbone_parquet, velour_velvet, monastery_stone_floor, and the kloofendal_overcast_puresky and qwantani_sunset_puresky HDRIs. They live in `assets/textures/polyhaven/` (colour, normal and roughness at 1K) and `assets/sky/`.
+Environment textures and the track skies are from [Poly Haven](https://polyhaven.com) (CC0, public domain): asphalt_04, road_damaged, rust_coarse_01, rusty_metal_02, rusty_corrugated_iron, concrete_moss, dirty_concrete, peeling_painted_wall, wood_peeling_paint_weathered, distressed_painted_planks, brown_mud_leaves_01, bark_willow, dirty_tiles, painted_worn_brick, withered_grass, sparse_grass, marble_01, herringbone_parquet, velour_velvet, monastery_stone_floor, forest_ground_04, forest_leaves_02, pine_bark, red_sandstone_wall, mossy_rock, and the kloofendal_overcast_puresky, qwantani_sunset_puresky and misty_pines HDRIs. They live in `assets/textures/polyhaven/` (colour, normal and roughness at 1K) and `assets/sky/`.
 
 ## Status and known issues
 
@@ -579,7 +596,7 @@ The racing has **not** been played on screen yet.
 - **Vehicle balance is a first pass.** The stat spread follows each car's GDD character but hasn't been driven. Rivals now drive random cars with real stats, so a Hard rival in a fast car is quicker than one in a slow car; the field varies from series to series.
 - **Prices and payouts are first guesses** where the GDD gives none (stripes, decals, underglow, exhaust, metallic and matte finishes). At roughly 30–75 coins per race, the 1,000-coin Chrome finish takes 15+ races.
 - **Not in Phase 5:** the optional first-time tutorial (GDD §11.9, not chosen for this phase), the race presentation items in GDD §11.8 (pre-race camera sweep, position-change feedback, podium ceremony), music, and dragging to rotate the preview.
-- **Three tracks are still to build** (the World Cup), so that cup is locked as "coming soon".
+- **Two tracks are still to build** (World Cup races 2 and 3: Catacombs Descent and Arashiyama Circuit), so the World Cup stays locked as "coming soon". Hoia Baciu Run is playable in Versus.
 - **Grand Prix classification at your finish** gives racers still on track their current position. The GDD doesn't specify this; it avoids waiting for the field.
 - **Only 6 of the GDD's 11 weapons** exist so far, plus Triple Nitro. Holo Decoy, Gravity Mine, System Glitch, Cyber Leech and Swarm Bots are Phase 6 content; the data-driven setup should make adding them straightforward.
 - **Combat balance is untested against a human:** crate odds, durations, the 22 m EMP radius and the Railgun's speed. The Railgun hits about half its shots in AI races. The AI often spend a held Firewall pre-emptively rather than saving it.

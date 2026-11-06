@@ -7,6 +7,7 @@ extends Node3D
 @onready var car: VehicleController = $PlayerCar
 @onready var camera: ChaseCamera = $ChaseCamera
 @onready var hud: PrototypeHUD = $PrototypeHUD
+var minimap: Minimap
 
 
 func _ready() -> void:
@@ -21,11 +22,26 @@ func _ready() -> void:
 	car.recovery.set_track(track, track.get_spawn_offset())
 	camera.set_target(car)
 	hud.setup(car, camera, track)
+	_add_minimap()
 	HudScaler.apply(hud, GameSettings.hud_scale)
 	if GameSettings.motion_blur:
 		var blur := SpeedBlur.new()
 		blur.vehicle = car
 		add_child(blur)
+
+
+## Practice minimap, bottom right like in races: the track and your car.
+func _add_minimap() -> void:
+	var anchor := Control.new()
+	anchor.name = "MinimapAnchor"
+	anchor.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
+	anchor.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hud.add_child(anchor)
+	minimap = Minimap.new()
+	minimap.name = "Minimap"
+	minimap.position = -Minimap.MAP_SIZE - Vector2(20, 20)
+	anchor.add_child(minimap)
+	minimap.setup_track(track, car)
 
 
 func _unhandled_input(event: InputEvent) -> void:

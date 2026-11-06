@@ -12,7 +12,7 @@ func _ready() -> void:
 	InputSetup.ensure_actions()
 	Music.play(get_tree(), Music.MENU)
 	cup = GrandPrixData.cup_by_path(GameSession.cup_path)
-	if cup == null or cup.locked:
+	if cup == null or not cup.is_open(false):
 		cup = GrandPrixData.all_cups()[0]
 		GameSession.cup_path = GrandPrixData.CUPS[0]
 	_build()
@@ -20,16 +20,25 @@ func _ready() -> void:
 	var last := str(PlayerProfile.get_profile().last_setup.get("track_name", ""))
 	var focus := cards[0]
 	for i in cup.track_names.size():
-		if cup.track_names[i] == last:
+		if cards[i].disabled:
+			continue
+		if cup.track_names[i] == last or focus.disabled:
 			focus = cards[i]
 	focus.grab_focus.call_deferred()
 
 
 func pick(index: int) -> void:
+	if not _ready_to_race(index):
+		return
 	GameSession.track_name = cup.track_names[index]
 	var setup := PlayerProfile.get_profile().last_setup
 	setup["track_name"] = GameSession.track_name
 	GameSession.to_race_setup(get_tree(), GameSession.setup_mode)
+
+
+## Tracks of a locked cup that aren't built yet show as "coming soon".
+func _ready_to_race(index: int) -> bool:
+	return not cup.locked or cup.is_track_built(index)
 
 
 func back() -> void:
@@ -85,6 +94,7 @@ func _card(index: int, laps: int) -> Button:
 	var card := UIStyle.button("", pick.bind(index))
 	card.name = "Track%d" % (index + 1)
 	card.custom_minimum_size = Vector2(340, 340)
+	card.disabled = not _ready_to_race(index)
 	var box := VBoxContainer.new()
 	box.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT, Control.PRESET_MODE_MINSIZE, 14)
 	box.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -104,6 +114,8 @@ func _card(index: int, laps: int) -> Button:
 	box.add_child(loc)
 	var best := PlayerProfile.get_profile().best_for(track, laps)
 	var best_text := "Best (%d laps): %s" % [laps, RaceProgress.format_time(float(best.race))] if best.has("race") else "No time yet"
+	if card.disabled:
+		best_text = "COMING SOON"
 	var best_label := UIStyle.stat(best_text, 15, UIStyle.CYAN)
 	best_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(best_label)

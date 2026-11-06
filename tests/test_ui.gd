@@ -34,6 +34,7 @@ func _run_all() -> void:
 	await _test_credits()
 	await _test_cups()
 	_test_stacks_rename()
+	await _test_practice_minimap()
 	await _run("HUD in a race", _test_hud, _config(3), false)
 	await _run("layout at HUD scale 1.0 and 1.5", _test_layout, _config(3), false)
 	var cars := _config(3)
@@ -207,6 +208,25 @@ func _test_cups() -> void:
 	setup.queue_free()
 	GameSession.cup_path = ""
 	GameSession.track_name = ""
+	await process_frame
+
+
+func _test_practice_minimap() -> void:
+	_current = "practice minimap"
+	print("- practice minimap")
+	var practice := (load("res://scenes/free_drive.tscn") as PackedScene).instantiate()
+	root.add_child(practice)
+	await _frames(3)
+	var map := practice.get("minimap") as Minimap
+	_check(map != null and map.is_visible_in_tree() and map.track != null, "Practice has a minimap")
+	if map != null:
+		var view := map.get_viewport().get_visible_rect().size
+		var rect := map.get_global_rect()
+		_check(rect.position.x > view.x * 0.5 and rect.position.y > view.y * 0.5, "bottom right (%s)" % rect)
+		var car := practice.get("car") as VehicleController
+		_check(Rect2(Vector2.ZERO, map.size).has_point(map.world_to_map(car.global_position)), "your car is on it")
+		_check(map.visible_racers().is_empty(), "no rivals in Practice")
+	practice.queue_free()
 	await process_frame
 
 

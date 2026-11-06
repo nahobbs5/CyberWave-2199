@@ -12,6 +12,7 @@ const CAR_SCENE := "res://scenes/vehicles/placeholder_car.tscn"
 const VEGAS := "res://scenes/tracks/vegas_overdrive.tscn"
 const SIX_FLAGS := "res://scenes/tracks/six_flags_new_orleans.tscn"
 const STACKS := "res://scenes/tracks/the_stacks.tscn"
+const HOIA := "res://scenes/tracks/hoia_baciu.tscn"
 
 var _passed: int = 0
 var _failed: int = 0
@@ -34,12 +35,14 @@ func _run_all() -> void:
 	await _test_layout(VEGAS, "Vegas Overdrive", 3000.0, 3400.0, 9, 90.0)
 	await _test_layout(SIX_FLAGS, "Six Flags New Orleans", 2900.0, 3300.0, 10, 80.0)
 	await _test_layout(STACKS, "The Stacks", 2700.0, 2950.0, 5, 80.0)
+	await _test_layout(HOIA, "Hoia Baciu Run", 3100.0, 3300.0, 6, 80.0)
+	_test_forest()
 	await _test_build_times()
 	await _run("features on Vegas", _test_features, _vegas_config(), false)
 	await _run("jump ramps and water (Six Flags)", _test_ramps_and_water, _config(SIX_FLAGS, "Six Flags New Orleans"), false)
 	await _run("shortcut: recovery and positions", _test_shortcut_recovery, _vegas_config(), false)
 	_test_menus_and_gp()
-	for track in [[VEGAS, "Vegas Overdrive"], [SIX_FLAGS, "Six Flags New Orleans"], [STACKS, "The Stacks"]]:
+	for track in [[VEGAS, "Vegas Overdrive"], [SIX_FLAGS, "Six Flags New Orleans"], [STACKS, "The Stacks"], [HOIA, "Hoia Baciu Run"]]:
 		var forced := _config(track[0], track[1])
 		forced.total_laps = 1
 		await _run("%s: everyone takes the shortcut (1 lap)" % track[1], _test_forced_shortcut, forced, true)
@@ -388,14 +391,53 @@ func _test_menus_and_gp() -> void:
 func _test_build_times() -> void:
 	_current = "scenery build times"
 	print("- scenery build times")
-	for path in [VEGAS, SIX_FLAGS, STACKS]:
+	for path in [VEGAS, SIX_FLAGS, STACKS, HOIA]:
 		var t0 := Time.get_ticks_msec()
 		var track := (load(path) as PackedScene).instantiate() as TrackCircuit
 		root.add_child(track)
 		var ms := Time.get_ticks_msec() - t0
-		_check(ms < 5000, "%s builds in under 5 s (%d ms)" % [path.get_file(), ms])
+		# Headless: about half of this is loading the PBR textures (see README).
+		_check(ms < 8000, "%s builds in under 8 s headless (%d ms)" % [path.get_file(), ms])
 		track.queue_free()
 		await process_frame
+
+
+## Hoia Baciu: in the catalogue, World Circuit race 1 (still locked), and a
+## forest of instanced trees that keeps off the roads and out of the clearing.
+func _test_forest() -> void:
+	_current = "Hoia Baciu forest"
+	print("- Hoia Baciu forest")
+	_check(TrackCatalog.scene_path("Hoia Baciu Run") == HOIA and TrackCatalog.music("Hoia Baciu Run") != "", "Hoia is in the track list with music")
+	var world := load("res://resources/grand_prix/world_circuit.tres") as GrandPrixData
+	_check(world.track_scenes[0] == HOIA and world.locked, "World Circuit race 1 is Hoia; the championship stays locked")
+	_check(not world.is_open(true) and world.is_open(false), "World Cup: locked for Grand Prix, open in Versus")
+	_check(world.is_track_built(0) and not world.is_track_built(1) and not world.is_track_built(2), "only Hoia is built")
+	GameSession.cup_path = GrandPrixData.CUPS[1]
+	GameSession.setup_mode = RaceConfig.Mode.VERSUS
+	var select := (load("res://scenes/menu/track_select.tscn") as PackedScene).instantiate() as TrackSelect
+	root.add_child(select)
+	_check(select.cup == world and not select.cards[0].disabled and select.cards[1].disabled and select.cards[2].disabled,
+			"Versus track select: Hoia raceable, the other two coming soon")
+	select.free()
+	var track := (load(HOIA) as PackedScene).instantiate() as TrackCircuit
+	root.add_child(track)
+	var chunks := track.find_children("Trees_*", "MultiMeshInstance3D", true, false)
+	var total := 0
+	var on_road := 0
+	var in_clearing := 0
+	for node in chunks:
+		var mm := (node as MultiMeshInstance3D).multimesh
+		total += mm.instance_count
+		for i in mm.instance_count:
+			var p := (node as Node3D).position + mm.get_instance_transform(i).origin
+			if track.get_lateral_distance(p) < track.road_width * 0.5 + track.barrier_thickness:
+				on_road += 1
+			if Vector2(p.x - HoiaScenery.CLEARING.x, p.z - HoiaScenery.CLEARING.z).length() < HoiaScenery.CLEARING_RADIUS:
+				in_clearing += 1
+	_check(total > 3000 and chunks.size() < 200, "a forest of instanced trees (%d trees in %d chunks)" % [total, chunks.size()])
+	_check(on_road == 0, "no tree stands on the main road (%d)" % on_road)
+	_check(in_clearing == 0, "the Round Clearing stays treeless (%d)" % in_clearing)
+	track.free()
 
 
 func _test_forced_shortcut(race: RaceManager) -> void:

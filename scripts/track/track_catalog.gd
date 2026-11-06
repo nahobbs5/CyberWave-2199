@@ -13,6 +13,8 @@ const TRACKS := [
 			"res://music/theboysbeats-the-boy-s-beats-race-winner-282390.mp3"],
 	["Vegas Overdrive", "res://scenes/tracks/vegas_overdrive.tscn", "Las Vegas, Nevada",
 			"res://music/spmusic-heavy-racing-151129.mp3"],
+	["Hoia Baciu Run", "res://scenes/tracks/hoia_baciu.tscn", "Romania",
+			"res://music/kulakovka-cyberpunk-music-624631.mp3"],
 	["Test Circuit", TEST_CIRCUIT, "Graybox", ""],
 ]
 
