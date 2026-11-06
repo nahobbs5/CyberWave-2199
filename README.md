@@ -226,9 +226,11 @@ There are no control instructions on the HUD; the controls (from your current bi
 | Races on The Stacks | Cyber Dreams by Lilex (loops) | `music/lilex-cyber-dreams-314323.mp3` |
 | Races on Six Flags New Orleans | Race Winner by TheBoysBeats (loops) | `music/theboysbeats-the-boy-s-beats-race-winner-282390.mp3` |
 | Races on Vegas Overdrive | Heavy Racing by SPmusic (loops) | `music/spmusic-heavy-racing-151129.mp3` |
+| Races on Hoia Baciu Run | Cyberpunk Music by kulakovka (loops) | `music/kulakovka-cyberpunk-music-624631.mp3` |
+| Races on Catacombs Descent | Hard Cyberpunk by kulakovka (loops) | `music/kulakovka-hard-cyberpunk-281149.mp3` |
 | Race start | Countdown beeps on 3 / 2 / 1 / START, one per start light | `sounds/freesound_community-short-beep-countdown-81121.mp3` |
 
-Music carries across menu screens without restarting and crossfades when the track changes (`scripts/core/music.gd`); each built track has its own race music (set in `TrackCatalog`, `scripts/track/track_catalog.gd`), which starts with the race; the test circuit and free drive have none, so the music fades out. **On the final lap** (when you start it, in races of 2+ laps, Elimination included) the race music speeds up 15%, pitch and all, over about 0.4 s; restarting or leaving the race puts it back to normal. The countdown clip has four beeps a second apart, played from the start: one beep per start light and word (3, 2, 1, START). Music plays on the Music bus and effects on the SFX bus, so the Settings sliders control each. Tracks by ikoliks / ikoliks_aj, Lilex, TheBoysBeats, SPmusic and freesound_community.
+Music carries across menu screens without restarting and crossfades when the track changes (`scripts/core/music.gd`); each built track has its own race music (set in `TrackCatalog`, `scripts/track/track_catalog.gd`), which starts with the race; the test circuit and free drive have none, so the music fades out. **On the final lap** (when you start it, in races of 2+ laps, Elimination included) the race music speeds up 15%, pitch and all, over about 0.4 s; restarting or leaving the race puts it back to normal. The countdown clip has four beeps a second apart, played from the start: one beep per start light and word (3, 2, 1, START). Music plays on the Music bus and effects on the SFX bus, so the Settings sliders control each. Tracks by ikoliks / ikoliks_aj, Lilex, TheBoysBeats, SPmusic, kulakovka and freesound_community.
 
 ### Tracks
 
@@ -261,6 +263,22 @@ World Cup race 1. A 3.2 km winding **dirt road through Romania's haunted forest 
 - **Round Clearing:** after a jump over a fallen-log mound, the road sweeps round the treeless meadow of the legend, ringed by bowing trees and old stones. Boost pad.
 - **Atmosphere:** the misty_pines HDRI darkened as the distant forest, dense blue-grey fog with low ground fog (plus volumetric fog in Forward+), cold moonlight with shadows, warm lanterns along the road (steady with Reduced flashing). Nothing supernatural, just lights in the fog.
 - **Trees:** about 7,000, built by `TreeBuilder` and instanced. It mixes crooked trees, tall misty pines, bare twisted trees and dead snags, densest by the road and thinning into the fog. Ferns, boulders, logs and stumps fill the ground.
+
+#### Catacombs Descent (GDD §8.5)
+
+World Cup race 2. A 2.8 km twisting race **through the quarried tunnels under Paris**, roofed over every metre: no sky anywhere. The road is a 12 m strip of wet cobbles, the narrowest in the game, between low sandstone kerbs with dim pink racing neon. The stone walls stand about 3 m beyond the kerbs, under barrel vaults about 7.5 m high. Tight corners (30–45 m radius), short straights and narrow chevron boards on every bend. It's lit by about 160 wall torches with a soft flame flicker (steady with Reduced flashing), candle clusters, and five shafts of pale light through iron street grates.
+
+- **Barrière d'Enfer** (start/finish): a tall 15 m vaulted chamber with cut-stone piers and iron braziers by the gantry. At its far end, over a low archway, the carved lintel **"ARRÊTE ! C'EST ICI L'EMPIRE DE LA MORT"**. Boost pad with item boxes.
+- **Ossuary galleries:** chicanes between walls of stacked bones set with rows of real skulls, with a row of skulls along the top ledge. Candles and skull heaps on the floor. A light shaft.
+- **Crypt:** burial niches in three rows (most sealed with slabs, a few open with a skull inside), and sarcophagi along the walls. Jump over a hump of fallen masonry.
+- **Service passage:** pipes along both walls and red emergency lamps.
+- **Flooded cistern:** a wide, 12 m high hall of columns standing in black water, with standing water on the road (keep right to stay dry). A light shaft.
+- **Forgotten chapel:** the road sweeps past an apse with an altar, a white statue, a cross, candelabras, dozens of candles and a strong shaft of light.
+- **More ossuary**, then the **quarry:** bare rock walls propped with timber. A fallen cable has electrified a puddle (EMP).
+- **Tomb gallery** back to the start.
+- **Flooded crypt** (shortcut): a 10 m passage under a 5.6 m vault that cuts across the waist of the lap. It's about 300 m shorter than the main road, but half of it is under water and a **fallen-rubble barricade** (smashable) blocks the half-collapsed stretch. Boost ring at the exit, three bonus coins.
+- **Atmosphere:** near-black background, low warm ambient light and dark brown fog, so the tunnels fade to black about 60 m ahead (plus volumetric fog in Forward+, which turns the grate light into visible beams).
+- Built from code: `CatacombsScenery` and the new `TunnelBuilder`, with Poly Haven old_stone_wall, large_sandstone_blocks and cobblestone_floor_08 textures and a generated bone-wall texture (colour and normal map). About 18,000 skulls are one small instanced mesh in 100 m chunks.
 
 #### Six Flags New Orleans (GDD §8.2)
 
@@ -326,9 +344,11 @@ A 3.2 km night circuit (shortened from 4.4 km after your first drive) with 20 m 
   - `ChainLinkFence`: damaged fencing with a procedural chain-link texture
   - `TreeBuilder`: a procedural forest. A few tree meshes (lofted bark tubes plus needle clumps: crooked, pine, bare, snag) are built once, then scattered as MultiMesh instances in 200 m chunks with a visibility range (300 m past the chunk), so thousands of trees cost a few draw calls.
   - `SceneryTerrain` also takes an optional `carve` function (ravines under bridges) and can skip the flood water.
+  - `TunnelBuilder`: a stone barrel vault along a stretch of the main road or a shortcut, with walls lined per side as `skulls` (ossuary), `tombs`, `pipes`, `rock` or plain `stone`, arch ribs, torches, candles and grate light shafts. Wall pieces that would stand on another road are left out at junctions, but the vault always closes over the top. Span ends get a stone face around the opening, so a low tunnel entering a tall chamber reads as an archway.
   - `HallBuilder`: an interior hall along a stretch of road: marble wainscot, plaster walls, pilasters, open arched window bays or bookshelf bays, a coffered painted ceiling and chandeliers. Plus a stand-alone `bookcase()`.
 - **Track look exports** also cover `neon_energy` and `edge_line_energy` (racing-edge brightness), `faded_markings`, `ground_visible`, and `road_texture` / `barrier_texture` / `ground_texture`. Geometry is merged into a few batched meshes, one per material, and it skips anything that would overlap a road. It builds in the editor too.
-- **Look:** road, edge, barrier, neon and light colours are exports on each track, and corners tighter than `corner_sign_radius` get chevron signs automatically.
+- **Look:** road, edge, barrier, neon and light colours are exports on each track, and corners tighter than `corner_sign_radius` get chevron signs automatically (`corner_sign_width` and `corner_sign_gap` narrow them for tunnels).
+- **`FlickerLight`** has a `flame` mode for torches and candles: a soft wobble that never goes dark.
 - Each track scene carries its own sky, fog and lighting (`WorldEnvironment`).
 
 ### Weapons
@@ -569,7 +589,7 @@ The exit code is non-zero if anything fails. These checks do **not** judge how t
 ## Credits
 
 - **Game:** Cyberwave 2199 by Nathan Hobbs.
-- **Music:** "Cyberpunk" by ikoliks_aj (main theme), "Wings of Hope" by ikoliks (garage), "Cyber Dreams" by Lilex (The Stacks), "Race Winner" by TheBoysBeats (Six Flags New Orleans), "Heavy Racing" by SPmusic (Vegas Overdrive).
+- **Music:** "Cyberpunk" by ikoliks_aj (main theme), "Wings of Hope" by ikoliks (garage), "Cyber Dreams" by Lilex (The Stacks), "Race Winner" by TheBoysBeats (Six Flags New Orleans), "Heavy Racing" by SPmusic (Vegas Overdrive), "Cyberpunk Music" by kulakovka (Hoia Baciu Run), "Hard Cyberpunk" by kulakovka (Catacombs Descent).
 - **Sound:** short beep countdown by freesound_community.
 - **Fonts:** Oxanium and Rajdhani, SIL Open Font License 1.1 (`assets/fonts/`).
 - **Weapon icons:** from the Weapon Arsenal concept art.
@@ -577,7 +597,7 @@ The exit code is non-zero if anything fails. These checks do **not** judge how t
 
 The in-game Credits screen (`scripts/menu/credits.gd`) shows the same list.
 
-Environment textures and the track skies are from [Poly Haven](https://polyhaven.com) (CC0, public domain): asphalt_04, road_damaged, rust_coarse_01, rusty_metal_02, rusty_corrugated_iron, concrete_moss, dirty_concrete, peeling_painted_wall, wood_peeling_paint_weathered, distressed_painted_planks, brown_mud_leaves_01, bark_willow, dirty_tiles, painted_worn_brick, withered_grass, sparse_grass, marble_01, herringbone_parquet, velour_velvet, monastery_stone_floor, forest_ground_04, forest_leaves_02, pine_bark, red_sandstone_wall, mossy_rock, and the kloofendal_overcast_puresky, qwantani_sunset_puresky and misty_pines HDRIs. They live in `assets/textures/polyhaven/` (colour, normal and roughness at 1K) and `assets/sky/`.
+Environment textures and the track skies are from [Poly Haven](https://polyhaven.com) (CC0, public domain): asphalt_04, road_damaged, rust_coarse_01, rusty_metal_02, rusty_corrugated_iron, concrete_moss, dirty_concrete, peeling_painted_wall, wood_peeling_paint_weathered, distressed_painted_planks, brown_mud_leaves_01, bark_willow, dirty_tiles, painted_worn_brick, withered_grass, sparse_grass, marble_01, herringbone_parquet, velour_velvet, monastery_stone_floor, forest_ground_04, forest_leaves_02, pine_bark, red_sandstone_wall, mossy_rock, old_stone_wall, large_sandstone_blocks, cobblestone_floor_08, and the kloofendal_overcast_puresky, qwantani_sunset_puresky and misty_pines HDRIs. They live in `assets/textures/polyhaven/` (colour, normal and roughness at 1K) and `assets/sky/`.
 
 ## Status and known issues
 

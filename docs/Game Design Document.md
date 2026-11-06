@@ -1,5 +1,5 @@
 # CYBERWAVE 2199
-## Game Design Document — Version 2.1
+## Game Design Document — Version 2.3
 
 **Status:** Development Baseline  
 **Engine:** Godot 4  
@@ -547,6 +547,18 @@ A fictionalized underground circuit through skull-lined tunnels, flooded chamber
 
 **Identity:** Constrained racing, precision, claustrophobic atmosphere.
 
+Built at about 2.8 km, fully underground: a vaulted stone ceiling covers every metre of both routes, and no sky is visible. The 12 m road is the narrowest in the game, with tight corners (30–45 m radius) and short straights. It's lit by wall torches, candles and a few shafts of pale light through street grates, and the tunnels fade to black ahead. Landmarks in driving order:
+- the tall Barrière d'Enfer start chamber;
+- the "Arrête ! C'est ici l'Empire de la Mort" lintel into the ossuary galleries (walls of stacked bones set with skulls);
+- a crypt of burial niches and sarcophagi;
+- a service passage with pipes and red emergency lamps;
+- a flooded cistern of columns (standing water on the road);
+- a forgotten candlelit chapel;
+- a quarry propped with timber (EMP puddle from a fallen cable);
+- a tomb gallery back to the start.
+
+The shortcut is a low, half-flooded crypt passage across the middle of the lap. It's about 300 m shorter, but slowed by water and a smashable rubble barricade. The Tunnel Collapse special (§8.9) is still a proposal.
+
 ## 8.6 Arashiyama Circuit
 
 **Location:** Kyoto, Japan
@@ -755,6 +767,8 @@ Previously selected settings should be remembered.
 - Cosmetic inventory
 - Cosmetic shop
 - Coin balance
+
+Layout follows the "Neon Cyberwave Garage Interface" reference art: logo and coin balance across the top; on the left the car on a neon turntable with previous / next arrows and a dot per car, then its name, type, stat bars and top speed, and the license plate; on the right a Cosmetics panel with the eight categories in a list beside that category's items (swatch, name, Buy / Equip / Equipped). There are no performance upgrades, so the reference's Upgrades, Performance and Details tabs are left out. Clicking an item previews it on the car; Apply equips every owned item being previewed; Back discards previews. The car spins slowly on its own and can be turned by dragging it (or with the right stick); the spin resumes shortly after. Race setup uses the same car showcase.
 
 ## 11.5 Race HUD
 
@@ -1157,5 +1171,7 @@ Changes after Version 1.0 should be tracked as revisions rather than silently re
 | 1.9 | 2026-11-06 | Championships are now cups chosen Mario Kart style: American Cup (USA-map trophy) and World Cup (globe). Versus picks a cup, then one of its tracks. The Stacks Grand Prix renamed The Stacks. American Cup order is now Vegas Overdrive, Six Flags New Orleans, The Stacks (§2.2, §8.1). |
 | 2.0 | 2026-11-06 | Hoia Baciu Run built at about 3.2 km: moonlit, foggy, dirt road, crooked trees (§8.4). The World Cup stays locked until its other two tracks exist. Final-lap music speed-up (§12). |
 | 2.1 | 2026-11-06 | Countdown is now 3 / 2 / 1 / START with a start-light board on the gantry, one lamp per beep (§11.8). |
+| 2.2 | 2026-11-06 | Garage restyled after the reference art, with an Apply button and drag-to-rotate; race setup shares its car showcase (§11.4). |
+| 2.3 | 2026-11-06 | Catacombs Descent built at about 2.8 km: fully vaulted, torch-lit, 12 m road, flooded-crypt shortcut (§8.5). The World Cup stays locked until Arashiyama exists. |
 
-**End of Game Design Document — Version 2.1**
+**End of Game Design Document — Version 2.3**

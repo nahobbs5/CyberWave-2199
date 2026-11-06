@@ -15,6 +15,8 @@ const TRACKS := [
 			"res://music/spmusic-heavy-racing-151129.mp3"],
 	["Hoia Baciu Run", "res://scenes/tracks/hoia_baciu.tscn", "Romania",
 			"res://music/kulakovka-cyberpunk-music-624631.mp3"],
+	["Catacombs Descent", "res://scenes/tracks/catacombs_descent.tscn", "Paris, France",
+			"res://music/kulakovka-hard-cyberpunk-281149.mp3"],
 	["Test Circuit", TEST_CIRCUIT, "Graybox", ""],
 ]
 

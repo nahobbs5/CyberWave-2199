@@ -13,6 +13,7 @@ const VEGAS := "res://scenes/tracks/vegas_overdrive.tscn"
 const SIX_FLAGS := "res://scenes/tracks/six_flags_new_orleans.tscn"
 const STACKS := "res://scenes/tracks/the_stacks.tscn"
 const HOIA := "res://scenes/tracks/hoia_baciu.tscn"
+const CATACOMBS := "res://scenes/tracks/catacombs_descent.tscn"
 
 var _passed: int = 0
 var _failed: int = 0
@@ -36,14 +37,17 @@ func _run_all() -> void:
 	await _test_layout(SIX_FLAGS, "Six Flags New Orleans", 2900.0, 3300.0, 10, 80.0)
 	await _test_layout(STACKS, "The Stacks", 2700.0, 2950.0, 5, 80.0)
 	await _test_layout(HOIA, "Hoia Baciu Run", 3100.0, 3300.0, 6, 80.0)
+	await _test_layout(CATACOMBS, "Catacombs Descent", 2700.0, 2950.0, 7, 150.0)
 	_test_forest()
+	_test_catacombs()
 	await _test_build_times()
 	await _run("features on Vegas", _test_features, _vegas_config(), false)
 	await _run("item boxes on ramps and boosters (The Stacks)", _test_item_boxes, _config(STACKS, "The Stacks"), false)
 	await _run("jump ramps and water (Six Flags)", _test_ramps_and_water, _config(SIX_FLAGS, "Six Flags New Orleans"), false)
 	await _run("shortcut: recovery and positions", _test_shortcut_recovery, _vegas_config(), false)
 	_test_menus_and_gp()
-	for track in [[VEGAS, "Vegas Overdrive"], [SIX_FLAGS, "Six Flags New Orleans"], [STACKS, "The Stacks"], [HOIA, "Hoia Baciu Run"]]:
+	for track in [[VEGAS, "Vegas Overdrive"], [SIX_FLAGS, "Six Flags New Orleans"], [STACKS, "The Stacks"], [HOIA, "Hoia Baciu Run"],
+			[CATACOMBS, "Catacombs Descent"]]:
 		var forced := _config(track[0], track[1])
 		forced.total_laps = 1
 		await _run("%s: everyone takes the shortcut (1 lap)" % track[1], _test_forced_shortcut, forced, true)
@@ -417,7 +421,7 @@ func _test_menus_and_gp() -> void:
 func _test_build_times() -> void:
 	_current = "scenery build times"
 	print("- scenery build times")
-	for path in [VEGAS, SIX_FLAGS, STACKS, HOIA]:
+	for path in [VEGAS, SIX_FLAGS, STACKS, HOIA, CATACOMBS]:
 		var t0 := Time.get_ticks_msec()
 		var track := (load(path) as PackedScene).instantiate() as TrackCircuit
 		root.add_child(track)
@@ -437,13 +441,13 @@ func _test_forest() -> void:
 	var world := load("res://resources/grand_prix/world_circuit.tres") as GrandPrixData
 	_check(world.track_scenes[0] == HOIA and world.locked, "World Circuit race 1 is Hoia; the championship stays locked")
 	_check(not world.is_open(true) and world.is_open(false), "World Cup: locked for Grand Prix, open in Versus")
-	_check(world.is_track_built(0) and not world.is_track_built(1) and not world.is_track_built(2), "only Hoia is built")
+	_check(world.is_track_built(0) and world.is_track_built(1) and not world.is_track_built(2), "Hoia and the Catacombs are built")
 	GameSession.cup_path = GrandPrixData.CUPS[1]
 	GameSession.setup_mode = RaceConfig.Mode.VERSUS
 	var select := (load("res://scenes/menu/track_select.tscn") as PackedScene).instantiate() as TrackSelect
 	root.add_child(select)
-	_check(select.cup == world and not select.cards[0].disabled and select.cards[1].disabled and select.cards[2].disabled,
-			"Versus track select: Hoia raceable, the other two coming soon")
+	_check(select.cup == world and not select.cards[0].disabled and not select.cards[1].disabled and select.cards[2].disabled,
+			"Versus track select: Hoia and the Catacombs raceable, Arashiyama coming soon")
 	select.free()
 	var track := (load(HOIA) as PackedScene).instantiate() as TrackCircuit
 	root.add_child(track)
@@ -463,6 +467,56 @@ func _test_forest() -> void:
 	_check(total > 3000 and chunks.size() < 400, "a forest of instanced trees (%d trees in %d chunks)" % [total, chunks.size()])
 	_check(on_road == 0, "no tree stands on the main road (%d)" % on_road)
 	_check(in_clearing == 0, "the Round Clearing stays treeless (%d)" % in_clearing)
+	track.free()
+
+
+## Catacombs Descent: World Cup race 2, roofed over every metre (main road
+## and shortcut), torch-lit, with skull walls that keep off the roads and
+## standing water on both routes.
+func _test_catacombs() -> void:
+	_current = "Catacombs Descent"
+	print("- Catacombs Descent")
+	_check(TrackCatalog.scene_path("Catacombs Descent") == CATACOMBS and TrackCatalog.music("Catacombs Descent") != "",
+			"the Catacombs are in the track list with music")
+	var world := load("res://resources/grand_prix/world_circuit.tres") as GrandPrixData
+	_check(world.track_scenes[1] == CATACOMBS and world.track_names[1] == "Catacombs Descent", "World Cup race 2 is the Catacombs")
+	var track := (load(CATACOMBS) as PackedScene).instantiate() as TrackCircuit
+	root.add_child(track)
+	var scenery := track.get_node("Scenery") as CatacombsScenery
+	var gaps: Array[String] = []
+	var d := 0.0
+	while d < track.length:
+		for lateral: float in [-track.road_width * 0.5, 0.0, track.road_width * 0.5]:
+			if not scenery.is_roofed(track.to_local(track.get_safe_transform(d, lateral, 0.0).origin)):
+				gaps.append("main@%d" % d)
+		d += 3.0
+	var sc := track.shortcuts[0]
+	d = 0.0
+	while d < sc.length:
+		if not scenery.is_roofed(sc.point_at(d)):
+			gaps.append("shortcut@%d" % d)
+		d += 3.0
+	_check(gaps.is_empty(), "a ceiling over every metre of both routes (gaps: %s)" % [gaps.slice(0, 8)])
+	var torches := track.find_children("*", "FlickerLight", true, false).filter(func(l: Node) -> bool: return (l as FlickerLight).flame)
+	_check(torches.size() > 120, "torch-lit (%d flames)" % torches.size())
+	_check(track.find_children("*", "SpotLight3D", true, false).size() >= 5, "light shafts through street grates")
+	var chunks := track.find_children("Skulls_*", "MultiMeshInstance3D", true, false)
+	var total := 0
+	var on_road := 0
+	for node in chunks:
+		var mm := (node as MultiMeshInstance3D).multimesh
+		total += mm.instance_count
+		for i in mm.instance_count:
+			var p := (node as Node3D).position + mm.get_instance_transform(i).origin
+			if track.get_lateral_distance(track.to_global(p)) < track.road_width * 0.5 + track.barrier_thickness:
+				on_road += 1
+	_check(total > 5000, "skull-lined walls (%d skulls)" % total)
+	_check(on_road == 0, "no skull sits on a road (%d)" % on_road)
+	var water := track.find_children("*", "TrackFeature", false, false).filter(
+			func(f: Node) -> bool: return (f as TrackFeature).kind == TrackFeature.Kind.WATER)
+	_check(water.size() == 2 and water.any(func(f: Node) -> bool: return (f as TrackFeature).on_shortcut == "")
+			and water.any(func(f: Node) -> bool: return (f as TrackFeature).on_shortcut == sc.name),
+			"standing water in the cistern and the flooded crypt")
 	track.free()
 
 

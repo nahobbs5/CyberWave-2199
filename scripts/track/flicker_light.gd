@@ -3,6 +3,7 @@ extends OmniLight3D
 ## A dying lamp: mostly on, with random stutters and dropouts. Optionally
 ## drives a material's glow too (half-dead neon signs, bulbs). With the
 ## reduced-flashing setting it stays on, steady and a little dimmer.
+## In flame mode it is a torch or candle instead: a soft, never-dark wobble.
 
 ## 0 = steady, 1 = constantly failing.
 @export_range(0.0, 1.0) var failing: float = 0.35
@@ -10,14 +11,18 @@ extends OmniLight3D
 ## Emissive material that dims along with the light (optional).
 var material: StandardMaterial3D
 var base_emission: float = 2.0
+## Torch flame: a gentle +/-15% wobble instead of dropouts.
+@export var flame: bool = false
 
 var _rng := RandomNumberGenerator.new()
 var _timer: float = 0.0
 var _level: float = 1.0
+var _time: float = 0.0
 
 
 func _ready() -> void:
 	_rng.randomize()
+	_time = _rng.randf() * 100.0
 	light_energy = base_energy
 	if material != null:
 		base_emission = material.emission_energy_multiplier
@@ -27,7 +32,11 @@ func _process(delta: float) -> void:
 	if Engine.is_editor_hint():
 		return
 	if GameSettings.reduced_flashing:
-		_apply(0.75)
+		_apply(0.9 if flame else 0.75)
+		return
+	if flame:
+		_time += delta
+		_apply(1.0 + 0.09 * sin(_time * 7.3) + 0.05 * sin(_time * 17.9 + 1.3) + _rng.randf_range(-0.03, 0.03))
 		return
 	_timer -= delta
 	if _timer <= 0.0:

@@ -375,6 +375,39 @@ func _test_menus() -> void:
 	_check(p.selected_vehicle == "nexus_x", "choosing a car in the garage selects it")
 	_check(p.equipped_item("nexus_x", CosmeticItem.Category.WHEELS).id == "wheels_standard",
 			"each car has its own loadout")
+	# Apply equips owned try-ons; unowned ones stay previews.
+	garage.try_on(_item("wheels_gold"))
+	garage.try_on(_item("glow_lime"))
+	_check(not garage._apply.disabled and garage.pending_items().size() == 1, "Apply is ready for one owned try-on")
+	_check(garage.apply() == 1 and p.equipped_item("nexus_x", CosmeticItem.Category.WHEELS).id == "wheels_gold"
+			and not p.owns("glow_lime") and garage._trying.has(CosmeticItem.Category.UNDERGLOW),
+			"Apply equips owned try-ons and keeps unowned ones as previews")
+	_check(garage._apply.disabled and garage.apply() == 0, "nothing left to apply")
+	# Showcase: a dot per car, arrows step through them.
+	var show := garage.showcase
+	_check(show.dots.size() == VehicleCatalog.all().size(), "one dot per car")
+	var before := garage.vehicle_index
+	show.next_button.pressed.emit()
+	_check(garage.vehicle_index == posmod(before + 1, VehicleCatalog.all().size()) and show.index == garage.vehicle_index,
+			"the > arrow picks the next car")
+	show.prev_button.pressed.emit()
+	_check(garage.vehicle_index == before and p.selected_vehicle == "nexus_x", "the < arrow goes back")
+	# Drag to rotate: turns the car and pauses the auto-spin for a moment.
+	var pv := garage._preview
+	var press := InputEventMouseButton.new()
+	press.button_index = MOUSE_BUTTON_LEFT
+	press.pressed = true
+	pv._gui_input(press)
+	var yaw := pv.yaw()
+	var drag := InputEventMouseMotion.new()
+	drag.relative = Vector2(60, 0)
+	pv._gui_input(drag)
+	_check(absf(pv.yaw() - yaw) > 0.5 and not pv.is_auto_spinning(), "dragging turns the car and holds the spin")
+	var release := InputEventMouseButton.new()
+	release.button_index = MOUSE_BUTTON_LEFT
+	pv._gui_input(release)
+	pv._process(VehiclePreview.RESUME_DELAY + 0.1)
+	_check(pv.is_auto_spinning(), "auto-spin resumes after the drag")
 	garage.queue_free()
 
 	# Race setup remembers choices.
@@ -384,6 +417,9 @@ func _test_menus() -> void:
 	await process_frame
 	_check(setup.vehicle().id == "nexus_x", "race setup starts on the selected car")
 	setup.select_vehicle(VehicleCatalog.index_of("cipher_evo"))
+	_check(setup.showcase.index == VehicleCatalog.index_of("cipher_evo")
+			and VehicleCosmetics.model_design(setup._preview.car) == VehicleCatalog.by_id("cipher_evo").id,
+			"race setup shows the picked car (%s)" % VehicleCosmetics.model_design(setup._preview.car))
 	setup._laps.selected = 1
 	setup._difficulty.selected = 0
 	setup._weapons.button_pressed = false

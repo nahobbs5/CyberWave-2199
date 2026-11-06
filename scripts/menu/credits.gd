@@ -12,6 +12,8 @@ const SECTIONS := [
 		"\"Cyber Dreams\" by Lilex  (The Stacks)",
 		"\"Race Winner\" by TheBoysBeats  (Six Flags New Orleans)",
 		"\"Heavy Racing\" by SPmusic  (Vegas Overdrive)",
+		"\"Cyberpunk Music\" by kulakovka  (Hoia Baciu Run)",
+		"\"Hard Cyberpunk\" by kulakovka  (Catacombs Descent)",
 	]],
 	["SOUND", ["Short beep countdown by freesound_community"]],
 	["FONTS", [

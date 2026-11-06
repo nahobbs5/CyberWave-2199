@@ -27,7 +27,8 @@ var _laps_row: HBoxContainer
 var _race_type: OptionButton
 var _title: Label
 var _weapons: CheckButton
-var _vehicle_info: VBoxContainer
+var showcase: CarShowcase
+## The showcase's 3D preview.
 var _preview: VehiclePreview
 var _note: Label
 var _start: Button
@@ -53,9 +54,8 @@ func select_vehicle(index: int) -> void:
 	vehicle_index = posmod(index, count)
 	var profile := PlayerProfile.get_profile()
 	profile.set_selected_vehicle(vehicle().id)
-	UIStyle.fill_vehicle_info(_vehicle_info, vehicle())
-	if _preview != null:
-		_preview.show_vehicle(vehicle(), profile.loadout_for(vehicle().id), profile.plate_text)
+	if showcase != null:
+		showcase.set_vehicle(vehicle_index, profile.loadout_for(vehicle().id), profile.plate_text)
 
 
 func difficulty_id() -> String:
@@ -201,23 +201,15 @@ func _build() -> void:
 	left.add_child(UIStyle.button("Back", back))
 
 	var right := VBoxContainer.new()
-	right.add_theme_constant_override("separation", 10)
+	right.add_theme_constant_override("separation", 6)
+	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	columns.add_child(right)
 	right.add_child(UIStyle.label("VEHICLE", 18, UIStyle.CYAN))
-	var picker := HBoxContainer.new()
-	picker.add_theme_constant_override("separation", 10)
-	right.add_child(picker)
-	var prev := UIStyle.button("<  Previous", func() -> void: select_vehicle(vehicle_index - 1))
-	var next := UIStyle.button("Next  >", func() -> void: select_vehicle(vehicle_index + 1))
-	prev.custom_minimum_size = Vector2(200, 40)
-	next.custom_minimum_size = Vector2(200, 40)
-	picker.add_child(prev)
-	picker.add_child(next)
-	_preview = VehiclePreview.new()
-	_preview.custom_minimum_size = Vector2(520, 300)
-	right.add_child(_preview)
-	_vehicle_info = VBoxContainer.new()
-	right.add_child(_vehicle_info)
+	showcase = CarShowcase.new(280.0)
+	showcase.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	showcase.vehicle_changed.connect(select_vehicle)
+	right.add_child(showcase)
+	_preview = showcase.preview
 	right.add_child(UIStyle.label("Plate: %s   (edit it in the Garage)" % PlayerProfile.get_profile().plate_text,
 			14, Color(1, 1, 1, 0.6)))
 

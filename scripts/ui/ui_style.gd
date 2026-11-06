@@ -224,26 +224,182 @@ static func stat_bar(rating: int) -> ProgressBar:
 	return bar
 
 
-## Vehicle name, type, description and four stat bars, rebuilt in place.
-static func fill_vehicle_info(box: VBoxContainer, vehicle: VehicleData) -> void:
-	for child in box.get_children():
-		child.queue_free()
-	var title := HBoxContainer.new()
-	title.add_theme_constant_override("separation", 12)
-	title.add_child(label(vehicle.display_name, 24, Color.WHITE))
-	title.add_child(label(vehicle.vehicle_type, 15, CYAN))
-	box.add_child(title)
-	var desc := label(vehicle.character, 14, Color(1, 1, 1, 0.7))
-	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	desc.custom_minimum_size = Vector2(400, 0)
-	box.add_child(desc)
-	var names: Array = VehicleCatalog.STAT_RANGES.keys()
-	var values := VehicleCatalog.primary_stats(vehicle.stats)
-	for i in names.size():
-		var row := HBoxContainer.new()
-		var name_label := label(names[i], 15)
-		name_label.custom_minimum_size = Vector2(120, 0)
-		row.add_child(name_label)
-		row.add_child(stat_bar(VehicleCatalog.rating(names[i], values[i])))
-		box.add_child(row)
-	box.add_child(label("Top speed %d km/h" % roundi(vehicle.stats.top_speed * 3.6), 13, Color(1, 1, 1, 0.55)))
+# --- garage-style pieces -----------------------------------------------------
+
+const LOGO_PATH := "res://assets/logo/Cyberwave 2199 Neon Cityscape.png"
+const LOGO_SHADER_PATH := "res://assets/logo/logo_blend.gdshader"
+
+
+## The Cyberwave logo with its black background blended away.
+static func logo(size: Vector2) -> TextureRect:
+	var rect := TextureRect.new()
+	rect.texture = load(LOGO_PATH) as Texture2D
+	rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	rect.custom_minimum_size = size
+	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var blend := ShaderMaterial.new()
+	blend.shader = load(LOGO_SHADER_PATH) as Shader
+	rect.material = blend
+	return rect
+
+
+## Logo on the left, screen title, coin pill on the right. Returns the
+## label inside the pill (set its text to the coin count).
+static func top_bar(parent: Container, title: String) -> Label:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 18)
+	parent.add_child(row)
+	row.add_child(logo(Vector2(190, 62)))
+	var heading_label := heading(title, 30, MAGENTA)
+	heading_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(heading_label)
+	var spacer := Control.new()
+	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(spacer)
+	var pill := PanelContainer.new()
+	var pill_style := box_style(Color(0.06, 0.03, 0.1, 0.95), GOLD, 0, 2)
+	pill_style.set_corner_radius_all(20)
+	pill_style.content_margin_left = 14
+	pill_style.content_margin_right = 18
+	pill_style.content_margin_top = 6
+	pill_style.content_margin_bottom = 6
+	pill.add_theme_stylebox_override("panel", pill_style)
+	pill.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(pill)
+	var inner := HBoxContainer.new()
+	inner.add_theme_constant_override("separation", 8)
+	pill.add_child(inner)
+	inner.add_child(CoinIcon.new(22.0))
+	var coins := stat("", 22, GOLD)
+	inner.add_child(coins)
+	return coins
+
+
+## A left-hand list entry (garage categories): magenta-filled when selected,
+## dark with a faint outline otherwise. Call again to change the look.
+static func style_list_tab(b: Button, selected: bool) -> void:
+	for state in ["normal", "hover", "pressed", "focus", "disabled"]:
+		var style := StyleBoxFlat.new()
+		style.set_corner_radius_all(4)
+		style.content_margin_left = 18
+		style.content_margin_right = 10
+		style.content_margin_top = 6
+		style.content_margin_bottom = 6
+		if selected:
+			style.bg_color = Color(MAGENTA.darkened(0.45), 0.95) if state != "hover" else Color(MAGENTA.darkened(0.3), 0.95)
+			style.border_color = MAGENTA
+			style.set_border_width_all(2)
+			style.shadow_color = Color(MAGENTA, 0.35)
+			style.shadow_size = 6
+		else:
+			style.bg_color = Color(0.06, 0.03, 0.12, 0.9) if state != "hover" else Color(0.12, 0.05, 0.22, 0.95)
+			style.border_color = MAGENTA if state in ["focus", "hover"] else Color(1, 1, 1, 0.18)
+			style.set_border_width_all(2 if state == "focus" else 1)
+		if state == "focus":
+			style.border_color = Color.WHITE if selected else MAGENTA
+		b.add_theme_stylebox_override(state, style)
+	b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	b.add_theme_color_override("font_color", Color.WHITE)
+	b.add_theme_color_override("font_hover_color", Color.WHITE)
+	b.add_theme_color_override("font_focus_color", Color.WHITE)
+
+
+## Small row button in the item list. kind: "buy" (gold), "equip",
+## "equipped" (cyan, disabled look) or "plain".
+static func row_action(text: String, kind: String, on_pressed: Callable) -> Button:
+	var b := Button.new()
+	b.text = text
+	b.custom_minimum_size = Vector2(124, 34)
+	b.add_theme_font_size_override("font_size", 16)
+	var font := bold_font()
+	if font != null:
+		b.add_theme_font_override("font", font)
+	var accent: Color = {"buy": GOLD, "equip": MAGENTA, "equipped": CYAN}.get(kind, Color(1, 1, 1, 0.3))
+	for state in ["normal", "hover", "pressed", "focus", "disabled"]:
+		var style := StyleBoxFlat.new()
+		style.set_corner_radius_all(4)
+		style.set_content_margin_all(4)
+		style.bg_color = Color(0.07, 0.04, 0.12, 0.95) if state != "hover" else Color(0.14, 0.07, 0.24, 0.95)
+		if kind == "equipped":
+			style.bg_color = Color(CYAN, 0.12)
+		style.border_color = accent if state != "normal" or kind == "equipped" else Color(accent, 0.55)
+		if kind == "buy" and state == "disabled":
+			style.border_color = Color(1, 1, 1, 0.15)
+		style.set_border_width_all(2)
+		if state == "focus":
+			style.border_color = Color.WHITE
+			style.shadow_color = Color(accent, 0.45)
+			style.shadow_size = 5
+		b.add_theme_stylebox_override(state, style)
+	b.add_theme_color_override("font_color", Color.WHITE)
+	b.add_theme_color_override("font_disabled_color", CYAN if kind == "equipped" else Color(1, 1, 1, 0.35))
+	if kind == "buy":
+		b.icon = coin_texture()
+		b.expand_icon = false
+	b.pressed.connect(on_pressed)
+	return b
+
+
+static var _coin_texture: Texture2D
+
+
+## A small gold coin as a texture (for button icons).
+static func coin_texture() -> Texture2D:
+	if _coin_texture == null:
+		var n := 18
+		var img := Image.create(n, n, false, Image.FORMAT_RGBA8)
+		var c := Vector2(n, n) * 0.5
+		var gold := Color(1.0, 0.8, 0.2)
+		for y in n:
+			for x in n:
+				var d := Vector2(x + 0.5, y + 0.5).distance_to(c)
+				var col := Color(0, 0, 0, 0)
+				if d < c.x:
+					col = gold.darkened(0.35)
+				if d < c.x - 1.5:
+					col = gold
+				if absf(d - c.x * 0.5) < 0.8:
+					col = gold.darkened(0.3)
+				img.set_pixel(x, y, col)
+		_coin_texture = ImageTexture.create_from_image(img)
+	return _coin_texture
+
+
+## The garage's big right-hand panel: dark purple fill, magenta-violet edge.
+static func section_panel(padding: int = 14) -> PanelContainer:
+	var p := PanelContainer.new()
+	var style := box_style(Color(0.035, 0.018, 0.08, 0.94), Color(0.6, 0.3, 0.9, 0.55), padding, 1)
+	style.set_corner_radius_all(8)
+	p.add_theme_stylebox_override("panel", style)
+	return p
+
+
+## Small line icons drawn into an image (fonts lack these glyphs):
+## "check" (a tick) or "info" (a ringed i).
+static func icon_texture(kind: String, size: int, color: Color) -> Texture2D:
+	var img := Image.create(size, size, false, Image.FORMAT_RGBA8)
+	var s := float(size)
+	var c := Vector2(s, s) * 0.5
+	var w := maxf(s * 0.09, 1.2)
+	for y in size:
+		for x in size:
+			var p := Vector2(x + 0.5, y + 0.5)
+			var d := INF
+			match kind:
+				"check":
+					d = minf(_segment_distance(p, Vector2(0.15, 0.52) * s, Vector2(0.4, 0.78) * s),
+							_segment_distance(p, Vector2(0.4, 0.78) * s, Vector2(0.88, 0.22) * s))
+				"info":
+					d = absf(p.distance_to(c) - (s * 0.5 - w))
+					d = minf(d, _segment_distance(p, Vector2(0.5, 0.45) * s, Vector2(0.5, 0.74) * s))
+					d = minf(d, p.distance_to(Vector2(0.5, 0.29) * s) - w * 0.4)
+			var a := clampf(w * 0.5 + 0.5 - d, 0.0, 1.0)
+			img.set_pixel(x, y, Color(color, color.a * a))
+	return ImageTexture.create_from_image(img)
+
+
+static func _segment_distance(p: Vector2, a: Vector2, b: Vector2) -> float:
+	var ab := b - a
+	var t := clampf((p - a).dot(ab) / ab.length_squared(), 0.0, 1.0)
+	return p.distance_to(a + ab * t)

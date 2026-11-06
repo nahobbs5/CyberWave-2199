@@ -98,6 +98,9 @@ signal checkpoint_crossed(index: int, body: Node3D)
 ## 0 turns them off.
 @export var corner_sign_radius: float = 140.0
 @export var corner_sign_color: Color = Color(1.0, 0.15, 0.8)
+## Board width and its gap from the barrier (narrow boards for tunnels).
+@export var corner_sign_width: float = 4.0
+@export var corner_sign_gap: float = 1.2
 ## Optional Poly Haven texture set names (assets/textures/polyhaven/<name>/)
 ## for the road, the barrier walls and the ground. Tinted by the colours above.
 @export var road_texture: String = ""
@@ -418,7 +421,6 @@ func _build_barriers() -> void:
 	var physics_material := PhysicsMaterial.new()
 	physics_material.friction = 0.1
 	body.physics_material_override = physics_material
-	_add_generated(body, "Barriers")
 
 	var walls: Array[Transform3D] = []
 	var lengths: Array[float] = []
@@ -471,6 +473,9 @@ func _build_barriers() -> void:
 	var right_strip := _multimesh(strip_mesh, _material(neon_right_color, neon_energy), rx, right_lengths)
 	right_strip.name = "NeonRight"
 	body.add_child(right_strip)
+	# Added last: adding shapes to a body already in the tree rebuilds its
+	# physics shape every time (seconds for a whole lap).
+	_add_generated(body, "Barriers")
 
 
 func _add_wall(body: StaticBody3D, p0: Vector3, p1: Vector3, walls: Array[Transform3D], lengths: Array[float],
@@ -750,14 +755,14 @@ func _build_corner_signs() -> void:
 		var mid := (i + j) / 2
 		for k in [-1, 0, 1]:
 			var d := clampf((mid + k * 3) * step, i * step, j * step)
-			var sign_xf := get_safe_transform(d, outside * (road_width * 0.5 + barrier_thickness + 1.2), 0.0)
+			var sign_xf := get_safe_transform(d, outside * (road_width * 0.5 + barrier_thickness + corner_sign_gap), 0.0)
 			sign_xf.basis = sign_xf.basis.rotated(Vector3.UP, PI) # face the oncoming cars
 			var board := Node3D.new()
 			board.transform = sign_xf
 			holder.add_child(board)
 			var panel := MeshInstance3D.new()
 			var panel_mesh := BoxMesh.new()
-			panel_mesh.size = Vector3(4.0, 1.6, 0.2)
+			panel_mesh.size = Vector3(corner_sign_width, 1.6, 0.2)
 			panel.mesh = panel_mesh
 			panel.material_override = board_mat
 			panel.position = Vector3(0, 1.6, 0)
