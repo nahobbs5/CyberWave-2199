@@ -9,5 +9,4 @@ display_name = "World Cup"
 emblem = "globe"
 track_names = PackedStringArray("Hoia Baciu Run", "Catacombs Descent", "Arashiyama Circuit")
 locations = PackedStringArray("Romania", "Paris, France", "Kyoto, Japan")
-track_scenes = PackedStringArray("res://scenes/tracks/hoia_baciu.tscn", "res://scenes/tracks/catacombs_descent.tscn", "res://scenes/tracks/test_circuit.tscn")
-locked = true
+track_scenes = PackedStringArray("res://scenes/tracks/hoia_baciu.tscn", "res://scenes/tracks/catacombs_descent.tscn", "res://scenes/tracks/arashiyama_circuit.tscn")

@@ -5,7 +5,9 @@ extends Node3D
 ## the car. Built in code; RaceManager drives it through update().
 
 const AHEAD := 25.0
-const HEIGHT := 6.0
+const HEIGHT := 7.5
+## Overall size of the sign (the board is built at 1x).
+const SIGN_SCALE := 1.5
 const BOARD_SIZE := Vector2(10.0, 3.6)
 const FRAME := 0.25
 const POP_TIME := 0.2
@@ -68,7 +70,7 @@ func update(track: TrackCircuit, car: Node3D, active: bool, delta: float) -> voi
 	away.y = 0.0
 	var facing := Basis.looking_at(away.normalized(), Vector3.UP) if away.length() > 0.1 else global_basis.orthonormalized()
 	var s := ease(_amount, -2.0) # quick pop with a soft finish
-	global_transform = Transform3D(facing.scaled(Vector3.ONE * maxf(s, 0.01)), target)
+	global_transform = Transform3D(facing.scaled(Vector3.ONE * maxf(s, 0.01) * SIGN_SCALE), target)
 	var pulse := 0.5 + 0.5 * sin(_time * TAU * PULSE_HZ)
 	_frame_mat.emission_energy_multiplier = lerpf(1.5, 6.0, pulse)
 	_title.modulate = UIStyle.DANGER.lerp(Color(1.0, 0.6, 0.6), pulse * 0.5)

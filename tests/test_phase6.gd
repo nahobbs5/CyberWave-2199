@@ -14,6 +14,7 @@ const SIX_FLAGS := "res://scenes/tracks/six_flags_new_orleans.tscn"
 const STACKS := "res://scenes/tracks/the_stacks.tscn"
 const HOIA := "res://scenes/tracks/hoia_baciu.tscn"
 const CATACOMBS := "res://scenes/tracks/catacombs_descent.tscn"
+const ARASHIYAMA := "res://scenes/tracks/arashiyama_circuit.tscn"
 
 var _passed: int = 0
 var _failed: int = 0
@@ -38,8 +39,10 @@ func _run_all() -> void:
 	await _test_layout(STACKS, "The Stacks", 2700.0, 2950.0, 5, 80.0)
 	await _test_layout(HOIA, "Hoia Baciu Run", 3100.0, 3300.0, 6, 80.0)
 	await _test_layout(CATACOMBS, "Catacombs Descent", 2700.0, 2950.0, 7, 150.0)
+	await _test_layout(ARASHIYAMA, "Arashiyama Circuit", 3000.0, 3250.0, 7, 120.0)
 	_test_forest()
 	_test_catacombs()
+	_test_arashiyama()
 	await _test_build_times()
 	await _run("features on Vegas", _test_features, _vegas_config(), false)
 	await _run("item boxes on ramps and boosters (The Stacks)", _test_item_boxes, _config(STACKS, "The Stacks"), false)
@@ -47,7 +50,7 @@ func _run_all() -> void:
 	await _run("shortcut: recovery and positions", _test_shortcut_recovery, _vegas_config(), false)
 	_test_menus_and_gp()
 	for track in [[VEGAS, "Vegas Overdrive"], [SIX_FLAGS, "Six Flags New Orleans"], [STACKS, "The Stacks"], [HOIA, "Hoia Baciu Run"],
-			[CATACOMBS, "Catacombs Descent"]]:
+			[CATACOMBS, "Catacombs Descent"], [ARASHIYAMA, "Arashiyama Circuit"]]:
 		var forced := _config(track[0], track[1])
 		forced.total_laps = 1
 		await _run("%s: everyone takes the shortcut (1 lap)" % track[1], _test_forced_shortcut, forced, true)
@@ -414,14 +417,14 @@ func _test_menus_and_gp() -> void:
 	_check(config.track_name == "The Stacks" and config.track_scene.resource_path == STACKS,
 			"American Cup race 3 runs on The Stacks")
 	var world := load("res://resources/grand_prix/world_circuit.tres") as GrandPrixData
-	_check(world.locked and not gp.locked, "World Circuit is locked (coming soon); American is playable")
+	_check(not world.locked and not gp.locked, "both cups are playable")
 
 
 ## Each track's scenery builds quickly (headless, no rendering).
 func _test_build_times() -> void:
 	_current = "scenery build times"
 	print("- scenery build times")
-	for path in [VEGAS, SIX_FLAGS, STACKS, HOIA, CATACOMBS]:
+	for path in [VEGAS, SIX_FLAGS, STACKS, HOIA, CATACOMBS, ARASHIYAMA]:
 		var t0 := Time.get_ticks_msec()
 		var track := (load(path) as PackedScene).instantiate() as TrackCircuit
 		root.add_child(track)
@@ -439,15 +442,15 @@ func _test_forest() -> void:
 	print("- Hoia Baciu forest")
 	_check(TrackCatalog.scene_path("Hoia Baciu Run") == HOIA and TrackCatalog.music("Hoia Baciu Run") != "", "Hoia is in the track list with music")
 	var world := load("res://resources/grand_prix/world_circuit.tres") as GrandPrixData
-	_check(world.track_scenes[0] == HOIA and world.locked, "World Circuit race 1 is Hoia; the championship stays locked")
-	_check(not world.is_open(true) and world.is_open(false), "World Cup: locked for Grand Prix, open in Versus")
-	_check(world.is_track_built(0) and world.is_track_built(1) and not world.is_track_built(2), "Hoia and the Catacombs are built")
+	_check(world.track_scenes[0] == HOIA, "World Cup race 1 is Hoia")
+	_check(world.is_open(true) and world.is_open(false), "World Cup: open for Grand Prix and Versus")
+	_check(world.is_track_built(0) and world.is_track_built(1) and world.is_track_built(2), "all three World Cup tracks are built")
 	GameSession.cup_path = GrandPrixData.CUPS[1]
 	GameSession.setup_mode = RaceConfig.Mode.VERSUS
 	var select := (load("res://scenes/menu/track_select.tscn") as PackedScene).instantiate() as TrackSelect
 	root.add_child(select)
-	_check(select.cup == world and not select.cards[0].disabled and not select.cards[1].disabled and select.cards[2].disabled,
-			"Versus track select: Hoia and the Catacombs raceable, Arashiyama coming soon")
+	_check(select.cup == world and not select.cards[0].disabled and not select.cards[1].disabled and not select.cards[2].disabled,
+			"Versus track select: all three World Cup tracks raceable")
 	select.free()
 	var track := (load(HOIA) as PackedScene).instantiate() as TrackCircuit
 	root.add_child(track)
@@ -500,17 +503,14 @@ func _test_catacombs() -> void:
 	var torches := track.find_children("*", "FlickerLight", true, false).filter(func(l: Node) -> bool: return (l as FlickerLight).flame)
 	_check(torches.size() > 120, "torch-lit (%d flames)" % torches.size())
 	_check(track.find_children("*", "SpotLight3D", true, false).size() >= 5, "light shafts through street grates")
-	var chunks := track.find_children("Skulls_*", "MultiMeshInstance3D", true, false)
-	var total := 0
+	# Positions come from the scenery: headless runs don't keep MultiMesh transforms.
+	var total := scenery.skull_origins.size()
 	var on_road := 0
-	for node in chunks:
-		var mm := (node as MultiMeshInstance3D).multimesh
-		total += mm.instance_count
-		for i in mm.instance_count:
-			var p := (node as Node3D).position + mm.get_instance_transform(i).origin
-			if track.get_lateral_distance(track.to_global(p)) < track.road_width * 0.5 + track.barrier_thickness:
-				on_road += 1
-	_check(total > 5000, "skull-lined walls (%d skulls)" % total)
+	for p in scenery.skull_origins:
+		if track.get_lateral_distance(track.to_global(p)) < track.road_width * 0.5 + track.barrier_thickness:
+			on_road += 1
+	var chunks := track.find_children("Skulls_*", "MultiMeshInstance3D", true, false)
+	_check(total > 5000 and chunks.size() > 10, "skull-lined walls (%d skulls in %d chunks)" % [total, chunks.size()])
 	_check(on_road == 0, "no skull sits on a road (%d)" % on_road)
 	var water := track.find_children("*", "TrackFeature", false, false).filter(
 			func(f: Node) -> bool: return (f as TrackFeature).kind == TrackFeature.Kind.WATER)
@@ -570,3 +570,61 @@ func _test_full_race(race: RaceManager) -> void:
 	_check(winner.finish_time > 180.0 and winner.finish_time < 285.0, "a 3-4 minute race: %s" % RaceProgress.format_time(winner.finish_time))
 	var map := race.race_hud.minimap
 	_check(map.shortcut_count() == 1, "the minimap draws the shortcut")
+
+
+## Arashiyama Circuit: World Cup race 3. A bamboo grove whose canopy closes
+## over most of the lap (open at the start plaza, the bridge and the temple
+## garden), thousands of culms that keep off both roads, the bridge and
+## garden open to the sky, and its features on the right routes.
+func _test_arashiyama() -> void:
+	_current = "Arashiyama Circuit"
+	print("- Arashiyama Circuit")
+	_check(TrackCatalog.scene_path("Arashiyama Circuit") == ARASHIYAMA and TrackCatalog.music("Arashiyama Circuit") != "",
+			"Arashiyama is in the track list with music")
+	var world := load("res://resources/grand_prix/world_circuit.tres") as GrandPrixData
+	_check(world.track_scenes[2] == ARASHIYAMA and world.track_names[2] == "Arashiyama Circuit", "World Cup race 3 is Arashiyama")
+	var track := (load(ARASHIYAMA) as PackedScene).instantiate() as TrackCircuit
+	root.add_child(track)
+	var scenery := track.get_node("Scenery") as ArashiyamaScenery
+	var covered := 0
+	var samples := 0
+	var d := 0.0
+	while d < track.length:
+		samples += 1
+		if scenery.is_covered(track.to_local(track.get_safe_transform(d, 0.0, 0.0).origin)):
+			covered += 1
+		d += 3.0
+	var fraction := float(covered) / samples
+	_check(fraction > 0.68 and fraction < 0.9, "the canopy closes over most of the lap (%d%%)" % roundi(fraction * 100.0))
+	var bridge := track.curve.get_closest_point(Vector3(563, 0, 172))
+	_check(not scenery.is_covered(bridge), "open sky over the bridge")
+	var garden := track.curve.get_closest_point(Vector3(-130, 0, 390))
+	_check(not scenery.is_covered(garden) and ArashiyamaScenery.GARDEN.has_point(Vector2(garden.x, garden.z)),
+			"open sky over the temple garden")
+	var sc := track.shortcuts[0]
+	var sc_covered := 0
+	d = 0.0
+	while d < sc.length:
+		if scenery.is_covered(sc.point_at(d)):
+			sc_covered += 1
+		d += 3.0
+	_check(sc_covered > int(sc.length / 3.0 * 0.6), "the shrine path runs under bamboo too")
+	var chunks := track.find_children("Bamboo_*", "MultiMeshInstance3D", true, false)
+	var total := 0
+	var on_road := 0
+	for node in chunks:
+		var mm := (node as MultiMeshInstance3D).multimesh
+		total += mm.instance_count
+		for i in mm.instance_count:
+			var p := (node as Node3D).position + mm.get_instance_transform(i).origin
+			if track.get_lateral_distance(track.to_global(p)) < track.road_width * 0.5 + track.barrier_thickness:
+				on_road += 1
+	_check(total > 12000 and chunks.size() < 400, "a grove of instanced bamboo (%d culms in %d chunks)" % [total, chunks.size()])
+	_check(on_road == 0, "no culm stands on a road (%d)" % on_road)
+	var features := track.find_children("*", "TrackFeature", false, false)
+	var on_route := func(kind: TrackFeature.Kind, shortcut: String) -> bool:
+		return features.any(func(f: Node) -> bool: return (f as TrackFeature).kind == kind and (f as TrackFeature).on_shortcut == shortcut)
+	_check(on_route.call(TrackFeature.Kind.WATER, "") and on_route.call(TrackFeature.Kind.BREAKABLE, sc.name),
+			"standing water on the main road; fallen bamboo blocks the shrine path")
+	track.free()
+

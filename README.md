@@ -86,10 +86,10 @@ The layout is the `control_points` list on `scenes/tracks/test_circuit.tscn`, sa
 
 ### Game modes
 
-**Cups (Mario Kart style).** Grand Prix and Versus start on a **cup screen**: one big card per cup with its trophy (drawn in code: the **American Cup** has a map of the USA on it, the **World Cup** a globe), its three races and, in Grand Prix, your best finish. Grand Prix then goes to the setup screen and races the whole cup; Versus first shows the cup's **tracks** as cards (each with its outline, location and your best time) and you pick one. Back (or Esc / B) steps back one screen. The **American Cup is fully playable**: Vegas Overdrive, then Six Flags New Orleans, then The Stacks. The **World Cup** is greyed out as "coming soon" until its tracks are built (`locked = true` on the resource). Each cup is data (`resources/grand_prix/*.tres`, listed in `GrandPrixData.CUPS`); its `emblem` picks the trophy picture. The Test Circuit isn't in a cup: it's the Practice track.
+**Cups (Mario Kart style).** Grand Prix and Versus start on a **cup screen**: one big card per cup with its trophy (drawn in code: the **American Cup** has a map of the USA on it, the **World Cup** a globe), its three races and, in Grand Prix, your best finish. Grand Prix then goes to the setup screen and races the whole cup; Versus first shows the cup's **tracks** as cards (each with its outline, location and your best time) and you pick one. Back (or Esc / B) steps back one screen. Both cups are fully playable: the **American Cup** (Vegas Overdrive, Six Flags New Orleans, The Stacks) and the **World Cup** (Hoia Baciu Run, Catacombs Descent, Arashiyama Circuit). A cup can be greyed out as "coming soon" with `locked = true` on its resource. Each cup is data (`resources/grand_prix/*.tres`, listed in `GrandPrixData.CUPS`); its `emblem` picks the trophy picture. The Test Circuit isn't in a cup: it's the Practice track.
 
 - **Versus** (GDD §2.1): one race, you start eighth. When you finish, the results fill in as the AI cross the line. **Race again** or **Quit to mode select**.
-- **Grand Prix** (GDD §2.2): the *American Cup* (the *World Cup* is coming soon), three races of three laps each.
+- **Grand Prix** (GDD §2.2): the *American Cup* or the *World Cup*, three races of three laps each.
   - Points are 15-12-10-8-6-4-2-1. Ties are broken by most wins, then most second places, then the order in the most recent race.
   - Race 1 starts the seven rivals in slots 1–7 with you last. Each later grid is the previous race's finishing order, not the points order. Rivals keep their names, colours and personalities all season.
   - **The race result is fixed when you cross the line:** anyone still racing is classified in their current order. That way you never have to wait for the field, and the points always match what the results screen shows.
@@ -228,9 +228,10 @@ There are no control instructions on the HUD; the controls (from your current bi
 | Races on Vegas Overdrive | Heavy Racing by SPmusic (loops) | `music/spmusic-heavy-racing-151129.mp3` |
 | Races on Hoia Baciu Run | Cyberpunk Music by kulakovka (loops) | `music/kulakovka-cyberpunk-music-624631.mp3` |
 | Races on Catacombs Descent | Hard Cyberpunk by kulakovka (loops) | `music/kulakovka-hard-cyberpunk-281149.mp3` |
+| Races on Arashiyama Circuit | The Cyber Geisha by Ob-Lix (loops) | `music/ob-lix-the-cyber-geisha-world-ethnic-amp-fantasy-background-music-110365.mp3` |
 | Race start | Countdown beeps on 3 / 2 / 1 / START, one per start light | `sounds/freesound_community-short-beep-countdown-81121.mp3` |
 
-Music carries across menu screens without restarting and crossfades when the track changes (`scripts/core/music.gd`); each built track has its own race music (set in `TrackCatalog`, `scripts/track/track_catalog.gd`), which starts with the race; the test circuit and free drive have none, so the music fades out. **On the final lap** (when you start it, in races of 2+ laps, Elimination included) the race music speeds up 15%, pitch and all, over about 0.4 s; restarting or leaving the race puts it back to normal. The countdown clip has four beeps a second apart, played from the start: one beep per start light and word (3, 2, 1, START). Music plays on the Music bus and effects on the SFX bus, so the Settings sliders control each. Tracks by ikoliks / ikoliks_aj, Lilex, TheBoysBeats, SPmusic, kulakovka and freesound_community.
+Music carries across menu screens without restarting and crossfades when the track changes (`scripts/core/music.gd`); each built track has its own race music (set in `TrackCatalog`, `scripts/track/track_catalog.gd`), which starts with the race; the test circuit and free drive have none, so the music fades out. **On the final lap** (when you start it, in races of 2+ laps, Elimination included) the race music speeds up 15%, pitch and all, over about 0.4 s; restarting or leaving the race puts it back to normal. The countdown clip has four beeps a second apart, played from the start: one beep per start light and word (3, 2, 1, START). Music plays on the Music bus and effects on the SFX bus, so the Settings sliders control each. Tracks by ikoliks / ikoliks_aj, Lilex, TheBoysBeats, SPmusic, kulakovka, Ob-Lix and freesound_community.
 
 ### Tracks
 
@@ -279,6 +280,20 @@ World Cup race 2. A 2.8 km twisting race **through the quarried tunnels under Pa
 - **Flooded crypt** (shortcut): a 10 m passage under a 5.6 m vault that cuts across the waist of the lap. It's about 300 m shorter than the main road, but half of it is under water and a **fallen-rubble barricade** (smashable) blocks the half-collapsed stretch. Boost ring at the exit, three bonus coins.
 - **Atmosphere:** near-black background, low warm ambient light and dark brown fog, so the tunnels fade to black about 60 m ahead (plus volumetric fog in Forward+, which turns the grate light into visible beams).
 - Built from code: `CatacombsScenery` and the new `TunnelBuilder`, with Poly Haven old_stone_wall, large_sandstone_blocks and cobblestone_floor_08 textures and a generated bone-wall texture (colour and normal map). About 18,000 skulls are one small instanced mesh in 100 m chunks.
+
+#### Arashiyama Circuit (GDD §8.6)
+
+World Cup race 3. A 3.1 km race **through Kyoto's bamboo grove on a soft, sunny day**, built to feel like an indoor garden out of doors. Tall culms bow in from both sides until their leaves close over the road like a green ceiling (about three quarters of the lap is under the canopy). The sun comes through in slanting shafts and dapples the road through the leaves. The road is 13 m of paved stone between brushwood (shibagaki) fences with two bamboo rails, with soft green racing neon along the fence tops and vermilion chevrons. Corners are drift-friendly 35–60 m radius bends with one hairpin and short straights.
+
+- **Start plaza** (open sky): stone lanterns and white and vermilion banners along the grid, then a timber gate with a tiled roof, paper lanterns and the **ARASHIYAMA** plaque where the road enters the grove.
+- **The grove:** S-bends under the canopy, past a stacked mossy-boulder wall. Boost pad on the exit.
+- **Katsura river bridge** (open sky): a long, low wooden bridge on timber pile bents over the river, which flows into a pond inside the loop, with wooded mountains behind. Boost pad before it, crates on the deck.
+- **Hillside sweepers:** mossy retaining walls on the hill side, red, orange and green maples among the bamboo, ending in the hairpin.
+- **Rain-soaked stretch:** wet, glossy stone with puddles near the edges and standing water on the road (keep right to stay dry), then a jump over a hump of roots and an electrified puddle from a fallen lantern cable (EMP).
+- **Temple garden** (open sky, walled): white plaster walls with tiled caps around a levelled moss garden with a pond (rocks, a pine island, snow-viewing lanterns), clipped azalea mounds, maples, stone lanterns, a raked-gravel garden with moss-ringed rock groups, and the abbot's hall.
+- **Shrine path** (shortcut): a 9 m lane under the bamboo through black torii with straw ropes and paper lanterns, past a small shrine. It's about 200 m shorter, but **fallen bamboo** (smashable) blocks the entrance. Boost ring at the exit, three bonus coins.
+- **Atmosphere:** the kloofendal overcast sky, a warm sun with shadows (limited to 90 m), green-tinted ambient light, light green haze (plus volumetric fog in Forward+, which turns the sun into visible shafts).
+- Built from code: `ArashiyamaScenery` and the new `BambooBuilder` (about 17,000 culms and 3,500 leaf sprays, instanced), with Poly Haven pavement_01 (road), reed_roof_04 (fences), hinoki_planks (bridge and timber), dry_decay_leaves (ground), mossy_stone_wall and sparse_grass (moss) textures, and generated culm and leaf textures.
 
 #### Six Flags New Orleans (GDD §8.2)
 
@@ -345,6 +360,8 @@ A 3.2 km night circuit (shortened from 4.4 km after your first drive) with 20 m 
   - `TreeBuilder`: a procedural forest. A few tree meshes (lofted bark tubes plus needle clumps: crooked, pine, bare, snag) are built once, then scattered as MultiMesh instances in 200 m chunks with a visibility range (300 m past the chunk), so thousands of trees cost a few draw calls.
   - `SceneryTerrain` also takes an optional `carve` function (ravines under bridges) and can skip the flood water.
   - `TunnelBuilder`: a stone barrel vault along a stretch of the main road or a shortcut, with walls lined per side as `skulls` (ossuary), `tombs`, `pipes`, `rock` or plain `stone`, arch ribs, torches, candles and grate light shafts. Wall pieces that would stand on another road are left out at junctions, but the vault always closes over the top. Span ends get a stone face around the opening, so a low tunnel entering a tall chamber reads as an archway.
+  - `BambooBuilder`: a procedural bamboo grove. A few culm meshes (jointed six-sided stems that stand upright or bow hard toward the road, with leaf-spray cards on their upper half) plus a leaf-spray cluster are built once, with generated culm and leaf textures, then scattered as MultiMesh instances in 120 m chunks, each with its own tint. Culms and leaves cast shadows, so the sun dapples the road.
+  - `SceneryTerrain.height_at()` gives the ground height at any point, so scenery can stand on the terrain.
   - `HallBuilder`: an interior hall along a stretch of road: marble wainscot, plaster walls, pilasters, open arched window bays or bookshelf bays, a coffered painted ceiling and chandeliers. Plus a stand-alone `bookcase()`.
 - **Track look exports** also cover `neon_energy` and `edge_line_energy` (racing-edge brightness), `faded_markings`, `ground_visible`, and `road_texture` / `barrier_texture` / `ground_texture`. Geometry is merged into a few batched meshes, one per material, and it skips anything that would overlap a road. It builds in the editor too.
 - **Look:** road, edge, barrier, neon and light colours are exports on each track, and corners tighter than `corner_sign_radius` get chevron signs automatically (`corner_sign_width` and `corner_sign_gap` narrow them for tunnels).
@@ -589,7 +606,7 @@ The exit code is non-zero if anything fails. These checks do **not** judge how t
 ## Credits
 
 - **Game:** Cyberwave 2199 by Nathan Hobbs.
-- **Music:** "Cyberpunk" by ikoliks_aj (main theme), "Wings of Hope" by ikoliks (garage), "Cyber Dreams" by Lilex (The Stacks), "Race Winner" by TheBoysBeats (Six Flags New Orleans), "Heavy Racing" by SPmusic (Vegas Overdrive), "Cyberpunk Music" by kulakovka (Hoia Baciu Run), "Hard Cyberpunk" by kulakovka (Catacombs Descent).
+- **Music:** "Cyberpunk" by ikoliks_aj (main theme), "Wings of Hope" by ikoliks (garage), "Cyber Dreams" by Lilex (The Stacks), "Race Winner" by TheBoysBeats (Six Flags New Orleans), "Heavy Racing" by SPmusic (Vegas Overdrive), "Cyberpunk Music" by kulakovka (Hoia Baciu Run), "Hard Cyberpunk" by kulakovka (Catacombs Descent), "The Cyber Geisha" by Ob-Lix (Arashiyama Circuit).
 - **Sound:** short beep countdown by freesound_community.
 - **Fonts:** Oxanium and Rajdhani, SIL Open Font License 1.1 (`assets/fonts/`).
 - **Weapon icons:** from the Weapon Arsenal concept art.
@@ -597,7 +614,7 @@ The exit code is non-zero if anything fails. These checks do **not** judge how t
 
 The in-game Credits screen (`scripts/menu/credits.gd`) shows the same list.
 
-Environment textures and the track skies are from [Poly Haven](https://polyhaven.com) (CC0, public domain): asphalt_04, road_damaged, rust_coarse_01, rusty_metal_02, rusty_corrugated_iron, concrete_moss, dirty_concrete, peeling_painted_wall, wood_peeling_paint_weathered, distressed_painted_planks, brown_mud_leaves_01, bark_willow, dirty_tiles, painted_worn_brick, withered_grass, sparse_grass, marble_01, herringbone_parquet, velour_velvet, monastery_stone_floor, forest_ground_04, forest_leaves_02, pine_bark, red_sandstone_wall, mossy_rock, old_stone_wall, large_sandstone_blocks, cobblestone_floor_08, and the kloofendal_overcast_puresky, qwantani_sunset_puresky and misty_pines HDRIs. They live in `assets/textures/polyhaven/` (colour, normal and roughness at 1K) and `assets/sky/`.
+Environment textures and the track skies are from [Poly Haven](https://polyhaven.com) (CC0, public domain): asphalt_04, road_damaged, rust_coarse_01, rusty_metal_02, rusty_corrugated_iron, concrete_moss, dirty_concrete, peeling_painted_wall, wood_peeling_paint_weathered, distressed_painted_planks, brown_mud_leaves_01, bark_willow, dirty_tiles, painted_worn_brick, withered_grass, sparse_grass, marble_01, herringbone_parquet, velour_velvet, monastery_stone_floor, forest_ground_04, forest_leaves_02, pine_bark, red_sandstone_wall, mossy_rock, old_stone_wall, large_sandstone_blocks, cobblestone_floor_08, pavement_01, reed_roof_04, hinoki_planks, dry_decay_leaves, mossy_stone_wall, and the kloofendal_overcast_puresky, qwantani_sunset_puresky and misty_pines HDRIs. They live in `assets/textures/polyhaven/` (colour, normal and roughness at 1K) and `assets/sky/`.
 
 ## Status and known issues
 
@@ -621,7 +638,7 @@ The racing has **not** been played on screen yet.
 - **Vehicle balance is a first pass.** The stat spread follows each car's GDD character but hasn't been driven. Rivals now drive random cars with real stats, so a Hard rival in a fast car is quicker than one in a slow car; the field varies from series to series.
 - **Prices and payouts are first guesses** where the GDD gives none (stripes, decals, underglow, exhaust, metallic and matte finishes). At roughly 30–75 coins per race, the 1,000-coin Chrome finish takes 15+ races.
 - **Not in Phase 5:** the optional first-time tutorial (GDD §11.9, not chosen for this phase), the race presentation items in GDD §11.8 (pre-race camera sweep, position-change feedback, podium ceremony), music, and dragging to rotate the preview.
-- **Two tracks are still to build** (World Cup races 2 and 3: Catacombs Descent and Arashiyama Circuit), so the World Cup stays locked as "coming soon". Hoia Baciu Run is playable in Versus.
+- **All six tracks are built** and both cups are playable. The World Cup tracks (Hoia Baciu Run, Catacombs Descent, Arashiyama Circuit) haven't been driven by a person yet.
 - **Grand Prix classification at your finish** gives racers still on track their current position. The GDD doesn't specify this; it avoids waiting for the field.
 - **Only 6 of the GDD's 11 weapons** exist so far, plus Triple Nitro. Holo Decoy, Gravity Mine, System Glitch, Cyber Leech and Swarm Bots are Phase 6 content; the data-driven setup should make adding them straightforward.
 - **Combat balance is untested against a human:** crate odds, durations, the 22 m EMP radius and the Railgun's speed. The Railgun hits about half its shots in AI races. The AI often spend a held Firewall pre-emptively rather than saving it.

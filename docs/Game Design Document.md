@@ -1,5 +1,5 @@
 # CYBERWAVE 2199
-## Game Design Document — Version 2.3
+## Game Design Document — Version 2.4
 
 **Status:** Development Baseline  
 **Engine:** Godot 4  
@@ -87,7 +87,7 @@ Two cups, each a championship of three consecutive races. As in Mario Kart, Gran
 | 2 | Catacombs Descent | Paris, France |
 | 3 | Arashiyama Circuit | Kyoto, Japan |
 
-The American Cup is playable now that all three of its tracks are built. The World Cup is listed as "coming soon" and can't be started until its tracks exist.
+Both cups are playable now that all six tracks are built.
 
 ### Starting Grid
 
@@ -566,6 +566,17 @@ The shortcut is a low, half-flooded crypt passage across the middle of the lap. 
 A racing circuit through dense bamboo forests, mountain roads, bridges, and rain-soaked pathways.
 
 **Identity:** Technical cornering, drifting, natural scenery.
+
+Built at about 3.1 km on a soft, sunny day. It should feel like an indoor garden out of doors: tall bamboo bows in from both sides until the leaves close over the road like a green ceiling, with the sun coming through in shafts and dapples. The canopy covers about three quarters of the lap and opens only at the start plaza, the bridge and the temple garden. The 13 m road is paved stone between brushwood (shibagaki) fences with bamboo rails, with medium-radius drift corners (35–60 m), one hairpin and short straights. Landmarks in driving order:
+- an open start plaza with stone lanterns and banners;
+- a timber gate marked ARASHIYAMA into the grove's S-bends;
+- a long wooden bridge over the Katsura river, with the mountains behind;
+- hillside sweepers past mossy retaining walls and red maples;
+- a rain-soaked stretch of wet stone (standing water on the road);
+- a walled temple garden with a pond, moss, clipped shrubs, raked gravel and a temple hall;
+- the grove again to the finish.
+
+The shortcut is a narrow shrine path through black torii, about 200 m shorter, but fallen bamboo (smashable) blocks the entrance. The Bamboo Collapse special (§8.9) is still a proposal.
 
 ## 8.7 Shared Track Features
 
@@ -1173,5 +1184,6 @@ Changes after Version 1.0 should be tracked as revisions rather than silently re
 | 2.1 | 2026-11-06 | Countdown is now 3 / 2 / 1 / START with a start-light board on the gantry, one lamp per beep (§11.8). |
 | 2.2 | 2026-11-06 | Garage restyled after the reference art, with an Apply button and drag-to-rotate; race setup shares its car showcase (§11.4). |
 | 2.3 | 2026-11-06 | Catacombs Descent built at about 2.8 km: fully vaulted, torch-lit, 12 m road, flooded-crypt shortcut (§8.5). The World Cup stays locked until Arashiyama exists. |
+| 2.4 | 2026-11-06 | Arashiyama Circuit built at about 3.1 km: sunny bamboo grove whose canopy closes over most of the lap, paved stone road, river bridge, temple garden, shrine-path shortcut (§8.6). All six tracks are built, so the World Cup is unlocked (§2.2). |
 
-**End of Game Design Document — Version 2.3**
+**End of Game Design Document — Version 2.4**

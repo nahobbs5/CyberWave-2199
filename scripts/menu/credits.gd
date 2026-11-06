@@ -14,6 +14,7 @@ const SECTIONS := [
 		"\"Heavy Racing\" by SPmusic  (Vegas Overdrive)",
 		"\"Cyberpunk Music\" by kulakovka  (Hoia Baciu Run)",
 		"\"Hard Cyberpunk\" by kulakovka  (Catacombs Descent)",
+		"\"The Cyber Geisha\" by Ob-Lix  (Arashiyama Circuit)",
 	]],
 	["SOUND", ["Short beep countdown by freesound_community"]],
 	["FONTS", [
@@ -21,7 +22,7 @@ const SECTIONS := [
 	]],
 	["TEXTURES AND SKY", [
 		"Poly Haven (polyhaven.com), CC0: asphalt, concrete, rust, metal, brick, wood,",
-		"grass, mud and tile textures, and the kloofendal overcast sky",
+		"grass, mud, stone, paving, reed and tile textures, and the kloofendal overcast sky",
 	]],
 	["ART", ["Weapon icons from the Weapon Arsenal concept art"]],
 	["ENGINE", ["Made with Godot Engine (godotengine.org), MIT License"]],

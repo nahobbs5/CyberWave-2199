@@ -322,10 +322,11 @@ func _test_mode_select() -> void:
 	var cups := (load("res://scenes/menu/cup_select.tscn") as PackedScene).instantiate() as CupSelect
 	root.add_child(cups)
 	await process_frame
-	_check(cups.cards.size() == 2 and not cups.cards[0].disabled and cups.cards[1].disabled,
-			"American Cup pickable, World Cup locked (coming soon)")
+	_check(cups.cards.size() == 2 and not cups.cards[0].disabled and not cups.cards[1].disabled,
+			"both cups pickable")
 	cups.pick(1)
-	_check(GameSession.cup_path == "", "a locked cup can't be picked")
+	_check(GameSession.cup_path == GrandPrixData.CUPS[1], "picking the World Cup")
+	GameSession.cup_path = ""
 	cups.pick(0)
 	_check(GameSession.cup_path == GrandPrixData.CUPS[0], "picking the American Cup")
 	cups.queue_free()

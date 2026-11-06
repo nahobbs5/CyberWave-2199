@@ -13,12 +13,7 @@ extends RefCounted
 static func build(scenery: TrackScenery, bounds: Rect2, cell: float = 7.0, amplitude: float = 2.2,
 		water_level: float = -0.12, grass_key: String = "terrain_grass", mud_key: String = "terrain_mud",
 		water_key: String = "terrain_water", seed_value: int = 1, carve: Callable = Callable()) -> void:
-	var track := scenery.track
-	var noise := FastNoiseLite.new()
-	noise.seed = seed_value
-	noise.frequency = 0.012
-	noise.fractal_octaves = 3
-	var bank := track.road_width * 0.5 + track.barrier_thickness + 5.0
+	var noise := make_noise(seed_value)
 	var nx := int(bounds.size.x / cell) + 1
 	var nz := int(bounds.size.y / cell) + 1
 	var heights := PackedFloat32Array()
@@ -27,14 +22,7 @@ static func build(scenery: TrackScenery, bounds: Rect2, cell: float = 7.0, ampli
 		for ix in nx:
 			var x := bounds.position.x + ix * cell
 			var z := bounds.position.y + iz * cell
-			var h := noise.get_noise_2d(x, z) * amplitude + 0.35
-			# Dry, level banks along the roads (just below the road surface).
-			var off_road := scenery.edge_distance(Vector3(x, 0, z)) - (bank - track.road_width * 0.5)
-			var t := clampf(off_road / 14.0, 0.0, 1.0)
-			var final_h := lerpf(-0.04, h, t * t * (3.0 - 2.0 * t))
-			if carve.is_valid():
-				final_h += float(carve.call(x, z))
-			heights[iz * nx + ix] = final_h
+			heights[iz * nx + ix] = height_at(scenery, noise, amplitude, x, z, carve)
 	# One grass and one mud mesh per chunk, so off-screen terrain is culled.
 	var tools := {}
 	for iz in nz - 1:
@@ -63,6 +51,31 @@ static func build(scenery: TrackScenery, bounds: Rect2, cell: float = 7.0, ampli
 	water.size = bounds.size
 	var wi := scenery.add_mesh_instance(water, scenery.get_material(water_key), "FloodWater")
 	wi.position = Vector3(bounds.get_center().x, water_level, bounds.get_center().y)
+
+
+## The noise build() uses for a seed (pass it to height_at()).
+static func make_noise(seed_value: int) -> FastNoiseLite:
+	var noise := FastNoiseLite.new()
+	noise.seed = seed_value
+	noise.frequency = 0.012
+	noise.fractal_octaves = 3
+	return noise
+
+
+## Ground height at (x, z), as build() makes it: noise, levelled to just
+## below the road near every road, plus the carve. Use it to stand scenery
+## on the terrain.
+static func height_at(scenery: TrackScenery, noise: FastNoiseLite, amplitude: float, x: float, z: float,
+		carve: Callable = Callable()) -> float:
+	var track := scenery.track
+	var h := noise.get_noise_2d(x, z) * amplitude + 0.35
+	# Dry, level banks along the roads (just below the road surface).
+	var off_road := scenery.edge_distance(Vector3(x, 0, z)) - (track.barrier_thickness + 5.0)
+	var t := clampf(off_road / 14.0, 0.0, 1.0)
+	var final_h := lerpf(-0.04, h, t * t * (3.0 - 2.0 * t))
+	if carve.is_valid():
+		final_h += float(carve.call(x, z))
+	return final_h
 
 
 static func _tri(st: SurfaceTool, a: Vector3, b: Vector3, c: Vector3) -> void:

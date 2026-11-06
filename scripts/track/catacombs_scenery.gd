@@ -34,12 +34,16 @@ var _skulls: Dictionary = {}
 var _skull_mesh: ArrayMesh
 var _roof: Dictionary = {}
 var torches: int = 0
+## Every skull's position (track-local), kept for tests: headless runs don't
+## store MultiMesh transforms, so they can't be read back from the chunks.
+var skull_origins: PackedVector3Array = PackedVector3Array()
 
 
 func build() -> void:
 	_setup_materials()
 	_skulls.clear()
 	_roof.clear()
+	skull_origins.clear()
 	torches = 0
 	var h := track.road_width * 0.5
 	var main := TunnelBuilder.new(self)
@@ -246,6 +250,7 @@ func _commit_skulls() -> void:
 		mm.instance_count = list.size()
 		for i in list.size():
 			mm.set_instance_transform(i, (list[i] as Transform3D).translated(-centre))
+			skull_origins.append((list[i] as Transform3D).origin)
 		var mmi := MultiMeshInstance3D.new()
 		mmi.name = "Skulls_%d_%d" % [key.x, key.y]
 		mmi.multimesh = mm
