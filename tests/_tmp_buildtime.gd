@@ -2,7 +2,7 @@ extends SceneTree
 func _initialize() -> void:
 	_go.call_deferred()
 func _go() -> void:
-	for path in ["res://scenes/tracks/the_stacks.tscn", "res://scenes/tracks/six_flags_new_orleans.tscn", "res://scenes/tracks/vegas_overdrive.tscn"]:
+	for path in ["res://scenes/tracks/the_stacks.tscn"]:
 		var t0 := Time.get_ticks_msec()
 		var track := (load(path) as PackedScene).instantiate() as TrackCircuit
 		root.add_child(track)

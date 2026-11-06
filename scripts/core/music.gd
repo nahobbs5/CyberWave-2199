@@ -10,10 +10,14 @@ const GARAGE := "res://music/ikoliks-wings-of-hope-no-copyright-music-background
 
 const FADE := 0.6
 const SILENT_DB := -40.0
+## Playback speed on a race's final lap (pitch rises with it, arcade style).
+const FINAL_LAP_SPEED := 1.15
+const SPEED_RAMP := 0.4
 
 static var _player: AudioStreamPlayer
 static var _path: String = ""
 static var _tween: Tween
+static var _speed_tween: Tween
 
 
 static func play(tree: SceneTree, path: String) -> void:
@@ -28,6 +32,7 @@ static func play(tree: SceneTree, path: String) -> void:
 	if player.playing:
 		_tween.tween_property(player, "volume_db", SILENT_DB, FADE * 0.5)
 	_tween.tween_callback(func() -> void:
+		_reset_speed(player)
 		player.stream = stream
 		player.volume_db = SILENT_DB
 		player.play())
@@ -41,12 +46,39 @@ static func stop(tree: SceneTree) -> void:
 	var player := _ensure_player(tree)
 	_restart_tween(tree)
 	_tween.tween_property(player, "volume_db", SILENT_DB, FADE)
-	_tween.tween_callback(player.stop)
+	_tween.tween_callback(func() -> void:
+		player.stop()
+		_reset_speed(player))
 
 
 ## Path of the track playing (or fading in), "" when stopped.
 static func current_path() -> String:
 	return _path
+
+
+## Ramps the playback speed (and pitch) of the current track, e.g.
+## FINAL_LAP_SPEED on a race's last lap. 1.0 is normal.
+static func set_speed(tree: SceneTree, scale: float) -> void:
+	var player := get_player()
+	if player == null:
+		return
+	if _speed_tween != null and _speed_tween.is_valid():
+		_speed_tween.kill()
+	_speed_tween = tree.create_tween()
+	_speed_tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	_speed_tween.tween_property(player, "pitch_scale", scale, SPEED_RAMP)
+
+
+## Current playback speed (1.0 when no music player exists).
+static func get_speed() -> float:
+	var player := get_player()
+	return player.pitch_scale if player != null else 1.0
+
+
+static func _reset_speed(player: AudioStreamPlayer) -> void:
+	if _speed_tween != null and _speed_tween.is_valid():
+		_speed_tween.kill()
+	player.pitch_scale = 1.0
 
 
 static func get_player() -> AudioStreamPlayer:

@@ -58,6 +58,7 @@ func _run_all() -> void:
 	race.queue_free()
 	await process_frame
 
+	await _test_final_lap_music()
 	print("\n%d checks passed, %d failed" % [_passed, _failed])
 	quit(1 if _failed > 0 else 0)
 
@@ -68,6 +69,42 @@ func _check(condition: bool, message: String) -> void:
 	else:
 		_failed += 1
 		printerr("  FAIL %s" % message)
+
+
+## Final lap: the race music plays 15% faster (pitch up); not in 1-lap races.
+func _test_final_lap_music() -> void:
+	print("- final-lap music")
+	for laps in [3, 1]:
+		var config := RaceConfig.new()
+		config.difficulty = load("res://resources/ai/normal.tres") as AIDifficulty
+		config.track_name = "Vegas Overdrive"
+		config.track_scene = TrackCatalog.scene(config.track_name)
+		config.total_laps = laps
+		var race := (load(RACE_SCENE) as PackedScene).instantiate() as RaceManager
+		race.config = config
+		root.add_child(race)
+		race.camera.save_preference = false
+		await _seconds(1.0)
+		var music := Music.current_path()
+		_check(music == TrackCatalog.music("Vegas Overdrive") and Music.get_speed() == 1.0, "%d-lap race: track music at normal speed" % laps)
+		# Drive the player through every gate by hand, lap by lap.
+		race.state = RaceManager.State.RACING
+		var car := race.player.vehicle
+		var gates := race.track.checkpoint_count
+		race._on_checkpoint_crossed(0, car) # start
+		for lap in laps:
+			for g in range(1, gates):
+				race._on_checkpoint_crossed(g, car)
+			race._on_checkpoint_crossed(0, car)
+			await _seconds(0.6)
+			var expected := Music.FINAL_LAP_SPEED if laps > 1 and lap == laps - 2 else 1.0
+			if lap < laps - 1 or laps == 1:
+				_check(is_equal_approx(Music.get_speed(), expected),
+						"%d-lap race after lap %d: speed %.2f (want %.2f)" % [laps, lap + 1, Music.get_speed(), expected])
+		race.queue_free()
+		await process_frame
+	await _open(MAIN_MENU)
+	_check(Music.current_path() == Music.MENU and Music.get_speed() == 1.0, "back in the menus the music is at normal speed")
 
 
 ## Opens a menu scene the way a scene change would, then lets fades finish.

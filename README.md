@@ -30,6 +30,7 @@ Running `scenes/race/race.tscn` directly (**F6**) still starts a Versus race usi
 | Reset vehicle | R | Y / Triangle |
 | Select weapon slot 1 / 2 | 1 / 2 | D-pad Left / Right |
 | Use selected weapon | Space | A / Cross |
+| Trick (in the air off a ramp) | E | X / Square |
 | Pause menu | Esc | Start / Options |
 | Menu buttons | Enter, mouse, arrow keys | A / Cross, D-pad |
 
@@ -105,7 +106,7 @@ The layout is the `control_points` list on `scenes/tracks/test_circuit.tscn`, sa
 
 ### Menus
 
-- **Main menu** (GDD §11.2): Continue Grand Prix (only when one is saved), Grand Prix, Versus, Practice, Garage, Settings, Credits, Exit.
+- **Main menu** (GDD §11.2): the title, then Continue Grand Prix (only when one is saved), Grand Prix, Versus, Practice, Garage, Settings, Credits, Exit.
 - **Credits:** the game, music, sound, fonts, textures and sky, weapon art and engine, with a Back button (Esc / B also goes back).
 - **Race setup** (GDD §11.3): track (only the test circuit for now) or championship, vehicle picker with a rotating preview of your car (paint, cosmetics and plate), stats, AI difficulty, laps (Versus), weapons on/off, Start race. It remembers your last choices and shows your personal best (Versus) or best championship finish (Grand Prix).
   - **A Grand Prix keeps the car you started it with** for all three races (the GDD saves the player vehicle with the championship).
@@ -188,6 +189,10 @@ The GDD prices basic paint (100), plate frames (250), wheels (500) and premium f
 - **Grand Prix** (`user://grand_prix_save.json`): as in Phase 4, now also written atomically, with the coins already awarded.
 - To start over, delete those files (on Windows they're in `%APPDATA%\Godot\app_userdata\Cyberwave 2199\`).
 
+### Ramp tricks
+
+Going over a **jump ramp** (three on Six Flags New Orleans, one in The Stacks) opens a trick window. Press **Trick** (E / gamepad X) while you're in the air, or just as you leave the lip, and the car spins a full turn; land it and you get a short cyan **Trick** boost (+6 m/s for 1 s, a little weaker than a Cyan drift boost). The spin is visual only (body and wheels), so your heading, physics and the camera aren't affected. The HUD shows TRICK! and TRICK BOOST!, with a tone. AI rivals trick too: 30% of the time on Easy, 60% on Normal, 90% on Hard (`trick_chance` in `resources/ai/*.tres`). Logic in `scripts/vehicles/vehicle_trick.gd`.
+
 ### HUD and results
 
 The race HUD is built from small parts in `scripts/ui/hud/`, coordinated by `RaceHUD`:
@@ -218,7 +223,7 @@ There are no control instructions on the HUD; the controls (from your current bi
 | Races on Vegas Overdrive | Heavy Racing by SPmusic (loops) | `music/spmusic-heavy-racing-151129.mp3` |
 | Race start | Countdown beeps on READY / SET / GO | `sounds/freesound_community-short-beep-countdown-81121.mp3` |
 
-Music carries across menu screens without restarting and crossfades when the track changes (`scripts/core/music.gd`); each built track has its own race music (set in `TrackCatalog`, `scripts/track/track_catalog.gd`), which starts with the race; the test circuit and free drive have none, so the music fades out. The countdown clip has four beeps a second apart; it starts 1 s in so the last three land on READY, SET and GO. Music plays on the Music bus and effects on the SFX bus, so the Settings sliders control each. Tracks by ikoliks / ikoliks_aj, Lilex, TheBoysBeats, SPmusic and freesound_community.
+Music carries across menu screens without restarting and crossfades when the track changes (`scripts/core/music.gd`); each built track has its own race music (set in `TrackCatalog`, `scripts/track/track_catalog.gd`), which starts with the race; the test circuit and free drive have none, so the music fades out. **On the final lap** (when you start it, in races of 2+ laps, Elimination included) the race music speeds up 15%, pitch and all, over about 0.4 s; restarting or leaving the race puts it back to normal. The countdown clip has four beeps a second apart; it starts 1 s in so the last three land on READY, SET and GO. Music plays on the Music bus and effects on the SFX bus, so the Settings sliders control each. Tracks by ikoliks / ikoliks_aj, Lilex, TheBoysBeats, SPmusic and freesound_community.
 
 ### Tracks
 
@@ -316,6 +321,7 @@ Drive through a "?" crate to collect a random weapon into your first free slot. 
 | Road Spike | Strip dropped behind you; lasts 12 s; single use | 1 s traction loss |
 | Nitro Overload | Self boost | 3 s, +10 m/s top speed |
 | Triple Nitro | Three Nitro charges in one slot (HUD shows ×3, ×2, ×1). Each press is a separate boost; the slot empties after the third | Rare. Mostly for trailing racers. A Railgun or drone hit knocks out all remaining charges |
+| Triple Spike | Three Road Spikes in one slot (HUD shows ×3, ×2, ×1). Each press drops one spike behind you; the slot empties after the third. The AI space their drops at least 1.5 s apart | Uncommon, mostly for leaders (front 0.6, back 0.15). A Railgun or drone hit knocks out all remaining spikes |
 | Firewall | Shield | Blocks the next attack, up to 10 s |
 
 - **Targeting** (GDD §6.2):

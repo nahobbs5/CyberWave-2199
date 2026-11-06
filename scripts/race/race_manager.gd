@@ -103,6 +103,8 @@ func _ready() -> void:
 		Music.stop(get_tree())
 	else:
 		Music.play(get_tree(), race_music)
+		# Restart keeps the same track playing, so drop any final-lap speed-up.
+		Music.set_speed(get_tree(), 1.0)
 	track.checkpoint_crossed.connect(_on_checkpoint_crossed)
 	_spawn_grid()
 	coins = TrackCoins.new()
@@ -417,6 +419,8 @@ func _on_checkpoint_crossed(index: int, body: Node3D) -> void:
 			lap_completed.emit(racer)
 			if racer.is_player:
 				coins.respawn() # track coins come back every lap (GDD 9.2)
+				if total_laps > 1 and racer.lap == total_laps:
+					Music.set_speed(get_tree(), Music.FINAL_LAP_SPEED) # final lap: music 15% faster
 		&"finish":
 			lap_completed.emit(racer)
 			_finish_count += 1

@@ -196,11 +196,16 @@ func _process(delta: float) -> void:
 	var body := _vehicle.get_node_or_null("Body") as Node3D
 	if body != null:
 		# Hard stuns spin the bodywork (visual only; physics keeps going straight).
+		# Only touches the body while stunned or settling, so other visual-only
+		# turns (ramp tricks) aren't overwritten.
 		if is_stunned():
 			_spin += delta * TAU * 2.0
-		else:
+			body.rotation.y = _spin
+		elif _spin != 0.0:
 			_spin = move_toward(_spin, roundf(_spin / TAU) * TAU, delta * 12.0)
-		body.rotation.y = _spin
+			if is_equal_approx(_spin, roundf(_spin / TAU) * TAU):
+				_spin = 0.0
+			body.rotation.y = _spin
 	var flicker := 0.7 if GameSettings.reduced_flashing else 0.5 + 0.5 * sin(Time.get_ticks_msec() * 0.03)
 	if has(&"emp"):
 		_status_light.light_color = Color(0.3, 0.6, 1.0)
