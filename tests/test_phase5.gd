@@ -353,7 +353,7 @@ func _test_menus() -> void:
 	for b in menu.find_children("*", "Button", true, false):
 		if (b as Button).visible:
 			labels.append((b as Button).text)
-	for wanted in ["Grand Prix", "Versus", "Practice", "Garage", "Settings", "Credits", "Exit"]:
+	for wanted in ["Grand Prix", "Versus", "Practice", "Garage", "Settings", "Credits", "Back"]:
 		_check(labels.has(wanted), "main menu has %s" % wanted)
 	menu.queue_free()
 
@@ -424,6 +424,8 @@ func _test_menus() -> void:
 	setup._difficulty.selected = 0
 	setup._weapons.button_pressed = false
 	setup.start()
+	# Versus: the track screen comes next (Mario Kart style).
+	GameSession.start_versus_race(self, "Vegas Overdrive")
 	var c := GameSession.current
 	_check(c.vehicle_id == "cipher_evo" and c.total_laps == 2 and not c.weapons_enabled
 			and c.difficulty.resource_path.ends_with("easy.tres"), "race config from the setup screen")

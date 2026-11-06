@@ -107,11 +107,11 @@ func clear() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if _vehicle == null or not _vehicle.player_controlled:
 		return
-	if event.is_action_pressed("select_slot_1"):
+	if event.is_action_pressed(_vehicle.action(&"select_slot_1")):
 		select(0)
-	elif event.is_action_pressed("select_slot_2"):
+	elif event.is_action_pressed(_vehicle.action(&"select_slot_2")):
 		select(1)
-	elif event.is_action_pressed("use_weapon"):
+	elif event.is_action_pressed(_vehicle.action(&"use_weapon")):
 		request_use()
 	else:
 		return

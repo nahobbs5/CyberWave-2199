@@ -49,7 +49,7 @@ func get_text() -> String:
 
 
 func back() -> void:
-	GameSession.to_main_menu(get_tree())
+	GameSession.back_from_options(get_tree())
 
 
 func _unhandled_input(event: InputEvent) -> void:

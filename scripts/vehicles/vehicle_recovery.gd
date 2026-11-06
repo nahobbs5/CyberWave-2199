@@ -73,7 +73,7 @@ func set_track(new_track: TrackCircuit, start_offset: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if vehicle != null and vehicle.player_controlled and event.is_action_pressed("reset_vehicle"):
+	if vehicle != null and vehicle.player_controlled and event.is_action_pressed(vehicle.action(&"reset_vehicle")):
 		request_recovery("manual")
 		get_viewport().set_input_as_handled()
 

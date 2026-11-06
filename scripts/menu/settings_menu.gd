@@ -168,7 +168,7 @@ func _build() -> void:
 	var spacer := Control.new()
 	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	left.add_child(spacer)
-	left.add_child(UIStyle.button("Back", func() -> void: GameSession.to_main_menu(get_tree())))
+	left.add_child(UIStyle.button("Back", func() -> void: GameSession.back_from_options(get_tree())))
 
 	var right := VBoxContainer.new()
 	right.add_theme_constant_override("separation", 8)
@@ -207,37 +207,12 @@ func _build() -> void:
 
 
 func _set_volume(v: float, bus: String) -> void:
-	match bus:
-		"master":
-			GameSettings.master_volume = v / 100.0
-		"music":
-			GameSettings.music_volume = v / 100.0
-		_:
-			GameSettings.sfx_volume = v / 100.0
-	GameSettings.apply_audio()
+	GameSettings.set_volume(bus, v / 100.0)
 
 
 func _slider(parent: Container, text: String, lo: float, hi: float, step: float, value: float,
 		fmt: String, on_change: Callable) -> HSlider:
-	var row := HBoxContainer.new()
-	var l := UIStyle.label(text, 16)
-	l.custom_minimum_size = Vector2(170, 0)
-	row.add_child(l)
-	var slider := HSlider.new()
-	slider.min_value = lo
-	slider.max_value = hi
-	slider.step = step
-	slider.value = value
-	slider.custom_minimum_size = Vector2(220, 28)
-	row.add_child(slider)
-	var readout := UIStyle.label(fmt % roundi(value), 15, Color(1, 1, 1, 0.7))
-	row.add_child(readout)
-	slider.value_changed.connect(func(v: float) -> void:
-		on_change.call(v)
-		readout.text = fmt % roundi(v)
-		GameSettings.save_settings())
-	parent.add_child(row)
-	return slider
+	return UIStyle.slider_row(parent, text, lo, hi, step, value, fmt, on_change)
 
 
 func _check(parent: Container, text: String, value: bool, on_change: Callable) -> CheckButton:

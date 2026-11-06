@@ -8,6 +8,7 @@
 [ext_resource type="Script" path="res://scripts/camera/chase_camera.gd" id="6_camera"]
 [ext_resource type="Resource" path="res://resources/cameras/far_chase.tres" id="7_far"]
 [ext_resource type="Resource" path="res://resources/cameras/close_chase.tres" id="8_close"]
+[ext_resource type="Resource" path="res://resources/cameras/rear_view.tres" id="8_rear"]
 [ext_resource type="PackedScene" path="res://scenes/ui/prototype_hud.tscn" id="9_proto_hud"]
 [ext_resource type="Script" path="res://scripts/ui/race_hud.gd" id="10_race_hud"]
 [ext_resource type="Script" path="res://scripts/combat/weapon_manager.gd" id="11_weapons"]
@@ -39,6 +40,7 @@ current = true
 script = ExtResource("6_camera")
 far_chase = ExtResource("7_far")
 close_chase = ExtResource("8_close")
+rear_view = ExtResource("8_rear")
 
 [node name="PrototypeHUD" parent="." instance=ExtResource("9_proto_hud")]
 show_lap_info = false

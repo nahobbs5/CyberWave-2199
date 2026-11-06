@@ -6,6 +6,7 @@
 [ext_resource type="Script" path="res://scripts/camera/chase_camera.gd" id="4_camera"]
 [ext_resource type="Resource" path="res://resources/cameras/far_chase.tres" id="5_far"]
 [ext_resource type="Resource" path="res://resources/cameras/close_chase.tres" id="6_close"]
+[ext_resource type="Resource" path="res://resources/cameras/rear_view.tres" id="6_rear"]
 [ext_resource type="PackedScene" path="res://scenes/ui/prototype_hud.tscn" id="8_hud"]
 
 [node name="FreeDrive" type="Node3D"]
@@ -22,5 +23,6 @@ current = true
 script = ExtResource("4_camera")
 far_chase = ExtResource("5_far")
 close_chase = ExtResource("6_close")
+rear_view = ExtResource("6_rear")
 
 [node name="PrototypeHUD" parent="." instance=ExtResource("8_hud")]

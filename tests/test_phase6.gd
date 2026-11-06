@@ -445,12 +445,14 @@ func _test_forest() -> void:
 	_check(world.track_scenes[0] == HOIA, "World Cup race 1 is Hoia")
 	_check(world.is_open(true) and world.is_open(false), "World Cup: open for Grand Prix and Versus")
 	_check(world.is_track_built(0) and world.is_track_built(1) and world.is_track_built(2), "all three World Cup tracks are built")
-	GameSession.cup_path = GrandPrixData.CUPS[1]
 	GameSession.setup_mode = RaceConfig.Mode.VERSUS
 	var select := (load("res://scenes/menu/track_select.tscn") as PackedScene).instantiate() as TrackSelect
 	root.add_child(select)
-	_check(select.cup == world and not select.cards[0].disabled and not select.cards[1].disabled and not select.cards[2].disabled,
-			"Versus track select: all three World Cup tracks raceable")
+	var world_open := true
+	for t in world.track_names:
+		var i := select.track_names.find(t)
+		world_open = world_open and i >= 0 and not select.cards[i].disabled
+	_check(world_open, "Versus track select: all three World Cup tracks raceable")
 	select.free()
 	var track := (load(HOIA) as PackedScene).instantiate() as TrackCircuit
 	root.add_child(track)

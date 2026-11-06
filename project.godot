@@ -11,13 +11,12 @@ config_version=5
 [application]
 
 config/name="Cyberwave 2199"
-run/main_scene="res://scenes/menu/main_menu.tscn"
+run/main_scene="res://scenes/menu/title_menu.tscn"
 config/features=PackedStringArray("4.7", "Forward Plus")
-config/icon="res://assets/logo/app_icon.png"
-boot_splash/show_image=true
-boot_splash/image="res://assets/logo/splash_skyline.png"
 boot_splash/bg_color=Color(0, 0, 0, 1)
-boot_splash/fullsize=false
+boot_splash/stretch_mode=0
+boot_splash/image="res://assets/logo/splash_skyline.png"
+config/icon="res://assets/logo/app_icon.png"
 
 [display]
 
@@ -25,6 +24,10 @@ window/size/viewport_width=1280
 window/size/viewport_height=720
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
+
+[gui]
+
+theme/custom="res://resources/ui/cyberwave_theme.tres"
 
 [layer_names]
 
@@ -38,7 +41,3 @@ window/stretch/aspect="expand"
 [rendering]
 
 rendering_device/driver.windows="d3d12"
-
-[gui]
-
-theme/custom="res://resources/ui/cyberwave_theme.tres"

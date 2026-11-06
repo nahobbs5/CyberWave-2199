@@ -111,6 +111,30 @@ static func apply_audio() -> void:
 	_set_volume("SFX", sfx_volume)
 
 
+## Sets one volume ("master", "music" or "sfx", 0-1) and applies it.
+static func set_volume(bus: String, linear: float) -> void:
+	linear = clampf(linear, 0.0, 1.0)
+	match bus:
+		"master":
+			master_volume = linear
+		"music":
+			music_volume = linear
+		_:
+			sfx_volume = linear
+	apply_audio()
+
+
+## The current volume (0-1) for "master", "music" or "sfx".
+static func volume(bus: String) -> float:
+	match bus:
+		"master":
+			return master_volume
+		"music":
+			return music_volume
+		_:
+			return sfx_volume
+
+
 static func _set_volume(bus: String, linear: float) -> void:
 	var index := AudioServer.get_bus_index(bus)
 	if index < 0:

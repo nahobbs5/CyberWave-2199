@@ -8,6 +8,8 @@ extends Node3D
 ## AI cars don't take them.
 
 signal coin_collected(total: int)
+## Any collecting car took a coin (split screen: each human counts their own).
+signal coin_collected_by(vehicle: VehicleController, total: int)
 
 const MAX_PER_RACE := 30
 
@@ -17,6 +19,11 @@ var collected: int = 0
 var collecting: bool = true
 
 var _player: VehicleController
+## Other collecting cars (split screen: players 2-4) -> coins this race.
+## Player 1's count is `collected`.
+var _counts: Dictionary = {}
+## Cars whose race is over.
+var _stopped: Dictionary = {}
 var _coins: Array[Area3D] = []
 var _spin: float = 0.0
 var _material: StandardMaterial3D
@@ -47,13 +54,27 @@ func setup(track: TrackCircuit, line: RacingLine, player: VehicleController) -> 
 			_coins.append(coin)
 
 
+## Split screen: another human's car collects too.
+func add_collector(car: VehicleController) -> void:
+	_counts[car] = 0
+
+
+## That car's race is over (the autopilot doesn't collect).
+func stop_collecting(car: VehicleController) -> void:
+	_stopped[car] = true
+
+
+func collected_by(car: VehicleController) -> int:
+	return collected if car == _player else int(_counts.get(car, 0))
+
+
 func available_count() -> int:
 	return _coins.filter(func(c: Area3D) -> bool: return c.visible).size()
 
 
 ## Every coin comes back when the player starts a new lap (until the cap).
 func respawn() -> void:
-	if collected >= MAX_PER_RACE:
+	if _counts.is_empty() and collected >= MAX_PER_RACE:
 		return
 	for coin in _coins:
 		_set_active(coin, true)
@@ -94,12 +115,24 @@ func _set_active(coin: Area3D, active: bool) -> void:
 
 
 func _on_body_entered(body: Node3D, coin: Area3D) -> void:
-	if body != _player or not collecting or not coin.visible or collected >= MAX_PER_RACE:
+	var is_player := body == _player
+	if not (is_player or _counts.has(body)) or _stopped.has(body) or not coin.visible:
 		return
-	collected += 1
+	if is_player and not collecting:
+		return
+	var total := collected_by(body as VehicleController)
+	if total >= MAX_PER_RACE:
+		return
+	total += 1
 	_set_active(coin, false)
-	coin_collected.emit(collected)
-	if collected >= MAX_PER_RACE:
+	if is_player:
+		collected = total
+		coin_collected.emit(collected)
+	else:
+		_counts[body] = total
+	coin_collected_by.emit(body, total)
+	# One collector: the coins are all gone once the cap is reached.
+	if _counts.is_empty() and total >= MAX_PER_RACE:
 		for c in _coins:
 			_set_active(c, false)
 

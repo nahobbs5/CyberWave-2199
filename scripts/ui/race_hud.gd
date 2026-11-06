@@ -17,6 +17,14 @@ const POSITION_SETTLE := 3.0
 const LEAD_COOLDOWN := 10.0
 
 var race: RaceManager
+## The player this HUD follows (split screen: one HUD per view). Null until
+## setup, which defaults it to player 1.
+var racer: RaceProgress
+## Split screen: this HUD is one view's. The shared overlay (SplitScreen)
+## has the minimap and the results, so this one hides its own.
+var split_view: bool = false
+## The speed / drift panel under this HUD (split screen: this view's).
+var prototype_hud: PrototypeHUD
 
 var info: RaceInfoPanel
 var standings: StandingsPanel
@@ -40,6 +48,8 @@ var _tones: Dictionary = {}
 var _was_incoming: bool = false
 var _last_position: int = 0
 var _lead_cooldown: float = 0.0
+## Split screen 3-4P: no room for the standings list in a quarter screen.
+var hide_standings: bool = false
 
 
 func _ready() -> void:
@@ -48,16 +58,24 @@ func _ready() -> void:
 
 func setup(manager: RaceManager) -> void:
 	race = manager
+	if racer == null:
+		racer = race.player
+	if prototype_hud == null:
+		prototype_hud = race.prototype_hud
+	standings.me_racer = racer if race.is_multiplayer() else null
+	items.racer = racer
 	race.countdown_tick.connect(_on_countdown_tick)
 	race.lap_completed.connect(_on_lap_completed)
 	race.player_finished.connect(_on_player_finished)
 	race.racer_eliminated.connect(_on_racer_eliminated)
 	race.racer_qualified.connect(_on_racer_qualified)
-	race.coins.coin_collected.connect(_on_coin_collected)
-	var trick := race.player.vehicle.trick if race.player != null else null
-	if race.player != null:
-		race.player.vehicle.slipstream_boost.connect(func() -> void: _play("slipstream"))
-		wind_lines.vehicle = race.player.vehicle
+	race.coins.coin_collected_by.connect(func(car: VehicleController, total: int) -> void:
+		if racer != null and car == racer.vehicle:
+			_on_coin_collected(total))
+	var trick := racer.vehicle.trick if racer != null else null
+	if racer != null:
+		racer.vehicle.slipstream_boost.connect(func() -> void: _play("slipstream"))
+		wind_lines.vehicle = racer.vehicle
 	if trick != null:
 		trick.trick_started.connect(func() -> void: _play("trick"))
 		trick.trick_landed.connect(func() -> void: _play("trick_land"))
@@ -65,6 +83,8 @@ func setup(manager: RaceManager) -> void:
 	results.menu_pressed.connect(func() -> void: race.quit_to_menu())
 	info.mode_label.text = _mode_text()
 	minimap.setup(race)
+	if split_view:
+		minimap.get_parent().visible = false
 	info.elim_label.visible = race.elimination != null
 	items.visible = race.combat_enabled()
 	if race.combat_enabled():
@@ -75,6 +95,11 @@ func setup(manager: RaceManager) -> void:
 
 
 # --- queries (tests) ------------------------------------------------------------
+
+## Race info + standings (top left; split screen may move it).
+func info_column() -> VBoxContainer:
+	return _left_column
+
 
 func is_incoming_visible() -> bool:
 	return announcer.incoming.visible
@@ -148,19 +173,22 @@ func _mode_text() -> String:
 # --- per frame -------------------------------------------------------------------
 
 func _process(delta: float) -> void:
-	if race == null or race.player == null:
+	if race == null or racer == null:
 		return
-	var p := race.player
+	var p := racer
 	info.show_position(p.finish_position if p.eliminated else p.position, _active_count(), p.eliminated)
 	info.lap_value.text = "%d / %d" % [p.display_lap(), race.total_laps]
 	var shown_time := p.finish_time if p.finished else race.race_time
 	info.time_value.text = RaceProgress.format_time(shown_time)
-	info.coin_label.text = str(race.coins.collected)
+	info.coin_label.text = str(race.coins.collected_by(p.vehicle))
 	_track_position(delta)
 
 	# Standings may not reach the speed panel (bottom left, in PrototypeHUD).
 	standings.bottom_limit = _speed_panel_top() - _left_column.position.y - 8.0
-	standings.refresh(race)
+	if hide_standings:
+		standings.visible = false
+	else:
+		standings.refresh(race)
 	if race.elimination != null:
 		_update_elimination()
 
@@ -177,7 +205,7 @@ func _process(delta: float) -> void:
 
 ## Top of the speed / drift panel, in this HUD's layout space.
 func _speed_panel_top() -> float:
-	var hud := race.prototype_hud
+	var hud := prototype_hud
 	if hud == null or hud.speed_panel == null:
 		return INF
 	# Both layers use the same HUD scale and layout size, so their global
@@ -188,7 +216,7 @@ func _speed_panel_top() -> float:
 ## Pulse the position on overtakes; "1ST PLACE!" on taking the lead.
 func _track_position(delta: float) -> void:
 	_lead_cooldown -= delta
-	var p := race.player
+	var p := racer
 	if race.state != RaceManager.State.RACING or p.finished or p.eliminated:
 		_last_position = p.position
 		return
@@ -209,30 +237,36 @@ func _on_countdown_tick(text: String) -> void:
 	announcer.announce(text, 1.0 if text != "START" else 0.8, CYAN if text != "START" else MAGENTA)
 
 
-func _on_lap_completed(racer: RaceProgress) -> void:
-	if not racer.is_player or racer.finished:
+func _on_lap_completed(who: RaceProgress) -> void:
+	if who != racer or who.finished:
 		return
-	var last := racer.lap_times[racer.lap_times.size() - 1]
-	var best_so_far := racer.lap_times.size() >= 2
-	for i in racer.lap_times.size() - 1:
-		best_so_far = best_so_far and last < racer.lap_times[i]
+	var last := who.lap_times[who.lap_times.size() - 1]
+	var best_so_far := who.lap_times.size() >= 2
+	for i in who.lap_times.size() - 1:
+		best_so_far = best_so_far and last < who.lap_times[i]
 	var lap_line := ("NEW BEST LAP!  " if best_so_far else "LAP  ") + RaceProgress.format_time(last)
-	if racer.lap == race.total_laps:
+	if who.lap == race.total_laps:
 		announcer.announce("FINAL LAP!", 1.8, MAGENTA, lap_line)
 	elif best_so_far:
 		announcer.announce("NEW BEST LAP!", 1.5, UIStyle.GOLD, RaceProgress.format_time(last))
 	else:
-		announcer.announce("LAP %d" % racer.lap, 1.5, CYAN, RaceProgress.format_time(last))
+		announcer.announce("LAP %d" % who.lap, 1.5, CYAN, RaceProgress.format_time(last))
 
 
-func _on_player_finished(racer: RaceProgress) -> void:
-	if racer.eliminated:
+func _on_player_finished(who: RaceProgress) -> void:
+	if who != racer:
+		return
+	if who.eliminated:
 		announcer.announce("ELIMINATED", 2.5, UIStyle.DANGER)
-	elif race.elimination != null and racer.finish_position == 1:
+	elif race.elimination != null and who.finish_position == 1:
 		announcer.announce("WINNER!", 2.5, UIStyle.GOLD)
+	elif split_view:
+		# Stays up until the shared results open (the others are still racing).
+		announcer.announce("FINISH!", 9999.0, MAGENTA, "%s PLACE" % ResultsScreen.ordinal(who.finish_position))
 	else:
-		announcer.announce("FINISH!", 2.0, MAGENTA, "%s PLACE" % ResultsScreen.ordinal(racer.finish_position))
-	results.open(race)
+		announcer.announce("FINISH!", 2.0, MAGENTA, "%s PLACE" % ResultsScreen.ordinal(who.finish_position))
+	if not split_view:
+		results.open(race)
 
 
 func _on_coin_collected(total: int) -> void:
@@ -242,14 +276,14 @@ func _on_coin_collected(total: int) -> void:
 		items.show_notice("COIN LIMIT REACHED", UIStyle.GOLD)
 
 
-func _on_racer_eliminated(racer: RaceProgress) -> void:
-	if racer.is_player:
+func _on_racer_eliminated(who: RaceProgress) -> void:
+	if who == racer:
 		return
-	announcer.show_feed("%s ELIMINATED" % racer.display_name, Color(1.0, 0.35, 0.4))
+	announcer.show_feed("%s ELIMINATED" % who.display_name, Color(1.0, 0.35, 0.4))
 
 
-func _on_racer_qualified(racer: RaceProgress, spots_left: int) -> void:
-	if not racer.is_player:
+func _on_racer_qualified(who: RaceProgress, spots_left: int) -> void:
+	if who != racer:
 		return
 	var after := "last place taken" if spots_left == 0 else "%d left" % spots_left
 	announcer.announce("QUALIFIED", 1.5, CYAN, after)
@@ -259,18 +293,18 @@ func _update_elimination() -> void:
 	var tracker := race.elimination
 	var active := tracker.active_racers().size()
 	var text := "ACTIVE  %d / %d" % [active, race.racers.size()]
-	if not tracker.is_done() and not race.player.finished:
+	if not tracker.is_done() and not racer.finished:
 		text += "\nELIMINATION  LAP %d MIDPOINT" % tracker.next_event_lap()
 		var places := EliminationTracker.SCHEDULE[tracker.event]
 		text += "\n%d of %d places left" % [tracker.spots_left(), places]
-		if tracker.has_qualified(race.player):
+		if tracker.has_qualified(racer):
 			text += "  -  you're through"
-		elif race.player.lap <= tracker.next_event_lap():
+		elif racer.lap <= tracker.next_event_lap():
 			var track := race.track
 			var gate := track.get_checkpoint_offset(tracker.gate_index)
-			var to_gate := fposmod(track.wrapped_delta(track.get_offset_at(race.player.vehicle.global_position), gate), track.length)
+			var to_gate := fposmod(track.wrapped_delta(track.get_offset_at(racer.vehicle.global_position), gate), track.length)
 			text += "  -  %d m" % roundi(to_gate)
-	elif tracker.is_done() and not race.player.finished:
+	elif tracker.is_done() and not racer.finished:
 		text += "\nFINAL TWO  -  first across the line wins"
 	info.elim_label.text = text
 
@@ -278,14 +312,14 @@ func _update_elimination() -> void:
 # --- combat events ----------------------------------------------------------------
 
 func _on_weapon_collected(vehicle: VehicleController, weapon: WeaponData) -> void:
-	if vehicle == race.player.vehicle:
+	if vehicle == racer.vehicle:
 		items.show_notice("+ %s" % weapon.display_name, weapon.color)
 		_play("pickup")
 
 
 func _on_hit_resolved(target: VehicleController, weapon: WeaponData, shooter: VehicleController,
 		blocked_by: StringName) -> void:
-	var player := race.player.vehicle
+	var player := racer.vehicle
 	var target_name := race.progress_of(target).display_name
 	if target == player:
 		if blocked_by == &"shield":
@@ -304,7 +338,7 @@ func _on_hit_resolved(target: VehicleController, weapon: WeaponData, shooter: Ve
 
 func _on_item_lost(target: VehicleController, lost: WeaponData, by_weapon: WeaponData,
 		shooter: VehicleController) -> void:
-	var player := race.player.vehicle
+	var player := racer.vehicle
 	if target == player:
 		items.show_notice("%s!  LOST %s" % [by_weapon.display_name.to_upper(), lost.display_name], lost.color)
 	elif shooter == player:

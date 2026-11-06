@@ -37,7 +37,10 @@ func pick(index: int) -> void:
 	GameSession.cup_path = GrandPrixData.CUPS[index]
 	var setup := PlayerProfile.get_profile().last_setup
 	setup["cup"] = GameSession.cup_path
-	if is_grand_prix():
+	if is_grand_prix() and GameSession.split_screen:
+		# Split screen: the lobby already has the cars and settings.
+		GameSession.start_multiplayer_grand_prix(get_tree(), cup)
+	elif is_grand_prix():
 		GameSession.track_name = ""
 		GameSession.to_race_setup(get_tree(), mode)
 	else:
@@ -45,7 +48,10 @@ func pick(index: int) -> void:
 
 
 func back() -> void:
-	GameSession.to_main_menu(get_tree())
+	if GameSession.split_screen:
+		GameSession.to_mp_setup(get_tree())
+	else:
+		GameSession.to_main_menu(get_tree())
 
 
 func _unhandled_input(event: InputEvent) -> void:

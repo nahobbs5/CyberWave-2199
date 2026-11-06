@@ -31,6 +31,8 @@ const SHIFT_DRIFT_STEER_THRESHOLD := 0.3
 ## The human racer's car (gets audio cues and the camera). Stays true after the
 ## player finishes and the autopilot takes over.
 @export var is_player: bool = true
+## Split screen: this player's action prefix ("p2_"); "" reads every device.
+@export var input_prefix: StringName = &""
 
 var throttle_input: float = 0.0
 var brake_input: float = 0.0
@@ -106,12 +108,12 @@ func _read_player_input() -> void:
 		drift_left_held = false
 		drift_right_held = false
 		return
-	throttle_input = Input.get_action_strength("accelerate")
-	brake_input = Input.get_action_strength("brake")
-	steer_input = Input.get_axis("steer_left", "steer_right")
-	drift_left_held = Input.is_action_pressed("drift_left")
-	drift_right_held = Input.is_action_pressed("drift_right")
-	if Input.is_action_pressed("drift"):
+	throttle_input = Input.get_action_strength(action(&"accelerate"))
+	brake_input = Input.get_action_strength(action(&"brake"))
+	steer_input = Input.get_axis(action(&"steer_left"), action(&"steer_right"))
+	drift_left_held = Input.is_action_pressed(action(&"drift_left"))
+	drift_right_held = Input.is_action_pressed(action(&"drift_right"))
+	if Input.is_action_pressed(action(&"drift")):
 		# Shift drift: steering picks the direction when the drift starts;
 		# after that, Shift alone keeps it going (steering just shapes it).
 		if drift.is_drifting():
@@ -121,6 +123,11 @@ func _read_player_input() -> void:
 			drift_left_held = true
 		elif steer_input >= SHIFT_DRIFT_STEER_THRESHOLD:
 			drift_right_held = true
+
+
+## This car's version of an input action (see input_prefix).
+func action(base: StringName) -> StringName:
+	return InputSetup.action(input_prefix, base)
 
 
 ## Moves the car on the next physics step and clears all motion.

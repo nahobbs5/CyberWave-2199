@@ -10,6 +10,8 @@ extends Resource
 ## Metres ahead of the car that the camera looks toward.
 @export var look_ahead: float = 6.0
 @export_range(30.0, 120.0) var fov: float = 72.0
+## Rear View: the camera sits ahead of the car and looks back past it.
+@export var look_back: bool = false
 
 @export_group("Speed Responsiveness")
 ## Extra FOV at top speed.

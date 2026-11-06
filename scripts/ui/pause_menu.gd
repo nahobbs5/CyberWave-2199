@@ -3,7 +3,10 @@ extends CanvasLayer
 ## Esc / gamepad Start pauses the whole race (physics, timers, AI) and shows
 ## Resume / Restart race / Quit to main menu (GDD 3.2, 3.3). Runs while the
 ## tree is paused. Restart is disabled once a Grand Prix result is saved.
-## The controls (current bindings) sit beside the buttons.
+## The controls (current bindings) sit beside the buttons, and Master /
+## Music / Sound effects sliders sit under them (saved straight away).
+
+const VOLUMES := [["Master", "master"], ["Music", "music"], ["Sound effects", "sfx"]]
 
 var race: RaceManager
 
@@ -12,6 +15,8 @@ var _resume: Button
 var _restart: Button
 var _quit: Button
 var _title: Label
+## bus key ("master", "music", "sfx") -> HSlider
+var volume_sliders: Dictionary = {}
 
 
 func _init() -> void:
@@ -34,6 +39,9 @@ func open() -> void:
 	get_tree().paused = true
 	_restart.disabled = not race.can_restart()
 	_title.text = "PAUSED  -  %s" % RaceConfig.MODE_NAMES[race.mode()]
+	for bus in volume_sliders:
+		# In case Settings changed it; only fires value_changed if it differs.
+		(volume_sliders[bus] as HSlider).value = GameSettings.volume(bus) * 100.0
 	_panel.visible = true
 	UIStyle.fade_in(_panel, 0.15)
 	_resume.grab_focus()
@@ -79,7 +87,16 @@ func _build() -> void:
 	_quit = UIStyle.button("Quit to main menu", func() -> void: race.quit_to_menu())
 	for b in [_resume, _restart, _quit]:
 		box.add_child(b)
-	UIStyle.chain_focus([_resume, _restart, _quit])
+	box.add_child(Control.new())
+	box.add_child(UIStyle.label("VOLUME", 18, UIStyle.CYAN))
+	var focus: Array = [_resume, _restart, _quit]
+	for v in VOLUMES:
+		var slider := UIStyle.slider_row(box, v[0], 0, 100, 5, GameSettings.volume(v[1]) * 100.0, "%d%%",
+				func(value: float) -> void: GameSettings.set_volume(v[1], value / 100.0))
+		slider.name = "Volume_" + v[1]
+		volume_sliders[v[1]] = slider
+		focus.append(slider)
+	UIStyle.chain_focus(focus)
 	var hint := UIStyle.label("Esc / Start: resume", 13, Color(1, 1, 1, 0.5))
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(hint)

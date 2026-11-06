@@ -1,12 +1,12 @@
 # CYBERWAVE 2199
-## Game Design Document — Version 2.4
+## Game Design Document — Version 2.9
 
 **Status:** Development Baseline  
 **Engine:** Godot 4  
 **Primary Language:** GDScript  
 **Genre:** 3D Arcade Combat Racing  
 **Platform:** Windows PC initially  
-**Players:** Single-player against seven AI opponents  
+**Players:** Single-player against seven AI opponents, or 2–4 player local split screen  
 **Camera:** Third-person chase  
 **Setting:** Retrofuturistic cyberpunk, year 2199
 
@@ -54,14 +54,12 @@ The initial release focuses on polished single-player racing. Additional feature
 
 ## 2.1 Versus
 
-A standalone race against seven AI opponents.
+A race, or a set of races, against seven AI opponents. Set up Mario Kart style:
 
-Players can select:
-- Any of the six tracks
-- Any of the eight vehicles
-- Easy, Normal, or Hard AI
-- Lap count, with three laps as the default
-- Weapons enabled or disabled, if implemented in race settings
+1. Race setup: vehicle, race type (Standard or Elimination), **number of races** (1, 2, 3, 4, 6, 8, 12 or 16), lap count (three by default), Easy / Normal / Hard AI, weapons on or off.
+2. Track screen: every cup's tracks on one screen, one row per cup. Pick any of the six tracks, or the **RANDOM** card below them for a random built track (in a series, one not raced yet while any are left).
+
+With more than one race, the track screen comes back before each race (showing "RACE 2 OF 4" and the points so far). Points and the next grid work like a Grand Prix (§2.2). The final results name the series winner. A series isn't saved: quitting part-way ends it. Each race pays its normal coins, with no cup bonus.
 
 The player starts in eighth position.
 
@@ -165,6 +163,42 @@ The final two racers compete through the second half of lap three.
 
 Checkpoint placement must be consistent with each track's layout and alternate routes.
 
+## 2.4 Split-Screen Multiplayer
+
+Two to four players on one PC, Mario Kart style. The title menu offers **Single Player** (the main menu in §11.2) and **Multiplayer**.
+
+### Setup Screens
+
+1. **Connect controllers.** Each player presses Enter (keyboard) or A / Start (gamepad) once to join, then again to confirm READY. That device is theirs for the session: the keyboard can be one player and each gamepad another. Each slot shows its device; connected pads are listed. Back / B takes back READY, then leaves. When two to four have joined and all are ready, an **ALL READY** banner appears; one more Enter / A / Start from any player opens step 2 (Back / B still takes a READY back).
+2. **Choose your cars.** One card per player: the car turning on its platform, its name and type, and its stats (top speed, acceleration, handling, drift as 1–10 bars). Left / right changes car on that player's device; Enter / A readies up; Back / B un-readies, or returns to step 1. When everyone is ready, an **ALL READY** banner asks for one more Enter / A / Start before step 3 opens.
+   - Player 1 drives their Garage loadout. Players 2–4 drive the stock car painted in their player colour (P1 cyan, P2 magenta, P3 gold, P4 green).
+   - Everyone can set a license plate (§9.5) with Y (gamepad) or Tab (keyboard). The keyboard player types; gamepad players use a letter picker (up / down changes the letter, left / right moves, X deletes, A done). Player 1's plate is saved to their profile; players 2–4 default to "P2"–"P4".
+3. **Race setup.** Mode (Grand Prix or Versus); in Versus, race type (Standard or Elimination) and number of races; NPCs on or off (the computer-driven cars: on fills the grid to eight, off races the humans only; Elimination needs NPCs); NPC difficulty (shown only with NPCs on); laps; weapons. A panel explains the chosen mode and race type, including how Elimination knocks cars out.
+   - Grand Prix goes to the cup screen. Versus goes to the all-cups track screen (§2.1), before every race of the set.
+
+Leaving a race, or finishing a set, returns to step 2 with the same players joined.
+
+### Screen Layout
+
+| Players | Layout |
+|---|---|
+| 2 | Top half and bottom half |
+| 3 | Three corners; the bottom-right corner shows a broadcast-style spectator camera cutting between other cars, preferring close battles |
+| 4 | One corner each |
+
+- Each view has its own chase camera and HUD, scaled down to fit. In 3–4 player races the standings list is hidden.
+- One shared minimap shows every player as an arrow in their colour. It sits in the centre for 3–4 players, and at the right end of the divider for 2. HUD panels that would sit under it move to that view's bottom-right corner.
+- Wrong-way signs and lock-on rings show only in their owner's view. Each car's "P2" tag shows in every view except its driver's.
+- Players start at the back of the grid, player 1 last.
+- Each player who finishes hands their car to the autopilot and sees their place until the shared results open, once every player is done.
+
+### Rules
+
+- Split screen pays no coins and records no personal bests or Grand Prix results. Versus sets of races work as in §2.1, with each human scoring points. Track coins can still be collected for the HUD count.
+- A split-screen Grand Prix is kept in memory only, so it never replaces a saved single-player championship. Every human scores points; any player can be champion.
+- Rubber-banding, coin respawns and the final-lap music follow the leading human.
+- Any player's pause button pauses the race for everyone.
+
 ---
 
 # 3. Driving and Controls
@@ -190,6 +224,7 @@ The physics model should prioritize enjoyable racing over realistic tire simulat
 | 1 | Select item slot 1 |
 | 2 | Select item slot 2 |
 | C | Cycle camera |
+| Q (hold) | Look back |
 | R | Reset vehicle |
 | Esc | Pause |
 
@@ -200,13 +235,14 @@ The physics model should prioritize enjoyable racing over realistic tire simulat
 | RT / R2 | Accelerate |
 | LT / L2 | Brake / Reverse |
 | Left stick | Steering |
-| LB / L1 | Drift left |
-| RB / R1 | Drift right |
-| A / Cross | Use selected weapon |
+| LB / L1 | Use selected weapon |
+| RB / R1 | Drift (hold + steer) |
 | D-pad Left | Select slot 1 |
 | D-pad Right | Select slot 2 |
-| Y / Triangle | Reset vehicle |
-| View / Touchpad | Cycle camera |
+| Y / Triangle | Trick (in the air) |
+| D-pad Up | Reset vehicle |
+| D-pad Down | Cycle camera |
+| Right stick click (hold) | Look back |
 | Start / Options | Pause |
 
 Gamepad support is part of the initial scope.
@@ -699,7 +735,7 @@ Purchases are shared by every vehicle; each vehicle keeps its own equipped cosme
 
 # 10. Cameras
 
-Two camera perspectives are included in the initial release.
+Three camera perspectives are included: Far Chase, Close Chase and Rear View. Cycle camera goes Far → Close → Rear → Far.
 
 ## 10.1 Far Chase
 
@@ -716,9 +752,15 @@ Two camera perspectives are included in the initial release.
 - More cinematic presentation
 - Greater emphasis on speed and vehicle details
 
+## 10.2a Rear View
+
+- Camera sits ahead of the car and looks back past it, to watch chasers and incoming fire
+- Can be chosen as a view, or shown only while **Look back** is held (Q / right stick click); releasing returns to the chosen view at once
+- The 3-player spectator view never looks back
+
 ## 10.3 Camera Behavior
 
-Both cameras share a common controller with configurable:
+All cameras share a common controller with configurable:
 - Distance
 - Height
 - Field of view
@@ -750,6 +792,8 @@ Visual effects should never compromise gameplay readability.
 
 ## 11.2 Main Menu
 
+The game opens on a title menu: Single Player, Multiplayer (§2.4), Settings, Credits, Exit. Single Player opens the main menu:
+
 - Versus
 - Grand Prix
 - Continue Grand Prix, when applicable
@@ -760,7 +804,9 @@ Visual effects should never compromise gameplay readability.
 
 ## 11.3 Race Setup
 
-- Track or championship selection
+Grand Prix: cup screen, then race setup. Versus: race setup first (including the number of races), then the all-cups track screen (§2.1).
+
+- Championship (Grand Prix) or number of races (Versus)
 - Vehicle selection
 - License plate preview
 - AI difficulty
@@ -818,6 +864,8 @@ Additional information:
 
 ## 11.8 Race Presentation
 
+- Loading card while a track builds (races and free drive): logo, track name, location, mode (and "Race N of M" in a set), track outline, LOADING. The countdown starts only after it fades out.
+- Pause menu: Resume / Restart race / Quit, Master / Music / Sound effects volume sliders (saved straight away, shared with Settings), and the controls card
 - Brief pre-race camera sweep
 - 3 / 2 / 1 / START countdown, with a four-lamp start-light board on the start gantry (three reds, then green), one lamp per beep
 - No false-start penalties
@@ -966,7 +1014,7 @@ The project uses reusable, data-driven systems.
 - Save data should be versioned for future compatibility.
 - Systems should remain modular enough to support later expansion.
 
-Multiplayer support is not an initial implementation requirement.
+Local split-screen multiplayer is supported (§2.4); online play is not.
 
 ---
 
@@ -1185,5 +1233,10 @@ Changes after Version 1.0 should be tracked as revisions rather than silently re
 | 2.2 | 2026-11-06 | Garage restyled after the reference art, with an Apply button and drag-to-rotate; race setup shares its car showcase (§11.4). |
 | 2.3 | 2026-11-06 | Catacombs Descent built at about 2.8 km: fully vaulted, torch-lit, 12 m road, flooded-crypt shortcut (§8.5). The World Cup stays locked until Arashiyama exists. |
 | 2.4 | 2026-11-06 | Arashiyama Circuit built at about 3.1 km: sunny bamboo grove whose canopy closes over most of the lap, paved stone road, river bridge, temple garden, shrine-path shortcut (§8.6). All six tracks are built, so the World Cup is unlocked (§2.2). |
+| 2.5 | 2026-11-06 | Local split-screen multiplayer for 2–4 players: title menu, join lobby, top/bottom and corner layouts, a 3-player spectator view, one shared minimap, no rewards (§2.4, §11.2). |
+| 2.6 | 2026-11-06 | Versus is Mario Kart style: pick the number of races, then each track from one screen listing every cup; points add up over the set (§2.1, §11.3). Split screen is three screens: connect controllers, choose cars (with stats), race setup (§2.4). |
+| 2.7 | 2026-11-06 | Gamepad: RB drift (hold + steer), LB weapon, Y trick, D-pad up reset, D-pad down camera (§3.3). Split screen: join then READY on the connect screen, license plates on the car screen, "NPCs" wording and mode explanations on race setup (§2.4). |
+| 2.8 | 2026-11-06 | Rear View camera (third in the cycle) and hold-to-look-back on Q / right stick click (§3.2, §3.3, §10). RANDOM track card on the Versus track screen (§2.1). Split screen: a final ALL READY confirm on the connect and car screens (§2.4). |
+| 2.9 | 2026-11-06 | Volume sliders (Master, Music, Sound effects) on the pause menu. Loading card over track builds so the game no longer looks frozen, and the countdown waits for it (§11.8). |
 
-**End of Game Design Document — Version 2.4**
+**End of Game Design Document — Version 2.8**

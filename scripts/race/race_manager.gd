@@ -21,7 +21,10 @@ signal state_changed(state: State)
 signal countdown_tick(text: String)
 signal lap_completed(racer: RaceProgress)
 signal racer_finished(racer: RaceProgress)
+## A human finished or was knocked out (split screen: once per player).
 signal player_finished(racer: RaceProgress)
+## Every human is done: the race is over for the players (results time).
+signal all_players_finished
 signal racer_eliminated(racer: RaceProgress)
 ## Elimination: a racer crossed the elimination gate in a qualifying place.
 signal racer_qualified(racer: RaceProgress, spots_left: int)
@@ -61,7 +64,12 @@ var state: State = State.GRID
 ## Seconds since GO.
 var race_time: float = 0.0
 var racers: Array[RaceProgress] = []
+## Player 1 (single player: the only human).
 var player: RaceProgress
+## Every human racer by player slot (split screen: 2-4; else just `player`).
+var players: Array[RaceProgress] = []
+## Split screen: the views, cameras and shared overlay (null in single player).
+var split: SplitScreen
 var line: RacingLine
 ## Drafting behind other cars (see Slipstream).
 var slipstream := Slipstream.new()
@@ -88,7 +96,17 @@ var _finish_count: int = 0
 var _wrong_way_time: float = 0.0
 ## The neon sign hung over the road while the player drives the wrong way.
 var wrong_way_sign: WrongWaySign
+## One sign per human (split screen: each on that player's private layer).
+var wrong_way_signs: Array[WrongWaySign] = []
+## Wrong-way state per human, by player slot.
+var wrong_ways: Array[bool] = []
+var _wrong_way_times: Array[float] = []
+## Every human is done.
 var _player_done: bool = false
+## Humans whose race is over -> true.
+var _humans_done: Dictionary = {}
+## Laps the coins have respawned for (split screen: the leading human's laps).
+var _coin_lap: int = 1
 
 @onready var track: TrackCircuit = $TestCircuit
 @onready var camera: ChaseCamera = $ChaseCamera
@@ -120,6 +138,8 @@ func _ready() -> void:
 	coins.name = "TrackCoins"
 	add_child(coins)
 	coins.setup(track, line, player.vehicle)
+	for i in range(1, players.size()):
+		coins.add_collector(players[i].vehicle)
 	if config.is_elimination():
 		elimination = EliminationTracker.new(racers, track.checkpoint_count / 2)
 		_build_elimination_gate()
@@ -127,12 +147,27 @@ func _ready() -> void:
 		weapon_manager.setup(self)
 		for racer in racers:
 			_attach_ai_combat(racer)
-	camera.set_target(player.vehicle)
-	prototype_hud.setup(player.vehicle, camera, track)
-	race_hud.setup(self)
-	HudScaler.apply(race_hud, GameSettings.hud_scale)
-	HudScaler.apply(prototype_hud, GameSettings.hud_scale)
-	if GameSettings.motion_blur:
+	_build_wrong_way_signs()
+	if is_multiplayer():
+		# Each player gets a view with their own camera and HUD (SplitScreen).
+		var scene_camera := camera
+		split = SplitScreen.new()
+		split.name = "SplitScreen"
+		add_child(split)
+		split.setup(self, scene_camera)
+		camera = split.cameras[0]
+		scene_camera.queue_free()
+		prototype_hud.queue_free()
+		race_hud.queue_free()
+		prototype_hud = split.prototype_huds[0]
+		race_hud = split.huds[0]
+	else:
+		camera.set_target(player.vehicle)
+		prototype_hud.setup(player.vehicle, camera, track)
+		race_hud.setup(self)
+		HudScaler.apply(race_hud, GameSettings.hud_scale)
+		HudScaler.apply(prototype_hud, GameSettings.hud_scale)
+	if GameSettings.motion_blur and not is_multiplayer():
 		var blur := SpeedBlur.new()
 		blur.name = "SpeedBlur"
 		blur.vehicle = player.vehicle
@@ -142,6 +177,9 @@ func _ready() -> void:
 	add_child(pause_menu)
 	pause_menu.setup(self)
 	if auto_start:
+		# Don't count down behind the loading card.
+		if LoadingScreen.active != null:
+			await LoadingScreen.active.closed
 		start_countdown()
 
 
@@ -183,6 +221,25 @@ func mode() -> RaceConfig.Mode:
 	return config.mode
 
 
+## Split screen (2-4 human players).
+func is_multiplayer() -> bool:
+	return config != null and config.is_multiplayer()
+
+
+## Player slot of a human racer (0 = player 1), -1 for AI.
+func player_slot(racer: RaceProgress) -> int:
+	return players.find(racer)
+
+
+## The human furthest round the track (rubber band, coins, music).
+func leading_player() -> RaceProgress:
+	var best: RaceProgress = player
+	for p in players:
+		if not p.finished and (best.finished or p.race_distance > best.race_distance):
+			best = p
+	return best
+
+
 ## Restarting a Grand Prix race after its result was saved isn't allowed.
 func can_restart() -> bool:
 	return not (championship != null and _player_done)
@@ -199,13 +256,18 @@ func continue_after_results() -> void:
 	if championship == null:
 		GameSession.start_race(get_tree(), config)
 	elif championship.is_complete():
-		GameSession.to_main_menu(get_tree())
+		GameSession.series = null
+		GameSession.to_menu(get_tree())
+	elif championship.is_series():
+		# Versus series: pick the next track (Mario Kart style).
+		GameSession.series = championship
+		GameSession.to_track_select(get_tree())
 	else:
 		GameSession.start_race(get_tree(), championship.make_race_config())
 
 
 func quit_to_menu() -> void:
-	GameSession.to_main_menu(get_tree())
+	GameSession.to_menu(get_tree())
 
 
 func _apply_config() -> void:
@@ -221,13 +283,17 @@ func _apply_config() -> void:
 	weapons_enabled = config.weapons_enabled
 	# The elimination schedule is built around three laps (GDD 2.3).
 	total_laps = 3 if config.is_elimination() else config.total_laps
-	championship = config.championship if config.mode == RaceConfig.Mode.GRAND_PRIX else null
+	# A cup Grand Prix or a Versus series (any race type).
+	championship = config.championship
 	var vehicle_id := config.vehicle_id
 	if championship != null:
 		vehicle_id = championship.vehicle_id
 	if vehicle_id == "":
 		vehicle_id = PlayerProfile.get_profile().selected_vehicle
 	player_vehicle = VehicleCatalog.by_id(vehicle_id)
+	if config.is_multiplayer():
+		for i in config.human_count():
+			InputSetup.build_player_actions(i, config.player_devices[i])
 	if config.track_scene != null and config.track_scene.resource_path != track.scene_file_path:
 		var old := track
 		track = config.track_scene.instantiate() as TrackCircuit
@@ -248,7 +314,8 @@ func _physics_process(delta: float) -> void:
 			_update_positions()
 			_update_rubber_band()
 			slipstream.update(racers, delta)
-			_update_wrong_way(delta)
+			for i in players.size():
+				_update_wrong_way(i, delta)
 
 
 # --- grid ----------------------------------------------------------------------
@@ -266,27 +333,38 @@ func _spawn_grid() -> void:
 	for slot in grid.size():
 		var car := car_scene.instantiate() as VehicleController
 		var id := grid[slot]
-		var is_player := id == RaceConfig.PLAYER_ID
+		var is_player := RaceConfig.is_human_id(id)
+		var human := RaceConfig.human_slot(id) if is_player else -1
+		var human_vehicle := _human_vehicle(human) if is_player else null
 		var profile: RacerProfile = null
 		if not is_player:
 			profile = rivals[id] if id < rivals.size() else RacerProfile.new()
-		car.name = "Player" if is_player else "AI%d" % (id + 1)
+		car.name = ("Player" if human == 0 else "Player%d" % (human + 1)) if is_player else "AI%d" % (id + 1)
 		var rival_vehicle: VehicleData = null
-		if is_player and player_vehicle != null:
-			car.stats = player_vehicle.stats
+		if is_player and human_vehicle != null:
+			car.stats = human_vehicle.stats
 		elif not is_player:
 			rival_vehicle = _rival_vehicle(id)
 			car.stats = rival_vehicle.stats
 		car.is_player = is_player
 		car.player_controlled = is_player and not player_uses_autopilot
+		if is_player and is_multiplayer():
+			car.input_prefix = StringName(InputSetup.player_prefix(human))
 		add_child(car)
 		car.global_transform = track.get_grid_transform(slot)
 		car.recovery.set_track(track, track.get_grid_offset(slot))
 		car.input_enabled = false
 		var color := player_color if is_player else profile.color
-		if is_player:
+		if is_player and is_multiplayer():
+			color = SplitScreen.PLAYER_COLORS[human]
+		if is_player and human == 0:
 			var p := PlayerProfile.get_profile()
-			VehicleCosmetics.apply(car, player_vehicle, p.loadout_for(player_vehicle.id), p.plate_text)
+			VehicleCosmetics.apply(car, human_vehicle, p.loadout_for(human_vehicle.id), _human_plate(0, p.plate_text))
+		elif is_player:
+			# Players 2-4: the stock car in their player colour, their own plate.
+			VehicleCosmetics.apply_model(car, human_vehicle)
+			car.set_body_color(color.darkened(0.15))
+			VehicleCosmetics.add_plate(car, _human_plate(human, "P%d" % (human + 1)), null)
 		else:
 			# Rivals drive the car rolled for this series (real model and
 			# stats), painted in their own colour, with their own plate.
@@ -296,7 +374,7 @@ func _spawn_grid() -> void:
 			if config != null and id >= 0 and id < config.rival_plates.size():
 				plate = config.rival_plates[id]
 			VehicleCosmetics.add_plate(car, plate, null)
-		var racer_name := "You" if is_player else profile.display_name
+		var racer_name := profile.display_name if not is_player else ("You" if not is_multiplayer() else "P%d" % (human + 1))
 		var progress := RaceProgress.new(car, racer_name, color, is_player, slot,
 				track.checkpoint_count, total_laps)
 		progress.racer_id = id
@@ -304,9 +382,14 @@ func _spawn_grid() -> void:
 		_by_vehicle[car] = progress
 		vehicles.append(car)
 		if is_player:
-			player = progress
+			if human == 0:
+				player = progress
 			if player_uses_autopilot:
 				_attach_ai(car, RacerProfile.new(), slot)
+			if is_multiplayer():
+				# Everyone else sees "P2" over this car; its driver doesn't.
+				var tag := _add_name_tag(car, racer_name, color)
+				SplitScreen.set_render_layer(tag, SplitScreen.tag_layer(human))
 		else:
 			_attach_ai(car, profile, slot)
 			_add_name_tag(car, racer_name, color)
@@ -314,13 +397,38 @@ func _spawn_grid() -> void:
 		var ai := get_ai(racer)
 		if ai != null:
 			ai.racers = vehicles
+	players.clear()
+	players.resize(config.human_count())
+	for racer in racers:
+		if racer.is_player:
+			players[RaceConfig.human_slot(racer.racer_id)] = racer
+
+
+## A split-screen player's plate from the car screen, else `fallback`.
+func _human_plate(human: int, fallback: String) -> String:
+	if human < config.player_plates.size() and config.player_plates[human] != "":
+		return config.player_plates[human]
+	return fallback
+
+
+## Split-screen player `human`'s car (player 1: the config's / profile's).
+func _human_vehicle(human: int) -> VehicleData:
+	if human > 0 and human < config.player_vehicle_ids.size():
+		var v := VehicleCatalog.by_id(config.player_vehicle_ids[human])
+		if v != null:
+			return v
+	if human > 0:
+		return VehicleCatalog.by_id(PlayerProfile.DEFAULT_VEHICLE)
+	return player_vehicle
 
 
 ## Racer ids by grid slot: the config's order, else rivals in roster order
 ## with the player in player_grid_slot.
 func _grid_order() -> Array[int]:
-	if config.grid_order.size() == 8:
+	if config.grid_order.size() == 8 or (config.is_multiplayer() and not config.grid_order.is_empty()):
 		return config.grid_order
+	if config.is_multiplayer():
+		return RaceConfig.default_grid(config.rival_count(), config.human_count())
 	var grid: Array[int] = []
 	var rival := 0
 	for slot in 8:
@@ -376,7 +484,7 @@ func _attach_ai_combat(racer: RaceProgress) -> void:
 			random_seed + racer.grid_slot * 104729)
 
 
-func _add_name_tag(car: VehicleController, text: String, color: Color) -> void:
+func _add_name_tag(car: VehicleController, text: String, color: Color) -> Label3D:
 	var tag := Label3D.new()
 	tag.text = text
 	tag.billboard = BaseMaterial3D.BILLBOARD_ENABLED
@@ -386,6 +494,7 @@ func _add_name_tag(car: VehicleController, text: String, color: Color) -> void:
 	tag.outline_size = 10
 	tag.modulate = color.lightened(0.3)
 	car.add_child(tag)
+	return tag
 
 
 # --- race flow -----------------------------------------------------------------
@@ -430,8 +539,11 @@ func _on_checkpoint_crossed(index: int, body: Node3D) -> void:
 				_eliminate(out)
 		&"lap":
 			lap_completed.emit(racer)
-			if racer.is_player:
-				coins.respawn() # track coins come back every lap (GDD 9.2)
+			if racer.is_player and racer.lap > _coin_lap:
+				# Track coins come back every lap (GDD 9.2); split screen:
+				# when the leading human starts a new lap.
+				_coin_lap = racer.lap
+				coins.respawn()
 				if total_laps > 1 and racer.lap == total_laps:
 					Music.set_speed(get_tree(), Music.FINAL_LAP_SPEED) # final lap: music 15% faster
 		&"finish":
@@ -443,7 +555,7 @@ func _on_checkpoint_crossed(index: int, body: Node3D) -> void:
 			if elimination != null and _finish_count == 1:
 				_classify_remaining()
 			if racer.is_player:
-				_on_player_finished()
+				_on_player_finished(racer)
 
 
 ## Gives everyone still racing a final position in their current order.
@@ -457,7 +569,7 @@ func _classify_remaining() -> void:
 		racer.finish_position = _finish_count
 		racer_finished.emit(racer)
 		if racer.is_player:
-			_on_player_finished()
+			_on_player_finished(racer)
 
 
 func _eliminate(out: Array[RaceProgress]) -> void:
@@ -474,10 +586,15 @@ func _eliminate(out: Array[RaceProgress]) -> void:
 		racer.finish_position = remaining + 1 + i
 		_remove_vehicle(racer.vehicle)
 		racer_eliminated.emit(racer)
-	if player.eliminated and not _player_done:
-		var leader := get_standings()[0].vehicle
-		camera.set_target(leader)
-		_on_player_finished()
+	for human in players:
+		if human.eliminated and not _humans_done.has(human):
+			# Knocked out: that player's view follows the leader.
+			var leader := get_standings()[0].vehicle
+			if split != null:
+				split.cameras[player_slot(human)].set_target(leader)
+			else:
+				camera.set_target(leader)
+			_on_player_finished(human)
 
 
 ## Eliminated cars stop colliding with active racers at once, then shrink
@@ -551,28 +668,37 @@ func _build_elimination_gate() -> void:
 	gate.add_child(label)
 
 
-func _on_player_finished() -> void:
-	if _player_done:
+## A human finished or was knocked out. Once every human is done the race
+## is over for the players: the Grand Prix result is recorded and (single
+## player only) coins and records are paid out before the results open.
+func _on_player_finished(racer: RaceProgress = null) -> void:
+	if racer == null:
+		racer = player
+	if _humans_done.has(racer):
 		return
-	_player_done = true
-	coins.collecting = false
-	_update_positions()
-	var reward := {}
-	if championship != null:
-		reward = _record_championship()
-	else:
-		reward = RaceRewards.compute(player.finish_position, not player.eliminated, coins.collected)
-	_grant_rewards(reward)
-	if player.eliminated:
-		_set_state(State.FINISHED)
-		player_finished.emit(player)
-		return
-	if get_ai(player) == null:
+	_humans_done[racer] = true
+	coins.stop_collecting(racer.vehicle)
+	var all_done := _humans_done.size() >= players.size()
+	if all_done:
+		_player_done = true
+		coins.collecting = false
+		_update_positions()
+		var reward := {}
+		if championship != null:
+			reward = _record_championship()
+		elif not is_multiplayer():
+			reward = RaceRewards.compute(player.finish_position, not player.eliminated, coins.collected)
+		if not is_multiplayer():
+			_grant_rewards(reward)
+	if not racer.eliminated and get_ai(racer) == null:
 		# Hand the car to the autopilot so it keeps driving through the results.
-		var autopilot := _attach_ai(player.vehicle, RacerProfile.new(), player.grid_slot)
+		var autopilot := _attach_ai(racer.vehicle, RacerProfile.new(), racer.grid_slot)
 		autopilot.racers = get_vehicles()
-	_set_state(State.FINISHED)
-	player_finished.emit(player)
+	if all_done:
+		_set_state(State.FINISHED)
+	player_finished.emit(racer)
+	if all_done:
+		all_players_finished.emit()
 
 
 ## Grand Prix: classify the field at the player's finish, award points and
@@ -585,6 +711,15 @@ func _record_championship() -> Dictionary:
 	for racer in get_standings():
 		order.append(racer.racer_id)
 	championship.record_race(order)
+	if is_multiplayer():
+		# Split screen pays nothing and saves nothing (the single-player
+		# Grand Prix save is left alone).
+		championship_updated.emit(championship)
+		return {}
+	if championship.is_series():
+		# Versus series: the usual race reward, no cup bonus, nothing saved.
+		championship_updated.emit(championship)
+		return RaceRewards.compute(player.finish_position, not player.eliminated, coins.collected)
 	var won := championship.is_complete() and championship.standings()[0] == RaceConfig.PLAYER_ID
 	var reward := RaceRewards.compute(player.finish_position, true, coins.collected, won)
 	championship.coins_awarded += int(reward.total)
@@ -638,15 +773,37 @@ func _update_rubber_band() -> void:
 		if state == State.FINISHED or difficulty == null:
 			ai.speed_scale = 1.0
 			continue
-		var gap := player.race_distance - racer.race_distance
+		var gap := leading_player().race_distance - racer.race_distance
 		ai.speed_scale = 1.0 + clampf(gap / 200.0, -1.0, 1.0) * difficulty.rubber_band
 
 
-func _update_wrong_way(delta: float) -> void:
-	var car := player.vehicle
+func _update_wrong_way(slot: int, delta: float) -> void:
+	var human := players[slot]
+	var car := human.vehicle
 	var tangent := track.get_direction_at(car.global_position) # follows shortcuts
 	var heading := -car.global_transform.basis.z
 	var backwards := car.linear_velocity.dot(tangent) < -3.0 and heading.dot(tangent) < -0.3
-	_wrong_way_time = _wrong_way_time + delta if backwards else 0.0
-	wrong_way = state == State.RACING and _wrong_way_time > 0.75
-	wrong_way_sign.update(track, car, wrong_way and not player.finished, delta)
+	_wrong_way_times[slot] = _wrong_way_times[slot] + delta if backwards else 0.0
+	wrong_ways[slot] = state == State.RACING and _wrong_way_times[slot] > 0.75
+	wrong_way_signs[slot].update(track, car, wrong_ways[slot] and not human.finished, delta)
+	if slot == 0:
+		_wrong_way_time = _wrong_way_times[0]
+		wrong_way = wrong_ways[0]
+
+
+## One wrong-way sign per human; in split screen each is drawn only in its
+## owner's view.
+func _build_wrong_way_signs() -> void:
+	wrong_way_signs = [wrong_way_sign]
+	for i in range(1, players.size()):
+		var sign := WrongWaySign.new()
+		sign.name = "WrongWaySign%d" % (i + 1)
+		add_child(sign)
+		wrong_way_signs.append(sign)
+	if is_multiplayer():
+		for i in wrong_way_signs.size():
+			SplitScreen.set_render_layer(wrong_way_signs[i], SplitScreen.private_layer(i))
+	wrong_ways.resize(players.size())
+	wrong_ways.fill(false)
+	_wrong_way_times.resize(players.size())
+	_wrong_way_times.fill(0.0)

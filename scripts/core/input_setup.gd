@@ -16,16 +16,18 @@ const DEFAULTS := {
 	&"brake": [TRIGGER_DEADZONE, [KEY_S, KEY_DOWN], [], [[JOY_AXIS_TRIGGER_LEFT, 1.0]]],
 	&"steer_left": [STEER_DEADZONE, [KEY_A, KEY_LEFT], [], [[JOY_AXIS_LEFT_X, -1.0]]],
 	&"steer_right": [STEER_DEADZONE, [KEY_D, KEY_RIGHT], [], [[JOY_AXIS_LEFT_X, 1.0]]],
-	# Keyboard: hold Shift and steer (A/D) to drift that way.
-	# Gamepad keeps dedicated left/right drift buttons (GDD 3.3).
-	&"drift": [0.5, [KEY_SHIFT], [], []],
-	&"drift_left": [0.5, [], [JOY_BUTTON_LEFT_SHOULDER], []],
-	&"drift_right": [0.5, [], [JOY_BUTTON_RIGHT_SHOULDER], []],
-	&"cycle_camera": [0.5, [KEY_C], [JOY_BUTTON_BACK], []],
-	&"reset_vehicle": [0.5, [KEY_R], [JOY_BUTTON_Y], []],
-	&"use_weapon": [0.5, [KEY_SPACE], [JOY_BUTTON_A], []],
+	# Hold Shift (keyboard) or RB (gamepad) and steer to drift that way (GDD 3.3).
+	&"drift": [0.5, [KEY_SHIFT], [JOY_BUTTON_RIGHT_SHOULDER], []],
+	# Fixed-direction drift; unbound by default (kept for rebinding / code).
+	&"drift_left": [0.5, [], [], []],
+	&"drift_right": [0.5, [], [], []],
+	&"cycle_camera": [0.5, [KEY_C], [JOY_BUTTON_DPAD_DOWN], []],
+	# Hold to see behind you (the Rear View), release to go back.
+	&"look_back": [0.5, [KEY_Q], [JOY_BUTTON_RIGHT_STICK], []],
+	&"reset_vehicle": [0.5, [KEY_R], [JOY_BUTTON_DPAD_UP], []],
+	&"use_weapon": [0.5, [KEY_SPACE], [JOY_BUTTON_LEFT_SHOULDER], []],
 	# Ramp tricks: press in the air after a jump ramp.
-	&"trick": [0.5, [KEY_E], [JOY_BUTTON_X], []],
+	&"trick": [0.5, [KEY_E], [JOY_BUTTON_Y], []],
 	&"select_slot_1": [0.5, [KEY_1], [JOY_BUTTON_DPAD_LEFT], []],
 	&"select_slot_2": [0.5, [KEY_2], [JOY_BUTTON_DPAD_RIGHT], []],
 	&"pause": [0.5, [KEY_ESCAPE], [JOY_BUTTON_START], []],
@@ -37,14 +39,13 @@ const REMAPPABLE := [
 	[&"brake", "Brake / reverse", true, true],
 	[&"steer_left", "Steer left", true, true],
 	[&"steer_right", "Steer right", true, true],
-	[&"drift", "Drift (hold + steer)", true, false],
-	[&"drift_left", "Drift left", false, true],
-	[&"drift_right", "Drift right", false, true],
+	[&"drift", "Drift (hold + steer)", true, true],
 	[&"use_weapon", "Use weapon", true, true],
 	[&"trick", "Trick (off a ramp)", true, true],
 	[&"select_slot_1", "Weapon slot 1", true, true],
 	[&"select_slot_2", "Weapon slot 2", true, true],
 	[&"cycle_camera", "Cycle camera", true, true],
+	[&"look_back", "Look back (hold)", true, true],
 	[&"reset_vehicle", "Reset vehicle", true, true],
 	[&"pause", "Pause", true, true],
 ]
@@ -74,6 +75,48 @@ static func ensure_actions() -> void:
 			_add_defaults(action)
 	_remove_space_from_ui_accept()
 	apply_bindings(GameSettings.bindings)
+
+
+## Builds this split-screen player's actions ("p2_accelerate", ...) from the
+## current bindings, so rebinds carry over. device -1 = keyboard (key events
+## only); otherwise that gamepad's events only, tied to its device id.
+## Returns the action prefix ("p2_").
+static func build_player_actions(slot: int, device: int) -> StringName:
+	ensure_actions()
+	var prefix := player_prefix(slot)
+	for base in DEFAULTS:
+		var action := StringName(prefix + str(base))
+		if InputMap.has_action(action):
+			InputMap.erase_action(action)
+		InputMap.add_action(action, InputMap.action_get_deadzone(base))
+		for event in InputMap.action_get_events(base):
+			var is_key := event is InputEventKey
+			var is_pad := event is InputEventJoypadButton or event is InputEventJoypadMotion
+			if (device < 0 and is_key) or (device >= 0 and is_pad):
+				var copy := event.duplicate() as InputEvent
+				copy.device = device if device >= 0 else -1
+				InputMap.action_add_event(action, copy)
+	return StringName(prefix)
+
+
+## "p1_" .. "p4_" for split-screen slots 0-3.
+static func player_prefix(slot: int) -> String:
+	return "p%d_" % (slot + 1)
+
+
+## A base action with a player's prefix ("" = single player, any device).
+static func action(prefix: StringName, base: StringName) -> StringName:
+	return base if prefix == &"" else StringName(str(prefix) + str(base))
+
+
+## Which join device an event comes from: -1 keyboard, a gamepad id, or -2
+## for anything else (mouse, touch).
+static func event_device(event: InputEvent) -> int:
+	if event is InputEventKey:
+		return -1
+	if event is InputEventJoypadButton or event is InputEventJoypadMotion:
+		return event.device
+	return -2
 
 
 ## Restores the GDD defaults for one action (both devices).

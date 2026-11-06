@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="CameraProfile" format=3]
+
+[ext_resource type="Script" path="res://scripts/camera/camera_profile.gd" id="1_profile"]
+
+[resource]
+script = ExtResource("1_profile")
+display_name = "Rear View"
+distance = 6.0
+height = 2.4
+look_height = 1.0
+look_ahead = 6.0
+fov = 76.0
+look_back = true
+speed_fov_gain = 3.0
+speed_distance_gain = 0.3
+boost_fov_kick = 2.0
+position_smoothing = 14.0
+rotation_smoothing = 7.0
+velocity_blend = 0.0

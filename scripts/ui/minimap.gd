@@ -129,22 +129,39 @@ func _draw() -> void:
 		if racer.is_player:
 			continue
 		var at := world_to_map(racer.vehicle.global_position)
-		if racer.vehicle.global_position.distance_to(me) < NEAR_DISTANCE:
+		if racer.vehicle.global_position.distance_to(me) < NEAR_DISTANCE and not race.is_multiplayer():
 			draw_arc(at, 7.0, 0.0, TAU, 20, Color(1, 1, 1, 0.45), 1.2, true)
 		draw_circle(at, 4.5, Color(0.0, 0.0, 0.0, 0.8))
 		draw_circle(at, 3.5, racer.color.lightened(0.35))
+	if race != null and race.is_multiplayer():
+		# Split screen: one arrow per player in their colour (player 1 on top).
+		for i in range(race.players.size() - 1, -1, -1):
+			var human := race.players[i]
+			if not human.eliminated and is_instance_valid(human.vehicle):
+				_draw_arrow(human.vehicle, SplitScreen.PLAYER_COLORS[i])
+		return
 	var out := race != null and race.player != null and race.player.eliminated
 	if is_instance_valid(player_car) and not out:
-		var car := player_car
-		var p := world_to_map(car.global_position)
-		var fwd3 := track.global_transform.basis.inverse() * -car.global_transform.basis.z
-		var fwd := Vector2(fwd3.x, fwd3.z).normalized()
-		if fwd == Vector2.ZERO:
-			fwd = Vector2.UP
-		var side := Vector2(-fwd.y, fwd.x)
-		var tri := PackedVector2Array([p + fwd * 10.0, p - fwd * 6.0 + side * 6.0, p - fwd * 6.0 - side * 6.0])
-		draw_colored_polygon(tri, UIStyle.CYAN)
-		draw_polyline(PackedVector2Array([tri[0], tri[1], tri[2], tri[0]]), Color.WHITE, 1.5, true)
+		_draw_arrow(player_car, UIStyle.CYAN)
+
+
+## Players drawn as arrows (tests): split screen = every human still in.
+func arrow_count() -> int:
+	if race != null and race.is_multiplayer():
+		return race.players.filter(func(r: RaceProgress) -> bool: return not r.eliminated).size()
+	return 1 if is_instance_valid(player_car) else 0
+
+
+func _draw_arrow(car: VehicleController, color: Color) -> void:
+	var p := world_to_map(car.global_position)
+	var fwd3 := track.global_transform.basis.inverse() * -car.global_transform.basis.z
+	var fwd := Vector2(fwd3.x, fwd3.z).normalized()
+	if fwd == Vector2.ZERO:
+		fwd = Vector2.UP
+	var side := Vector2(-fwd.y, fwd.x)
+	var tri := PackedVector2Array([p + fwd * 10.0, p - fwd * 6.0 + side * 6.0, p - fwd * 6.0 - side * 6.0])
+	draw_colored_polygon(tri, color)
+	draw_polyline(PackedVector2Array([tri[0], tri[1], tri[2], tri[0]]), Color.WHITE, 1.5, true)
 
 
 func _draw_tick(track: TrackCircuit, offset: float, color: Color, width: float = 3.0) -> void:

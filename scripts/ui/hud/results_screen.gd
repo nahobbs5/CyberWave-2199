@@ -29,6 +29,11 @@ var continue_button: Button
 var menu_button: Button
 var standings_box: VBoxContainer
 var grid_box: VBoxContainer
+## Split screen: one line per player (place, time, best lap) in their colour.
+var players_box: VBoxContainer
+
+var _tiles: HBoxContainer
+var _rewards_caption: Label
 
 var _header_cells: Array[Label] = []
 var _rows: Array[PanelContainer] = []
@@ -68,21 +73,41 @@ func open(manager: RaceManager) -> void:
 	race = manager
 	var player := race.player
 	var c := race.championship
+	var mp := race.is_multiplayer()
 	title.text = context_text()
+	# Split screen pays no coins: a line per player instead of tiles + rewards.
+	_tiles.visible = not mp
+	_rewards_caption.visible = not mp
+	rewards_box.visible = not mp
+	affordable_label.visible = not mp
+	players_box.visible = mp
+	if mp:
+		player = best_human()
 	var place := player.finish_position
 	placement.text = "ELIMINATED" if player.eliminated else "%s PLACE" % ordinal(place)
 	subtitle.text = placement_subtitle()
 	placement.add_theme_color_override("font_color", UIStyle.DANGER if player.eliminated else (UIStyle.GOLD if place == 1 else UIStyle.MAGENTA))
+	if mp:
+		placement.text = "%s  %s" % [player.display_name, "WINS!" if place == 1 else ordinal(place)]
+		placement.add_theme_color_override("font_color", SplitScreen.PLAYER_COLORS[race.player_slot(player)])
 	time_value.text = ("OUT  LAP %d" % player.eliminated_lap) if player.eliminated else RaceProgress.format_time(player.finish_time)
 	best_value.text = RaceProgress.format_time(player.best_lap)
 	_fill_rewards()
+	if mp:
+		best_banner.visible = false
+		_fill_players()
 	if c == null:
 		continue_button.text = "Race again"
 	elif c.is_complete():
 		continue_button.text = "Back to main menu"
+	elif c.is_series():
+		continue_button.text = "Next race: pick a track"
 	else:
 		continue_button.text = "Next race: %s" % c.current_track_name()
 	menu_button.visible = c == null or not c.is_complete()
+	menu_button.text = "Car select" if mp else "Main menu"
+	if mp and c != null and c.is_complete():
+		continue_button.text = "Back to car select"
 	continue_button.disabled = true
 	menu_button.disabled = true
 	_buttons_delay = 1.5
@@ -101,16 +126,36 @@ func context_text() -> String:
 	var track := race.config.track_name.to_upper()
 	if c == null:
 		return "%s / %s" % [RaceConfig.MODE_NAMES[race.config.mode].to_upper(), track]
+	if c.is_complete() and c.is_series():
+		return "%s FINAL / %d RACES" % [RaceConfig.MODE_NAMES[c.series_mode].to_upper(), c.race_count()]
 	if c.is_complete():
 		return "CHAMPIONSHIP FINAL / %s" % c.gp.display_name.to_upper()
 	return "%s / RACE %d OF %d / %s" % [c.gp.display_name.to_upper(), c.race_index, c.race_count(), track]
 
 
+## Split screen: the human with the best finishing position.
+func best_human() -> RaceProgress:
+	var best := race.player
+	for p in race.players:
+		if p.finish_position > 0 and (best.finish_position <= 0 or p.finish_position < best.finish_position):
+			best = p
+	return best
+
+
 func placement_subtitle() -> String:
 	var player := race.player
 	var c := race.championship
+	if race.is_multiplayer():
+		if c != null and c.is_complete():
+			var champ := c.standings()[0]
+			if c.is_series():
+				return "%s WINS THE SERIES!" % _name_of(champ) if RaceConfig.is_human_id(champ) else "SERIES COMPLETE"
+			return "%s IS CHAMPION!" % _name_of(champ) if RaceConfig.is_human_id(champ) else "CHAMPIONSHIP COMPLETE"
+		return "VICTORY!" if best_human().finish_position == 1 else "RACE COMPLETE"
 	if player.eliminated:
 		return "KNOCKED OUT ON LAP %d" % player.eliminated_lap
+	if c != null and c.is_complete() and c.is_series():
+		return "SERIES WINNER!" if c.standings()[0] == RaceConfig.PLAYER_ID else "SERIES COMPLETE"
 	if c != null and c.is_complete():
 		return "CHAMPION!" if c.standings()[0] == RaceConfig.PLAYER_ID else "CHAMPIONSHIP COMPLETE"
 	match player.finish_position:
@@ -194,9 +239,10 @@ func refresh() -> void:
 			var cell := cells[k] as Label
 			cell.text = texts[k]
 			cell.add_theme_color_override("font_color", Color.WHITE if racer.is_player else UIStyle.MUTED)
+		var mine := _highlight(racer)
 		var style := row.get_theme_stylebox("panel") as StyleBoxFlat
-		style.bg_color = Color(UIStyle.MAGENTA, 0.28) if racer.is_player else Color(1, 1, 1, 0.03)
-		style.border_color = UIStyle.MAGENTA if racer.is_player else Color(0, 0, 0, 0)
+		style.bg_color = Color(mine, 0.28) if racer.is_player else Color(1, 1, 1, 0.03)
+		style.border_color = mine if racer.is_player else Color(0, 0, 0, 0)
 	if c != null:
 		_fill_championship(c)
 		var lines: PackedStringArray = []
@@ -262,12 +308,42 @@ func _fill_championship(c: Championship) -> void:
 	var ranking := c.standings()
 	for i in ranking.size():
 		var id := ranking[i]
-		var color := UIStyle.MAGENTA if id == RaceConfig.PLAYER_ID else UIStyle.MUTED
+		var color := UIStyle.MUTED
+		if id == RaceConfig.PLAYER_ID and not race.is_multiplayer():
+			color = UIStyle.MAGENTA
+		elif RaceConfig.is_human_id(id) and race.is_multiplayer():
+			color = SplitScreen.PLAYER_COLORS[RaceConfig.human_slot(id)]
 		if i == 0 and c.is_complete():
 			color = UIStyle.GOLD
 		_championship_grid.add_child(UIStyle.stat(str(i + 1), 16, color))
 		_championship_grid.add_child(UIStyle.stat(_name_of(id), 16, color))
 		_championship_grid.add_child(UIStyle.heading(str(c.points.get(id, 0)), 15, color))
+
+
+## A human's row colour: magenta, or their player colour in split screen.
+func _highlight(racer: RaceProgress) -> Color:
+	if race.is_multiplayer() and racer.is_player:
+		return SplitScreen.PLAYER_COLORS[race.player_slot(racer)]
+	return UIStyle.MAGENTA
+
+
+## Split screen: "P1   3RD   2:31.4   best 0:49.2" per player.
+func _fill_players() -> void:
+	for child in players_box.get_children():
+		child.queue_free()
+	for p in race.players:
+		var color: Color = SplitScreen.PLAYER_COLORS[race.player_slot(p)]
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 14)
+		var who := UIStyle.heading(p.display_name, 20, color)
+		who.custom_minimum_size = Vector2(44, 0)
+		row.add_child(who)
+		var place := UIStyle.heading("OUT" if p.eliminated else ordinal(p.finish_position), 20, Color.WHITE)
+		place.custom_minimum_size = Vector2(64, 0)
+		row.add_child(place)
+		var time := ("lap %d" % p.eliminated_lap) if p.eliminated else RaceProgress.format_time(p.finish_time)
+		row.add_child(UIStyle.stat("%s    best %s" % [time, RaceProgress.format_time(p.best_lap)], 16, UIStyle.MUTED))
+		players_box.add_child(row)
 
 
 func _name_of(id: int) -> String:
@@ -337,6 +413,11 @@ func _build() -> void:
 	var tiles := HBoxContainer.new()
 	tiles.add_theme_constant_override("separation", 8)
 	left.add_child(tiles)
+	_tiles = tiles
+	players_box = VBoxContainer.new()
+	players_box.add_theme_constant_override("separation", 2)
+	players_box.visible = false
+	left.add_child(players_box)
 	time_value = _tile(tiles, "RACE TIME", Color.WHITE)
 	best_value = _tile(tiles, "BEST LAP", UIStyle.CYAN)
 	coins_value = _tile(tiles, "COINS", UIStyle.GOLD)
@@ -344,7 +425,8 @@ func _build() -> void:
 	best_banner.resized.connect(func() -> void: best_banner.pivot_offset = best_banner.size * 0.5)
 	best_banner.visible = false
 	left.add_child(best_banner)
-	left.add_child(UIStyle.stat("REWARDS", 15, UIStyle.CYAN))
+	_rewards_caption = UIStyle.stat("REWARDS", 15, UIStyle.CYAN)
+	left.add_child(_rewards_caption)
 	rewards_box = VBoxContainer.new()
 	rewards_box.add_theme_constant_override("separation", -2)
 	left.add_child(rewards_box)

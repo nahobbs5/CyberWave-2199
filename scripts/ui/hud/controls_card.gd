@@ -7,11 +7,12 @@ const ROWS := [
 	["Accelerate", [&"accelerate"]],
 	["Brake / reverse", [&"brake"]],
 	["Steer", [&"steer_left", &"steer_right"]],
-	["Drift: hold + steer", [&"drift"], [&"drift_left", &"drift_right"]],
+	["Drift: hold + steer", [&"drift"]],
 	["Use item", [&"use_weapon"]],
 	["Trick (in the air off a ramp)", [&"trick"]],
 	["Item slot 1 / 2", [&"select_slot_1", &"select_slot_2"]],
 	["Camera", [&"cycle_camera"]],
+	["Look back (hold)", [&"look_back"]],
 	["Reset car", [&"reset_vehicle"]],
 	["Pause", [&"pause"]],
 ]

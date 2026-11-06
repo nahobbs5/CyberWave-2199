@@ -1,8 +1,9 @@
 class_name MainMenu
 extends Control
-## Main menu (GDD 11.2): Continue Grand Prix (only when a championship is
-## saved), Grand Prix, Versus (Standard or Elimination, picked on the setup
-## screen), Practice (free drive), Garage, Settings, Credits, Exit.
+## Single-player menu (GDD 11.2), opened from the title's Single Player:
+## Continue Grand Prix (only when a championship is saved), Grand Prix,
+## Versus (Standard or Elimination, picked on the setup screen), Practice
+## (free drive), Garage, Settings, Credits, Back to the title.
 
 const LOGO := preload("res://assets/logo/Cyberwave 2199 Neon Cityscape.png")
 ## Additive blend drops the logo's black background, leaving only the neon;
@@ -23,10 +24,18 @@ func button_texts() -> PackedStringArray:
 
 func _ready() -> void:
 	InputSetup.ensure_actions()
+	GameSession.split_screen = false
+	GameSession.menu_return = GameSession.MAIN_MENU_SCENE
 	Music.play(get_tree(), Music.MENU)
 	_build()
 	UIStyle.fade_in(self)
 	_buttons[0].grab_focus.call_deferred()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel"):
+		get_viewport().set_input_as_handled()
+		GameSession.to_title(get_tree())
 
 
 func has_continue() -> bool:
@@ -69,12 +78,12 @@ func _build() -> void:
 	var entries: Array[Button] = [
 		_continue_button,
 		UIStyle.button("Grand Prix", func() -> void: GameSession.to_cup_select(tree, RaceConfig.Mode.GRAND_PRIX)),
-		UIStyle.button("Versus", func() -> void: GameSession.to_cup_select(tree, GameSession.last_versus_mode())),
+		UIStyle.button("Versus", func() -> void: GameSession.to_race_setup(tree, GameSession.last_versus_mode())),
 		UIStyle.button("Practice", func() -> void: GameSession.to_free_drive(tree)),
 		UIStyle.button("Garage", func() -> void: GameSession.to_garage(tree)),
 		UIStyle.button("Settings", func() -> void: GameSession.to_settings(tree)),
 		UIStyle.button("Credits", func() -> void: GameSession.to_credits(tree)),
-		UIStyle.button("Exit", func() -> void: tree.quit()),
+		UIStyle.button("Back", func() -> void: GameSession.to_title(tree)),
 	]
 	for b in entries:
 		b.custom_minimum_size = Vector2(440, 44)

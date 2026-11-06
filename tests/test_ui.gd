@@ -36,6 +36,9 @@ func _run_all() -> void:
 	await _test_cups()
 	_test_stacks_rename()
 	await _test_practice_minimap()
+	await _test_loading_card()
+	await _test_countdown_waits_for_loading()
+	await _run("pause menu volume", _test_pause_volume, _config(3), false)
 	await _run("HUD in a race", _test_hud, _config(3), false)
 	await _run("layout at HUD scale 1.0 and 1.5", _test_layout, _config(3), false)
 	var cars := _config(3)
@@ -175,8 +178,8 @@ func _test_cups() -> void:
 	var american := GrandPrixData.cup_by_path(GrandPrixData.CUPS[0])
 	_check(american.display_name == "American Cup" and american.emblem == "usa", "American Cup with the USA trophy")
 	_check(GrandPrixData.cup_by_path(GrandPrixData.CUPS[1]).display_name == "World Cup", "World Cup")
-	# Versus: cup, then track.
-	GameSession.setup_mode = RaceConfig.Mode.VERSUS
+	# Grand Prix: the cup screen shows the trophies.
+	GameSession.setup_mode = RaceConfig.Mode.GRAND_PRIX
 	GameSession.cup_path = ""
 	GameSession.track_name = ""
 	var cups := (load("res://scenes/menu/cup_select.tscn") as PackedScene).instantiate() as CupSelect
@@ -185,31 +188,36 @@ func _test_cups() -> void:
 	var trophy := cups.cards[0].find_child("Trophy", true, false) as TrophyIcon
 	_check(trophy != null and trophy.emblem == "usa" and not trophy.locked, "the American card shows its trophy")
 	_check(cups.cards[0].has_focus(), "first cup focused")
-	cups.pick(0)
-	_check(GameSession.cup_path == GrandPrixData.CUPS[0], "Versus: cup picked")
 	cups.queue_free()
+	# Versus (Mario Kart style): race setup first, then every cup's tracks on one screen.
+	GameSession.setup_mode = RaceConfig.Mode.VERSUS
+	var setup := (load("res://scenes/menu/race_setup.tscn") as PackedScene).instantiate() as RaceSetup
+	root.add_child(setup)
+	await _frames(2)
+	setup._races.selected = RaceSetup.RACE_COUNTS.find(1)
+	_check(setup.summary_text() == "VERSUS  ·  1 RACE", "Versus setup shows the race count (%s)" % setup.summary_text())
+	setup.start()
+	_check(GameSession.versus_template != null and GameSession.series == null, "one race: no series")
+	setup.queue_free()
 	var tracks := (load("res://scenes/menu/track_select.tscn") as PackedScene).instantiate() as TrackSelect
 	root.add_child(tracks)
 	await _frames(2)
-	_check(tracks.cards.size() == 3, "three track cards")
+	_check(tracks.cards.size() == 6, "every cup's tracks on one screen (%d)" % tracks.cards.size())
 	var outlines_ok := true
 	for card in tracks.cards:
 		var thumb := card.find_child("Thumbnail", true, false) as TrackThumbnail
 		outlines_ok = outlines_ok and thumb != null and thumb.outline.size() >= 3
 	_check(outlines_ok, "every track card has its outline")
+	var down := tracks.cards[0].get_node(tracks.cards[0].focus_neighbor_bottom)
+	_check(down == tracks.cards[3], "down moves from the American Cup row to the World Cup row")
 	tracks.pick(0)
 	_check(GameSession.track_name == "Vegas Overdrive", "picking a track: Vegas is first (%s)" % GameSession.track_name)
+	_check(GameSession.current != null and GameSession.current.track_scene.resource_path.ends_with("vegas_overdrive.tscn"),
+			"and it races that track")
 	tracks.queue_free()
-	var setup := (load("res://scenes/menu/race_setup.tscn") as PackedScene).instantiate() as RaceSetup
-	root.add_child(setup)
-	await _frames(2)
-	var config := setup.make_config()
-	_check(config.track_name == "Vegas Overdrive" and config.track_scene.resource_path.ends_with("vegas_overdrive.tscn"),
-			"race setup races the picked track")
-	_check(setup.summary_text() == "AMERICAN CUP  ·  VEGAS OVERDRIVE", "setup shows the cup and track (%s)" % setup.summary_text())
-	setup.queue_free()
 	GameSession.cup_path = ""
 	GameSession.track_name = ""
+	GameSession.versus_template = null
 	await process_frame
 
 
@@ -301,8 +309,8 @@ func _test_slipstream_race(race: RaceManager) -> void:
 func _test_tricks(race: RaceManager) -> void:
 	var keys := InputMap.action_get_events(&"trick")
 	var has_e := keys.any(func(e: InputEvent) -> bool: return e is InputEventKey and (e as InputEventKey).physical_keycode == KEY_E or e is InputEventKey and (e as InputEventKey).keycode == KEY_E)
-	var has_x := keys.any(func(e: InputEvent) -> bool: return e is InputEventJoypadButton and (e as InputEventJoypadButton).button_index == JOY_BUTTON_X)
-	_check(has_e and has_x, "Trick is E / gamepad X")
+	var has_y := keys.any(func(e: InputEvent) -> bool: return e is InputEventJoypadButton and (e as InputEventJoypadButton).button_index == JOY_BUTTON_Y)
+	_check(has_e and has_y, "Trick is E / gamepad Y")
 	var car := race.player.vehicle
 	var trick := car.trick
 	_check(trick != null and not trick.try_trick(), "no trick without a ramp")
@@ -542,3 +550,77 @@ func _test_results(race: RaceManager) -> void:
 	_check(results.placement_subtitle() == "PODIUM!", "P2: podium")
 	await _frames(100)
 	_check(not hud._continue_button.disabled and results.continue_button.has_focus(), "Race again focused once enabled")
+
+
+# --- loading screen + pause volume ---------------------------------------------
+
+func _test_loading_card() -> void:
+	_current = "loading card"
+	print("- loading card")
+	var config := _config(3)
+	config.mode = RaceConfig.Mode.GRAND_PRIX
+	config.track_name = "Vegas Overdrive"
+	GameSession.current = config
+	var card := LoadingScreen.card_for(GameSession.RACE_SCENE)
+	_check(card.title == "Vegas Overdrive", "card names the track (%s)" % card.title)
+	_check(str(card.detail).contains("Las Vegas") and str(card.detail).contains("Grand Prix"),
+			"card shows location and mode (%s)" % card.detail)
+	_check(LoadingScreen.card_for(GameSession.FREE_DRIVE_SCENE).title == "Free Drive", "free drive card")
+	_check(GameSession.RACE_SCENE in GameSession.SLOW_SCENES and GameSession.FREE_DRIVE_SCENE in GameSession.SLOW_SCENES
+			and not GameSession.MAIN_MENU_SCENE in GameSession.SLOW_SCENES, "races and free drive load behind the card")
+	var screen := LoadingScreen.new()
+	screen.build(card)
+	root.add_child(screen)
+	await _frames(2)
+	_check(screen.title_label.text == "VEGAS OVERDRIVE", "title on screen")
+	_check(screen.thumbnail != null and screen.thumbnail.outline.size() > 10, "track outline on screen")
+	_check(screen.layer > 20, "drawn above the pause menu and HUD")
+	await screen.dismiss()
+	await process_frame
+	_check(not is_instance_valid(screen), "freed after fading out")
+	GameSession.current = null
+
+
+func _test_countdown_waits_for_loading() -> void:
+	_current = "countdown waits for loading"
+	print("- countdown waits for loading")
+	var screen := LoadingScreen.new()
+	screen.build(LoadingScreen.card_for(""))
+	root.add_child(screen)
+	LoadingScreen.active = screen
+	var race := (load(RACE_SCENE) as PackedScene).instantiate() as RaceManager
+	race.config = _config(3)
+	root.add_child(race)
+	race.camera.save_preference = false
+	for i in 30:
+		await physics_frame
+	_check(race.state == RaceManager.State.GRID, "no countdown behind the card (%s)" % race.state)
+	await screen.dismiss()
+	_check(LoadingScreen.active == null, "active cleared")
+	await physics_frame
+	_check(race.state == RaceManager.State.COUNTDOWN, "countdown starts once the card is gone (%s)" % race.state)
+	race.queue_free()
+	await process_frame
+
+
+func _test_pause_volume(race: RaceManager) -> void:
+	var pause := race.get_node("PauseMenu") as PauseMenu
+	_check(pause.volume_sliders.size() == 3, "Master, Music and Sound effects sliders")
+	GameSettings.set_volume("music", 0.8)
+	pause.open()
+	var music := pause.volume_sliders["music"] as HSlider
+	_check(is_equal_approx(music.value, 80.0), "slider shows the saved volume (%s)" % music.value)
+	music.value = 30.0
+	_check(is_equal_approx(GameSettings.music_volume, 0.3), "moving it sets the music volume")
+	var bus := AudioServer.get_bus_index("Music")
+	_check(is_equal_approx(AudioServer.get_bus_volume_db(bus), linear_to_db(0.3)), "Music bus follows")
+	var saved := ConfigFile.new()
+	saved.load(GameSettings.path)
+	_check(is_equal_approx(float(saved.get_value("audio", "music", 0.0)), 0.3), "saved to settings")
+	var sfx := pause.volume_sliders["sfx"] as HSlider
+	sfx.value = 0.0
+	_check(AudioServer.is_bus_mute(AudioServer.get_bus_index("SFX")), "0% mutes sound effects")
+	_check(sfx.focus_neighbor_top != NodePath(""), "sliders are in the focus chain")
+	pause.close()
+	GameSettings.set_volume("sfx", 1.0)
+	GameSettings.set_volume("music", 0.8)

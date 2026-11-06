@@ -5,7 +5,7 @@ extends SceneTree
 ## Optional env SHOT_CAMERA="x,y,z;tx,ty,tz" places a camera looking at a target.
 ## Optional env SHOT_CAR_CAM="dx,dy,dz" (race scenes) puts the camera at that
 ## offset in the player car's local space, looking at the car.
-## SHOT_TRACK / SHOT_AUTOPILOT: see below. SHOT_EVERY=n saves a numbered shot
+## SHOT_TRACK / SHOT_AUTOPILOT / SHOT_PLAYERS: see below. SHOT_EVERY=n saves a numbered shot
 ## every n frames (out.png -> out_001.png ...).
 
 func _initialize() -> void:
@@ -27,6 +27,12 @@ func _go() -> void:
 		var track_path := OS.get_environment("SHOT_TRACK")
 		if track_path != "":
 			config.track_scene = load(track_path) as PackedScene
+		# SHOT_PLAYERS=2..4 races in split screen (keyboard + pads 0-2).
+		var players := int(OS.get_environment("SHOT_PLAYERS")) if OS.get_environment("SHOT_PLAYERS") != "" else 1
+		if players > 1:
+			config.player_devices = PackedInt32Array([-1, 0, 1, 2]).slice(0, players)
+			for i in players:
+				config.player_vehicle_ids.append(VehicleCatalog.all()[i].id)
 		(node as RaceManager).config = config
 		(node as RaceManager).player_uses_autopilot = OS.get_environment("SHOT_AUTOPILOT") != ""
 	root.add_child(node)

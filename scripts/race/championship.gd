@@ -33,13 +33,30 @@ var rival_vehicles: PackedStringArray = PackedStringArray()
 var coins_awarded: int = 0
 var difficulty_id: String = "normal"
 var weapons_enabled: bool = true
+## Split screen (never saved): each human's device and car, and whether AI
+## rivals fill the grid. Humans are RaceConfig.human_id(slot).
+var player_devices: PackedInt32Array = PackedInt32Array()
+var player_vehicle_ids: PackedStringArray = PackedStringArray()
+var player_plates: PackedStringArray = PackedStringArray()
+var ai_rivals: bool = true
+## Versus series (Mario Kart style "number of races"): how many races, 0 for
+## a cup Grand Prix. Tracks are picked one race at a time (add_track), and
+## the series lives in memory only.
+var series_races: int = 0
+## Versus or Elimination: the race type of every race in a series.
+var series_mode: RaceConfig.Mode = RaceConfig.Mode.VERSUS
 
 
 static func create(p_gp: GrandPrixData, p_difficulty_id: String, p_weapons: bool,
-		roster: RivalRoster, p_vehicle_id: String = PlayerProfile.DEFAULT_VEHICLE) -> Championship:
+		roster: RivalRoster, p_vehicle_id: String = PlayerProfile.DEFAULT_VEHICLE,
+		p_devices: PackedInt32Array = PackedInt32Array(), p_vehicles: PackedStringArray = PackedStringArray(),
+		p_ai_rivals: bool = true) -> Championship:
 	var c := Championship.new()
 	c.gp = p_gp
 	c.vehicle_id = p_vehicle_id
+	c.player_devices = p_devices.duplicate()
+	c.player_vehicle_ids = p_vehicles.duplicate()
+	c.ai_rivals = p_ai_rivals
 	c.difficulty_id = p_difficulty_id
 	c.weapons_enabled = p_weapons
 	var count := 7
@@ -49,18 +66,64 @@ static func create(p_gp: GrandPrixData, p_difficulty_id: String, p_weapons: bool
 			c.rival_names.append(profile.display_name)
 	c.rival_plates = RaceConfig.random_plates(7, PlayerProfile.get_profile().plate_text)
 	c.rival_vehicles = RaceConfig.random_vehicles(7)
-	# Race 1: the seven rivals fill slots 1-7, the player starts eighth.
-	c.next_grid = RaceConfig.default_grid(count)
+	if c.is_multiplayer():
+		count = mini(count, RaceConfig.rivals_for(c.player_devices.size(), p_ai_rivals))
+	# Race 1: the seven rivals fill slots 1-7, the player starts eighth
+	# (split screen: the humans fill the back of the grid).
+	c.next_grid = RaceConfig.default_grid(count, maxi(1, c.player_devices.size()))
 	for id in c.next_grid:
 		c.points[id] = 0
 	return c
+
+
+## A Versus series of `count` races with the settings in `template` (mode,
+## laps, weapons, player car, rival plates and cars, split-screen players).
+static func create_series(count: int, template: RaceConfig, p_difficulty_id: String,
+		roster: RivalRoster) -> Championship:
+	var cup := GrandPrixData.new()
+	cup.id = "versus"
+	cup.display_name = "Versus"
+	cup.laps = template.total_laps
+	var c := create(cup, p_difficulty_id, template.weapons_enabled, roster, template.vehicle_id,
+			template.player_devices, template.player_vehicle_ids, template.ai_rivals)
+	c.series_races = maxi(1, count)
+	c.series_mode = template.mode
+	c.player_plates = template.player_plates.duplicate()
+	if template.rival_plates.size() >= 7:
+		c.rival_plates = template.rival_plates
+	if template.rival_vehicles.size() >= 7:
+		c.rival_vehicles = template.rival_vehicles
+	return c
+
+
+func is_series() -> bool:
+	return series_races > 0
+
+
+## Series: the track for the next race (picked on the track screen).
+func add_track(track_name: String) -> void:
+	gp.track_names.append(track_name)
+	gp.locations.append(TrackCatalog.location(track_name))
+	gp.track_scenes.append(TrackCatalog.scene_path(track_name))
 
 
 static func points_for(position: int) -> int:
 	return POINTS[position - 1] if position >= 1 and position <= POINTS.size() else 0
 
 
+func is_multiplayer() -> bool:
+	return player_devices.size() > 1
+
+
+## The best-placed human in the standings (any player wins the cup).
+func human_won() -> bool:
+	var ranking := standings()
+	return not ranking.is_empty() and RaceConfig.is_human_id(ranking[0])
+
+
 func race_count() -> int:
+	if series_races > 0:
+		return series_races
 	return gp.race_count() if gp != null else 0
 
 
@@ -69,7 +132,8 @@ func is_complete() -> bool:
 
 
 func current_track_name() -> String:
-	return gp.track_names[mini(race_index, race_count() - 1)]
+	var index := mini(race_index, race_count() - 1)
+	return gp.track_names[index] if index < gp.track_names.size() else ""
 
 
 ## Records a finished race (ids in finishing order) and sets the next grid to
@@ -116,11 +180,11 @@ func standings() -> Array[int]:
 
 func make_race_config() -> RaceConfig:
 	var config := RaceConfig.new()
-	config.mode = RaceConfig.Mode.GRAND_PRIX
+	config.mode = series_mode if is_series() else RaceConfig.Mode.GRAND_PRIX
 	config.difficulty = load(DIFFICULTY_PATH % difficulty_id) as AIDifficulty
 	config.weapons_enabled = weapons_enabled
 	config.total_laps = gp.laps
-	var index := mini(race_index, race_count() - 1)
+	var index := mini(race_index, gp.track_names.size() - 1)
 	config.track_name = gp.track_names[index]
 	if index < gp.track_scenes.size() and gp.track_scenes[index] != "":
 		config.track_scene = load(gp.track_scenes[index]) as PackedScene
@@ -129,6 +193,10 @@ func make_race_config() -> RaceConfig:
 	config.vehicle_id = vehicle_id
 	config.rival_plates = rival_plates
 	config.rival_vehicles = rival_vehicles
+	config.player_devices = player_devices.duplicate()
+	config.player_vehicle_ids = player_vehicle_ids.duplicate()
+	config.player_plates = player_plates.duplicate()
+	config.ai_rivals = ai_rivals
 	return config
 
 
@@ -189,6 +257,8 @@ static func from_dict(data: Dictionary) -> Championship:
 
 
 func save() -> bool:
+	if is_multiplayer() or is_series():
+		return false # split-screen and Versus series live in memory only
 	var file := FileAccess.open(save_path, FileAccess.WRITE)
 	if file == null:
 		push_warning("Couldn't save the Grand Prix to %s" % save_path)

@@ -122,8 +122,12 @@ func show_notice(text: String, color: Color) -> void:
 	_notice_time = 1.6
 
 
+## Whose items (split screen: this view's player); null = player 1.
+var racer: RaceProgress
+
+
 func refresh(race: RaceManager, delta: float) -> void:
-	var car := race.player.vehicle
+	var car := (racer if racer != null else race.player).vehicle
 	var inventory := car.inventory
 	for i in ItemInventory.SLOT_COUNT:
 		var weapon := inventory.slots[i]

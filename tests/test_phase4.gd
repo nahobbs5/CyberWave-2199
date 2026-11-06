@@ -285,10 +285,10 @@ func _test_mode_select() -> void:
 	await process_frame
 	_check(not menu.has_continue(), "no Continue Grand Prix without a save")
 	var order := ", ".join(menu.button_texts())
-	_check(order == "Grand Prix, Versus, Practice, Garage, Settings, Credits, Exit", "main menu order (%s)" % order)
+	_check(order == "Grand Prix, Versus, Practice, Garage, Settings, Credits, Back", "main menu order (%s)" % order)
 	menu.queue_free()
 	var setup := await _open_setup(RaceConfig.Mode.VERSUS)
-	setup.start()
+	_start_versus(setup)
 	_check(GameSession.current != null and GameSession.current.mode == RaceConfig.Mode.VERSUS
 			and GameSession.current.total_laps == 3 and GameSession.current.weapons_enabled, "Versus: default settings")
 	setup.queue_free()
@@ -303,14 +303,14 @@ func _test_mode_select() -> void:
 	_check(setup._race_type != null and setup._race_type.selected == 0, "Versus setup has a Race type, Standard first")
 	setup.set_race_type(1)
 	_check(not setup._laps_row.visible and setup._title.text.begins_with("ELIMINATION"), "picking Elimination hides laps and retitles")
-	setup.start()
+	_start_versus(setup)
 	_check(GameSession.current.is_elimination(), "Race type Elimination starts an Elimination race")
 	_check(GameSession.last_versus_mode() == RaceConfig.Mode.ELIMINATION, "Versus reopens on the race type used last")
 	setup.queue_free()
 	setup = await _open_setup(RaceConfig.Mode.ELIMINATION)
 	setup._laps.selected = 4
 	setup._difficulty.selected = 2
-	setup.start()
+	_start_versus(setup)
 	_check(GameSession.current.is_elimination() and GameSession.current.total_laps == 5
 			and GameSession.current.difficulty.resource_path.ends_with("hard.tres"), "Elimination with chosen settings")
 	_check(GameSession.current.rival_plates.size() == 7 and GameSession.current.rival_plates != versus_plates,
@@ -350,6 +350,12 @@ func _test_mode_select() -> void:
 	GameSession.current = null
 	GameSession.cup_path = ""
 	GameSession.track_name = ""
+
+
+## Versus setup: Next, then pick the first track on the track screen.
+func _start_versus(setup: RaceSetup) -> void:
+	setup.start()
+	GameSession.start_versus_race(self, "Vegas Overdrive")
 
 
 func _open_setup(mode: RaceConfig.Mode) -> RaceSetup:

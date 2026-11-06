@@ -182,6 +182,31 @@ static func chain_focus(buttons: Array) -> void:
 		b.focus_neighbor_bottom = b.get_path_to(buttons[(i + 1) % buttons.size()])
 
 
+## A settings row: label, slider and a readout ("%d%%"). Calls on_change
+## with the new value, then saves the settings.
+static func slider_row(parent: Container, text: String, lo: float, hi: float, step: float,
+		value: float, fmt: String, on_change: Callable) -> HSlider:
+	var row := HBoxContainer.new()
+	var l := label(text, 16)
+	l.custom_minimum_size = Vector2(170, 0)
+	row.add_child(l)
+	var slider := HSlider.new()
+	slider.min_value = lo
+	slider.max_value = hi
+	slider.step = step
+	slider.value = value
+	slider.custom_minimum_size = Vector2(220, 28)
+	row.add_child(slider)
+	var readout := label(fmt % roundi(value), 15, Color(1, 1, 1, 0.7))
+	row.add_child(readout)
+	slider.value_changed.connect(func(v: float) -> void:
+		on_change.call(v)
+		readout.text = fmt % roundi(v)
+		GameSettings.save_settings())
+	parent.add_child(row)
+	return slider
+
+
 ## Full-screen dark background for menu screens.
 static func background(parent: Control) -> void:
 	var bg := ColorRect.new()

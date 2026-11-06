@@ -1,22 +1,23 @@
 # CyberWave-2199
 
-Single-player 3D arcade combat racing game for Godot 4 (GDScript, Jolt Physics).
-The authoritative design is [`docs/Game Design Document.md`](docs/Game%20Design%20Document.md) (GDD v1.7).
+**▶ Play the browser demo: [nahobbs5.github.io/CyberWave-2199/web/](https://nahobbs5.github.io/CyberWave-2199/web/)**
+(the latest release, exported to [`web/`](web/))
+
+3D arcade combat racing game for Godot 4 (GDScript, Jolt Physics): single player against seven NPC rivals, or **2–4 player local split screen**.
+The authoritative design is [`docs/Game Design Document.md`](docs/Game%20Design%20Document.md) (GDD v2.8).
 
 **Current milestone: Phase 6, content and polish** (GDD §16), in progress. Done so far:
-- **Eight vehicle models**, built procedurally after the roster art, with support for swapping in your own `.glb` models,
-- **Six Flags New Orleans**, the second finished track: an abandoned, overgrown theme park at night with real jump ramps, flooded water patches and a water-park shortcut,
-- **Vegas Overdrive**, the first finished track: a 3.2 km neon circuit with themed scenery, the Luxor shortcut, boost pads and rings, EMP puddles, a smashable barrier and chevron signs,
-- **weapon pictures** in the HUD slots and a **minimap** in the bottom-right corner,
-- the track tech the other five tracks will reuse: shortcuts, track features, batched scenery and per-track looks.
+- **All six tracks** in two cups: the **American Cup** (Vegas Overdrive, Six Flags New Orleans, The Stacks) and the **World Cup** (Hoia Baciu Run, Catacombs Descent, Arashiyama Circuit),
+- **Split-screen multiplayer** for 2–4 players (keyboard + gamepads): top/bottom halves for two, corners for three or four, a live spectator view in the spare corner for three, one shared minimap,
+- **Mario Kart style Versus:** pick how many races (1–16), then each track from one screen listing every cup; points add up over the set,
+- **eight vehicle models**, built procedurally after the roster art, with support for swapping in your own `.glb` models,
+- **music** per menu and per track (faster on the final lap), a start-light countdown, a 3D WRONG WAY sign, weapon pictures in the HUD and a minimap.
 
-Still to come in Phase 6: the other five tracks, the remaining weapons, named rivals, sound and music (your files in `sounds/` aren't wired in yet), race presentation, optimisation and balancing.
+Still to come in Phase 6: the remaining weapons, race presentation (pre-race camera sweep, podium), optimisation and balancing.
 
-Phases 1–5 are unchanged apart from the models.
-
-Open the project in Godot 4.7 and press **F5** for the main menu (`scenes/menu/main_menu.tscn`).
+Open the project in Godot 4.7 and press **F5** for the title menu (`scenes/menu/title_menu.tscn`): **Single Player**, **Multiplayer**, Settings, Credits, Exit.
 Running `scenes/race/race.tscn` directly (**F6**) still starts a Versus race using the `Race` node's Inspector settings and your selected car.
-**Practice** on the main menu opens the Phase 1 sandbox (`scenes/free_drive.tscn`) with your car; Esc returns from it.
+**Practice** on the single-player menu opens the Phase 1 sandbox (`scenes/free_drive.tscn`) with your car; Esc returns from it.
 
 ## Controls
 
@@ -25,12 +26,13 @@ Running `scenes/race/race.tscn` directly (**F6**) still starts a Versus race usi
 | Accelerate | W / Up | RT / R2 |
 | Brake / Reverse | S / Down | LT / L2 |
 | Steer | A / D, Left / Right | Left stick |
-| Drift | Hold Shift + A / D | LB / L1 (left), RB / R1 (right) |
-| Cycle camera (Far ↔ Close) | C | View / Touchpad |
-| Reset vehicle | R | Y / Triangle |
+| Drift | Hold Shift + A / D | Hold RB / R1 + steer |
+| Cycle camera (Far → Close → Rear) | C | D-pad Down |
+| Look back (hold) | Q | Right stick click |
+| Reset vehicle | R | D-pad Up |
 | Select weapon slot 1 / 2 | 1 / 2 | D-pad Left / Right |
-| Use selected weapon | Space | A / Cross |
-| Trick (in the air off a ramp) | E | X / Square |
+| Use selected weapon | Space | LB / L1 |
+| Trick (in the air off a ramp) | E | Y / Triangle |
 | Pause menu | Esc | Start / Options |
 | Menu buttons | Enter, mouse, arrow keys | A / Cross, D-pad |
 
@@ -86,9 +88,9 @@ The layout is the `control_points` list on `scenes/tracks/test_circuit.tscn`, sa
 
 ### Game modes
 
-**Cups (Mario Kart style).** Grand Prix and Versus start on a **cup screen**: one big card per cup with its trophy (drawn in code: the **American Cup** has a map of the USA on it, the **World Cup** a globe), its three races and, in Grand Prix, your best finish. Grand Prix then goes to the setup screen and races the whole cup; Versus first shows the cup's **tracks** as cards (each with its outline, location and your best time) and you pick one. Back (or Esc / B) steps back one screen. Both cups are fully playable: the **American Cup** (Vegas Overdrive, Six Flags New Orleans, The Stacks) and the **World Cup** (Hoia Baciu Run, Catacombs Descent, Arashiyama Circuit). A cup can be greyed out as "coming soon" with `locked = true` on its resource. Each cup is data (`resources/grand_prix/*.tres`, listed in `GrandPrixData.CUPS`); its `emblem` picks the trophy picture. The Test Circuit isn't in a cup: it's the Practice track.
+**Cups and tracks (Mario Kart style).** **Grand Prix** starts on a **cup screen**: one big card per cup with its trophy (drawn in code: the **American Cup** has a map of the USA on it, the **World Cup** a globe), its three races and your best finish, then goes to the setup screen and races the whole cup. **Versus** starts on the setup screen (car, race type, **number of races**, laps, NPC difficulty, weapons), then shows a **track screen with every cup's tracks** (one row per cup; each card has the outline, location and your best time, plus a RANDOM card). Back (or Esc / B) steps back one screen. Both cups are fully playable: the **American Cup** (Vegas Overdrive, Six Flags New Orleans, The Stacks) and the **World Cup** (Hoia Baciu Run, Catacombs Descent, Arashiyama Circuit). A cup can be greyed out as "coming soon" with `locked = true` on its resource. Each cup is data (`resources/grand_prix/*.tres`, listed in `GrandPrixData.CUPS`); its `emblem` picks the trophy picture. The Test Circuit isn't in a cup: it's the Practice track.
 
-- **Versus** (GDD §2.1): one race, you start eighth. When you finish, the results fill in as the AI cross the line. **Race again** or **Quit to mode select**.
+- **Versus** (GDD §2.1): you start eighth. Pick **1, 2, 3, 4, 6, 8, 12 or 16 races**. With one race, the results offer **Race again** or the menu. With more, the track screen comes back before each race ("RACE 2 OF 4", with the points so far), points and grids work like a Grand Prix, and the last results name the series winner. A series isn't saved; each race pays its normal coins.
 - **Grand Prix** (GDD §2.2): the *American Cup* or the *World Cup*, three races of three laps each.
   - Points are 15-12-10-8-6-4-2-1. Ties are broken by most wins, then most second places, then the order in the most recent race.
   - Race 1 starts the seven rivals in slots 1–7 with you last. Each later grid is the previous race's finishing order, not the points order. Rivals keep their names, colours and personalities all season.
@@ -106,10 +108,12 @@ The layout is the `control_points` list on `scenes/tracks/test_circuit.tscn`, sa
 
 ### Menus
 
-- **Main menu** (GDD §11.2): the Cyberwave 2199 logo (`assets/logo/`) above the title, then Continue Grand Prix (only when one is saved), Grand Prix, Versus, Practice, Garage, Settings, Credits, Exit.
+- **Title menu** (GDD §11.2): the Cyberwave 2199 logo (`assets/logo/`), then Single Player, Multiplayer, Settings, Credits, Exit.
+- **Single-player menu:** Continue Grand Prix (only when one is saved), Grand Prix, Versus, Practice, Garage, Settings, Credits, Back.
+- **Multiplayer:** three screens (see "Split-screen multiplayer" below).
 - **Boot splash:** the logo's skyline and sun (`assets/logo/splash_skyline.png`) on black while the game loads. The app/window icon is a square crop of the same skyline (`assets/logo/app_icon.png`). A Windows .exe icon (.ico) gets set in the export preset when you export.
 - **Credits:** the game, music, sound, fonts, textures and sky, weapon art and engine, with a Back button (Esc / B also goes back).
-- **Race setup** (GDD §11.3): track (only the test circuit for now) or championship, vehicle picker with a rotating preview of your car (paint, cosmetics and plate), stats, AI difficulty, laps (Versus), weapons on/off, Start race. It remembers your last choices and shows your personal best (Versus) or best championship finish (Grand Prix).
+- **Race setup** (GDD §11.3): the cup (Grand Prix) or race type and number of races (Versus), vehicle picker with a rotating preview of your car (paint, cosmetics and plate), stats, NPC difficulty, laps (Versus), weapons on/off, and a short explanation of the chosen mode (how Elimination knocks cars out, how points work). Grand Prix starts the race; Versus goes on to the track screen. It remembers your last choices and shows your personal best (Versus) or best championship finish (Grand Prix).
   - **A Grand Prix keeps the car you started it with** for all three races (the GDD saves the player vehicle with the championship).
 - **Garage** (GDD §11.4): rotating preview, vehicle stats, license plate editor, the 8 cosmetic categories, your coin balance.
   - **Click an item's name** to try it on. **Buy** spends coins and equips it; **Equip** puts an item you own on this car. Purchases are permanent and shared by all cars, but **each car has its own equipped look**.
@@ -119,6 +123,20 @@ The layout is the `control_points` list on `scenes/tracks/test_circuit.tscn`, sa
   - **Audio:** Master, Music and Sound effects. The Music slider controls menu and race music.
   - **Controls:** press a binding, then the new key, gamepad button or stick direction within 5 seconds. A rebind replaces all of that action's keyboard inputs (so W + Up becomes just your new key) or all of its gamepad inputs. If another action already uses that input, you get a note (both keep working). **Reset controls to defaults** undoes all rebinds.
   - HUD scale and motion blur take effect from the next race.
+
+### Split-screen multiplayer
+
+Two to four players on one PC (GDD §2.4). **Multiplayer** on the title menu opens three screens:
+
+1. **Connect controllers:** press Enter (keyboard) or A (gamepad) to join, then again for READY. That device is yours: the keyboard can be one player and each gamepad another. B takes back READY, then leaves.
+2. **Choose your cars:** each player picks on their own device and sees the car turning, its type and its stat bars. **Y / Tab edits your license plate**: the keyboard player types, gamepad players use a letter picker (up/down letter, left/right move, X delete, A done). Player 1 drives their Garage loadout and plate; players 2–4 drive their car in their player colour (P1 cyan, P2 magenta, P3 gold, P4 green).
+3. **Race setup:** Grand Prix or Versus, race type, number of races, **NPCs** on/off (on fills the grid to eight; Elimination needs them), NPC difficulty, laps, weapons. Then the cup or track screen.
+
+In the race:
+- **2 players:** top and bottom halves, minimap at the right end of the divider. **3 players:** three corners plus a **LIVE** broadcast camera in the fourth that cuts between close battles and the leader. **4 players:** a corner each, one minimap in the centre with an arrow per player.
+- Each view has its own camera and HUD. Wrong-way signs and lock-on rings only show in their owner's view; everyone else's car has a "P2"-style tag.
+- Any player's Start / Esc pauses everyone. When every player has finished, one shared results screen opens.
+- **No coins, personal bests or saved Grand Prix** in split screen: a split-screen Grand Prix lives in memory and never replaces your single-player save.
 
 ### Vehicles
 
@@ -652,6 +670,6 @@ The racing has **not** been played on screen yet.
 - **Race length:** AI finish a Normal race in about 3:15. A human finishing mid-pack will likely take about 3:30–4:00, near the low end of the GDD §15.2 target of 4–6 minutes. Lengthen the layout or raise the lap count if races feel short.
 - **Scene load takes about 1.2 s** of generation (track meshes and colliders about 0.8 s, racing line about 0.4 s) before the countdown. That's acceptable for now, but could later be cached or baked.
 - **The Aggressor wins most simulated races.** Its personality never backs off behind slower cars, which pays off in AI-only races. Balancing rivals is Phase 6 work.
-- **The track is flat.** No elevation, ramps or banking yet. The road is visual only; the ground slab provides collision, so elevation will need road colliders.
-- **No pause** (Esc), menus, cosmetics or pre-race camera sweep yet. These come in later phases.
+- **No pre-race camera sweep or podium ceremony yet** (GDD §11.8).
+- **Split screen hasn't been played with real gamepads,** and four views on the heaviest tracks (the Hoia Baciu forest, the Arashiyama bamboo) may be slow. Checked headless and in screenshots only.
 - **Rival names are placeholders** ("The Technician", etc.), following GDD §7.3. AI cars show a floating name tag.

@@ -157,7 +157,9 @@ static func texture_material(texture_name: String, tint: Color = Color.WHITE, me
 		roughness: float = 0.85, metallic: float = 0.0) -> StandardMaterial3D:
 	var m := StandardMaterial3D.new()
 	m.albedo_texture = load(TEXTURES % [texture_name, texture_name, "diff"]) as Texture2D
-	var normal := load(TEXTURES % [texture_name, texture_name, "nor"]) as Texture2D
+	# The web build leaves the normal and roughness maps out (download size).
+	var normal_path := TEXTURES % [texture_name, texture_name, "nor"]
+	var normal := load(normal_path) as Texture2D if ResourceLoader.exists(normal_path) else null
 	if normal != null:
 		m.normal_enabled = true
 		m.normal_texture = normal

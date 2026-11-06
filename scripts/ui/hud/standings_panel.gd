@@ -10,6 +10,9 @@ const MIN_ROWS := 3
 
 ## Lowest screen y (in this panel's parent space) the panel may reach.
 var bottom_limit: float = INF
+## The racer highlighted as "you" (split screen: this view's player);
+## null = every human.
+var me_racer: RaceProgress
 
 var _rows: Array[Label] = []
 var _lines: PackedStringArray = []
@@ -45,8 +48,8 @@ func refresh(race: RaceManager) -> void:
 	var me := 0
 	for i in active.size():
 		var racer := active[i]
-		_lines.append("%s%d  %s" % [">" if racer.is_player else " ", racer.position, racer.display_name])
-		if racer.is_player:
+		_lines.append("%s%d  %s" % [">" if _is_me(racer) else " ", racer.position, racer.display_name])
+		if _is_me(racer):
 			me = i
 	# How many rows fit above bottom_limit.
 	var room := active.size()
@@ -66,5 +69,14 @@ func refresh(race: RaceManager) -> void:
 		var racer := active[first + i]
 		row.visible = true
 		row.text = "%d   %s" % [racer.position, racer.display_name]
-		row.add_theme_color_override("font_color", UIStyle.MAGENTA if racer.is_player else UIStyle.MUTED)
-		row.add_theme_font_size_override("font_size", 17 if racer.is_player else 16)
+		var color := UIStyle.MUTED
+		if _is_me(racer):
+			color = UIStyle.MAGENTA if not race.is_multiplayer() else SplitScreen.PLAYER_COLORS[race.player_slot(racer)]
+		elif racer.is_player:
+			color = Color(SplitScreen.PLAYER_COLORS[race.player_slot(racer)], 0.75) # the other players
+		row.add_theme_color_override("font_color", color)
+		row.add_theme_font_size_override("font_size", 17 if _is_me(racer) else 16)
+
+
+func _is_me(racer: RaceProgress) -> bool:
+	return racer == me_racer if me_racer != null else racer.is_player

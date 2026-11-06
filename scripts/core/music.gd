@@ -20,14 +20,27 @@ static var _tween: Tween
 static var _speed_tween: Tween
 
 
+## The file actually played: the web build ships smaller 96 kbps copies of
+## the music as music/web/<same name>.ogg (the .mp3 originals are left out
+## of that export), so it uses those when they're there.
+static func file_for(path: String) -> String:
+	if OS.has_feature("web"):
+		var small := path.replace("res://music/", "res://music/web/").get_basename() + ".ogg"
+		if ResourceLoader.exists(small):
+			return small
+	return path
+
+
 static func play(tree: SceneTree, path: String) -> void:
 	if path == _path:
 		return
 	_path = path
 	var player := _ensure_player(tree)
-	var stream := load(path) as AudioStream
+	var stream := load(file_for(path)) as AudioStream
 	if stream is AudioStreamMP3:
 		(stream as AudioStreamMP3).loop = true
+	elif stream is AudioStreamOggVorbis:
+		(stream as AudioStreamOggVorbis).loop = true
 	_restart_tween(tree)
 	if player.playing:
 		_tween.tween_property(player, "volume_db", SILENT_DB, FADE * 0.5)

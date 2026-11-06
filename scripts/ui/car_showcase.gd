@@ -165,24 +165,31 @@ func _build(stage_height: float) -> void:
 
 
 func _fill_stats(v: VehicleData) -> void:
-	for child in _stats.get_children():
-		_stats.remove_child(child)
+	fill_stat_grid(_stats, v)
+
+
+## Fills a 3-column grid with the car's four stat rows (name, 1-10 bar,
+## rating x10). Shared by the garage, race setup and split-screen car select.
+static func fill_stat_grid(grid: GridContainer, v: VehicleData, bar_width: float = 150.0,
+		font_size: int = 16) -> void:
+	for child in grid.get_children():
+		grid.remove_child(child)
 		child.queue_free()
 	var names: Array = VehicleCatalog.STAT_RANGES.keys()
 	var values := VehicleCatalog.primary_stats(v.stats)
 	for i in names.size():
 		var rating := VehicleCatalog.rating(names[i], values[i])
-		var name_label := UIStyle.label(str(names[i]), 16)
-		name_label.custom_minimum_size = Vector2(104, 0)
-		_stats.add_child(name_label)
+		var name_label := UIStyle.label(str(names[i]), font_size)
+		name_label.custom_minimum_size = Vector2(font_size * 6.5, 0)
+		grid.add_child(name_label)
 		var bar := UIStyle.stat_bar(rating)
-		bar.custom_minimum_size = Vector2(150, 12)
+		bar.custom_minimum_size = Vector2(bar_width, 12)
 		bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		_stats.add_child(bar)
-		var number := UIStyle.stat(str(rating * 10), 17)
+		grid.add_child(bar)
+		var number := UIStyle.stat(str(rating * 10), font_size + 1)
 		number.custom_minimum_size = Vector2(30, 0)
 		number.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-		_stats.add_child(number)
+		grid.add_child(number)
 
 
 static var _slant_heading: FontVariation

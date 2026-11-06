@@ -27,16 +27,60 @@ const PLAYER_ID := -1
 ## plates. Empty = the V8 Specter.
 @export var rival_vehicles: PackedStringArray = PackedStringArray()
 
+## Split screen: one input device per human player (-1 = keyboard, else a
+## gamepad id). Empty or one entry = single player.
+@export var player_devices: PackedInt32Array = PackedInt32Array()
+## Split screen: each human's vehicle id, by player slot.
+@export var player_vehicle_ids: PackedStringArray = PackedStringArray()
+## Split screen: each human's license plate, by player slot ("" = default).
+@export var player_plates: PackedStringArray = PackedStringArray()
+## Split screen: fill the grid to eight with AI rivals; off = humans only.
+@export var ai_rivals: bool = true
+
 ## Grand Prix only: the championship this race belongs to.
 var championship: Championship
 
 
-static func default_grid(rival_count: int = 7) -> Array[int]:
+## Rivals first, then the humans at the back (player 1 last).
+static func default_grid(rival_count: int = 7, humans: int = 1) -> Array[int]:
 	var grid: Array[int] = []
 	for i in rival_count:
 		grid.append(i)
-	grid.append(PLAYER_ID)
+	for i in range(humans - 1, -1, -1):
+		grid.append(human_id(i))
 	return grid
+
+
+## Racer id of split-screen player `slot` (0 = player 1 = PLAYER_ID).
+static func human_id(slot: int) -> int:
+	return PLAYER_ID - slot
+
+
+static func is_human_id(id: int) -> bool:
+	return id < 0
+
+
+## Player slot of a human racer id.
+static func human_slot(id: int) -> int:
+	return PLAYER_ID - id
+
+
+func is_multiplayer() -> bool:
+	return player_devices.size() > 1
+
+
+func human_count() -> int:
+	return maxi(1, player_devices.size())
+
+
+## Rivals on the grid: enough to make eight cars, or none in a humans-only
+## split-screen race.
+func rival_count() -> int:
+	return rivals_for(human_count(), ai_rivals)
+
+
+static func rivals_for(humans: int, ai: bool) -> int:
+	return 8 - humans if humans <= 1 or ai else 0
 
 
 ## `count` distinct random plates like "KRX-417", never equal to `avoid`

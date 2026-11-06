@@ -29,6 +29,9 @@ var uses: Dictionary = {}
 var _rng := RandomNumberGenerator.new()
 var _reticle: MeshInstance3D
 var _reticle_material: StandardMaterial3D
+## One lock-on ring per human (player 1's is _reticle).
+var _reticles: Array[MeshInstance3D] = []
+var _reticle_materials: Array[StandardMaterial3D] = []
 var _last_block: StringName = &""
 
 
@@ -268,17 +271,29 @@ func spawn_flash(at: Vector3, color: Color) -> void:
 # --- player lock indicator (GDD 6.2) ------------------------------------------------
 
 func _build_reticle() -> void:
-	_reticle = MeshInstance3D.new()
-	var torus := TorusMesh.new()
-	torus.inner_radius = 1.6
-	torus.outer_radius = 1.85
-	_reticle.mesh = torus
-	_reticle_material = glow_material(Color(1.0, 0.2, 0.85), 4.0)
-	_reticle_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	_reticle_material.no_depth_test = true
-	_reticle.material_override = _reticle_material
-	_reticle.visible = false
-	add_child(_reticle)
+	_reticles.clear()
+	_reticle_materials.clear()
+	var count := maxi(1, race.players.size())
+	for i in count:
+		var reticle := MeshInstance3D.new()
+		reticle.name = "Reticle%d" % (i + 1)
+		var torus := TorusMesh.new()
+		torus.inner_radius = 1.6
+		torus.outer_radius = 1.85
+		reticle.mesh = torus
+		var mat := glow_material(Color(1.0, 0.2, 0.85), 4.0)
+		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		mat.no_depth_test = true
+		reticle.material_override = mat
+		reticle.visible = false
+		add_child(reticle)
+		# Split screen: each player sees only their own lock-on ring.
+		if race.is_multiplayer():
+			SplitScreen.set_render_layer(reticle, SplitScreen.private_layer(i))
+		_reticles.append(reticle)
+		_reticle_materials.append(mat)
+	_reticle = _reticles[0]
+	_reticle_material = _reticle_materials[0]
 
 
 func _physics_process(delta: float) -> void:
@@ -293,22 +308,27 @@ func _physics_process(delta: float) -> void:
 
 
 func _process(_delta: float) -> void:
-	if _reticle == null or race.player == null:
+	if _reticles.is_empty() or race.player == null:
 		return
-	var targeting := race.player.vehicle.targeting
+	for i in _reticles.size():
+		var human := race.players[i] if i < race.players.size() else race.player
+		_update_reticle(_reticles[i], _reticle_materials[i], human.vehicle.targeting)
+
+
+func _update_reticle(reticle: MeshInstance3D, mat: StandardMaterial3D, targeting: TargetingSystem) -> void:
 	var shown: VehicleController = targeting.candidate if targeting != null else null
-	_reticle.visible = shown != null
+	reticle.visible = shown != null
 	if shown == null:
 		return
-	_reticle.global_position = shown.global_position + Vector3.UP * 1.0
+	reticle.global_position = shown.global_position + Vector3.UP * 1.0
 	var pulse := 1.0 if GameSettings.reduced_flashing else 1.0 + 0.08 * sin(Time.get_ticks_msec() * 0.015)
 	if targeting.locked:
-		_reticle.scale = Vector3.ONE * pulse
-		_reticle_material.albedo_color = Color(1.0, 0.2, 0.85, 0.95)
+		reticle.scale = Vector3.ONE * pulse
+		mat.albedo_color = Color(1.0, 0.2, 0.85, 0.95)
 	else:
 		# Shrinks onto the target while the lock is being acquired.
-		_reticle.scale = Vector3.ONE * lerpf(2.0, 1.0, targeting.acquire_progress)
-		_reticle_material.albedo_color = Color(1.0, 1.0, 1.0, 0.5)
+		reticle.scale = Vector3.ONE * lerpf(2.0, 1.0, targeting.acquire_progress)
+		mat.albedo_color = Color(1.0, 1.0, 1.0, 0.5)
 
 
 static func glow_material(color: Color, energy: float) -> StandardMaterial3D:

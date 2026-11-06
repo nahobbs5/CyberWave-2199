@@ -9,11 +9,11 @@ const MAIN_SCENE := "res://scenes/free_drive.tscn"
 const DT := 1.0 / 60.0
 const ACTIONS: Array[StringName] = [
 	&"accelerate", &"brake", &"steer_left", &"steer_right",
-	&"drift", &"drift_left", &"drift_right", &"cycle_camera", &"reset_vehicle",
+	&"drift", &"cycle_camera", &"look_back", &"reset_vehicle",
 ]
 ## Keyboard-only and gamepad-only actions (everything else needs both).
-const KEYBOARD_ONLY: Array[StringName] = [&"drift"]
-const GAMEPAD_ONLY: Array[StringName] = [&"drift_left", &"drift_right"]
+const KEYBOARD_ONLY: Array[StringName] = []
+const GAMEPAD_ONLY: Array[StringName] = []
 
 var _passed: int = 0
 var _failed: int = 0
@@ -323,7 +323,24 @@ func _test_camera(main: Node) -> void:
 	var close_distance := (camera.global_position - car.global_position).length()
 	_check(close_distance < far_distance - 1.0, "Close Chase is closer (%.1f vs %.1f)" % [close_distance, far_distance])
 	await _press_key(KEY_C)
+	_check(camera.get_profile().display_name == "Rear View", "C switches to Rear View")
+	await _frames(30)
+	car_forward = -car.global_transform.basis.z
+	_check((camera.global_position - car.global_position).dot(car_forward) > 3.0, "Rear View sits ahead of the car")
+	_check((-camera.global_transform.basis.z).dot(car_forward) < -0.5, "and looks back")
+	await _press_key(KEY_C)
 	_check(camera.get_profile().display_name == "Far Chase", "C cycles back to Far Chase")
+
+	Input.action_press(&"look_back")
+	await _frames(2)
+	car_forward = -car.global_transform.basis.z
+	_check(camera.looking_back and camera.active_profile().look_back, "holding Look back uses the Rear View")
+	_check((camera.global_position - car.global_position).dot(car_forward) > 3.0, "the view flips ahead of the car at once")
+	_check(camera.get_profile().display_name == "Far Chase", "the chosen view stays Far Chase")
+	Input.action_release(&"look_back")
+	await _frames(2)
+	_check(not camera.looking_back and (camera.global_position - car.global_position).dot(-car.global_transform.basis.z) < -3.0,
+			"releasing goes straight back behind the car")
 
 
 func _test_manual_reset(main: Node) -> void:

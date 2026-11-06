@@ -19,3 +19,9 @@ web-build/
 #Reference
 reference files/
 
+
+# Export builds (too big for GitHub: attach them to a GitHub Release instead).
+# The web build in web/ is committed for GitHub Pages.
+/Cyberwave 2199.exe
+/Cyberwave 2199.console.exe
+/Cyberwave 2199.pck
