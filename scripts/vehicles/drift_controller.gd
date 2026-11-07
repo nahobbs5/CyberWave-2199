@@ -27,6 +27,11 @@ const LEVEL_COLORS: Array[Color] = [
 
 ## Seconds of valid drifting needed for Cyan, Magenta and Gold (GDD 4.2).
 @export var level_thresholds: PackedFloat32Array = PackedFloat32Array([1.0, 2.5, 4.0])
+## Charge rate when steering fully into the drift / fully out of it
+## (neutral steering charges at 1x, so the thresholds above are seconds).
+## Turning harder charges faster but can cost the racing line.
+@export var inward_charge_rate: float = 1.5
+@export var outward_charge_rate: float = 0.75
 ## Leaving the ground pauses charging; staying airborne longer than this ends the drift.
 @export var max_airborne_time: float = 1.5
 ## The drift is lost if forward speed falls below drift_min_speed times this.
@@ -34,7 +39,7 @@ const LEVEL_COLORS: Array[Color] = [
 
 ## -1 = drifting left, +1 = drifting right, 0 = not drifting.
 var direction: int = 0
-## Seconds of valid drifting accumulated in the current drift.
+## Charge accumulated in the current drift (seconds at neutral steering).
 var charge_time: float = 0.0
 var level: int = LEVEL_NONE
 ## True when charge increased during the last update (useful for effects/HUD).
@@ -55,9 +60,17 @@ func level_for_time(seconds: float) -> int:
 	return result
 
 
+## How fast charge builds for this steering (-1 left .. 1 right).
+func charge_rate(steer: float) -> float:
+	var into := clampf(steer * float(direction), -1.0, 1.0)
+	if into >= 0.0:
+		return lerpf(1.0, inward_charge_rate, into)
+	return lerpf(1.0, outward_charge_rate, -into)
+
+
 ## Advances the drift. Returns the boost level to fire this step (0 = none).
 func update(delta: float, left_held: bool, right_held: bool, grounded: bool,
-		forward_speed: float, lateral_speed: float, stats: VehicleStats) -> int:
+		forward_speed: float, lateral_speed: float, stats: VehicleStats, steer: float = 0.0) -> int:
 	is_charging = false
 	if direction == 0:
 		if grounded and forward_speed >= stats.drift_min_speed and left_held != right_held:
@@ -81,7 +94,7 @@ func update(delta: float, left_held: bool, right_held: bool, grounded: bool,
 
 	if absf(lateral_speed) >= stats.drift_min_lateral_speed:
 		is_charging = true
-		charge_time += delta
+		charge_time += delta * charge_rate(steer)
 		var new_level := level_for_time(charge_time)
 		if new_level != level:
 			level = new_level

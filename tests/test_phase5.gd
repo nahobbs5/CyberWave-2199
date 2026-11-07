@@ -244,7 +244,7 @@ func _test_settings() -> void:
 	key.physical_keycode = KEY_J
 	GameSettings.set_binding(&"use_weapon", key)
 	_check(InputSetup.describe(&"use_weapon", true) == "J", "rebind replaces the keyboard key (%s)" % InputSetup.describe(&"use_weapon", true))
-	_check(InputSetup.describe(&"use_weapon", false) == "A", "gamepad binding untouched")
+	_check(InputSetup.describe(&"use_weapon", false) == "LB", "gamepad binding untouched")
 	var pad := InputEventJoypadButton.new()
 	pad.button_index = JOY_BUTTON_X
 	GameSettings.set_binding(&"use_weapon", pad)
@@ -268,7 +268,7 @@ func _test_settings() -> void:
 	_check(InputSetup.event_to_string(InputSetup.event_from_string("a:2:-1")) == "a:2:-1"
 			and InputSetup.event_to_string(motion) == "a:2:-1", "stick directions round-trip")
 	GameSettings.reset_bindings()
-	_check(InputSetup.describe(&"use_weapon", true) == "Space" and InputSetup.describe(&"use_weapon", false) == "A",
+	_check(InputSetup.describe(&"use_weapon", true) == "Space" and InputSetup.describe(&"use_weapon", false) == "LB",
 			"reset restores the defaults")
 	_fresh()
 

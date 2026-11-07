@@ -251,7 +251,14 @@ func _test_full_race(race: RaceManager) -> void:
 				if absf(a.race_distance - b.race_distance) < 4.0:
 					continue
 				samples += 1
-				if _reference_distance(race, a) + 8.0 < _reference_distance(race, b):
+				# The reference lags while a car slides (it only counts upright,
+				# on-road driving), so a mismatch must also show on the track:
+				# same lap stage, and b really further round than a.
+				var same_stage := a.lap == b.lap and a.next_checkpoint == b.next_checkpoint
+				var track_says_b := same_stage and race.track.wrapped_delta(
+						race.track.get_offset_at(a.vehicle.global_position),
+						race.track.get_offset_at(b.vehicle.global_position)) > 0.0
+				if _reference_distance(race, a) + 8.0 < _reference_distance(race, b) and (track_says_b or not same_stage):
 					order_errors += 1
 					if order_errors <= 8: print("    mismatch t=%.0f %s dist=%.0f ref=%.0f next=%d off=%.0f | %s dist=%.0f ref=%.0f next=%d off=%.0f" % [race.race_time, a.display_name, a.race_distance, _reference_distance(race, a), a.next_checkpoint, race.track.get_offset_at(a.vehicle.global_position), b.display_name, b.race_distance, _reference_distance(race, b), b.next_checkpoint, race.track.get_offset_at(b.vehicle.global_position)])
 	print("    race took %.1f s simulated" % (frames / 60.0))

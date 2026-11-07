@@ -48,10 +48,11 @@ Actions are registered at startup by `scripts/core/input_setup.gd`. Any action y
 - At speed (over 12 m/s, about 43 km/h), hold **Shift** and steer with **A** or **D**. The steering direction when the drift starts picks left or right; after that, keep Shift held and steer to shape it (into the drift tightens it, against it widens it). Shift while driving straight does nothing.
 - Shift drifting replaced the original Q/E binding in GDD v1.1 (see its Revision History).
 - Charge only builds while the car is grounded and sliding sideways.
-- **Cyan** at 1 s, **Magenta** at 2.5 s, **Gold** at 4 s of valid drifting.
+- **Cyan** at 1 s, **Magenta** at 2.5 s, **Gold** at 4 s of valid drifting with neutral steering. **Steering into the drift charges faster** (up to 1.5x, so Gold in about 2.7 s); steering out of it charges slower (0.75x).
+- The car **hops** as the drift starts and its body **angles into the slide** (visual only). After the drift, grip blends back over 0.15 s so it straightens cleanly into the boost.
 - **Releasing** Shift (or the bumper) fires the boost. Higher levels give more speed for longer.
 - Leaving the ground pauses charging. Staying airborne for more than 1.5 s, hitting something hard, or slowing well below drift speed cancels the drift with no boost.
-- Feedback: rear-wheel sparks and an undercarriage glow in the current level's colour, a tone for each level, exhaust flames and a FOV kick while boosting, and the HUD charge bar.
+- Feedback: rear-wheel sparks and an undercarriage glow in the current level's colour, **tyre smoke** while sliding, a looping **skid** hiss (your car only), a tone for each level, exhaust flames and a FOV kick while boosting, and the HUD charge bar.
 
 ### Recovery
 
@@ -111,7 +112,8 @@ The layout is the `control_points` list on `scenes/tracks/test_circuit.tscn`, sa
 - **Title menu** (GDD §11.2): the Cyberwave 2199 logo (`assets/logo/`), then Single Player, Multiplayer, Settings, Credits, Exit.
 - **Single-player menu:** Continue Grand Prix (only when one is saved), Grand Prix, Versus, Practice, Garage, Settings, Credits, Back.
 - **Multiplayer:** three screens (see "Split-screen multiplayer" below).
-- **Boot splash:** the logo's skyline and sun (`assets/logo/splash_skyline.png`) on black while the game loads. The app/window icon is a square crop of the same skyline (`assets/logo/app_icon.png`). A Windows .exe icon (.ico) gets set in the export preset when you export.
+- **Boot splash:** the logo's skyline and sun (`assets/logo/splash_skyline.png`) on black while the game loads. The engine shows it first, then the boot scene (`scenes/boot.tscn`, the main scene) keeps the same picture in the same place and adds a cyan progress bar while the title menu loads in the background.
+- **Loading card:** races and Practice open behind a card with the track name, location, mode, outline and a **progress bar with a percentage**. The game files load in the background, then the track is built in steps (road, each feature, and each scenery set in several parts) while its textures load in the background. Last comes race setup (cars, racing line, HUD). Each step still pauses the game, so the bar moves in small jumps. Race setup is one step at the end (about 1–4 s headless). The menu underneath is frozen and ignores input while loading. Scenery `build()` functions call `await step(share)` between big parts so the bar can redraw; outside the loading card `step()` returns at once and the build runs in one go. The app/window icon is a square crop of the same skyline (`assets/logo/app_icon.png`). A Windows .exe icon (.ico) gets set in the export preset when you export.
 - **Credits:** the game, music, sound, fonts, textures and sky, weapon art and engine, with a Back button (Esc / B also goes back).
 - **Race setup** (GDD §11.3): the cup (Grand Prix) or race type and number of races (Versus), vehicle picker with a rotating preview of your car (paint, cosmetics and plate), stats, NPC difficulty, laps (Versus), weapons on/off, and a short explanation of the chosen mode (how Elimination knocks cars out, how points work). Grand Prix starts the race; Versus goes on to the track screen. It remembers your last choices and shows your personal best (Versus) or best championship finish (Grand Prix).
   - **A Grand Prix keeps the car you started it with** for all three races (the GDD saves the player vehicle with the championship).

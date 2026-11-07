@@ -72,8 +72,12 @@ var _wheel_spin: float = 0.0
 var _wheels: Array[RayCast3D] = []
 ## Visual size (see set_visual_scale); 1 = as built.
 var visual_scale: float = 1.0
-## Per-wheel offset of the drawn wheel from its ray, for a scaled-up look.
-var _wheel_offsets: Dictionary = {}
+## Visual-only body yaw (rad) and hop height (m) from the drift effects;
+## the drawn wheels follow them so they stay under the body.
+var visual_yaw: float = 0.0
+var visual_hop: float = 0.0
+## Seconds left of the post-drift grip blend (see drift_recovery_time).
+var _recover_left: float = 0.0
 
 @onready var drift: DriftController = $DriftController
 @onready var recovery: VehicleRecovery = $VehicleRecovery
@@ -100,6 +104,8 @@ func _ready() -> void:
 			_wheels.append(ray)
 	if _wheels.is_empty():
 		push_error("VehicleController: no Wheel* RayCast3D children found.")
+	drift.drift_ended.connect(func(_level: int, _boosted: bool) -> void: _recover_left = stats.drift_recovery_time)
+	drift.drift_cancelled.connect(func(_reason: String) -> void: _recover_left = stats.drift_recovery_time)
 	trick = VehicleTrick.new()
 	trick.name = "VehicleTrick"
 	add_child(trick)
@@ -149,19 +155,28 @@ func set_visual_scale(s: float) -> void:
 	var body := get_node_or_null("Body") as Node3D
 	if body != null:
 		body.scale *= change
-		body.position.y = BODY_HALF_HEIGHT * (s - 1.0)
+		body.position.y = body_base_y()
 	var feedback := get_node_or_null("Feedback") as Node3D
 	if feedback != null:
 		feedback.scale = Vector3.ONE * s
-	var radius := stats.wheel_radius if stats != null else 0.38
 	for ray in _wheels:
 		var mesh := ray.get_node_or_null("Pivot/Mesh") as Node3D
 		if mesh != null:
 			mesh.scale = Vector3.ONE * s
-		# Out to the bigger body's corners, and up so the bigger wheel's
-		# bottom stays on the road.
-		_wheel_offsets[ray] = Vector3(ray.position.x, 0.0, ray.position.z) * (s - 1.0) \
-				+ Vector3(0.0, radius * (s - 1.0), 0.0)
+
+
+## Where a drawn wheel sits relative to its ray: out at the (scaled) body's
+## corner, turned with the body's drift yaw, lifted by the hop, and raised so
+## a bigger wheel's bottom stays on the road.
+func _wheel_visual_offset(ray: RayCast3D) -> Vector3:
+	var corner := Vector3(ray.position.x, 0.0, ray.position.z)
+	var drawn := (corner * visual_scale).rotated(Vector3.UP, visual_yaw)
+	return drawn - corner + Vector3(0.0, stats.wheel_radius * (visual_scale - 1.0) + visual_hop, 0.0)
+
+
+## The body's resting height (raised when the car is drawn bigger).
+func body_base_y() -> float:
+	return BODY_HALF_HEIGHT * (visual_scale - 1.0)
 
 
 ## Moves the car on the next physics step and clears all motion.
@@ -278,7 +293,7 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 			drift.cancel("disrupted")
 
 	var boost_to_fire := drift.update(dt, drift_left_held, drift_right_held,
-			grounded_wheels >= 2, forward_speed, lateral_speed, stats)
+			grounded_wheels >= 2, forward_speed, lateral_speed, stats, steer_input)
 
 	_update_boost_timer(dt)
 
@@ -359,9 +374,15 @@ func _apply_drive(velocity: Vector3, fwd: Vector3, dt: float, traction: float) -
 func _apply_grip(velocity: Vector3, fwd: Vector3, dt: float, traction: float) -> Vector3:
 	var drifting := drift.is_drifting()
 	var grip_rate := stats.drift_grip if drifting else stats.grip
+	var retention := stats.drift_speed_retention if drifting else stats.grip_speed_retention
+	if not drifting and _recover_left > 0.0:
+		# Just out of a drift: ease back to full grip.
+		var t := 1.0 - _recover_left / maxf(stats.drift_recovery_time, 0.001)
+		grip_rate = lerpf(stats.drift_grip, stats.grip, t)
+		retention = lerpf(stats.drift_speed_retention, stats.grip_speed_retention, t)
+		_recover_left = maxf(0.0, _recover_left - dt)
 	if status != null:
 		grip_rate *= status.grip_multiplier()
-	var retention := stats.drift_speed_retention if drifting else stats.grip_speed_retention
 
 	var normal := ground_normal
 	var vertical := normal * velocity.dot(normal)
@@ -437,6 +458,6 @@ func _update_wheel_visuals(delta: float) -> void:
 		if ray.is_colliding():
 			var dist := (ray.global_position - ray.get_collision_point()).dot(global_transform.basis.y)
 			spring_length = clampf(dist - stats.wheel_radius, 0.0, stats.suspension_rest_length)
-		pivot.position = Vector3(0.0, -spring_length, 0.0) + _wheel_offsets.get(ray, Vector3.ZERO)
-		var yaw := steer_angle if ray.name.begins_with("WheelF") else 0.0
+		pivot.position = Vector3(0.0, -spring_length, 0.0) + _wheel_visual_offset(ray)
+		var yaw := (steer_angle if ray.name.begins_with("WheelF") else 0.0) + visual_yaw
 		pivot.rotation = Vector3(_wheel_spin, yaw, 0.0)

@@ -40,6 +40,9 @@ extends Resource
 @export var drift_min_speed: float = 12.0
 ## Sideways speed required for a drift to count as valid and charge (GDD 4.1).
 @export var drift_min_lateral_speed: float = 1.5
+## After a drift, grip blends back to normal over this long (a clean
+## straighten-up into the boost instead of a snap).
+@export var drift_recovery_time: float = 0.15
 
 @export_group("Drift Boost (Cyan, Magenta, Gold)")
 @export var boost_extra_speed: PackedFloat32Array = PackedFloat32Array([6.0, 10.0, 15.0])

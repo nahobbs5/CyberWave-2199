@@ -95,6 +95,12 @@ func active_effects() -> Array:
 	return _timers.keys()
 
 
+## A stun is spinning (or settling) the bodywork, so other visual body
+## effects (drift yaw) should leave it alone.
+func body_spin_active() -> bool:
+	return is_stunned() or _spin != 0.0
+
+
 func is_stunned() -> bool:
 	return has(&"stun") or has(&"stagger")
 

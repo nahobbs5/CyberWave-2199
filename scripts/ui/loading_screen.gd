@@ -114,13 +114,13 @@ func build(card: Dictionary) -> void:
 		box.add_child(thumbnail)
 	var row := HBoxContainer.new()
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
-	row.add_theme_constant_override("separation", 16)
+	row.add_theme_constant_override("separation", 10)
 	box.add_child(row)
 	var loading := UIStyle.heading("LOADING", 24, UIStyle.CYAN)
 	row.add_child(loading)
 	percent_label = UIStyle.heading("0%", 24, UIStyle.CYAN)
 	percent_label.custom_minimum_size.x = 70
-	percent_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	percent_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	row.add_child(percent_label)
 	progress_bar = ProgressBar.new()
 	progress_bar.min_value = 0.0

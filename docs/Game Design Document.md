@@ -1,5 +1,5 @@
 # CYBERWAVE 2199
-## Game Design Document — Version 2.9
+## Game Design Document — Version 3.0
 
 **Status:** Development Baseline  
 **Engine:** Godot 4  
@@ -260,18 +260,20 @@ Drifting is a central driving skill.
 - Holding Shift while steering left or right starts a drift in that direction.
 - The drift continues while Shift is held; steering does not switch its direction.
 - Steering input controls the slide.
-- Valid drifting accumulates boost charge.
+- Valid drifting accumulates boost charge. **Steering into the drift charges faster** (up to 1.5x when steering fully in; 0.75x when steering fully out), so tighter cornering is rewarded, at the cost of a possibly worse racing line.
 - Releasing Shift (or the gamepad drift button) ends the drift and activates the accumulated boost.
+- The car hops slightly as a drift starts, and its body angles further into the slide than it actually travels (visual only; the physics stay as tuned). Both ease smoothly in and out.
+- After a drift, grip blends back to normal over about 0.15 s, so the car straightens cleanly into the boost instead of snapping.
 
 A valid drift requires actual lateral movement. Holding the drift button while driving straight does not generate charge.
 
 ## 4.2 Drift Charge Levels
 
-| Level | Color | Required Drift |
-|---|---|---:|
-| Level 1 | Cyan | 1 second |
-| Level 2 | Magenta | 2.5 seconds |
-| Level 3 | Gold | 4 seconds |
+| Level | Color | Required Drift (neutral steering) | Steering fully into the drift |
+|---|---|---:|---:|
+| Level 1 | Cyan | 1 second | about 0.67 seconds |
+| Level 2 | Magenta | 2.5 seconds | about 1.67 seconds |
+| Level 3 | Gold | 4 seconds | about 2.67 seconds |
 
 Higher levels grant stronger speed boosts.
 
@@ -285,6 +287,8 @@ Each stage should have:
 - Visible HUD progression
 - Clear feedback when the drift ends
 - A recognizable boost activation effect
+
+Current effects: rear-wheel sparks and an undercarriage glow in the level's colour, tyre smoke from the rear wheels while sliding, a looping skid sound (louder at higher levels) for human players, a tone per level, exhaust flames when boosting, and the HUD charge bar.
 
 ## 4.4 Drift Interruption
 
@@ -1238,5 +1242,6 @@ Changes after Version 1.0 should be tracked as revisions rather than silently re
 | 2.7 | 2026-11-06 | Gamepad: RB drift (hold + steer), LB weapon, Y trick, D-pad up reset, D-pad down camera (§3.3). Split screen: join then READY on the connect screen, license plates on the car screen, "NPCs" wording and mode explanations on race setup (§2.4). |
 | 2.8 | 2026-11-06 | Rear View camera (third in the cycle) and hold-to-look-back on Q / right stick click (§3.2, §3.3, §10). RANDOM track card on the Versus track screen (§2.1). Split screen: a final ALL READY confirm on the connect and car screens (§2.4). |
 | 2.9 | 2026-11-06 | Volume sliders (Master, Music, Sound effects) on the pause menu. Loading card over track builds so the game no longer looks frozen, and the countdown waits for it (§11.8). |
+| 3.0 | 2026-11-07 | Mario Kart style drift feel: steering into a drift charges faster (1.5x in, 0.75x out), drift-entry hop, body angled into the slide, smooth grip recovery after a drift, tyre smoke and a skid sound (§4.1–4.3). |
 
-**End of Game Design Document — Version 2.8**
+**End of Game Design Document — Version 3.0**
