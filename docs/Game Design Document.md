@@ -1,5 +1,5 @@
 # CYBERWAVE 2199
-## Game Design Document — Version 3.2
+## Game Design Document — Version 3.3
 
 **Status:** Development Baseline  
 **Engine:** Godot 4  
@@ -57,7 +57,7 @@ The initial release focuses on polished single-player racing. Additional feature
 A race, or a set of races, against seven AI opponents. Set up Mario Kart style:
 
 1. Race setup: vehicle, race type (Standard or Elimination), **number of races** (1, 2, 3, 4, 6, 8, 12 or 16), lap count (three by default), Easy / Normal / Hard AI, weapons on or off.
-2. Track screen: every cup's tracks on one screen, one row per cup. Pick any of the seven tracks, or the **RANDOM** card below them for a random built track (in a series, one not raced yet while any are left).
+2. Track screen: every cup's tracks on one screen, one row per cup. Pick any of the eight tracks, or the **RANDOM** card below them for a random built track (in a series, one not raced yet while any are left).
 
 With more than one race, the track screen comes back before each race (showing "RACE 2 OF 4" and the points so far). Points and the next grid work like a Grand Prix (§2.2). The final results name the series winner. A series isn't saved: quitting part-way ends it. Each race pays its normal coins, with no cup bonus.
 
@@ -67,7 +67,7 @@ The race concludes when the player finishes or is otherwise removed from competi
 
 ## 2.2 Grand Prix
 
-Three cups, each a championship of its tracks raced back to back (three races, except the one-race Asia Cup). As in Mario Kart, Grand Prix and Versus both start by choosing a cup; Versus then picks one of that cup's tracks.
+Three cups, each a championship of its tracks raced back to back (three races, except the two-race Asia Cup). As in Mario Kart, Grand Prix and Versus both start by choosing a cup; Versus then picks one of that cup's tracks.
 
 ### American Cup (trophy: a map of the USA)
 
@@ -90,6 +90,7 @@ Three cups, each a championship of its tracks raced back to back (three races, e
 | Race | Track | Location |
 |---|---|---|
 | 1 | Arashiyama Circuit | Kyoto, Japan |
+| 2 | Crazy House | Hang Nga Villa, Da Lat, Vietnam |
 
 All three cups are playable. The Europe Cup was the World Cup; its save id is unchanged, so earlier results still count. The cup-win coin bonus is 100 for a three-race cup, scaled by the number of races (§9.3).
 
@@ -545,7 +546,7 @@ AI must support:
 
 # 8. Tracks and Environments
 
-Seven tracks are included at launch.
+Eight tracks are included at launch.
 
 ## 8.1 The Stacks
 
@@ -644,6 +645,24 @@ Built at about 3.1 km with a 14 m road and long flowing corners (55–115 m radi
 
 The shortcut is the Crystal Tube: a narrow, glowing round tunnel of scalloped ice with white light at its far end. It cuts from the Cathedral to the Icicle Gallery, about 120 m shorter, but an ice wall (smashable) blocks its entrance. The Ice Cave Collapse special (§8.9) is still a proposal. Race music is still to be chosen.
 
+## 8.6b Crazy House
+
+**Location:** Hang Nga Villa, Da Lat, Vietnam (shown without Vietnamese accents because the game fonts lack "ạ")
+
+A race inside Hang Nga's Crazy House, the guesthouse built to look like a hollowed-out tree.
+
+**Identity:** Twists, turns and the bizarre. It's a fantasy on a giant scale: the whole lap runs inside one enormous hollow trunk, and nothing has a straight line or a right angle.
+
+Built at about 2.9 km with a 13 m road and constant linked corners (40–70 m radius, no straight longer than about 220 m). The inside of the trunk is melted grey and dark-brown bark dripping with cream plaster, with roofs from about 19 m to 46 m. Daylight comes through oval windows in the roof, and warm light glows from oval windows in the walls. The road is flat; the stairs are scenery (real elevation is a later engine upgrade). Landmarks in driving order:
+- the Root Hall: the start, between gnarled root columns, with knotted bone railings beyond the barriers;
+- the Spiral Stair Well: a tall well ringed with helical staircases (rounded steps, bone banisters, lit doorways at the top) (boost pad);
+- the Animal Rooms: warm-lit alcoves with a bear, an eagle and a giraffe, after the house's themed rooms (stair-step jump);
+- the Gingerbread Gables: the yellow timber house with steep curling gables and warm windows, built into the trunk (boost ring);
+- the Lava Grotto: orange-red pitted walls and giant mushrooms (sap puddle EMP);
+- the Bone Gallery: bone arches over the road (never lower than 7.5 m), knotted railings and a giant spider web (stair-step jump), back to the Root Hall.
+
+Smaller staircases climb the walls all round the lap (about 29 flights, 1,500 steps). The shortcut is the Rib Tunnel: a narrow passage lined with bone ribs that carries straight on where the road turns into the Gables. It's about 250 m shorter, but a bone barricade (smashable) blocks the entrance. Race music is still to be chosen.
+
 ## 8.7 Shared Track Features
 
 Tracks may contain:
@@ -686,6 +705,7 @@ The track concept art suggests one signature dynamic event per track. They are r
 | Catacombs Descent | Tunnel Collapse: blocked routes and forced detours |
 | Arashiyama Circuit | Bamboo Collapse: falling bamboo hazards |
 | Vatnajökull Glacier | Ice Cave Collapse: falling icicles and blocks of ice |
+| Crazy House | Moving Staircases: stairs that swing into new routes |
 
 ---
 
@@ -693,7 +713,7 @@ The track concept art suggests one signature dynamic event per track. They are r
 
 ## 9.1 Progression Model
 
-All eight vehicles, seven tracks, and all three Grand Prix cups are available immediately.
+All eight vehicles, eight tracks, and all three Grand Prix cups are available immediately.
 
 Progression is cosmetic-only.
 
@@ -1272,5 +1292,6 @@ Changes after Version 1.0 should be tracked as revisions rather than silently re
 | 3.0 | 2026-11-07 | Mario Kart style drift feel: steering into a drift charges faster (1.5x in, 0.75x out), drift-entry hop, body angled into the slide, smooth grip recovery after a drift, tyre smoke and a skid sound (§4.1–4.3). |
 | 3.1 | 2026-11-07 | Firewall shield drawn as an animated force-field shader: rim glow, hex grid, fade in / dissolve out, flash on block (§6). |
 | 3.2 | 2026-11-07 | Vatnajökull Glacier built at about 3.1 km: a roomy, bright ice cave with icicles, sky-light shafts, a frozen lake and the Crystal Tube shortcut (§8.6a). The World Cup becomes the Europe Cup (Hoia Baciu, Catacombs, Vatnajökull); Arashiyama moves to the new Asia Cup. Cup-win bonus scales with the cup's race count (§2.2). |
+| 3.3 | 2026-11-07 | Crazy House built at about 2.9 km: inside a giant hollow tree (Hang Nga Villa, Da Lat, Vietnam), staircases everywhere, bone arches, Rib Tunnel shortcut (§8.6b). It is Asia Cup race 2 (§2.2). The road stays flat; elevation is planned as a later engine upgrade. |
 
-**End of Game Design Document — Version 3.2**
+**End of Game Design Document — Version 3.3**

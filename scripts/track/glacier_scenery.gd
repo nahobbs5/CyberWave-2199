@@ -63,7 +63,7 @@ var _glow: Array[Vector4] = []
 var _mouth_from: float = 0.0
 var _mouth_to: float = 0.0
 var _zone_list: Array = []
-var _cave: IceCaveBuilder
+var _cave: CaveShellBuilder
 
 
 func build() -> void:
@@ -82,7 +82,7 @@ func build() -> void:
 	_mouth_from = track.wrap_offset(track.start_line_offset - 120.0)
 	_mouth_to = track.wrap_offset(track.start_line_offset + 130.0)
 
-	var cave := IceCaveBuilder.new(self, null, random_seed)
+	var cave := CaveShellBuilder.new(self, null, random_seed)
 	_cave = cave
 	cave.dims = _dims
 	cave.on_roof = mark_roof
@@ -150,7 +150,7 @@ func _in_mouth(d: float) -> bool:
 	return fposmod(d - _mouth_from, track.length) <= fposmod(_mouth_to - _mouth_from, track.length)
 
 
-func _roof_over_road(cave: IceCaveBuilder, d: float, h: float) -> float:
+func _roof_over_road(cave: CaveShellBuilder, d: float, h: float) -> float:
 	var pr := cave.profile(d, _dims(d), h)
 	var low := INF
 	for p in pr:
@@ -163,7 +163,7 @@ func _roof_over_road(cave: IceCaveBuilder, d: float, h: float) -> float:
 
 func mark_roof(f: Transform3D, from_lateral: float, to_lateral: float) -> void:
 	var along := 0.0
-	while along <= IceCaveBuilder.STEP:
+	while along <= CaveShellBuilder.STEP:
 		var lat := from_lateral
 		while lat <= to_lateral:
 			var p := f * Vector3(lat, 0, -along)
@@ -256,7 +256,7 @@ func _dress_section(f: Transform3D, pr: PackedVector2Array, d: float, dm: Dictio
 		if minf(a.y, b.y) < 4.0:
 			continue
 		var p := a.lerp(b, rng.randf())
-		var along := -rng.randf_range(0.0, IceCaveBuilder.STEP)
+		var along := -rng.randf_range(0.0, CaveShellBuilder.STEP)
 		var top := f * Vector3(p.x, p.y - 0.1, along)
 		var length := lerpf(0.4, max_len, pow(rng.randf(), 2.2))
 		var radius := 0.05 + 0.05 * length * rng.randf_range(0.6, 1.2)
@@ -462,7 +462,7 @@ func _cathedral_stream() -> void:
 
 
 ## Moulin Hall: holes in the roof with sky light pouring down, snow below.
-func _moulins(cave: IceCaveBuilder) -> void:
+func _moulins(cave: CaveShellBuilder) -> void:
 	var h := track.road_width * 0.5
 	var from := float(zone_offsets["moulin"])
 	var span := fposmod(float(zone_offsets["canyon"]) - from, track.length)
@@ -576,7 +576,7 @@ func _crystal_tube(sc: TrackShortcut) -> void:
 		t1 = d
 		d -= 3.0
 	var h := sc.road_width * 0.5
-	var tube := IceCaveBuilder.new(self, sc, 4242)
+	var tube := CaveShellBuilder.new(self, sc, 4242)
 	tube.min_clear = 7.6
 	tube.dims = func(td: float) -> Dictionary:
 		var flare := 1.0 + 0.7 * (1.0 - smoothstep(0.0, 18.0, minf(td - t0, t1 - td)))

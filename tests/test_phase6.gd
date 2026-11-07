@@ -16,6 +16,7 @@ const HOIA := "res://scenes/tracks/hoia_baciu.tscn"
 const CATACOMBS := "res://scenes/tracks/catacombs_descent.tscn"
 const ARASHIYAMA := "res://scenes/tracks/arashiyama_circuit.tscn"
 const GLACIER := "res://scenes/tracks/vatnajokull_glacier.tscn"
+const CRAZY := "res://scenes/tracks/crazy_house.tscn"
 
 var _passed: int = 0
 var _failed: int = 0
@@ -42,10 +43,12 @@ func _run_all() -> void:
 	await _test_layout(CATACOMBS, "Catacombs Descent", 2700.0, 2950.0, 7, 150.0)
 	await _test_layout(ARASHIYAMA, "Arashiyama Circuit", 3000.0, 3250.0, 7, 120.0)
 	await _test_layout(GLACIER, "Vatnajökull Glacier", 2950.0, 3200.0, 7, 100.0)
+	await _test_layout(CRAZY, "Crazy House", 2750.0, 3050.0, 7, 100.0)
 	_test_forest()
 	_test_catacombs()
 	_test_arashiyama()
 	_test_glacier()
+	_test_crazy_house()
 	await _test_build_times()
 	await _run("features on Vegas", _test_features, _vegas_config(), false)
 	await _run("item boxes on ramps and boosters (The Stacks)", _test_item_boxes, _config(STACKS, "The Stacks"), false)
@@ -55,7 +58,7 @@ func _run_all() -> void:
 	await _run("deep water recovers (Six Flags)", _test_deep_water, _config(SIX_FLAGS, "Six Flags New Orleans"), false)
 	_test_menus_and_gp()
 	for track in [[VEGAS, "Vegas Overdrive"], [SIX_FLAGS, "Six Flags New Orleans"], [STACKS, "The Stacks"], [HOIA, "Hoia Baciu Run"],
-			[CATACOMBS, "Catacombs Descent"], [ARASHIYAMA, "Arashiyama Circuit"], [GLACIER, "Vatnajökull Glacier"]]:
+			[CATACOMBS, "Catacombs Descent"], [ARASHIYAMA, "Arashiyama Circuit"], [GLACIER, "Vatnajökull Glacier"], [CRAZY, "Crazy House"]]:
 		var forced := _config(track[0], track[1])
 		forced.total_laps = 1
 		await _run("%s: everyone takes the shortcut (1 lap)" % track[1], _test_forced_shortcut, forced, true)
@@ -467,7 +470,7 @@ func _test_menus_and_gp() -> void:
 func _test_build_times() -> void:
 	_current = "scenery build times"
 	print("- scenery build times")
-	for path in [VEGAS, SIX_FLAGS, STACKS, HOIA, CATACOMBS, ARASHIYAMA, GLACIER]:
+	for path in [VEGAS, SIX_FLAGS, STACKS, HOIA, CATACOMBS, ARASHIYAMA, GLACIER, CRAZY]:
 		var t0 := Time.get_ticks_msec()
 		var track := (load(path) as PackedScene).instantiate() as TrackCircuit
 		root.add_child(track)
@@ -632,7 +635,7 @@ func _test_arashiyama() -> void:
 	_check(TrackCatalog.scene_path("Arashiyama Circuit") == ARASHIYAMA and TrackCatalog.music("Arashiyama Circuit") != "",
 			"Arashiyama is in the track list with music")
 	var asia := load("res://resources/grand_prix/asia_circuit.tres") as GrandPrixData
-	_check(asia.track_scenes == PackedStringArray([ARASHIYAMA]) and asia.track_names[0] == "Arashiyama Circuit", "the Asia Cup is Arashiyama")
+	_check(asia.track_scenes[0] == ARASHIYAMA and asia.track_names[0] == "Arashiyama Circuit", "Asia Cup race 1 is Arashiyama")
 	var track := (load(ARASHIYAMA) as PackedScene).instantiate() as TrackCircuit
 	root.add_child(track)
 	var scenery := track.get_node("Scenery") as ArashiyamaScenery
@@ -720,4 +723,40 @@ func _test_glacier() -> void:
 	var water := track.find_children("*", "TrackFeature", false, false).filter(
 			func(f: Node) -> bool: return (f as TrackFeature).kind == TrackFeature.Kind.WATER and (f as TrackFeature).on_shortcut == "")
 	_check(water.size() == 1, "a meltwater ford on the main road")
+	track.queue_free()
+
+
+## Crazy House: Asia Cup race 2. Inside one giant hollow tree, roofed over
+## every metre of both routes, with staircases everywhere, bone arches that
+## never come below 7.5 m over a road, and daylight through roof windows.
+func _test_crazy_house() -> void:
+	_current = "Crazy House"
+	print("- Crazy House")
+	_check(TrackCatalog.scene_path("Crazy House") == CRAZY and TrackCatalog.location("Crazy House").contains("Vietnam"),
+			"the Crazy House is in the track list (Vietnam)")
+	var asia := load("res://resources/grand_prix/asia_circuit.tres") as GrandPrixData
+	_check(asia.race_count() == 2 and asia.track_scenes[1] == CRAZY and asia.track_names[1] == "Crazy House", "Asia Cup race 2 is the Crazy House")
+	var track := (load(CRAZY) as PackedScene).instantiate() as TrackCircuit
+	root.add_child(track)
+	var scenery := track.get_node("Scenery") as CrazyHouseScenery
+	var gaps: Array[String] = []
+	var d := 0.0
+	while d < track.length:
+		for lateral: float in [-track.road_width * 0.5, 0.0, track.road_width * 0.5]:
+			if not scenery.is_roofed(track.to_local(track.get_safe_transform(d, lateral, 0.0).origin)):
+				gaps.append("main@%d" % d)
+		d += 3.0
+	var sc := track.shortcuts[0]
+	d = 0.0
+	while d < sc.length:
+		if not scenery.is_roofed(sc.point_at(d)):
+			gaps.append("tunnel@%d" % d)
+		d += 3.0
+	_check(gaps.is_empty(), "inside the tree over every metre of both routes (gaps: %s)" % [gaps.slice(0, 8)])
+	_check(scenery.start_roof_height >= 20.0, "a tall Root Hall: roof %.1f m over the grid" % scenery.start_roof_height)
+	_check(scenery.stair_flights >= 6 and scenery.step_count > 300, "staircases everywhere (%d flights, %d steps)" % [scenery.stair_flights, scenery.step_count])
+	_check(scenery.bone_arches >= 10 and scenery.bone_arch_clearance >= 7.5,
+			"bone arches (%d) never lower than 7.5 m over a road (%.1f m)" % [scenery.bone_arches, scenery.bone_arch_clearance])
+	_check(scenery.window_shafts >= 4 and track.find_children("WindowShaft*", "SpotLight3D", true, false).size() >= 4,
+			"daylight through roof windows")
 	track.queue_free()

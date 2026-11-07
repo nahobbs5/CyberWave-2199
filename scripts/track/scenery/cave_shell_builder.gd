@@ -1,9 +1,10 @@
-class_name IceCaveBuilder
+class_name CaveShellBuilder
 extends RefCounted
-## Builds a glacier ice cave along a stretch of road (the main loop or a
-## shortcut): one continuous, irregular shell of ice whose width, height and
-## roughness can change smoothly along the route (dims(d) gives them), carved
-## by two layers of noise into big swirling lobes and small scallops.
+## Builds an organic cave shell (glacier ice, the inside of a hollow tree)
+## along a stretch of road (the main loop or a shortcut): one continuous,
+## irregular shell whose width, height and roughness can change smoothly
+## along the route (dims(d) gives them), carved by layers of noise into big
+## lobes, small scallops and (with "bulge") slow, melted-looking swellings.
 ##
 ## Corner-aware like TunnelBuilder: shell pieces near the floor that would
 ## stand on another road (where a shortcut leaves or rejoins) are left out,
@@ -12,8 +13,9 @@ extends RefCounted
 ## least min_clear metres above it. Visual only: the track barriers collide.
 ##
 ## dims(d) returns a Dictionary: left_wall, right_wall (wall feet laterals),
-## crown (roof height), rough (0..2 noise strength), key (material key),
-## open_left (bool), open_h (height of the mouth opening).
+## crown (roof height), rough (0..2 noise strength), bulge (0..2 slow
+## swellings, default 0), key (material key), open_left (bool), open_h
+## (height of the mouth opening).
 
 const STEP := 3.0
 ## Points across the cross-section, right floor to left floor.
@@ -130,6 +132,7 @@ func profile(d: float, dm: Dictionary, h: float) -> PackedVector2Array:
 	var wr := float(dm.get("right_wall", h + 10.0))
 	var crown := float(dm.get("crown", 15.0))
 	var rough := float(dm.get("rough", 1.0))
+	var bulge := float(dm.get("bulge", 0.0))
 	var c := (wr - wl) * 0.5
 	var a := (wr + wl) * 0.5
 	var centre := Vector2(c, crown * 0.3)
@@ -146,6 +149,10 @@ func profile(d: float, dm: Dictionary, h: float) -> PackedVector2Array:
 			var big := _noise_big.get_noise_3d(u.x, u.y, theta * 18.0)
 			var small := _noise_small.get_noise_3d(u.x * 1.0, u.y * 1.0, theta * 30.0)
 			var amount := rough * (big * minf(a, crown) * 0.22 + small * 1.1)
+			if bulge > 0.0:
+				# Slow swellings along the route: walls that bulge and sag like melted wax.
+				var slow := _noise_big.get_noise_3d(u.x * 0.35, u.y * 0.35, theta * 5.0 + 40.0)
+				amount += bulge * slow * minf(a, crown) * 0.3
 			p += (p - centre).normalized() * amount
 			# Keep the floor-level walls off the road and the roof high above it.
 			if absf(p.x) < h + 3.0:
