@@ -82,6 +82,13 @@ var _pending_launch: float = -1.0
 ## Cars this one passes through for now (recovery protection).
 var _ghosted_with: Array[VehicleController] = []
 var _ghost: bool = false
+## Automated flight (Overdrive): the car is placed on _flight_transform each
+## step and moves at _flight_velocity; driving physics is off.
+var _flying: bool = false
+var _flight_transform: Transform3D
+var _flight_velocity: Vector3 = Vector3.ZERO
+## Overdrive flight controller (made on first use).
+var overdrive: OverdriveController
 var _prev_forward_speed: float = 0.0
 var _wheel_spin: float = 0.0
 var _wheels: Array[RayCast3D] = []
@@ -135,7 +142,29 @@ func _physics_process(delta: float) -> void:
 
 ## True when the driver (player or AI) may steer and accelerate.
 func can_control() -> bool:
-	return input_enabled and not recovery_lock
+	return input_enabled and not recovery_lock and not _flying
+
+
+## True while an Overdrive flies the car.
+func is_flying() -> bool:
+	return _flying
+
+
+## Starts or continues automated flight: put the car at `target`, moving at
+## `velocity` (so speed readouts, positions and the camera still work).
+func fly_to(target: Transform3D, velocity: Vector3) -> void:
+	_flying = true
+	_flight_transform = target
+	_flight_velocity = velocity
+	_has_pending_teleport = false
+
+
+## Ends automated flight, driving on forward at `speed`.
+func end_flight(speed: float = 0.0) -> void:
+	if not _flying:
+		return
+	_flying = false
+	_pending_launch = maxf(speed, 0.0)
 
 
 func _read_player_input() -> void:
@@ -335,6 +364,18 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 			_held_moved = false
 			teleported.emit.call_deferred()
 		return
+	if _flying:
+		state.transform = _flight_transform
+		state.linear_velocity = _flight_velocity
+		state.angular_velocity = Vector3.ZERO
+		var basis_now := _flight_transform.basis
+		forward_speed = _flight_velocity.dot(-basis_now.z)
+		lateral_speed = 0.0
+		_prev_forward_speed = forward_speed
+		grounded_wheels = 0
+		_pending_kick = 0.0
+		_pending_speed_scale = 1.0
+		return
 	if _pending_launch >= 0.0:
 		state.linear_velocity = -state.transform.basis.z * _pending_launch
 		state.angular_velocity = Vector3.ZERO
@@ -443,7 +484,8 @@ func _apply_drive(velocity: Vector3, fwd: Vector3, dt: float, traction: float) -
 
 	if throttle_input > 0.0 and forward_speed < cap:
 		var ratio := clampf(forward_speed / cap, 0.0, 1.0)
-		accel += throttle_input * stats.acceleration * (1.0 - ratio * ratio)
+		var accel_scale := status.accel_multiplier() if status != null else 1.0
+		accel += throttle_input * stats.acceleration * accel_scale * (1.0 - ratio * ratio)
 	if is_boosting() and forward_speed < cap:
 		accel += stats.boost_acceleration
 	if forward_speed > cap:

@@ -19,6 +19,8 @@ const TRACKS := [
 			"res://music/kulakovka-hard-cyberpunk-281149.mp3"],
 	["Arashiyama Circuit", "res://scenes/tracks/arashiyama_circuit.tscn", "Kyoto, Japan",
 			"res://music/ob-lix-the-cyber-geisha-world-ethnic-amp-fantasy-background-music-110365.mp3"],
+	# Music to come (the user is choosing a track); silent until then.
+	["Vatnajökull Glacier", "res://scenes/tracks/vatnajokull_glacier.tscn", "Vatnajökull, Iceland", ""],
 	["Test Circuit", TEST_CIRCUIT, "Graybox", ""],
 ]
 

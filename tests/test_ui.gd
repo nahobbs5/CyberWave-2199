@@ -179,7 +179,15 @@ func _test_cups() -> void:
 	_check(poly.size() >= 60 and not Geometry2D.triangulate_polygon(poly).is_empty(), "USA map is a valid shape (%d points)" % poly.size())
 	var american := GrandPrixData.cup_by_path(GrandPrixData.CUPS[0])
 	_check(american.display_name == "American Cup" and american.emblem == "usa", "American Cup with the USA trophy")
-	_check(GrandPrixData.cup_by_path(GrandPrixData.CUPS[1]).display_name == "World Cup", "World Cup")
+	var europe := GrandPrixData.cup_by_path(GrandPrixData.CUPS[1])
+	var asia := GrandPrixData.cup_by_path(GrandPrixData.CUPS[2])
+	_check(europe.display_name == "Europe Cup" and europe.emblem == "europe", "Europe Cup with the Europe trophy")
+	_check(asia.display_name == "Asia Cup" and asia.emblem == "japan" and asia.track_names == PackedStringArray(["Arashiyama Circuit"]),
+			"Asia Cup (Arashiyama) with the rising-sun trophy")
+	var europe_ok := true
+	for shape in TrophyIcon.europe_polygons(Rect2(0, 0, 100, 60)):
+		europe_ok = europe_ok and shape.size() >= 5 and not Geometry2D.triangulate_polygon(shape).is_empty()
+	_check(europe_ok and TrophyIcon.europe_polygons(Rect2(0, 0, 100, 60)).size() == 4, "Europe map: mainland, Britain, Ireland, Iceland")
 	# Grand Prix: the cup screen shows the trophies.
 	GameSession.setup_mode = RaceConfig.Mode.GRAND_PRIX
 	GameSession.cup_path = ""
@@ -204,14 +212,18 @@ func _test_cups() -> void:
 	var tracks := (load("res://scenes/menu/track_select.tscn") as PackedScene).instantiate() as TrackSelect
 	root.add_child(tracks)
 	await _frames(2)
-	_check(tracks.cards.size() == 6, "every cup's tracks on one screen (%d)" % tracks.cards.size())
+	_check(tracks.cards.size() == 7, "every cup's tracks on one screen (%d)" % tracks.cards.size())
 	var outlines_ok := true
 	for card in tracks.cards:
 		var thumb := card.find_child("Thumbnail", true, false) as TrackThumbnail
 		outlines_ok = outlines_ok and thumb != null and thumb.outline.size() >= 3
 	_check(outlines_ok, "every track card has its outline")
 	var down := tracks.cards[0].get_node(tracks.cards[0].focus_neighbor_bottom)
-	_check(down == tracks.cards[3], "down moves from the American Cup row to the World Cup row")
+	_check(down == tracks.cards[3], "down moves from the American Cup row to the Europe Cup row")
+	var asia_card := tracks.cards[tracks.track_names.find("Arashiyama Circuit")]
+	_check(tracks.cards[3].get_node(tracks.cards[3].focus_neighbor_bottom) == asia_card, "and on down to the Asia Cup")
+	var glacier_at := tracks.track_names.find("Vatnajökull Glacier")
+	_check(glacier_at == 5 and not tracks.cards[glacier_at].disabled, "the glacier is the Europe Cup's third track")
 	tracks.pick(0)
 	_check(GameSession.track_name == "Vegas Overdrive", "picking a track: Vegas is first (%s)" % GameSession.track_name)
 	_check(GameSession.current != null and GameSession.current.track_scene.resource_path.ends_with("vegas_overdrive.tscn"),

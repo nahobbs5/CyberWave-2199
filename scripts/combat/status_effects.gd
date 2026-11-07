@@ -31,6 +31,9 @@ const FORCE_FIELD_SHADER := preload("res://assets/shaders/force_field.gdshader")
 @export var traction_grip_multiplier: float = 0.2
 @export var wet_speed_multiplier: float = 0.88
 @export var wet_grip_multiplier: float = 0.75
+## System Override (Advanced Weapons §3): top speed and acceleration kept.
+@export var override_speed_multiplier: float = 0.7
+@export var override_accel_multiplier: float = 0.6
 
 var _timers: Dictionary = {}
 var _protection: float = 0.0
@@ -54,6 +57,10 @@ func _ready() -> void:
 ## Applies a harmful effect. Returns false if a shield or stun protection
 ## blocked it.
 func apply_attack(effect: StringName, duration: float) -> bool:
+	# An Overdrive flight is untouchable (Advanced Weapons §5).
+	if has(&"overdrive"):
+		attack_blocked.emit(effect, &"overdrive")
+		return false
 	if has(&"shield"):
 		_end(&"shield")
 		_shield_flash = 1.0
@@ -68,11 +75,17 @@ func apply_attack(effect: StringName, duration: float) -> bool:
 		_vehicle.drift.cancel("stunned")
 	elif effect == &"emp" and _vehicle != null:
 		_vehicle.drift.cancel("EMP")
+	elif effect == &"override" and _vehicle != null:
+		# Loses any mini-turbo charge; steering is untouched.
+		_vehicle.drift.cancel("override")
 	return true
 
 
 ## Applies a beneficial effect (e.g. the Firewall shield); never blocked.
 func apply_buff(effect: StringName, duration: float) -> void:
+	# Starting an Overdrive shrugs off a System Override.
+	if effect == &"overdrive":
+		_end(&"override")
 	_start(effect, duration)
 
 
@@ -89,6 +102,11 @@ func apply_surface(effect: StringName, duration: float) -> void:
 		_timers[effect] = maxf(time_left(effect), duration)
 	else:
 		_start(effect, duration)
+
+
+## Ends an effect early (an Overdrive landing ends its buff).
+func remove(effect: StringName) -> void:
+	_end(effect)
 
 
 func has(effect: StringName) -> bool:
@@ -135,7 +153,14 @@ func speed_multiplier() -> float:
 		m *= emp_speed_multiplier
 	if has(&"wet"):
 		m *= wet_speed_multiplier
+	if has(&"override"):
+		m *= override_speed_multiplier
 	return m
+
+
+## Scales the car's acceleration (System Override).
+func accel_multiplier() -> float:
+	return override_accel_multiplier if has(&"override") else 1.0
 
 
 func grip_multiplier() -> float:
@@ -246,6 +271,11 @@ func _process(delta: float) -> void:
 	if has(&"emp"):
 		_status_light.light_color = Color(0.3, 0.6, 1.0)
 		_status_light.light_energy = 3.0 * flicker
+	elif has(&"override"):
+		# Hacked: red-magenta, stuttering like failing electronics.
+		_status_light.light_color = Color(1.0, 0.15, 0.4)
+		var stutter := 0.8 if GameSettings.reduced_flashing else (1.0 if fmod(Time.get_ticks_msec() * 0.011, 1.0) < 0.6 else 0.2)
+		_status_light.light_energy = 3.5 * stutter
 	elif has(&"traction"):
 		_status_light.light_color = Color(1.0, 0.9, 0.2)
 		_status_light.light_energy = 3.0 * flicker

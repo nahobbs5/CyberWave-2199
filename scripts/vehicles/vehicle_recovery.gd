@@ -125,7 +125,7 @@ func _physics_process(delta: float) -> void:
 	var v := vehicle.linear_velocity
 	_travelled += Vector2(v.x, v.z).length() * delta
 	_update_safe_point()
-	if auto_recovery_enabled and _cooldown <= 0.0 and state == State.NORMAL:
+	if auto_recovery_enabled and _cooldown <= 0.0 and state == State.NORMAL and not vehicle.is_flying():
 		_check_automatic(delta)
 
 
@@ -142,7 +142,7 @@ func is_busy() -> bool:
 ## Starts a recovery. Returns false if refused: during the cooldown, or while
 ## one is already playing (one recovery per incident).
 func request_recovery(reason: String) -> bool:
-	if track == null or vehicle == null or _cooldown > 0.0 or state != State.NORMAL:
+	if track == null or vehicle == null or _cooldown > 0.0 or state != State.NORMAL or vehicle.is_flying():
 		return false
 	var backoff := reset_backoff
 	target_transform = _find_clear_transform(last_safe_offset - backoff)

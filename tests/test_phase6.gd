@@ -15,6 +15,7 @@ const STACKS := "res://scenes/tracks/the_stacks.tscn"
 const HOIA := "res://scenes/tracks/hoia_baciu.tscn"
 const CATACOMBS := "res://scenes/tracks/catacombs_descent.tscn"
 const ARASHIYAMA := "res://scenes/tracks/arashiyama_circuit.tscn"
+const GLACIER := "res://scenes/tracks/vatnajokull_glacier.tscn"
 
 var _passed: int = 0
 var _failed: int = 0
@@ -40,9 +41,11 @@ func _run_all() -> void:
 	await _test_layout(HOIA, "Hoia Baciu Run", 3100.0, 3300.0, 6, 80.0)
 	await _test_layout(CATACOMBS, "Catacombs Descent", 2700.0, 2950.0, 7, 150.0)
 	await _test_layout(ARASHIYAMA, "Arashiyama Circuit", 3000.0, 3250.0, 7, 120.0)
+	await _test_layout(GLACIER, "Vatnajökull Glacier", 2950.0, 3200.0, 7, 100.0)
 	_test_forest()
 	_test_catacombs()
 	_test_arashiyama()
+	_test_glacier()
 	await _test_build_times()
 	await _run("features on Vegas", _test_features, _vegas_config(), false)
 	await _run("item boxes on ramps and boosters (The Stacks)", _test_item_boxes, _config(STACKS, "The Stacks"), false)
@@ -52,7 +55,7 @@ func _run_all() -> void:
 	await _run("deep water recovers (Six Flags)", _test_deep_water, _config(SIX_FLAGS, "Six Flags New Orleans"), false)
 	_test_menus_and_gp()
 	for track in [[VEGAS, "Vegas Overdrive"], [SIX_FLAGS, "Six Flags New Orleans"], [STACKS, "The Stacks"], [HOIA, "Hoia Baciu Run"],
-			[CATACOMBS, "Catacombs Descent"], [ARASHIYAMA, "Arashiyama Circuit"]]:
+			[CATACOMBS, "Catacombs Descent"], [ARASHIYAMA, "Arashiyama Circuit"], [GLACIER, "Vatnajökull Glacier"]]:
 		var forced := _config(track[0], track[1])
 		forced.total_laps = 1
 		await _run("%s: everyone takes the shortcut (1 lap)" % track[1], _test_forced_shortcut, forced, true)
@@ -453,15 +456,18 @@ func _test_menus_and_gp() -> void:
 	config = c.make_race_config()
 	_check(config.track_name == "The Stacks" and config.track_scene.resource_path == STACKS,
 			"American Cup race 3 runs on The Stacks")
-	var world := load("res://resources/grand_prix/world_circuit.tres") as GrandPrixData
-	_check(not world.locked and not gp.locked, "both cups are playable")
+	var europe := load("res://resources/grand_prix/world_circuit.tres") as GrandPrixData
+	var asia := load("res://resources/grand_prix/asia_circuit.tres") as GrandPrixData
+	_check(not europe.locked and not asia.locked and not gp.locked, "all three cups are playable")
+	_check(GrandPrixData.CUPS.size() == 3 and europe.display_name == "Europe Cup" and asia.display_name == "Asia Cup",
+			"American, Europe and Asia cups")
 
 
 ## Each track's scenery builds quickly (headless, no rendering).
 func _test_build_times() -> void:
 	_current = "scenery build times"
 	print("- scenery build times")
-	for path in [VEGAS, SIX_FLAGS, STACKS, HOIA, CATACOMBS, ARASHIYAMA]:
+	for path in [VEGAS, SIX_FLAGS, STACKS, HOIA, CATACOMBS, ARASHIYAMA, GLACIER]:
 		var t0 := Time.get_ticks_msec()
 		var track := (load(path) as PackedScene).instantiate() as TrackCircuit
 		root.add_child(track)
@@ -472,16 +478,16 @@ func _test_build_times() -> void:
 		await process_frame
 
 
-## Hoia Baciu: in the catalogue, World Circuit race 1 (still locked), and a
+## Hoia Baciu: in the catalogue, Europe Cup race 1, and a
 ## forest of instanced trees that keeps off the roads and out of the clearing.
 func _test_forest() -> void:
 	_current = "Hoia Baciu forest"
 	print("- Hoia Baciu forest")
 	_check(TrackCatalog.scene_path("Hoia Baciu Run") == HOIA and TrackCatalog.music("Hoia Baciu Run") != "", "Hoia is in the track list with music")
 	var world := load("res://resources/grand_prix/world_circuit.tres") as GrandPrixData
-	_check(world.track_scenes[0] == HOIA, "World Cup race 1 is Hoia")
-	_check(world.is_open(true) and world.is_open(false), "World Cup: open for Grand Prix and Versus")
-	_check(world.is_track_built(0) and world.is_track_built(1) and world.is_track_built(2), "all three World Cup tracks are built")
+	_check(world.track_scenes[0] == HOIA, "Europe Cup race 1 is Hoia")
+	_check(world.is_open(true) and world.is_open(false), "Europe Cup: open for Grand Prix and Versus")
+	_check(world.is_track_built(0) and world.is_track_built(1) and world.is_track_built(2), "all three Europe Cup tracks are built")
 	GameSession.setup_mode = RaceConfig.Mode.VERSUS
 	var select := (load("res://scenes/menu/track_select.tscn") as PackedScene).instantiate() as TrackSelect
 	root.add_child(select)
@@ -489,7 +495,7 @@ func _test_forest() -> void:
 	for t in world.track_names:
 		var i := select.track_names.find(t)
 		world_open = world_open and i >= 0 and not select.cards[i].disabled
-	_check(world_open, "Versus track select: all three World Cup tracks raceable")
+	_check(world_open, "Versus track select: all three Europe Cup tracks raceable")
 	select.free()
 	var track := (load(HOIA) as PackedScene).instantiate() as TrackCircuit
 	root.add_child(track)
@@ -512,7 +518,7 @@ func _test_forest() -> void:
 	track.free()
 
 
-## Catacombs Descent: World Cup race 2, roofed over every metre (main road
+## Catacombs Descent: Europe Cup race 2, roofed over every metre (main road
 ## and shortcut), torch-lit, with skull walls that keep off the roads and
 ## standing water on both routes.
 func _test_catacombs() -> void:
@@ -521,7 +527,7 @@ func _test_catacombs() -> void:
 	_check(TrackCatalog.scene_path("Catacombs Descent") == CATACOMBS and TrackCatalog.music("Catacombs Descent") != "",
 			"the Catacombs are in the track list with music")
 	var world := load("res://resources/grand_prix/world_circuit.tres") as GrandPrixData
-	_check(world.track_scenes[1] == CATACOMBS and world.track_names[1] == "Catacombs Descent", "World Cup race 2 is the Catacombs")
+	_check(world.track_scenes[1] == CATACOMBS and world.track_names[1] == "Catacombs Descent", "Europe Cup race 2 is the Catacombs")
 	var track := (load(CATACOMBS) as PackedScene).instantiate() as TrackCircuit
 	root.add_child(track)
 	var scenery := track.get_node("Scenery") as CatacombsScenery
@@ -560,6 +566,11 @@ func _test_catacombs() -> void:
 
 
 func _test_forced_shortcut(race: RaceManager) -> void:
+	# Overdrive flies the main road, so leave the rare items out of this
+	# routing test (they're covered in test_weapons_advanced.gd).
+	var wm := race.weapon_manager
+	if wm != null:
+		wm.weapons = wm.weapons.filter(func(w: WeaponData) -> bool: return not w.is_special())
 	var sc := race.track.shortcuts[0]
 	sc.ai_chance = 1.0
 	for racer in race.racers:
@@ -611,7 +622,7 @@ func _test_full_race(race: RaceManager) -> void:
 	_check(map.shortcut_count() == 1, "the minimap draws the shortcut")
 
 
-## Arashiyama Circuit: World Cup race 3. A bamboo grove whose canopy closes
+## Arashiyama Circuit: the Asia Cup. A bamboo grove whose canopy closes
 ## over most of the lap (open at the start plaza, the bridge and the temple
 ## garden), thousands of culms that keep off both roads, the bridge and
 ## garden open to the sky, and its features on the right routes.
@@ -620,8 +631,8 @@ func _test_arashiyama() -> void:
 	print("- Arashiyama Circuit")
 	_check(TrackCatalog.scene_path("Arashiyama Circuit") == ARASHIYAMA and TrackCatalog.music("Arashiyama Circuit") != "",
 			"Arashiyama is in the track list with music")
-	var world := load("res://resources/grand_prix/world_circuit.tres") as GrandPrixData
-	_check(world.track_scenes[2] == ARASHIYAMA and world.track_names[2] == "Arashiyama Circuit", "World Cup race 3 is Arashiyama")
+	var asia := load("res://resources/grand_prix/asia_circuit.tres") as GrandPrixData
+	_check(asia.track_scenes == PackedStringArray([ARASHIYAMA]) and asia.track_names[0] == "Arashiyama Circuit", "the Asia Cup is Arashiyama")
 	var track := (load(ARASHIYAMA) as PackedScene).instantiate() as TrackCircuit
 	root.add_child(track)
 	var scenery := track.get_node("Scenery") as ArashiyamaScenery
@@ -667,3 +678,46 @@ func _test_arashiyama() -> void:
 			"standing water on the main road; fallen bamboo blocks the shrine path")
 	track.free()
 
+
+## Vatnajökull Glacier: Europe Cup race 3. An ice cave roofed over every
+## metre of both routes, tall enough at the start for the gantry, with
+## thousands of icicles that never hang low over a road, sky-light shafts in
+## Moulin Hall and a meltwater ford on the main road.
+func _test_glacier() -> void:
+	_current = "Vatnajökull Glacier"
+	print("- Vatnajökull Glacier")
+	_check(TrackCatalog.scene_path("Vatnajökull Glacier") == GLACIER and TrackCatalog.location("Vatnajökull Glacier").contains("Iceland"),
+			"the glacier is in the track list (Iceland)")
+	var europe := load("res://resources/grand_prix/world_circuit.tres") as GrandPrixData
+	_check(europe.track_scenes[2] == GLACIER and europe.track_names[2] == "Vatnajökull Glacier", "Europe Cup race 3 is the glacier")
+	var track := (load(GLACIER) as PackedScene).instantiate() as TrackCircuit
+	root.add_child(track)
+	var scenery := track.get_node("Scenery") as GlacierScenery
+	var gaps: Array[String] = []
+	var d := 0.0
+	while d < track.length:
+		for lateral: float in [-track.road_width * 0.5, 0.0, track.road_width * 0.5]:
+			if not scenery.is_roofed(track.to_local(track.get_safe_transform(d, lateral, 0.0).origin)):
+				gaps.append("main@%d" % d)
+		d += 3.0
+	var sc := track.shortcuts[0]
+	d = 0.0
+	while d < sc.length:
+		if not scenery.is_roofed(sc.point_at(d)):
+			gaps.append("tube@%d" % d)
+		d += 3.0
+	_check(gaps.is_empty(), "ice over every metre of both routes (gaps: %s)" % [gaps.slice(0, 8)])
+	_check(scenery.start_roof_height >= 20.0, "a roomy start hall: roof %.1f m over the grid" % scenery.start_roof_height)
+	var low := 0
+	for p in scenery.icicle_tips:
+		if track.get_lateral_distance(track.to_global(p)) < track.road_width * 0.5 + 1.0 and p.y < 7.0:
+			low += 1
+	var chunks := track.find_children("Icicles_*", "MultiMeshInstance3D", true, false)
+	_check(scenery.icicle_count() > 5000 and chunks.size() > 10, "icicles everywhere (%d in %d chunks)" % [scenery.icicle_count(), chunks.size()])
+	_check(low == 0, "no icicle hangs below 7 m over the road (%d)" % low)
+	_check(scenery.skylights >= 4 and track.find_children("Skylight*", "SpotLight3D", true, false).size() >= 4,
+			"sky-light shafts in Moulin Hall")
+	var water := track.find_children("*", "TrackFeature", false, false).filter(
+			func(f: Node) -> bool: return (f as TrackFeature).kind == TrackFeature.Kind.WATER and (f as TrackFeature).on_shortcut == "")
+	_check(water.size() == 1, "a meltwater ford on the main road")
+	track.queue_free()

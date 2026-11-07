@@ -125,11 +125,21 @@ func _build() -> void:
 	columns.add_theme_constant_override("separation", 24)
 	columns.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	page.add_child(columns)
+	# The cup rows scroll (three cups and RANDOM don't fit at 720p); the
+	# focused card is always scrolled into view.
+	var scroll := ScrollContainer.new()
+	scroll.name = "Rows"
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.follow_focus = true
+	columns.add_child(scroll)
 	var rows_box := VBoxContainer.new()
 	rows_box.add_theme_constant_override("separation", 14)
 	rows_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	rows_box.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	rows_box.alignment = BoxContainer.ALIGNMENT_CENTER
-	columns.add_child(rows_box)
+	scroll.add_child(rows_box)
 	var rows: Array = []
 	for cup in GrandPrixData.all_cups():
 		var row_cards: Array[Button] = []

@@ -7,7 +7,7 @@
 The authoritative design is [`docs/Game Design Document.md`](docs/Game%20Design%20Document.md) (GDD v2.8).
 
 **Current milestone: Phase 6, content and polish** (GDD §16), in progress. Done so far:
-- **All six tracks** in two cups: the **American Cup** (Vegas Overdrive, Six Flags New Orleans, The Stacks) and the **World Cup** (Hoia Baciu Run, Catacombs Descent, Arashiyama Circuit),
+- **All seven tracks** in three cups: the **American Cup** (Vegas Overdrive, Six Flags New Orleans, The Stacks), the **Europe Cup** (Hoia Baciu Run, Catacombs Descent, Vatnajökull Glacier) and the **Asia Cup** (Arashiyama Circuit),
 - **Split-screen multiplayer** for 2–4 players (keyboard + gamepads): top/bottom halves for two, corners for three or four, a live spectator view in the spare corner for three, one shared minimap,
 - **Mario Kart style Versus:** pick how many races (1–16), then each track from one screen listing every cup; points add up over the set,
 - **eight vehicle models**, built procedurally after the roster art, with support for swapping in your own `.glb` models,
@@ -115,10 +115,10 @@ The layout is the `control_points` list on `scenes/tracks/test_circuit.tscn`, sa
 
 ### Game modes
 
-**Cups and tracks (Mario Kart style).** **Grand Prix** starts on a **cup screen**: one big card per cup with its trophy (drawn in code: the **American Cup** has a map of the USA on it, the **World Cup** a globe), its three races and your best finish, then goes to the setup screen and races the whole cup. **Versus** starts on the setup screen (car, race type, **number of races**, laps, NPC difficulty, weapons), then shows a **track screen with every cup's tracks** (one row per cup; each card has the outline, location and your best time, plus a RANDOM card). Back (or Esc / B) steps back one screen. Both cups are fully playable: the **American Cup** (Vegas Overdrive, Six Flags New Orleans, The Stacks) and the **World Cup** (Hoia Baciu Run, Catacombs Descent, Arashiyama Circuit). A cup can be greyed out as "coming soon" with `locked = true` on its resource. Each cup is data (`resources/grand_prix/*.tres`, listed in `GrandPrixData.CUPS`); its `emblem` picks the trophy picture. The Test Circuit isn't in a cup: it's the Practice track.
+**Cups and tracks (Mario Kart style).** **Grand Prix** starts on a **cup screen**: one big card per cup with its trophy (drawn in code: the **American Cup** has a map of the USA on it, the **Europe Cup** a map of Europe, the **Asia Cup** a rising sun), its races and your best finish, then goes to the setup screen and races the whole cup. **Versus** starts on the setup screen (car, race type, **number of races**, laps, NPC difficulty, weapons), then shows a **track screen with every cup's tracks** (one row per cup; each card has the outline, location and your best time, plus a RANDOM card). Back (or Esc / B) steps back one screen. All three cups are fully playable: the **American Cup** (Vegas Overdrive, Six Flags New Orleans, The Stacks), the **Europe Cup** (Hoia Baciu Run, Catacombs Descent, Vatnajökull Glacier) and the **Asia Cup** (Arashiyama Circuit, one race for now). The Europe Cup was the World Cup; its resource keeps the old file name and id (`world_circuit`) so saved results carry over. The track screen scrolls to keep the focused card in view. A cup can be greyed out as "coming soon" with `locked = true` on its resource. Each cup is data (`resources/grand_prix/*.tres`, listed in `GrandPrixData.CUPS`); its `emblem` picks the trophy picture. The Test Circuit isn't in a cup: it's the Practice track.
 
 - **Versus** (GDD §2.1): you start eighth. Pick **1, 2, 3, 4, 6, 8, 12 or 16 races**. With one race, the results offer **Race again** or the menu. With more, the track screen comes back before each race ("RACE 2 OF 4", with the points so far), points and grids work like a Grand Prix, and the last results name the series winner. A series isn't saved; each race pays its normal coins.
-- **Grand Prix** (GDD §2.2): the *American Cup* or the *World Cup*, three races of three laps each.
+- **Grand Prix** (GDD §2.2): the *American Cup*, the *Europe Cup* (three races each) or the *Asia Cup* (one race), three laps per race. The cup-win bonus is 100 coins for three races, scaled by the cup's race count.
   - Points are 15-12-10-8-6-4-2-1. Ties are broken by most wins, then most second places, then the order in the most recent race.
   - Race 1 starts the seven rivals in slots 1–7 with you last. Each later grid is the previous race's finishing order, not the points order. Rivals keep their names, colours and personalities all season.
   - **The race result is fixed when you cross the line:** anyone still racing is classified in their current order. That way you never have to wait for the field, and the points always match what the results screen shows.
@@ -299,7 +299,7 @@ A 2.9 km technical circuit through the Library of Congress **at sunset**. It's m
 
 #### Hoia Baciu Run (GDD §8.4)
 
-World Cup race 1. A 3.2 km winding **dirt road through Romania's haunted forest on a foggy, moonlit night** (no rain). The road is 15 m wide with no centre line, and cold blue-white racing neon dimmed to read through the fog.
+Europe Cup race 1. A 3.2 km winding **dirt road through Romania's haunted forest on a foggy, moonlit night** (no rain). The road is 15 m wide with no centre line, and cold blue-white racing neon dimmed to read through the fog.
 
 - **Start:** under a carved wooden archway with lanterns and red banners.
 - **Crooked Forest:** four S-bends through a grove of Hoia's bent trees. Their trunks leave the ground sideways, curl up in a J/S bend and rise tall and straight, all bowing the same way.
@@ -313,7 +313,7 @@ World Cup race 1. A 3.2 km winding **dirt road through Romania's haunted forest 
 
 #### Catacombs Descent (GDD §8.5)
 
-World Cup race 2. A 2.8 km twisting race **through the quarried tunnels under Paris**, roofed over every metre: no sky anywhere. The road is a 12 m strip of wet cobbles, the narrowest in the game, between low sandstone kerbs with dim pink racing neon. The stone walls stand about 3 m beyond the kerbs, under barrel vaults about 7.5 m high. Tight corners (30–45 m radius), short straights and narrow chevron boards on every bend. It's lit by about 160 wall torches with a soft flame flicker (steady with Reduced flashing), candle clusters, and five shafts of pale light through iron street grates.
+Europe Cup race 2. A 2.8 km twisting race **through the quarried tunnels under Paris**, roofed over every metre: no sky anywhere. The road is a 12 m strip of wet cobbles, the narrowest in the game, between low sandstone kerbs with dim pink racing neon. The stone walls stand about 3 m beyond the kerbs, under barrel vaults about 7.5 m high. Tight corners (30–45 m radius), short straights and narrow chevron boards on every bend. It's lit by about 160 wall torches with a soft flame flicker (steady with Reduced flashing), candle clusters, and five shafts of pale light through iron street grates.
 
 - **Barrière d'Enfer** (start/finish): a tall 15 m vaulted chamber with cut-stone piers and iron braziers by the gantry. At its far end, over a low archway, the carved lintel **"ARRÊTE ! C'EST ICI L'EMPIRE DE LA MORT"**. Boost pad with item boxes.
 - **Ossuary galleries:** chicanes between walls of stacked bones set with rows of real skulls, with a row of skulls along the top ledge. Candles and skull heaps on the floor. A light shaft.
@@ -329,7 +329,7 @@ World Cup race 2. A 2.8 km twisting race **through the quarried tunnels under Pa
 
 #### Arashiyama Circuit (GDD §8.6)
 
-World Cup race 3. A 3.1 km race **through Kyoto's bamboo grove on a soft, sunny day**, built to feel like an indoor garden out of doors. Tall culms bow in from both sides until their leaves close over the road like a green ceiling (about three quarters of the lap is under the canopy). The sun comes through in slanting shafts and dapples the road through the leaves. The road is 13 m of paved stone between brushwood (shibagaki) fences with two bamboo rails, with soft green racing neon along the fence tops and vermilion chevrons. Corners are drift-friendly 35–60 m radius bends with one hairpin and short straights.
+The Asia Cup. A 3.1 km race **through Kyoto's bamboo grove on a soft, sunny day**, built to feel like an indoor garden out of doors. Tall culms bow in from both sides until their leaves close over the road like a green ceiling (about three quarters of the lap is under the canopy). The sun comes through in slanting shafts and dapples the road through the leaves. The road is 13 m of paved stone between brushwood (shibagaki) fences with two bamboo rails, with soft green racing neon along the fence tops and vermilion chevrons. Corners are drift-friendly 35–60 m radius bends with one hairpin and short straights.
 
 - **Start plaza** (open sky): stone lanterns and white and vermilion banners along the grid, then a timber gate with a tiled roof, paper lanterns and the **ARASHIYAMA** plaque where the road enters the grove.
 - **The grove:** S-bends under the canopy, past a stacked mossy-boulder wall. Boost pad on the exit.
@@ -340,6 +340,20 @@ World Cup race 3. A 3.1 km race **through Kyoto's bamboo grove on a soft, sunny 
 - **Shrine path** (shortcut): a 9 m lane under the bamboo through black torii with straw ropes and paper lanterns, past a small shrine. It's about 200 m shorter, but **fallen bamboo** (smashable) blocks the entrance. Boost ring at the exit, three bonus coins.
 - **Atmosphere:** the kloofendal overcast sky, a warm sun with shadows (limited to 90 m), green-tinted ambient light, light green haze (plus volumetric fog in Forward+, which turns the sun into visible shafts).
 - Built from code: `ArashiyamaScenery` and the new `BambooBuilder` (about 17,000 culms and 3,500 leaf sprays, instanced), with Poly Haven pavement_01 (road), reed_roof_04 (fences), hinoki_planks (bridge and timber), dry_decay_leaves (ground), mossy_stone_wall and sparse_grass (moss) textures, and generated culm and leaf textures.
+
+#### Vatnajökull Glacier (GDD §8.6a)
+
+Europe Cup race 3. A 3.1 km race **through an ice cave under Vatnajökull, Iceland**: fully under the ice like the Catacombs, but roomy and bright instead of cramped. One continuous cave of swirling blue, white and ash-striped ice opens up and closes in along the lap (roofs from 15 m to about 36 m), lit mostly by daylight glowing through the ice. The road is 14 m of blue-grey asphalt between pale ice-block barriers with cyan and white neon, with long flowing corners (55–115 m radius). Over ten thousand icicles hang from the roof, and none hangs lower than 7.5 m over a road. In driving order:
+- **Glacier Mouth** (start): a huge opening onto bright daylight and snow, beside the grid.
+- **Blue Cathedral:** a vast swirling hall along the longest straight, with a meltwater stream beside the road. Boost pad with item boxes.
+- **Icicle Gallery:** lower and wide, lined with icicle curtains and hourglass ice columns.
+- **Moulin Hall:** five meltwater holes in the roof pour shafts of sky light onto snow drifts. Boost ring and a meltwater ford across the road.
+- **Ash Canyon:** a tall gorge striped with black volcanic ash, with a snow-drift jump.
+- **Frozen Lake:** a glassy lake beside the road under ice chandeliers, and a slush puddle (EMP), back to the mouth.
+- **Crystal Tube** (shortcut): a narrow, glowing round tunnel of scalloped ice from the Cathedral to the Gallery, with white light at its far end. About 120 m shorter, but an **ice wall** (smashable) blocks the entrance. Boost ring at the exit, three bonus coins.
+- **Atmosphere:** no sky; a dark blue background, pale blue ambient light and light blue fog thin enough to see far down the cave, strong glow on the daylight, and volumetric fog in Forward+.
+- **No race music yet** (silent until a track is chosen).
+- Built from code: `GlacierScenery` and the new `IceCaveBuilder` (one noise-carved ice shell along each route, blending between zone shapes). The ice is a procedural shader (`assets/shaders/glacier_ice.gdshader`: swirling flow bands, ash streaks, and a glow strongest near the daylight), so it doesn't come out black in the Compatibility renderer. Icicles are instanced. Poly Haven asphalt_04 (road), marble_01 (barriers) and cobblestone_floor_08 (the dark pebble floor) textures.
 
 #### Six Flags New Orleans (GDD §8.2)
 
@@ -428,6 +442,9 @@ Drive through a "?" crate to collect a random weapon into your first free slot. 
 | Triple Nitro | Three Nitro charges in one slot (HUD shows ×3, ×2, ×1). Each press is a separate boost; the slot empties after the third | Rare. Mostly for trailing racers. A Railgun or drone hit knocks out all remaining charges |
 | Triple Spike | Three Road Spikes in one slot (HUD shows ×3, ×2, ×1). Each press drops one spike behind you; the slot empties after the third. The AI space their drops at least 1.5 s apart | Uncommon, mostly for leaders (front 0.6, back 0.15). A Railgun or drone hit knocks out all remaining spikes |
 | Firewall | Shield | Blocks the next attack, up to 10 s |
+| Hunter-Killer Drone | Rare (3rd–8th). Locks on to the **leader** at launch and keeps that racer even if they lose the lead. Flies along the road at 1.8× their top speed, passing everyone else. Close behind, it holds a red reticle and beam over them for 1.2 s, then dives in | 1.5 s spin-out (hard stun). Waits while the target is recovering or in Overdrive, and burns out after 12 s or when the target finishes |
+| Overdrive Protocol | Rare (5th–8th). Your kart lifts 3.5 m off the road (2.2 m under the catacomb vaults), grows cyan thruster pods and flies itself along the road centre at 2× top speed for about 5 s. It then lands on the next clear stretch of road (not near a jump ramp or another car) and hands back control at top speed | You can't be hit, steered or recovered while flying, and cars under your path are nudged aside. Every checkpoint gate still counts. Starting it shrugs off a System Override |
+| System Override | Rare (3rd–8th). A red hacking pulse hits **every racer ahead of you** at that moment. Nobody behind you is touched | 2.5 s: −30% top speed, −40% acceleration, drift charge lost, steering untouched. Red arcs crawl over the car. It doesn't stack; a second hit only refreshes it |
 
 - **Targeting** (GDD §6.2):
   - With a Railgun or Hunter Drone selected, the nearest eligible opponent in a 40° cone ahead is targeted, preferring racers ahead of you in the race.
@@ -441,13 +458,34 @@ Drive through a "?" crate to collect a random weapon into your first free slot. 
   - A landed Railgun or Hunter Drone hit knocks out the victim's selected weapon (or the other one if that slot is empty). Hits blocked by a Firewall or stun protection cost nothing.
 - **Self-effects** (GDD §6.4): only the Road Spike can hit its owner, and only after a 1 s grace period. Everything else ignores its owner.
 - **Crate odds** depend on race position (GDD §6.5). Leaders mostly get Road Spikes and Firewalls, while trailing racers get more Hunter Drones and Nitros.
+- **Advanced weapons** (`docs/Cyberwave_2199_Advanced_Weapons.md`): the three rare items are rolled first, at fixed per-position chances (`WeaponData.position_chance`), before the normal weighted pick. 1st and 2nd never get them.
+
+  | Position | Hunter-Killer | Overdrive | System Override |
+  |---|---:|---:|---:|
+  | 1st–2nd | 0% | 0% | 0% |
+  | 3rd | 3% | 0% | 5% |
+  | 4th | 6% | 0% | 8% |
+  | 5th | 8% | 5% | 10% |
+  | 6th | 10% | 10% | 12% |
+  | 7th | 8% | 15% | 12% |
+  | 8th | 5% | 20% | 10% |
+
+  With fewer than 8 racers, positions are spread over the same rows. **Counters:**
+  - A Firewall soaks a Hunter-Killer blast or a System Override (and is used up).
+  - An active Overdrive ignores every attack.
+  - The Hunter-Killer joins the INCOMING warning, so AI raise a Firewall against it.
+  - The target also gets a "HUNTER-KILLER LOCKED" banner during the 1.2 s warning.
+  - Icons:
+    - The drone and Overdrive icons are crops of the concept art in `reference files/Weapons concept_art/`.
+    - System Override's is a symbol (a hacked chip split by a glitch bolt), drawn as SVG.
+    - Regenerate them with `tests/tools/make_weapon_icons.gd`.
 - **HUD:**
   - two item slots, top right, showing each weapon's picture from the Weapon Arsenal concept art (`assets/ui/weapons/`; the name is in the tooltip). The active slot is larger with a magenta border and an ACTIVE caption, the other is smaller (STORED), empty slots say EMPTY, and Triple Nitro shows its charges (x3, x2, x1). Picking an item up flashes the slot and pops the icon in; using one puffs it out
   - a **minimap** in the bottom-right corner (GDD §11.5): the circuit (muted purple), shortcuts (dimmer), the white start line, the elimination gate in Elimination, every racer as a dot in their colour (ringed when near you), and you as a cyan arrow pointing your heading
   - under the slots: lock status, your active effects (with timers, e.g. JAMMED), and hit / pickup / "LOST …" notices
   - a flashing INCOMING warning when someone has locked on to you or a drone is chasing you
   - short tones for pickup, hit, getting hit, blocked and incoming
-- **AI** score each weapon for the moment: fire when locked, EMP when someone is close, drop spikes on a racer behind, Nitro on long straights (one burst at a time), and raise a Firewall when attacked. Difficulty sets reaction time and reliability; personality sets how long they hold weapons.
+- **AI** score each weapon for the moment: fire when locked, EMP when someone is close, drop spikes on a racer behind, Nitro on long straights (one burst at a time), and raise a Firewall when attacked. They launch a Hunter-Killer after a short beat, a System Override when two or more racers are ahead, and an Overdrive once they're on the ground. Difficulty sets reaction time and reliability; personality sets how long they hold weapons.
 - **Weapons on/off** is the `weapons_enabled` setting on the `Race` node (GDD §2.1).
 
 ## Project layout
@@ -481,6 +519,7 @@ scripts/
     targeting_system.gd      TargetingSystem: lock-on
     status_effects.gd        StatusEffects: stun / EMP / traction / shield rules and visuals
     railgun_shot.gd, hunter_drone.gd, road_spike.gd, emp_blast.gd, weapon_crate.gd
+    hunter_killer_drone.gd   HunterKillerDrone: leader-seeking drone (Advanced Weapons §1)
   ai/
     ai_controller.gd         AIController: steering, speed, drifting, traffic
     ai_combat.gd             AICombat: weapon decisions
@@ -492,6 +531,7 @@ scripts/
     drift_controller.gd      DriftController: drift state, charge levels, boost on release
     vehicle_recovery.gd      VehicleRecovery: manual/auto reset, safe-point tracking, staged hologram sequence
     recovery_effect.gd       RecoveryEffect: hologram overlay, fragments, flash and sounds for a recovery
+    overdrive_controller.gd  OverdriveController: Overdrive Protocol flight (Advanced Weapons §2)
     vehicle_feedback.gd      Placeholder drift/boost visuals and generated audio cues
     vehicle_stats.gd         VehicleStats resource (Top Speed, Acceleration, Handling, Drift, ...)
     vehicle_data.gd          VehicleData resource: name, type, stats, placeholder proportions
@@ -540,6 +580,8 @@ tests/
   test_audio.gd              Menu / garage music, crossfades, countdown beep
   test_ui.gd                 Fonts, HUD panels, drift / item / results screens, layout at two HUD scales
   test_phase6.gd             Vehicle models, imported models, Vegas layout, shortcut, features, full Vegas races
+  test_weapons_advanced.gd   Hunter-Killer Drone, Overdrive Protocol, System Override: odds, counters, AI use
+  tools/make_weapon_icons.gd Dev tool: builds the three advanced-weapon icons (headless)
   tools/screenshot.gd        Dev tool: renders a scene / race to PNG (needs a display, see below)
   tools/car_showroom.gd      Dev tool: renders every car model
 docs/                        GDD
@@ -582,6 +624,7 @@ godot --headless --fixed-fps 60 -s res://tests/test_phase5.gd
 godot --headless --fixed-fps 60 -s res://tests/test_phase6.gd
 godot --headless --fixed-fps 60 -s res://tests/test_audio.gd
 godot --headless --fixed-fps 60 -s res://tests/test_ui.gd
+godot --headless --fixed-fps 60 -s res://tests/test_weapons_advanced.gd
 ```
 
 The two scripts in `tests/tools/` render real screenshots, so they need a display (run them without `--headless`). For example, `godot --path . -s res://tests/tools/car_showroom.gd -- user://cars front` renders every car, and `SHOT_TRACK=res://scenes/tracks/vegas_overdrive.tscn SHOT_AUTOPILOT=1 SHOT_EVERY=600 godot --path . --fixed-fps 60 -s res://tests/tools/screenshot.gd -- res://scenes/race/race.tscn user://lap.png 6000` saves a screenshot every 10 s of an autopilot lap.
@@ -686,7 +729,7 @@ The racing has **not** been played on screen yet.
 - **Vehicle balance is a first pass.** The stat spread follows each car's GDD character but hasn't been driven. Rivals now drive random cars with real stats, so a Hard rival in a fast car is quicker than one in a slow car; the field varies from series to series.
 - **Prices and payouts are first guesses** where the GDD gives none (stripes, decals, underglow, exhaust, metallic and matte finishes). At roughly 30–75 coins per race, the 1,000-coin Chrome finish takes 15+ races.
 - **Not in Phase 5:** the optional first-time tutorial (GDD §11.9, not chosen for this phase), the race presentation items in GDD §11.8 (pre-race camera sweep, position-change feedback, podium ceremony), music, and dragging to rotate the preview.
-- **All six tracks are built** and both cups are playable. The World Cup tracks (Hoia Baciu Run, Catacombs Descent, Arashiyama Circuit) haven't been driven by a person yet.
+- **All seven tracks are built** and all three cups are playable. The Europe and Asia Cup tracks (Hoia Baciu Run, Catacombs Descent, Vatnajökull Glacier, Arashiyama Circuit) haven't been driven by a person yet.
 - **Grand Prix classification at your finish** gives racers still on track their current position. The GDD doesn't specify this; it avoids waiting for the field.
 - **Only 6 of the GDD's 11 weapons** exist so far, plus Triple Nitro. Holo Decoy, Gravity Mine, System Glitch, Cyber Leech and Swarm Bots are Phase 6 content; the data-driven setup should make adding them straightforward.
 - **Combat balance is untested against a human:** crate odds, durations, the 22 m EMP radius and the Railgun's speed. The Railgun hits about half its shots in AI races. The AI often spend a held Firewall pre-emptively rather than saving it.

@@ -5,8 +5,8 @@
 [resource]
 script = ExtResource("1_gp")
 id = "world_circuit"
-display_name = "World Cup"
-emblem = "globe"
-track_names = PackedStringArray("Hoia Baciu Run", "Catacombs Descent", "Arashiyama Circuit")
-locations = PackedStringArray("Romania", "Paris, France", "Kyoto, Japan")
-track_scenes = PackedStringArray("res://scenes/tracks/hoia_baciu.tscn", "res://scenes/tracks/catacombs_descent.tscn", "res://scenes/tracks/arashiyama_circuit.tscn")
+display_name = "Europe Cup"
+emblem = "europe"
+track_names = PackedStringArray("Hoia Baciu Run", "Catacombs Descent", "Vatnajökull Glacier")
+locations = PackedStringArray("Romania", "Paris, France", "Vatnajökull, Iceland")
+track_scenes = PackedStringArray("res://scenes/tracks/hoia_baciu.tscn", "res://scenes/tracks/catacombs_descent.tscn", "res://scenes/tracks/vatnajokull_glacier.tscn")

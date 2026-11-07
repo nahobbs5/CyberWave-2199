@@ -2,8 +2,9 @@ class_name TrophyIcon
 extends Control
 ## A cup's trophy, drawn in code: gold bowl, two handles, stem and a
 ## two-step base, with the cup's emblem on the bowl. "usa" is a silhouette
-## of the lower 48 states; "globe" is a little globe. Locked cups are grey
-## with a padlock.
+## of the lower 48 states; "europe" a map of Europe (with Britain, Ireland
+## and Iceland); "japan" a rising sun; "globe" a little globe. Locked cups
+## are grey with a padlock.
 
 const GOLD := Color(1.0, 0.8, 0.22)
 const GOLD_DARK := Color(0.72, 0.5, 0.08)
@@ -37,6 +38,36 @@ const USA_LON_LAT: Array[Vector2] = [
 	Vector2(-124.2, 42.0), Vector2(-124.0, 43.7), Vector2(-124.0, 46.3),
 ]
 
+## Europe as (longitude, latitude): the mainland with Scandinavia, then
+## Great Britain, Ireland and Iceland. Simplified; for an icon.
+const EUROPE_LON_LAT: Array = [
+	[Vector2(-5.6, 36.0), Vector2(-8.9, 37.0), Vector2(-9.5, 38.8), Vector2(-8.8, 42.0), Vector2(-9.3, 43.0),
+	Vector2(-1.8, 43.4), Vector2(-1.2, 46.2), Vector2(-4.5, 48.4), Vector2(-1.6, 49.6), Vector2(1.6, 50.9),
+	Vector2(4.0, 51.8), Vector2(6.0, 53.4), Vector2(8.6, 53.9), Vector2(8.1, 56.8), Vector2(10.5, 57.7),
+	Vector2(10.6, 55.0), Vector2(14.0, 54.0), Vector2(19.0, 54.5), Vector2(21.2, 55.8), Vector2(24.0, 57.0),
+	Vector2(23.5, 59.3), Vector2(28.0, 59.7), Vector2(25.0, 60.2), Vector2(22.0, 60.3), Vector2(21.5, 62.5),
+	Vector2(25.3, 65.0), Vector2(23.0, 65.8), Vector2(21.0, 64.0), Vector2(17.5, 62.3), Vector2(18.5, 60.0),
+	Vector2(16.5, 57.0), Vector2(14.2, 55.4), Vector2(12.8, 56.3), Vector2(11.2, 58.9), Vector2(10.5, 59.5),
+	Vector2(8.0, 58.0), Vector2(5.5, 59.0), Vector2(5.0, 61.5), Vector2(7.0, 62.8), Vector2(10.5, 64.5),
+	Vector2(13.5, 67.0), Vector2(17.0, 69.2), Vector2(21.0, 70.2), Vector2(25.8, 71.1), Vector2(30.0, 70.2),
+	Vector2(31.0, 69.5), Vector2(32.0, 60.0), Vector2(32.0, 52.0), Vector2(36.0, 47.0), Vector2(33.0, 46.0),
+	Vector2(30.5, 46.5), Vector2(29.7, 45.2), Vector2(28.0, 43.5), Vector2(29.0, 41.1), Vector2(26.5, 40.6),
+	Vector2(24.0, 40.7), Vector2(23.0, 39.5), Vector2(22.5, 37.0), Vector2(21.2, 37.9), Vector2(20.0, 39.6),
+	Vector2(19.4, 41.8), Vector2(16.0, 43.5), Vector2(13.6, 45.6), Vector2(12.3, 45.4), Vector2(12.6, 44.0),
+	Vector2(14.0, 42.5), Vector2(16.0, 41.5), Vector2(18.5, 40.1), Vector2(17.0, 39.0), Vector2(16.5, 38.0),
+	Vector2(15.7, 38.0), Vector2(15.6, 40.0), Vector2(14.2, 40.8), Vector2(12.5, 41.7), Vector2(10.5, 43.0),
+	Vector2(8.8, 44.4), Vector2(7.5, 43.8), Vector2(4.8, 43.4), Vector2(3.1, 43.0), Vector2(3.2, 41.9),
+	Vector2(0.8, 40.8), Vector2(-0.3, 39.5), Vector2(0.2, 38.7), Vector2(-0.7, 37.6), Vector2(-2.1, 36.7),
+	Vector2(-4.4, 36.7)],
+	[Vector2(-5.7, 50.0), Vector2(1.4, 51.2), Vector2(1.7, 52.7), Vector2(0.0, 53.5), Vector2(-1.6, 55.6),
+	Vector2(-2.0, 57.6), Vector2(-3.5, 58.6), Vector2(-5.0, 58.6), Vector2(-6.2, 56.5), Vector2(-4.9, 55.0),
+	Vector2(-3.0, 53.9), Vector2(-4.6, 53.2), Vector2(-4.2, 51.6)],
+	[Vector2(-10.0, 51.6), Vector2(-6.0, 52.2), Vector2(-6.0, 54.1), Vector2(-7.5, 55.3), Vector2(-10.0, 54.2)],
+	[Vector2(-24.0, 65.5), Vector2(-22.0, 66.4), Vector2(-16.0, 66.5), Vector2(-13.6, 65.2), Vector2(-15.0, 64.3),
+	Vector2(-18.7, 63.4), Vector2(-22.7, 63.8), Vector2(-22.0, 64.6), Vector2(-24.0, 64.9)],
+]
+const SUN_RED := Color(0.85, 0.12, 0.15)
+
 var emblem: String = ""
 var locked: bool = false
 
@@ -51,21 +82,38 @@ func _init(p_emblem: String = "", p_locked: bool = false, side: float = 120.0) -
 ## The USA outline projected (x = lon * cos 38 deg, y = -lat) and fitted
 ## into `rect`, keeping its shape.
 static func usa_polygon(rect: Rect2) -> PackedVector2Array:
-	var raw := PackedVector2Array()
-	var squash := cos(deg_to_rad(38.0))
+	return outline_polygons([USA_LON_LAT], rect, 38.0)[0]
+
+
+## Europe's outlines (mainland, Britain, Ireland, Iceland) fitted into `rect`.
+static func europe_polygons(rect: Rect2) -> Array[PackedVector2Array]:
+	return outline_polygons(EUROPE_LON_LAT, rect, 52.0)
+
+
+## Map outlines given as (longitude, latitude) lists, projected (x = lon *
+## cos lat0, y = -lat) and fitted together into `rect`, keeping their shape.
+static func outline_polygons(shapes: Array, rect: Rect2, lat0: float) -> Array[PackedVector2Array]:
+	var squash := cos(deg_to_rad(lat0))
 	var lo := Vector2(INF, INF)
 	var hi := Vector2(-INF, -INF)
-	for p in USA_LON_LAT:
-		var q := Vector2(p.x * squash, -p.y)
-		raw.append(q)
-		lo = lo.min(q)
-		hi = hi.max(q)
+	var raw: Array[PackedVector2Array] = []
+	for shape in shapes:
+		var pts := PackedVector2Array()
+		for p: Vector2 in shape:
+			var q := Vector2(p.x * squash, -p.y)
+			pts.append(q)
+			lo = lo.min(q)
+			hi = hi.max(q)
+		raw.append(pts)
 	var span := hi - lo
 	var s := minf(rect.size.x / span.x, rect.size.y / span.y)
 	var offset := rect.position + (rect.size - span * s) * 0.5
-	var out := PackedVector2Array()
-	for q in raw:
-		out.append(offset + (q - lo) * s)
+	var out: Array[PackedVector2Array] = []
+	for pts in raw:
+		var fitted := PackedVector2Array()
+		for q in pts:
+			fitted.append(offset + (q - lo) * s)
+		out.append(fitted)
 	return out
 
 
@@ -111,6 +159,31 @@ func _draw() -> void:
 			var fill := EMBLEM_BG if not locked else Color(0.25, 0.25, 0.3)
 			draw_colored_polygon(poly, fill)
 			draw_polyline(poly + PackedVector2Array([poly[0]]), light, maxf(1.0, w * 0.01), true)
+		"europe":
+			var fill := EMBLEM_BG if not locked else Color(0.25, 0.25, 0.3)
+			for poly in europe_polygons(badge.grow(-w * 0.015)):
+				draw_colored_polygon(poly, fill)
+				draw_polyline(poly + PackedVector2Array([poly[0]]), light, maxf(1.0, w * 0.008), true)
+		"japan":
+			# Rising sun: red rays around a red disc on white.
+			var c := badge.get_center() + Vector2(0, badge.size.y * 0.08)
+			var r := minf(badge.size.x, badge.size.y) * 0.5
+			var white := Color(0.97, 0.96, 0.92) if not locked else Color(0.75, 0.75, 0.78)
+			var red := SUN_RED if not locked else Color(0.4, 0.4, 0.45)
+			draw_circle(c, r, white)
+			var rays := 16
+			for i in rays:
+				if i % 2 == 1:
+					continue
+				var a0 := TAU * i / rays
+				var a1 := TAU * (i + 1) / rays
+				var ray := PackedVector2Array([c])
+				for k in 5:
+					var a := lerpf(a0, a1, k / 4.0)
+					ray.append(c + Vector2(cos(a), sin(a)) * r)
+				draw_colored_polygon(ray, red)
+			draw_circle(c, r * 0.38, red)
+			draw_arc(c, r, 0.0, TAU, 32, light, maxf(1.0, w * 0.01), true)
 		"globe":
 			var c := badge.get_center()
 			var r := minf(badge.size.x, badge.size.y) * 0.5

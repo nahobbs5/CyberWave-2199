@@ -77,19 +77,30 @@ func can_fight(vehicle: VehicleController) -> bool:
 func roll_weapon(position: int, racer_count: int = 8) -> WeaponData:
 	if weapons.is_empty():
 		return null
+	# Rare comeback items first, at their per-position odds (Advanced Weapons §4).
+	var special_roll := _rng.randf() * 100.0
+	for w in weapons:
+		if w.is_special():
+			special_roll -= w.chance_for(position, racer_count)
+			if special_roll < 0.0:
+				return w
 	var t := clampf(float(position - 1) / float(maxi(racer_count - 1, 1)), 0.0, 1.0)
 	var total := 0.0
 	var weights: Array[float] = []
 	for w in weapons:
-		var weight := maxf(0.0, lerpf(w.weight_front, w.weight_back, t))
+		var weight := 0.0 if w.is_special() else maxf(0.0, lerpf(w.weight_front, w.weight_back, t))
 		weights.append(weight)
 		total += weight
 	var roll := _rng.randf() * total
+	var last: WeaponData = null
 	for i in weapons.size():
+		if weights[i] <= 0.0:
+			continue
+		last = weapons[i]
 		roll -= weights[i]
 		if roll <= 0.0:
 			return weapons[i]
-	return weapons[weapons.size() - 1]
+	return last
 
 
 func try_give_weapon(vehicle: VehicleController) -> bool:
@@ -146,7 +157,7 @@ func is_incoming(vehicle: VehicleController) -> bool:
 		if other != vehicle and other.targeting != null and other.targeting.get_target() == vehicle:
 			return true
 	for drone in get_tree().get_nodes_in_group(&"hunter_drones"):
-		if (drone as HunterDrone).target == vehicle:
+		if drone.get(&"target") == vehicle:
 			return true
 	return false
 
@@ -223,6 +234,104 @@ func _deploy(user: VehicleController, weapon: WeaponData) -> void:
 		WeaponData.Kind.SHIELD:
 			if user.status != null:
 				user.status.apply_buff(weapon.effect, weapon.effect_duration)
+		WeaponData.Kind.LEADER_DRONE:
+			var hunter := HunterKillerDrone.new()
+			hunter.manager = self
+			hunter.shooter = user
+			hunter.weapon = weapon
+			hunter.target = HunterKillerDrone.pick_target(race, user)
+			hunter.position = user.global_transform * muzzle_offset + Vector3.UP * 1.8
+			if hunter.target != null:
+				add_child(hunter)
+			else:
+				hunter.free()
+		WeaponData.Kind.OVERDRIVE:
+			OverdriveController.for_vehicle(user).activate(track)
+		WeaponData.Kind.OVERRIDE:
+			_system_override(user, weapon)
+
+
+## System Override: every racer ahead of the user right now is hacked
+## (slowed); nobody behind is touched (Advanced Weapons §3).
+func _system_override(user: VehicleController, weapon: WeaponData) -> Array[VehicleController]:
+	var hit: Array[VehicleController] = []
+	var me := race.progress_of(user)
+	if me == null:
+		return hit
+	# Snapshot first, so hits can't reshuffle who counts as "ahead".
+	var ahead: Array[VehicleController] = []
+	for racer in race.get_standings():
+		if racer.vehicle != user and racer.position < me.position and not racer.finished and not racer.eliminated:
+			ahead.append(racer.vehicle)
+	for car in ahead:
+		if is_targetable(car) and apply_hit(car, weapon, user):
+			hit.append(car)
+			_attach_override_sparks(car, weapon.effect_duration, weapon.color)
+	var pulse := EmpBlast.new()
+	pulse.radius = 14.0
+	pulse.color = weapon.color
+	pulse.position = user.global_position
+	add_child(pulse)
+	return hit
+
+
+## Red arcs crawling over a hacked car for `seconds`.
+func _attach_override_sparks(car: VehicleController, seconds: float, color: Color) -> void:
+	var old := car.get_node_or_null("OverrideSparks")
+	if old != null:
+		old.free()
+	var sparks := CPUParticles3D.new()
+	sparks.name = "OverrideSparks"
+	sparks.amount = 30
+	sparks.lifetime = 0.18
+	sparks.explosiveness = 0.3
+	var bolt := BoxMesh.new()
+	bolt.size = Vector3(0.04, 0.5, 0.04)
+	bolt.material = glow_material(color, 1.6)
+	sparks.mesh = bolt
+	sparks.emission_shape = CPUParticles3D.EMISSION_SHAPE_BOX
+	sparks.emission_box_extents = Vector3(0.9, 0.5, 1.8) * car.visual_scale
+	sparks.position = Vector3(0.0, 0.6 * car.visual_scale, 0.0)
+	sparks.direction = Vector3.UP
+	sparks.spread = 180.0
+	sparks.gravity = Vector3.ZERO
+	sparks.initial_velocity_min = 0.5
+	sparks.initial_velocity_max = 2.0
+	sparks.angle_min = -180.0
+	sparks.angle_max = 180.0
+	sparks.particle_flag_align_y = true
+	car.add_child(sparks)
+	# A tween on the sparks themselves, so it dies with them (race ending early).
+	var tween := sparks.create_tween()
+	tween.tween_interval(seconds)
+	tween.tween_callback(func() -> void: sparks.emitting = false)
+	tween.tween_interval(0.3)
+	tween.tween_callback(sparks.queue_free)
+
+
+## A one-shot burst of electric streaks (the Hunter-Killer's discharge).
+func spawn_arc_burst(at: Vector3, color: Color) -> void:
+	var burst := CPUParticles3D.new()
+	burst.one_shot = true
+	burst.explosiveness = 0.95
+	burst.amount = 36
+	burst.lifetime = 0.35
+	var streak := BoxMesh.new()
+	streak.size = Vector3(0.05, 0.9, 0.05)
+	streak.material = glow_material(color, 6.0)
+	burst.mesh = streak
+	burst.direction = Vector3.UP
+	burst.spread = 180.0
+	burst.gravity = Vector3.ZERO
+	burst.initial_velocity_min = 8.0
+	burst.initial_velocity_max = 16.0
+	burst.particle_flag_align_y = true
+	burst.position = at
+	add_child(burst)
+	burst.emitting = true
+	var tween := burst.create_tween()
+	tween.tween_interval(1.0)
+	tween.tween_callback(burst.queue_free)
 
 
 ## Aims at the locked target's predicted position, else straight ahead.

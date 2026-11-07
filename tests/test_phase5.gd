@@ -190,6 +190,7 @@ func _test_rewards() -> void:
 	_check(RaceRewards.compute(4, true, 0).total == 25, "fourth: completion only")
 	_check(RaceRewards.compute(7, false, 5).total == 5, "eliminated: track coins only")
 	_check(RaceRewards.compute(1, true, 0, true).total == 165, "Grand Prix winner: +100 on top")
+	_check(RaceRewards.compute(1, true, 0, true, 1).total == 65 + 33, "a one-race cup pays a third of the bonus")
 
 
 func _test_vehicles() -> void:

@@ -46,6 +46,7 @@ var _left_column: VBoxContainer
 var _cue_player: AudioStreamPlayer
 var _tones: Dictionary = {}
 var _was_incoming: bool = false
+var _was_hk_locked: bool = false
 var _last_position: int = 0
 var _lead_cooldown: float = 0.0
 ## Split screen 3-4P: no room for the standings list in a quarter screen.
@@ -201,6 +202,20 @@ func _process(delta: float) -> void:
 		if incoming and not _was_incoming:
 			_play("incoming")
 		_was_incoming = incoming
+		# The Hunter-Killer's 1.2 s warning before it strikes.
+		var locked := _hunter_killer_warning(p.vehicle) and not p.finished
+		if locked and not _was_hk_locked:
+			announcer.announce("HUNTER-KILLER LOCKED", 1.2, UIStyle.DANGER, "Firewall now!")
+			_play("incoming")
+		_was_hk_locked = locked
+
+
+func _hunter_killer_warning(car: VehicleController) -> bool:
+	for drone in get_tree().get_nodes_in_group(&"hunter_drones"):
+		var hunter := drone as HunterKillerDrone
+		if hunter != null and hunter.target == car and hunter.is_warning():
+			return true
+	return false
 
 
 ## Top of the speed / drift panel, in this HUD's layout space.
@@ -325,9 +340,13 @@ func _on_hit_resolved(target: VehicleController, weapon: WeaponData, shooter: Ve
 		if blocked_by == &"shield":
 			items.show_notice("FIREWALL BLOCKED %s" % weapon.display_name.to_upper(), UIStyle.WARN)
 			_play("blocked")
+		elif blocked_by == &"overdrive":
+			items.show_notice("OVERDRIVE IGNORED %s" % weapon.display_name.to_upper(), UIStyle.CYAN)
 		elif blocked_by == &"":
 			items.show_notice("%s!" % weapon.display_name.to_upper(), UIStyle.DANGER)
 			_play("hurt")
+			if weapon.kind == WeaponData.Kind.OVERRIDE:
+				announcer.announce("SYSTEM OVERRIDE", 1.4, weapon.color, "speed and acceleration down")
 	elif shooter == player:
 		if blocked_by == &"":
 			items.show_notice("HIT  %s" % target_name, weapon.color)

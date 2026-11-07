@@ -107,7 +107,25 @@ func _score(weapon: WeaponData, selected: bool, held: float) -> float:
 			if manager.is_incoming(vehicle):
 				return 2.0
 			return 1.0 if held > 30.0 * patience else 0.0
+		WeaponData.Kind.LEADER_DRONE:
+			# Always has a target (the leader); a short beat so it isn't instant.
+			return 1.2 if held > 2.0 * patience and _position() > 1 else 0.0
+		WeaponData.Kind.OVERRIDE:
+			var ahead := _position() - 1
+			if ahead >= 2 or (ahead >= 1 and held > 4.0 * patience):
+				return 1.2
+			return 0.0
+		WeaponData.Kind.OVERDRIVE:
+			# Take off from the road, not mid-air or while spun out.
+			if vehicle.grounded_wheels < 3 or vehicle.is_flying() or (vehicle.status != null and vehicle.status.is_stunned()):
+				return 0.0
+			return 1.2 if held > 1.5 * patience else 0.0
 	return 0.0
+
+
+func _position() -> int:
+	var progress := manager.race.progress_of(vehicle) if manager.race != null else null
+	return progress.position if progress != null else 1
 
 
 func _opponents_within(radius: float) -> int:

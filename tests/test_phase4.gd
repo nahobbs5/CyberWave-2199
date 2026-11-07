@@ -323,10 +323,10 @@ func _test_mode_select() -> void:
 	var cups := (load("res://scenes/menu/cup_select.tscn") as PackedScene).instantiate() as CupSelect
 	root.add_child(cups)
 	await process_frame
-	_check(cups.cards.size() == 2 and not cups.cards[0].disabled and not cups.cards[1].disabled,
-			"both cups pickable")
+	_check(cups.cards.size() == 3 and not cups.cards[0].disabled and not cups.cards[1].disabled and not cups.cards[2].disabled,
+			"all three cups pickable")
 	cups.pick(1)
-	_check(GameSession.cup_path == GrandPrixData.CUPS[1], "picking the World Cup")
+	_check(GameSession.cup_path == GrandPrixData.CUPS[1], "picking the Europe Cup")
 	GameSession.cup_path = ""
 	cups.pick(0)
 	_check(GameSession.cup_path == GrandPrixData.CUPS[0], "picking the American Cup")

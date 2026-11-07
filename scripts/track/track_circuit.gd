@@ -74,6 +74,13 @@ signal checkpoint_crossed(index: int, body: Node3D)
 ## Extra setback of the right-hand slot in each row (staggered grid).
 @export var grid_stagger: float = 4.5
 @export var grid_lateral: float = 4.0
+@export_group("Overdrive flight")
+## Height (m) an Overdrive flies above the road centre (Advanced Weapons §2).
+## Keep it under ~4 m so the car's body stays inside the 6 m checkpoint gates.
+@export var flight_height: float = 3.5
+## Height under a roof (scenery with is_roofed(), e.g. the catacomb vaults).
+@export var roofed_flight_height: float = 2.2
+
 @export_group("Look")
 @export var road_color: Color = Color(0.13, 0.13, 0.16)
 @export var edge_line_color: Color = Color(0.0, 0.85, 1.0)
@@ -182,6 +189,15 @@ func placeables() -> Array[Node]:
 
 func wrap_offset(offset: float) -> float:
 	return fposmod(offset, length) if length > 0.0 else 0.0
+
+
+## How high an Overdrive flies at a distance along the main road.
+func flight_height_at(offset: float) -> float:
+	var local := curve.sample_baked(wrap_offset(offset)) if curve != null else Vector3.ZERO
+	for child in get_children():
+		if child.has_method("is_roofed") and child.is_roofed(local):
+			return minf(flight_height, roofed_flight_height)
+	return flight_height
 
 
 ## Shortest signed distance along the loop from one offset to another.

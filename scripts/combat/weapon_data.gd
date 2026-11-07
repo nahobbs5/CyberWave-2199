@@ -3,7 +3,10 @@ extends Resource
 ## Data-driven weapon definition (GDD 6.3, 14.3). WeaponManager reads these;
 ## behaviour is chosen by kind, numbers come from the fields.
 
-enum Kind { PROJECTILE, GUIDED, AREA, HAZARD, SELF_BOOST, SHIELD }
+## New kinds go at the end: .tres files store the number.
+## LEADER_DRONE: Hunter-Killer Drone (hunts the leader). OVERDRIVE: automated
+## flight. OVERRIDE: System Override (slows everyone ahead).
+enum Kind { PROJECTILE, GUIDED, AREA, HAZARD, SELF_BOOST, SHIELD, LEADER_DRONE, OVERDRIVE, OVERRIDE }
 
 @export var id: StringName = &"weapon"
 @export var display_name: String = "Weapon"
@@ -47,3 +50,21 @@ enum Kind { PROJECTILE, GUIDED, AREA, HAZARD, SELF_BOOST, SHIELD }
 @export var weight_front: float = 1.0
 ## ...and for the last-placed racer (interpolated in between).
 @export var weight_back: float = 1.0
+## Rare items instead: percent chance from a crate for each position, 1st to
+## 8th (fewer racers are spread over the same rows). Rolled before the
+## weighted pick; weight_front / weight_back are ignored when this is set.
+@export var position_chance: PackedFloat32Array = PackedFloat32Array()
+
+
+## True for items rolled from position_chance (see WeaponManager.roll_weapon).
+func is_special() -> bool:
+	return not position_chance.is_empty()
+
+
+## Percent chance (0-100) for a racer in `position` of `racer_count`.
+func chance_for(position: int, racer_count: int) -> float:
+	if position_chance.is_empty():
+		return 0.0
+	var rows := position_chance.size()
+	var t := clampf(float(position - 1) / float(maxi(racer_count - 1, 1)), 0.0, 1.0)
+	return position_chance[clampi(roundi(t * (rows - 1)), 0, rows - 1)]

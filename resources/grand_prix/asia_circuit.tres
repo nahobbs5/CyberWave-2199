@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="GrandPrixData" format=3]
+
+[ext_resource type="Script" path="res://scripts/race/grand_prix_data.gd" id="1_gp"]
+
+[resource]
+script = ExtResource("1_gp")
+id = "asia_circuit"
+display_name = "Asia Cup"
+emblem = "japan"
+track_names = PackedStringArray("Arashiyama Circuit")
+locations = PackedStringArray("Kyoto, Japan")
+track_scenes = PackedStringArray("res://scenes/tracks/arashiyama_circuit.tscn")

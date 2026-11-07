@@ -20,7 +20,7 @@ static func describe(p_mode: RaceConfig.Mode, races: int = 1, npcs: bool = true)
 	var lines: PackedStringArray = []
 	match p_mode:
 		RaceConfig.Mode.GRAND_PRIX:
-			lines.append("GRAND PRIX: three races in a cup. Points after every race (15, 12, 10, 8, 6, 4, 2, 1). "
+			lines.append("GRAND PRIX: every race in a cup. Points after every race (15, 12, 10, 8, 6, 4, 2, 1). "
 					+ "Each race starts in the order the last one finished. Most points wins the cup.")
 		RaceConfig.Mode.ELIMINATION:
 			lines.append("ELIMINATION: always 3 laps. At the halfway gate of every lap, the last two cars "

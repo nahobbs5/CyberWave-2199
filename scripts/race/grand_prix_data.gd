@@ -1,13 +1,15 @@
 class_name GrandPrixData
 extends Resource
-## A cup: a championship of three races (GDD 2.2), picked Mario Kart style
+## A cup: a championship of its tracks' races (GDD 2.2; most cups have three), picked Mario Kart style
 ## for Grand Prix and Versus. A cup whose tracks aren't built yet is
 ## `locked` (shown as "coming soon", can't be picked).
 
 ## Every cup, in menu order.
 const CUPS: Array[String] = [
 	"res://resources/grand_prix/american_circuit.tres",
+	# The Europe Cup (the file keeps its old World Cup name so saved results carry over).
 	"res://resources/grand_prix/world_circuit.tres",
+	"res://resources/grand_prix/asia_circuit.tres",
 ]
 
 @export var id: String = "grand_prix"
@@ -19,7 +21,8 @@ const CUPS: Array[String] = [
 @export_range(1, 9) var laps: int = 3
 ## Not playable yet (tracks still to be built).
 @export var locked: bool = false
-## Picture on the cup's trophy: "usa" (map of the USA) or "globe".
+## Picture on the cup's trophy: "usa", "europe" (maps), "japan" (rising
+## sun) or "globe".
 @export var emblem: String = ""
 
 

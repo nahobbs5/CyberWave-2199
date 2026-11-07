@@ -605,8 +605,10 @@ func _eliminate(out: Array[RaceProgress]) -> void:
 ## Eliminated cars stop colliding with active racers at once, then shrink
 ## away and are parked out of sight (GDD 2.3).
 func _remove_vehicle(car: VehicleController) -> void:
-	# Stop any recovery first, so it can't undo what elimination sets below.
+	# Stop any recovery or flight first, so they can't undo what elimination sets below.
 	car.recovery.cancel()
+	if car.overdrive != null:
+		car.overdrive.cancel()
 	car.collision_layer = 0
 	car.collision_mask = 1
 	car.input_enabled = false
@@ -728,7 +730,7 @@ func _record_championship() -> Dictionary:
 		championship_updated.emit(championship)
 		return RaceRewards.compute(player.finish_position, not player.eliminated, coins.collected)
 	var won := championship.is_complete() and championship.standings()[0] == RaceConfig.PLAYER_ID
-	var reward := RaceRewards.compute(player.finish_position, true, coins.collected, won)
+	var reward := RaceRewards.compute(player.finish_position, true, coins.collected, won, championship.race_count())
 	championship.coins_awarded += int(reward.total)
 	if championship.is_complete():
 		var ranking := championship.standings()

@@ -1,5 +1,5 @@
 # CYBERWAVE 2199
-## Game Design Document — Version 3.1
+## Game Design Document — Version 3.2
 
 **Status:** Development Baseline  
 **Engine:** Godot 4  
@@ -57,7 +57,7 @@ The initial release focuses on polished single-player racing. Additional feature
 A race, or a set of races, against seven AI opponents. Set up Mario Kart style:
 
 1. Race setup: vehicle, race type (Standard or Elimination), **number of races** (1, 2, 3, 4, 6, 8, 12 or 16), lap count (three by default), Easy / Normal / Hard AI, weapons on or off.
-2. Track screen: every cup's tracks on one screen, one row per cup. Pick any of the six tracks, or the **RANDOM** card below them for a random built track (in a series, one not raced yet while any are left).
+2. Track screen: every cup's tracks on one screen, one row per cup. Pick any of the seven tracks, or the **RANDOM** card below them for a random built track (in a series, one not raced yet while any are left).
 
 With more than one race, the track screen comes back before each race (showing "RACE 2 OF 4" and the points so far). Points and the next grid work like a Grand Prix (§2.2). The final results name the series winner. A series isn't saved: quitting part-way ends it. Each race pays its normal coins, with no cup bonus.
 
@@ -67,7 +67,7 @@ The race concludes when the player finishes or is otherwise removed from competi
 
 ## 2.2 Grand Prix
 
-Two cups, each a championship of three consecutive races. As in Mario Kart, Grand Prix and Versus both start by choosing a cup; Versus then picks one of that cup's tracks.
+Three cups, each a championship of its tracks raced back to back (three races, except the one-race Asia Cup). As in Mario Kart, Grand Prix and Versus both start by choosing a cup; Versus then picks one of that cup's tracks.
 
 ### American Cup (trophy: a map of the USA)
 
@@ -77,15 +77,21 @@ Two cups, each a championship of three consecutive races. As in Mario Kart, Gran
 | 2 | Six Flags New Orleans | Louisiana |
 | 3 | The Stacks | Library of Congress, Washington, DC |
 
-### World Cup (trophy: a globe)
+### Europe Cup (trophy: a map of Europe)
 
 | Race | Track | Location |
 |---|---|---|
 | 1 | Hoia Baciu Run | Romania |
 | 2 | Catacombs Descent | Paris, France |
-| 3 | Arashiyama Circuit | Kyoto, Japan |
+| 3 | Vatnajökull Glacier | Vatnajökull, Iceland |
 
-Both cups are playable now that all six tracks are built.
+### Asia Cup (trophy: a rising sun)
+
+| Race | Track | Location |
+|---|---|---|
+| 1 | Arashiyama Circuit | Kyoto, Japan |
+
+All three cups are playable. The Europe Cup was the World Cup; its save id is unchanged, so earlier results still count. The cup-win coin bonus is 100 for a three-race cup, scaled by the number of races (§9.3).
 
 ### Starting Grid
 
@@ -539,7 +545,7 @@ AI must support:
 
 # 8. Tracks and Environments
 
-Six tracks are included at launch.
+Seven tracks are included at launch.
 
 ## 8.1 The Stacks
 
@@ -620,6 +626,24 @@ Built at about 3.1 km on a soft, sunny day. It should feel like an indoor garden
 
 The shortcut is a narrow shrine path through black torii, about 200 m shorter, but fallen bamboo (smashable) blocks the entrance. The Bamboo Collapse special (§8.9) is still a proposal.
 
+## 8.6a Vatnajökull Glacier
+
+**Location:** Vatnajökull, Iceland
+
+A race through an ice cave under Europe's largest glacier.
+
+**Identity:** Beauty and space. It is fully under the ice like the Catacombs, but roomy and bright where the Catacombs are cramped and dark.
+
+Built at about 3.1 km with a 14 m road and long flowing corners (55–115 m radius, two gentle sweeps on the straights). One continuous cave of swirling blue, white and ash-striped ice opens up and closes in along the lap, with roofs from 15 m to about 36 m high. It's lit mostly by daylight glowing through the ice, plus soft blue light. More than ten thousand icicles hang from the roof; none hangs lower than 7.5 m over a road. Landmarks in driving order:
+- the Glacier Mouth: the start hall, with a huge opening onto bright daylight and snow beside the grid;
+- the Blue Cathedral: a vast swirling hall along the longest straight, with a meltwater stream (boost pad);
+- the Icicle Gallery: lower and lined with icicle curtains and hourglass ice columns;
+- Moulin Hall: meltwater holes in the roof pour shafts of sky light onto snow drifts (boost ring, meltwater ford on the road);
+- the Ash Canyon: a tall gorge striped with black volcanic ash (snow-drift jump);
+- the Frozen Lake: a glassy lake under ice chandeliers (slush EMP puddle), back to the mouth.
+
+The shortcut is the Crystal Tube: a narrow, glowing round tunnel of scalloped ice with white light at its far end. It cuts from the Cathedral to the Icicle Gallery, about 120 m shorter, but an ice wall (smashable) blocks its entrance. The Ice Cave Collapse special (§8.9) is still a proposal. Race music is still to be chosen.
+
 ## 8.7 Shared Track Features
 
 Tracks may contain:
@@ -661,6 +685,7 @@ The track concept art suggests one signature dynamic event per track. They are r
 | Hoia Baciu Run | Phantom Signal: false routes and visual distortions |
 | Catacombs Descent | Tunnel Collapse: blocked routes and forced detours |
 | Arashiyama Circuit | Bamboo Collapse: falling bamboo hazards |
+| Vatnajökull Glacier | Ice Cave Collapse: falling icicles and blocks of ice |
 
 ---
 
@@ -668,7 +693,7 @@ The track concept art suggests one signature dynamic event per track. They are r
 
 ## 9.1 Progression Model
 
-All eight vehicles, six tracks, and both Grand Prix cups are available immediately.
+All eight vehicles, seven tracks, and all three Grand Prix cups are available immediately.
 
 Progression is cosmetic-only.
 
@@ -1246,5 +1271,6 @@ Changes after Version 1.0 should be tracked as revisions rather than silently re
 | 2.9 | 2026-11-06 | Volume sliders (Master, Music, Sound effects) on the pause menu. Loading card over track builds so the game no longer looks frozen, and the countdown waits for it (§11.8). |
 | 3.0 | 2026-11-07 | Mario Kart style drift feel: steering into a drift charges faster (1.5x in, 0.75x out), drift-entry hop, body angled into the slide, smooth grip recovery after a drift, tyre smoke and a skid sound (§4.1–4.3). |
 | 3.1 | 2026-11-07 | Firewall shield drawn as an animated force-field shader: rim glow, hex grid, fade in / dissolve out, flash on block (§6). |
+| 3.2 | 2026-11-07 | Vatnajökull Glacier built at about 3.1 km: a roomy, bright ice cave with icicles, sky-light shafts, a frozen lake and the Crystal Tube shortcut (§8.6a). The World Cup becomes the Europe Cup (Hoia Baciu, Catacombs, Vatnajökull); Arashiyama moves to the new Asia Cup. Cup-win bonus scales with the cup's race count (§2.2). |
 
-**End of Game Design Document — Version 3.1**
+**End of Game Design Document — Version 3.2**
