@@ -605,6 +605,8 @@ func _eliminate(out: Array[RaceProgress]) -> void:
 ## Eliminated cars stop colliding with active racers at once, then shrink
 ## away and are parked out of sight (GDD 2.3).
 func _remove_vehicle(car: VehicleController) -> void:
+	# Stop any recovery first, so it can't undo what elimination sets below.
+	car.recovery.cancel()
 	car.collision_layer = 0
 	car.collision_mask = 1
 	car.input_enabled = false

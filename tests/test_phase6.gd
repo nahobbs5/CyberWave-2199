@@ -48,6 +48,8 @@ func _run_all() -> void:
 	await _run("item boxes on ramps and boosters (The Stacks)", _test_item_boxes, _config(STACKS, "The Stacks"), false)
 	await _run("jump ramps and water (Six Flags)", _test_ramps_and_water, _config(SIX_FLAGS, "Six Flags New Orleans"), false)
 	await _run("shortcut: recovery and positions", _test_shortcut_recovery, _vegas_config(), false)
+	await _run("deep water recovers (Arashiyama)", _test_deep_water, _config(ARASHIYAMA, "Arashiyama Circuit"), false)
+	await _run("deep water recovers (Six Flags)", _test_deep_water, _config(SIX_FLAGS, "Six Flags New Orleans"), false)
 	_test_menus_and_gp()
 	for track in [[VEGAS, "Vegas Overdrive"], [SIX_FLAGS, "Six Flags New Orleans"], [STACKS, "The Stacks"], [HOIA, "Hoia Baciu Run"],
 			[CATACOMBS, "Catacombs Descent"], [ARASHIYAMA, "Arashiyama Circuit"]]:
@@ -392,8 +394,43 @@ func _test_shortcut_recovery(race: RaceManager) -> void:
 	_check(sc.contains_main_offset(race.track, race.track.get_offset_at(me.global_position)), "its offset maps inside the shortcut's span")
 	# Recovering from the shortcut puts the car back on the road, not behind the start.
 	me.recovery.request_recovery("test")
-	await _frames(5)
+	await _frames(75)
 	_check(race.track.is_on_road(me.global_position), "a reset from the shortcut lands on the road")
+
+
+## Deep water is a hazard, but never on or right beside a road (bridges).
+func _test_deep_water(race: RaceManager) -> void:
+	var track := race.track
+	var zones := track.find_children("*", "RecoveryZone", true, false)
+	_check(zones.size() == 1 and zones[0].get_child_count() > 5, "a deep-water zone is built (%d boxes)"
+			% (zones[0].get_child_count() if not zones.is_empty() else 0))
+	if zones.is_empty():
+		return
+	var zone := zones[0] as RecoveryZone
+	var inside := 0
+	var d := 0.0
+	while d < track.length:
+		for lat in [-track.road_width * 0.5, 0.0, track.road_width * 0.5]:
+			if zone.has_point(track.get_safe_transform(d, lat, 0.6).origin):
+				inside += 1
+		d += 2.0
+	for sc in track.shortcuts:
+		var e := 0.0
+		while e < sc.length:
+			if zone.has_point(track.to_global(sc.point_at(e)) + Vector3.UP * 0.6):
+				inside += 1
+			e += 2.0
+	_check(inside == 0, "no road (or shortcut) point is in the water zone (%d)" % inside)
+	# Drop the player's car over the water.
+	var me := race.player.vehicle
+	await _frames(30)
+	var box := zone.get_child(zone.get_child_count() / 2) as CollisionShape3D
+	var over := zone.to_global(box.position) + Vector3(0.0, -0.4, 0.0)
+	me.teleport(Transform3D(Basis.IDENTITY, over))
+	await _frames(10)
+	_check(me.recovery.last_reason == "water", "driving into deep water recovers (%s)" % me.recovery.last_reason)
+	await _frames(80)
+	_check(track.is_on_road(me.global_position), "and comes back on the road")
 
 
 func _test_menus_and_gp() -> void:

@@ -56,14 +56,40 @@ Actions are registered at startup by `scripts/core/input_setup.gd`. Any action y
 
 ### Recovery
 
-- **R** (or gamepad Y) resets you to the last point on the track you legitimately drove through, about 6 m behind it, upright and stopped. Resets can never move you forward, so they can't be used as shortcuts.
+Recovery is a quick **holographic teleport** (`docs/Recovery System.md`).
+
+- **R** (or gamepad D-pad Up) resets you to the last point on the track you legitimately drove through, about 6 m behind it. Resets can never move you forward, so they can't be used as shortcuts.
 - Automatic recovery happens when the car is:
-  - upside down or on its side for 1.5 s,
-  - stuck (pressing throttle or brake while barely moving forward or back; sliding sideways along a wall counts as stuck) for 3 s,
-  - below the world, or
+  - upside down or on its side for 2.5 s,
+  - stuck (pressing throttle or brake while barely moving forward or back; sliding sideways along a wall counts as stuck) for 4 s,
+  - below the world,
+  - over **deep water** (a splash, then the recovery). Tracks whose terrain has a flood plane (Six Flags, Arashiyama) get a `RecoveryZone` over every hollow more than 0.6 m deep, except within a few metres of a road, so bridges and road edges never trigger it,
   - outside the circuit (more than 3 m past the road edge, i.e. beyond the barrier) for 1 s, or
   - making no progress: trying to drive but gaining less than 15 m along the track in 8 s (catches a car rocking back and forth against a wall, which never looks "stuck").
-- The respawn spot is checked for other vehicles and shifts sideways or back if it is occupied.
+- **The sequence** (1.6 s; every time is an export on `VehicleRecovery`):
+
+  | Stage | Time | What happens |
+  |---|---:|---|
+  | Disintegrating | 0.3 s | The car freezes where it is. A cyan hologram flickers over it, grows scan lines and sweeps away from the bottom up, with a warning blip and digital static. |
+  | Teleporting | 0.4 s | Fragments burst out with a flash and a low pulse. The car is gone and moves to the recovery spot. |
+  | Reconstructing | 0.5 s | Fragments converge, and a grid "wireframe" hologram builds from the bottom up with a rising shimmer. The solid body fades back in and the glow fades. |
+  | Protected | 1.0 s | You drive again, starting at 25% of top speed, straight ahead. A faint shimmer shows while you pass through other cars. A confirm tone plays. |
+
+- **During the first three stages:**
+  - Your controls are locked, and so are the AI's.
+  - Drift charge, boosts and slipstream are cleared.
+  - The car is on no collision layer, so other cars, crates, coins, spikes, boost pads and ramps all ignore it.
+  - It can't be targeted or hit by weapons, drafted, or fire weapons.
+- **Checkpoints are never paused.** Gates only count in order, so coming back behind one can't skip it.
+- **One recovery per incident.** No new recovery starts until the whole sequence (protection included) is over.
+- **Elimination** cancels a recovery in progress.
+- **Reduced flashing** dims the flash and flicker.
+- **The respawn spot** is checked for other vehicles, and for cars that are re-forming there. It shifts sideways or back if it's occupied.
+- **Code:**
+  - `VehicleRecovery`: stages and gameplay.
+  - `RecoveryEffect`: hologram, particles and sounds, made in code.
+  - `assets/shaders/hologram.gdshader`.
+  - `RecoveryZone`: hazard volumes. Add box shapes in the editor for pits or other hazards.
 
 ### The test circuit
 
@@ -464,7 +490,8 @@ scripts/
   vehicles/
     vehicle_controller.gd    VehicleController: suspension, drive, grip, steering, boost
     drift_controller.gd      DriftController: drift state, charge levels, boost on release
-    vehicle_recovery.gd      VehicleRecovery: manual/auto reset, safe-point tracking
+    vehicle_recovery.gd      VehicleRecovery: manual/auto reset, safe-point tracking, staged hologram sequence
+    recovery_effect.gd       RecoveryEffect: hologram overlay, fragments, flash and sounds for a recovery
     vehicle_feedback.gd      Placeholder drift/boost visuals and generated audio cues
     vehicle_stats.gd         VehicleStats resource (Top Speed, Acceleration, Handling, Drift, ...)
     vehicle_data.gd          VehicleData resource: name, type, stats, placeholder proportions
@@ -478,6 +505,7 @@ scripts/
   track/track_circuit.gd     TrackCircuit: builds the circuit and answers track-space queries
   track/track_shortcut.gd    TrackShortcut: an alternate route
   track/track_feature.gd     TrackFeature: boost pads / rings, EMP puddles, breakable barriers
+  track/recovery_zone.gd     RecoveryZone: hazard volume (deep water, pits) that starts a recovery
   track/track_scenery.gd     TrackScenery: batched set-dressing base class
   track/vegas_scenery.gd     VegasScenery: the Vegas landmarks and city
   track/six_flags_scenery.gd SixFlagsScenery: the park, coaster, water park, backlot and bayou

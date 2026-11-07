@@ -69,6 +69,15 @@ func setup(p_vehicle: VehicleController, p_track: TrackCircuit, p_line: RacingLi
 		vehicle.boost_started.connect(_on_boost_started)
 	if vehicle.trick != null and not vehicle.trick.ramp_entered.is_connected(_on_ramp):
 		vehicle.trick.ramp_entered.connect(_on_ramp)
+	if vehicle.recovery != null and not vehicle.recovery.recovery_finished.is_connected(_on_recovered):
+		vehicle.recovery.recovery_finished.connect(_on_recovered)
+
+
+## Back on the road after a recovery: forget any unsticking or shortcut plan.
+func _on_recovered() -> void:
+	_reverse_time = 0.0
+	_blocked_time = 0.0
+	_shortcut = null
 
 
 ## Over a jump ramp: maybe do a trick, a moment later (in the air).
@@ -84,7 +93,7 @@ func _on_ramp() -> void:
 func _physics_process(delta: float) -> void:
 	if vehicle == null or track == null or line == null:
 		return
-	if not enabled or not vehicle.input_enabled:
+	if not enabled or not vehicle.can_control():
 		_clear_inputs()
 		return
 	_time += delta

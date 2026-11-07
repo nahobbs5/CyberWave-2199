@@ -41,6 +41,8 @@ func _run_all() -> void:
 	await _run("auto recovery: overturned", _test_auto_overturned)
 	await _run("auto recovery: stuck", _test_auto_stuck)
 	await _run("auto recovery: out of bounds", _test_out_of_bounds)
+	await _run("holographic recovery sequence", _test_recovery_sequence)
+	await _run("recovery ghosting and pickups", _test_recovery_ghost)
 	await _run("scripted driver completes a lap", _test_scripted_lap)
 	await _run("shift + A/D keyboard drift", _test_shift_drift_keys)
 	print("\n%d checks passed, %d failed" % [_passed, _failed])
@@ -73,6 +75,15 @@ func _run(test_name: String, test: Callable) -> void:
 
 func _frames(count: int) -> void:
 	for i in count:
+		await physics_frame
+
+
+## Waits until a recovery has the car back on the road (or ~3 s pass).
+func _recovery_done(car: VehicleController) -> void:
+	for i in 180:
+		if car.recovery.state == VehicleRecovery.State.PROTECTED or car.recovery.state == VehicleRecovery.State.NORMAL \
+				and i > 0:
+			return
 		await physics_frame
 
 
@@ -353,14 +364,17 @@ func _test_manual_reset(main: Node) -> void:
 	Input.action_release(&"accelerate")
 	var safe := car.recovery.last_safe_offset
 	await _press_key(KEY_R)
-	await _frames(5)
 	_check(reasons == ["manual"], "R triggers a manual recovery (%s)" % [reasons])
+	await _recovery_done(car)
+	await _frames(1)
 	var offset := track.get_offset_at(car.global_position)
 	var delta := track.wrapped_delta(safe, offset)
 	_check(delta < 0.0 and delta > -20.0, "reset lands just behind the last safe point (%.1f m)" % delta)
 	_check(track.get_lateral_distance(car.global_position) < 1.0, "reset lands on the centre line")
 	_check(car.global_transform.basis.y.dot(Vector3.UP) > 0.99, "reset is upright")
-	_check(car.linear_velocity.length() < 2.0, "reset clears momentum")
+	var respawn := car.stats.top_speed * car.recovery.respawn_speed_fraction
+	_check(absf(car.forward_speed - respawn) < 3.0 and absf(car.lateral_speed) < 1.0,
+			"comes back driving straight ahead at a quarter of top speed (%.1f m/s)" % car.forward_speed)
 
 	# Teleporting far ahead must not count as progress, so a reset goes back.
 	await _frames(70)
@@ -369,8 +383,10 @@ func _test_manual_reset(main: Node) -> void:
 	await _frames(40)
 	_check(absf(track.wrapped_delta(before, car.recovery.last_safe_offset)) < 10.0,
 			"a 300 m jump is not accepted as progress")
+	await _frames(80)
 	car.recovery.request_recovery("manual")
-	await _frames(5)
+	await _recovery_done(car)
+	await _frames(1)
 	var back := track.wrapped_delta(before, track.get_offset_at(car.global_position))
 	_check(back < 0.0 and back > -20.0, "reset after a jump returns to the real position (%.1f m)" % back)
 
@@ -415,6 +431,9 @@ func _test_out_of_bounds(main: Node) -> void:
 	car.teleport(Transform3D(Basis.IDENTITY, Vector3(-400.0, -30.0, 0.0)))
 	await _frames(10)
 	_check(reasons.has("out of bounds"), "falling below the world is recovered (%s)" % [reasons])
+	_check(car.is_held() and car.linear_velocity.length() < 0.1, "it stops falling while it dissolves")
+	await _recovery_done(car)
+	await _frames(1)
 	_check(car.global_position.y > 0.0, "car is back above the ground")
 
 
@@ -490,3 +509,127 @@ func _test_shift_drift_keys(main: Node) -> void:
 	_check(car.drift.direction == -1, "Shift pressed while holding A starts a left drift")
 	_key_event(KEY_SHIFT, false, false)
 	_key_event(KEY_A, false, false)
+
+
+## The doc's sequence: dissolve 0.3 s, gone 0.4 s, re-form 0.5 s (controls
+## locked throughout), then 1 s passing through other cars.
+func _test_recovery_sequence(main: Node) -> void:
+	var car := _car(main)
+	var track := _track(main)
+	var rec := car.recovery
+	Input.action_press(&"accelerate")
+	await _frames(90)
+	car.start_boost(2)
+	var states: Array[int] = []
+	var times: Array[float] = []
+	var clock := [0.0]
+	rec.state_changed.connect(func(st: VehicleRecovery.State) -> void:
+		states.append(st)
+		times.append(clock[0]))
+	var finished := [false]
+	rec.recovery_finished.connect(func() -> void: finished[0] = true)
+	var start := car.global_position
+	_check(rec.request_recovery("manual"), "a recovery starts")
+	_check(not rec.request_recovery("manual"), "a second request mid-sequence is refused")
+	_check(not car.is_boosting() and not car.drift.is_drifting(), "boost and drift are cancelled")
+	_check(car.recovery_lock and not car.can_control(), "controls are locked")
+	_check(car.collision_layer == 0, "hidden from cars, pickups and pads while it dissolves")
+	var moved_while_locked := 0.0
+	for i in 74:
+		await physics_frame
+		clock[0] += DT
+		if rec.state == VehicleRecovery.State.DISINTEGRATING:
+			moved_while_locked = maxf(moved_while_locked, car.global_position.distance_to(start))
+		if i == 30:
+			_check(rec.is_hidden() and car.recovery_lock, "still locked while gone (%s)" % rec.state)
+			_check(car.throttle_input == 0.0, "the held accelerator does nothing")
+	_check(moved_while_locked < 0.05, "the car stands still while it dissolves (%.2f m)" % moved_while_locked)
+	var expected: Array[int] = [VehicleRecovery.State.DISINTEGRATING, VehicleRecovery.State.TELEPORTING,
+			VehicleRecovery.State.RECONSTRUCTING, VehicleRecovery.State.PROTECTED]
+	_check(states == expected, "stages in order (%s)" % [states])
+	if times.size() == 4:
+		_check(absf(times[1] - 0.3) < 0.04 and absf(times[2] - 0.7) < 0.04 and absf(times[3] - 1.2) < 0.04,
+				"stage timings 0.3 / 0.7 / 1.2 s (%s)" % [times])
+	_check(finished[0] and not car.recovery_lock and car.can_control(), "controls back after 1.2 s")
+	_check(car.collision_layer == 2 and car.is_ghost(), "back on the car layer, passing through other cars")
+	_check(track.is_on_road(car.global_position), "re-formed on the road")
+	await _frames(70)
+	_check(rec.state == VehicleRecovery.State.NORMAL and not car.is_ghost(), "protection ends after 1 s")
+	_check(rec.effect != null and not rec.effect._active, "effect finished")
+	var body := car.get_node("Body") as Node3D
+	var meshes := body.find_children("*", "GeometryInstance3D", true, false)
+	var clean := body.visible
+	for m in meshes:
+		clean = clean and (m as GeometryInstance3D).material_overlay == null and (m as GeometryInstance3D).transparency == 0.0
+	_check(clean and meshes.size() > 0, "car looks exactly as before")
+	# The hologram really is on the car mid-sequence.
+	rec.request_recovery("manual")
+	await _frames(9)
+	var overlaid := 0
+	var solid := 0
+	for m in meshes:
+		if m is Label3D:
+			continue
+		solid += 1
+		if (m as GeometryInstance3D).material_overlay == rec.effect.material:
+			overlaid += 1
+	_check(overlaid == solid and solid > 0, "hologram overlay on every mesh while dissolving (%d/%d)" % [overlaid, solid])
+	await _frames(15)
+	_check(not body.visible, "gone while teleporting")
+	# cancel() puts everything back at once.
+	rec.cancel()
+	_check(rec.state == VehicleRecovery.State.NORMAL and not car.recovery_lock and car.collision_layer == 2
+			and not car.is_ghost() and not car.is_held() and body.visible, "cancel restores the car")
+	for name in ["warning", "breakup", "pulse", "shimmer", "confirm", "splash"]:
+		var stream := RecoveryEffect.sound_stream(name)
+		_check(stream != null and stream.data.size() > 2000, "%s sound is made" % name)
+
+
+## A re-forming car can't be hit by other cars or grab a crate; once protection
+## ends, cars collide again.
+func _test_recovery_ghost(main: Node) -> void:
+	var car := _car(main)
+	var track := _track(main)
+	await _frames(30)
+	var other := (load("res://scenes/vehicles/placeholder_car.tscn") as PackedScene).instantiate() as VehicleController
+	other.player_controlled = false
+	other.is_player = false
+	main.add_child(other)
+	other.recovery.auto_recovery_enabled = false
+	other.recovery.set_track(track, track.get_spawn_offset() + 40.0)
+	# A crate where the car dissolves: nothing is collected while it's hidden.
+	var crate := Area3D.new()
+	crate.collision_layer = 0
+	crate.collision_mask = 2
+	var shape := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = Vector3(6, 4, 6)
+	shape.shape = box
+	crate.add_child(shape)
+	var touched := []
+	crate.body_entered.connect(func(b: Node3D) -> void: touched.append(b))
+	car.recovery.request_recovery("manual")
+	await _frames(1)
+	crate.position = car.global_position
+	main.add_child(crate)
+	await _frames(10)
+	_check(touched.is_empty(), "a pickup at the dissolve spot isn't touched")
+	crate.queue_free()
+	await _frames(40)
+	# Drive the other car straight through the spot the car re-forms at.
+	var target := car.recovery.target_transform
+	var fwd := -target.basis.z
+	other.teleport(Transform3D(target.basis, target.origin - fwd * 12.0))
+	await _frames(2)
+	other.linear_velocity = fwd * 20.0
+	var closest := INF
+	for i in 50:
+		await physics_frame
+		closest = minf(closest, other.global_position.distance_to(car.global_position))
+	_check(closest < 1.5, "another car drives right through the re-forming car (%.1f m)" % closest)
+	await _recovery_done(car)
+	await _frames(80)
+	_check(car.recovery.state == VehicleRecovery.State.NORMAL and car.collision_layer == 2 and not car.is_ghost(),
+			"cars collide again after the protection")
+	other.queue_free()
+

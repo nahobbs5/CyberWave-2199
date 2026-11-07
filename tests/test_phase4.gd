@@ -39,6 +39,7 @@ func _run_all() -> void:
 	await _test_mode_select()
 	await _run("pause menu", _test_pause, _config(RaceConfig.Mode.VERSUS))
 	await _run("triple nitro in a race", _test_triple_nitro_race, _config(RaceConfig.Mode.VERSUS))
+	await _run("elimination during a recovery", _test_eliminate_mid_recovery, _config(RaceConfig.Mode.ELIMINATION))
 	var versus := _config(RaceConfig.Mode.VERSUS)
 	versus.total_laps = 1
 	await _run("versus race", _test_versus, versus, true)
@@ -570,3 +571,18 @@ func _test_elimination_race(race: RaceManager) -> void:
 			"results shown to the player")
 	print("    winner %s; player P%d%s; %.1f s simulated" % [winner.display_name, race.player.finish_position,
 			" (eliminated)" if race.player.eliminated else "", frames / 60.0])
+
+
+## Elimination wins over a recovery in progress: the car stays out of the race.
+func _test_eliminate_mid_recovery(race: RaceManager) -> void:
+	await _frames(30)
+	var car := race.racers[1].vehicle
+	_check(car.recovery.request_recovery("test"), "a rival starts recovering")
+	await _frames(25)
+	race._remove_vehicle(car)
+	_check(car.recovery.state == VehicleRecovery.State.NORMAL and not car.recovery_lock and not car.is_held(),
+			"the recovery is cancelled")
+	_check(car.collision_layer == 0 and not car.is_ghost(), "eliminated: off the car layer at once")
+	await _frames(120)
+	_check(car.collision_layer == 0 and not car.visible, "and stays parked out of the race")
+

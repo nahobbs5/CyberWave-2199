@@ -91,11 +91,12 @@ func update(racers: Array[RaceProgress], delta: float) -> void:
 
 static func _can_draft(racer: RaceProgress) -> bool:
 	var car := racer.vehicle
-	return is_instance_valid(car) and car.visible and not racer.finished and not racer.eliminated
+	return is_instance_valid(car) and car.visible and not car.is_recovering_hidden() and not racer.finished and not racer.eliminated
 
 
 ## A car you can draft behind: any car still on track (finished ones too,
 ## while they're still driving), on the ground.
 static func _is_leader(racer: RaceProgress) -> bool:
 	var car := racer.vehicle
-	return is_instance_valid(car) and car.visible and not racer.eliminated and car.grounded_wheels >= 2
+	return is_instance_valid(car) and car.visible and not car.is_recovering_hidden() and not racer.eliminated \
+			and car.grounded_wheels >= 2

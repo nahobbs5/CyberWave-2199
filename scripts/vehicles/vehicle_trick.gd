@@ -80,7 +80,7 @@ func try_trick() -> bool:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if vehicle == null or not vehicle.player_controlled or not vehicle.input_enabled:
+	if vehicle == null or not vehicle.player_controlled or not vehicle.can_control():
 		return
 	if event.is_action_pressed(vehicle.action(&"trick")) and try_trick():
 		get_viewport().set_input_as_handled()

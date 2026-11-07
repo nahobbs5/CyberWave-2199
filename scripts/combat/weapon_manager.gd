@@ -64,11 +64,11 @@ func is_targetable(vehicle: VehicleController) -> bool:
 	if race == null:
 		return false
 	var progress: RaceProgress = race.progress_of(vehicle)
-	return progress != null and not progress.finished and is_active()
+	return progress != null and not progress.finished and is_active() and not vehicle.is_recovering_hidden()
 
 
 func can_fight(vehicle: VehicleController) -> bool:
-	if not is_targetable(vehicle):
+	if not is_targetable(vehicle) or vehicle.recovery_lock:
 		return false
 	return vehicle.status == null or vehicle.status.can_use_weapons()
 

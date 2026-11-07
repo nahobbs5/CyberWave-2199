@@ -1,5 +1,5 @@
 # CYBERWAVE 2199
-## Game Design Document — Version 3.0
+## Game Design Document — Version 3.1
 
 **Status:** Development Baseline  
 **Engine:** Godot 4  
@@ -417,6 +417,8 @@ Automatic targeting with lock-on is the standard system.
 | Cyber Leech | Drains or steals boost energy | 2s |
 | Railgun | Fires a fast projectile | 0.7s stagger |
 | Swarm Bots | Pursue and disrupt an opponent | 5s pursuit |
+
+The Firewall shows as an orange force field around the car: a glowing rim and a drifting hex energy grid. It fades in, dissolves away when it runs out, and bursts with a flash when it blocks a hit (`assets/shaders/force_field.gdshader`).
 
 All values are initial balance targets.
 
@@ -1243,5 +1245,6 @@ Changes after Version 1.0 should be tracked as revisions rather than silently re
 | 2.8 | 2026-11-06 | Rear View camera (third in the cycle) and hold-to-look-back on Q / right stick click (§3.2, §3.3, §10). RANDOM track card on the Versus track screen (§2.1). Split screen: a final ALL READY confirm on the connect and car screens (§2.4). |
 | 2.9 | 2026-11-06 | Volume sliders (Master, Music, Sound effects) on the pause menu. Loading card over track builds so the game no longer looks frozen, and the countdown waits for it (§11.8). |
 | 3.0 | 2026-11-07 | Mario Kart style drift feel: steering into a drift charges faster (1.5x in, 0.75x out), drift-entry hop, body angled into the slide, smooth grip recovery after a drift, tyre smoke and a skid sound (§4.1–4.3). |
+| 3.1 | 2026-11-07 | Firewall shield drawn as an animated force-field shader: rim glow, hex grid, fade in / dissolve out, flash on block (§6). |
 
-**End of Game Design Document — Version 3.0**
+**End of Game Design Document — Version 3.1**

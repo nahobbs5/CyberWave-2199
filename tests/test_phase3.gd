@@ -480,8 +480,16 @@ func _test_firewall_and_protection(race: RaceManager) -> void:
 	me.inventory.add(_weapon("firewall"))
 	wm.use_weapon(me)
 	_check(me.status.has(&"shield"), "Firewall raises a shield")
+	await _frames(20)
+	var field := me.find_child("ShieldField", true, false) as MeshInstance3D
+	_check(me.status.is_shield_shown() and field != null and field.material_override is ShaderMaterial,
+			"the force field shader is on show")
 	_check(not wm.apply_hit(me, railgun, rival), "the shield blocks the railgun")
 	_check(not me.status.has(&"shield"), "and is used up")
+	await _frames(3)
+	_check(me.status.is_shield_shown() and me.status.get_shield_flash() > 0.5, "the field bursts as it blocks")
+	await _frames(45)
+	_check(not me.status.is_shield_shown(), "then dissolves away")
 	# Stun, then immediate follow-ups: protection stops chain-stuns.
 	_check(wm.apply_hit(me, drone, rival), "drone stun lands")
 	me.player_controlled = false

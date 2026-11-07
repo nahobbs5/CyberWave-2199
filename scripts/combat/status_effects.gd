@@ -21,6 +21,7 @@ signal effect_ended(effect: StringName)
 signal attack_blocked(effect: StringName, by: StringName)
 
 const HARD_STUNS: Array[StringName] = [&"stun", &"stagger"]
+const FORCE_FIELD_SHADER := preload("res://assets/shaders/force_field.gdshader")
 
 @export var stun_protection_time: float = 1.5
 ## Fraction of speed kept when hit by each hard stun.
@@ -35,6 +36,12 @@ var _timers: Dictionary = {}
 var _protection: float = 0.0
 var _vehicle: VehicleController
 var _shield_mesh: MeshInstance3D
+var _shield_material: ShaderMaterial
+## Shield visual: 0 = fully shown, 1 = dissolved away. Lags the effect so it
+## fades in and out instead of popping.
+var _shield_dissolve: float = 1.0
+## Burst (1 -> 0) when the shield blocks an attack.
+var _shield_flash: float = 0.0
 var _status_light: OmniLight3D
 var _spin: float = 0.0
 
@@ -49,6 +56,7 @@ func _ready() -> void:
 func apply_attack(effect: StringName, duration: float) -> bool:
 	if has(&"shield"):
 		_end(&"shield")
+		_shield_flash = 1.0
 		attack_blocked.emit(effect, &"shield")
 		return false
 	if HARD_STUNS.has(effect) and (_protection > 0.0 or is_stunned()):
@@ -173,18 +181,18 @@ func _build_visuals() -> void:
 	if _vehicle == null:
 		return
 	_shield_mesh = MeshInstance3D.new()
+	_shield_mesh.name = "ShieldField"
 	var sphere := SphereMesh.new()
 	sphere.radius = 2.8
 	sphere.height = 3.4
+	sphere.radial_segments = 64
+	sphere.rings = 32
 	_shield_mesh.mesh = sphere
-	var mat := StandardMaterial3D.new()
-	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	mat.albedo_color = Color(1.0, 0.45, 0.1, 0.22)
-	mat.emission_enabled = true
-	mat.emission = Color(1.0, 0.45, 0.1)
-	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
-	_shield_mesh.material_override = mat
+	_shield_material = ShaderMaterial.new()
+	_shield_material.shader = FORCE_FIELD_SHADER
+	_shield_material.set_shader_parameter("dissolve", 1.0)
+	_shield_mesh.material_override = _shield_material
+	_shield_mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	_shield_mesh.visible = false
 	_shield_mesh.position = Vector3(0.0, 0.3, 0.0)
 	_vehicle.add_child.call_deferred(_shield_mesh)
@@ -195,10 +203,32 @@ func _build_visuals() -> void:
 	_vehicle.add_child.call_deferred(_status_light)
 
 
+## Shield visual: fades in over ~0.3 s, dissolves out over ~0.5 s (bursting
+## when it blocked a hit). Gameplay never waits for it.
+func _update_shield(delta: float) -> void:
+	var on := has(&"shield")
+	_shield_dissolve = move_toward(_shield_dissolve, 0.0 if on else 1.0, delta / (0.3 if on else 0.5))
+	_shield_flash = move_toward(_shield_flash, 0.0, delta / 0.6)
+	_shield_mesh.visible = on or _shield_dissolve < 1.0
+	if _shield_mesh.visible:
+		_shield_material.set_shader_parameter("dissolve", _shield_dissolve)
+		_shield_material.set_shader_parameter("flash", _shield_flash)
+		_shield_material.set_shader_parameter("pulse_amount", 0.3 if GameSettings.reduced_flashing else 1.0)
+
+
+## Whether the shield's force field is on screen (it lingers while fading).
+func is_shield_shown() -> bool:
+	return _shield_mesh != null and _shield_mesh.visible
+
+
+func get_shield_flash() -> float:
+	return _shield_flash
+
+
 func _process(delta: float) -> void:
 	if _vehicle == null or _shield_mesh == null:
 		return
-	_shield_mesh.visible = has(&"shield")
+	_update_shield(delta)
 	var body := _vehicle.get_node_or_null("Body") as Node3D
 	if body != null:
 		# Hard stuns spin the bodywork (visual only; physics keeps going straight).

@@ -28,6 +28,9 @@ const TRACK_VISUAL_SCALE := 1.3
 ## sits on the road.
 const BODY_HALF_HEIGHT := 0.28
 
+## Every car is in this group (recovery uses it to pass through other cars).
+const GROUP := &"vehicles"
+
 ## Steering needed to pick a direction when starting a Shift drift.
 const SHIFT_DRIFT_STEER_THRESHOLD := 0.3
 
@@ -47,6 +50,9 @@ var steer_input: float = 0.0
 var drift_left_held: bool = false
 var drift_right_held: bool = false
 var input_enabled: bool = true
+## Set by VehicleRecovery while a recovery sequence has the controls. Kept
+## apart from input_enabled, which the race (countdown, elimination) owns.
+var recovery_lock: bool = false
 
 var grounded_wheels: int = 0
 var forward_speed: float = 0.0
@@ -67,6 +73,15 @@ var _pending_kick: float = 0.0
 var _pending_speed_scale: float = 1.0
 var _has_pending_teleport: bool = false
 var _pending_teleport: Transform3D
+## Recovery hold: the car is pinned at _held_transform, motionless.
+var _held: bool = false
+var _held_transform: Transform3D
+var _held_moved: bool = false
+## Forward speed to give the car on the next step (after a recovery); < 0 none.
+var _pending_launch: float = -1.0
+## Cars this one passes through for now (recovery protection).
+var _ghosted_with: Array[VehicleController] = []
+var _ghost: bool = false
 var _prev_forward_speed: float = 0.0
 var _wheel_spin: float = 0.0
 var _wheels: Array[RayCast3D] = []
@@ -109,6 +124,7 @@ func _ready() -> void:
 	trick = VehicleTrick.new()
 	trick.name = "VehicleTrick"
 	add_child(trick)
+	add_to_group(GROUP)
 
 
 func _physics_process(delta: float) -> void:
@@ -117,8 +133,13 @@ func _physics_process(delta: float) -> void:
 	_update_wheel_visuals(delta)
 
 
+## True when the driver (player or AI) may steer and accelerate.
+func can_control() -> bool:
+	return input_enabled and not recovery_lock
+
+
 func _read_player_input() -> void:
-	if not input_enabled:
+	if not can_control():
 		throttle_input = 0.0
 		brake_input = 0.0
 		steer_input = 0.0
@@ -185,6 +206,59 @@ func teleport(target: Transform3D) -> void:
 	_has_pending_teleport = true
 
 
+## Pins the car motionless at `target` until release() (recovery). Moving
+## a held car somewhere new emits `teleported` (the camera snaps).
+func hold_at(target: Transform3D) -> void:
+	_held_moved = _held and not target.is_equal_approx(_held_transform)
+	_held = true
+	_held_transform = target
+	_has_pending_teleport = false
+
+
+## Pins the car where it is now.
+func hold_here() -> void:
+	hold_at(global_transform)
+
+
+func is_held() -> bool:
+	return _held
+
+
+## Lets a held car go, moving forward at `speed` m/s.
+func release(speed: float = 0.0) -> void:
+	if not _held:
+		return
+	_held = false
+	_pending_launch = maxf(speed, 0.0)
+
+
+## Passes through every other car while on (collisions with the track stay).
+## Off restores normal car-to-car contact.
+func set_ghost(on: bool) -> void:
+	for other in _ghosted_with:
+		if is_instance_valid(other):
+			remove_collision_exception_with(other)
+	_ghosted_with.clear()
+	_ghost = on
+	if not on or not is_inside_tree():
+		return
+	for node in get_tree().get_nodes_in_group(GROUP):
+		var other := node as VehicleController
+		if other != null and other != self:
+			add_collision_exception_with(other)
+			_ghosted_with.append(other)
+
+
+## True while a recovery has the car dissolved, gone or still forming: it
+## can't be hit, targeted, drafted or collect anything.
+func is_recovering_hidden() -> bool:
+	return recovery != null and recovery.is_hidden()
+
+
+func is_ghost() -> bool:
+	return _ghost
+
+
 ## Placeholder paint so racers are distinguishable (not a cosmetic system).
 ## Swaps the driving stats after the car is in the tree (re-aims the wheel rays).
 func set_stats(new_stats: VehicleStats) -> void:
@@ -248,6 +322,24 @@ func clear_boost() -> void:
 
 
 func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
+	if _held:
+		state.transform = _held_transform
+		state.linear_velocity = Vector3.ZERO
+		state.angular_velocity = Vector3.ZERO
+		_pending_kick = 0.0
+		_pending_speed_scale = 1.0
+		_prev_forward_speed = 0.0
+		forward_speed = 0.0
+		lateral_speed = 0.0
+		if _held_moved:
+			_held_moved = false
+			teleported.emit.call_deferred()
+		return
+	if _pending_launch >= 0.0:
+		state.linear_velocity = -state.transform.basis.z * _pending_launch
+		state.angular_velocity = Vector3.ZERO
+		_prev_forward_speed = _pending_launch
+		_pending_launch = -1.0
 	if _has_pending_teleport:
 		_has_pending_teleport = false
 		state.transform = _pending_teleport

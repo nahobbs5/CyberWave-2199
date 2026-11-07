@@ -51,6 +51,47 @@ static func build(scenery: TrackScenery, bounds: Rect2, cell: float = 7.0, ampli
 	water.size = bounds.size
 	var wi := scenery.add_mesh_instance(water, scenery.get_material(water_key), "FloodWater")
 	wi.position = Vector3(bounds.get_center().x, water_level, bounds.get_center().y)
+	_add_water_zone(scenery, bounds, cell, nx, nz, heights, water_level)
+
+
+## Water deeper than this (m) recovers a car that drives over it.
+const DEEP_WATER := 0.6
+## Deep water closer than this to a road edge is left out (barriers, bridges).
+const WATER_ROAD_CLEARANCE := 3.0
+
+
+## A RecoveryZone over the deep water: the terrain is only a picture (cars
+## drive on the flat collision slab), so this is what makes the water a
+## hazard. Cells next to a road are left out, so bridges and road edges
+## never trigger it. Each row's runs of deep cells become one box.
+static func _add_water_zone(scenery: TrackScenery, bounds: Rect2, cell: float, nx: int, nz: int,
+		heights: PackedFloat32Array, water_level: float) -> void:
+	var zone := RecoveryZone.new()
+	zone.name = "DeepWater"
+	zone.reason = "water"
+	var clearance := scenery.track.barrier_thickness + WATER_ROAD_CLEARANCE
+	for iz in nz - 1:
+		var run_start := -1
+		for ix in nx:
+			var deep := false
+			if ix < nx - 1:
+				var avg := (heights[iz * nx + ix] + heights[iz * nx + ix + 1]
+						+ heights[(iz + 1) * nx + ix] + heights[(iz + 1) * nx + ix + 1]) * 0.25
+				if avg < water_level - DEEP_WATER:
+					var center := Vector3(bounds.position.x + (ix + 0.5) * cell, 0.0, bounds.position.y + (iz + 0.5) * cell)
+					deep = scenery.edge_distance(center) > clearance + cell * 0.71
+			if deep and run_start < 0:
+				run_start = ix
+			elif not deep and run_start >= 0:
+				var x0 := bounds.position.x + run_start * cell
+				var x1 := bounds.position.x + ix * cell
+				zone.add_box(Vector3((x0 + x1) * 0.5, 1.0, bounds.position.y + (iz + 0.5) * cell),
+						Vector3(x1 - x0, 4.0, cell))
+				run_start = -1
+	if zone.get_child_count() == 0:
+		zone.free()
+		return
+	scenery.add_node(zone)
 
 
 ## The noise build() uses for a seed (pass it to height_at()).
