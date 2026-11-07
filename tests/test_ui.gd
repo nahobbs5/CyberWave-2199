@@ -37,6 +37,7 @@ func _run_all() -> void:
 	_test_stacks_rename()
 	await _test_practice_minimap()
 	await _test_loading_card()
+	await _test_loading_progress()
 	await _test_countdown_waits_for_loading()
 	await _run("pause menu volume", _test_pause_volume, _config(3), false)
 	await _run("HUD in a race", _test_hud, _config(3), false)
@@ -44,6 +45,7 @@ func _run_all() -> void:
 	var cars := _config(3)
 	cars.rival_vehicles = PackedStringArray(["aurora_gt", "orbiter", "riviera_88", "valkyrie_r", "nexus_x", "cipher_evo", "empyrean_s"])
 	await _run("rivals drive their own cars", _test_rival_cars, cars, false)
+	await _run("bigger cars on track", _test_car_size, _config(3), false)
 	await _run("slipstream in a race", _test_slipstream_race, _config(3), false)
 	var flags := _config(1)
 	flags.track_name = "Six Flags New Orleans"
@@ -581,6 +583,66 @@ func _test_loading_card() -> void:
 	GameSession.current = null
 
 
+func _test_loading_progress() -> void:
+	_current = "loading progress"
+	print("- loading progress")
+	var screen := LoadingScreen.new()
+	screen.build(LoadingScreen.card_for(""))
+	root.add_child(screen)
+	_check(screen.progress_bar != null and screen.get_progress() == 0.0 and screen.percent_label.text == "0%", "bar starts empty")
+	screen.set_progress(0.5)
+	screen.set_progress(0.3)
+	_check(is_equal_approx(screen.get_progress(), 0.5) and screen.percent_label.text == "50%", "bar never moves backwards")
+	# A track built in steps matches one built in one go.
+	var vegas := load("res://scenes/tracks/vegas_overdrive.tscn") as PackedScene
+	var samples: Array[float] = []
+	var sampler := func() -> void: samples.append(screen.get_progress())
+	process_frame.connect(sampler)
+	var built: TrackCircuit = await screen._build_track(vegas)
+	process_frame.disconnect(sampler)
+	_check(built != null and not built.is_inside_tree() and not built.visible, "built track waits, hidden, for the race")
+	var whole := vegas.instantiate() as TrackCircuit
+	root.add_child(whole)
+	await process_frame # replaced feature visuals are freed
+	_check(_count_nodes(built) == _count_nodes(whole), "same nodes as a normal build (%d vs %d)" % [_count_nodes(built), _count_nodes(whole)])
+	var climbing := samples.size() > 3
+	for i in range(1, samples.size()):
+		climbing = climbing and samples[i] >= samples[i - 1]
+	_check(climbing and samples.back() > samples.front() and screen.get_progress() >= LoadingScreen.TEXTURES_END - 0.001,
+			"bar climbs while the track builds (%d steps, %.2f)" % [samples.size(), screen.get_progress()])
+	# Textures queued during a stepped build load on threads, then fill in.
+	TrackScenery.async_textures = true
+	var velvet := TrackScenery.texture_material("velour_velvet")
+	TrackScenery.async_textures = false
+	for i in 600:
+		if TrackScenery.texture_progress() >= 1.0:
+			break
+		await process_frame
+	TrackScenery.finish_textures()
+	_check(velvet.albedo_texture != null and TrackScenery._pending_textures.is_empty(), "threaded textures land on their material")
+	_check(not TrackScenery.stepper.is_valid() and not TrackScenery.async_textures and not TrackCircuit.defer_build,
+			"build hooks are reset afterwards")
+	LoadingScreen._built_track = built
+	_check(LoadingScreen.take_track("res://scenes/tracks/the_stacks.tscn") == null and LoadingScreen._built_track == null,
+			"a track for another scene is thrown away")
+	LoadingScreen._built_track = vegas.instantiate() as TrackCircuit
+	LoadingScreen._built_track.visible = false
+	var taken := LoadingScreen.take_track(vegas.resource_path)
+	_check(taken != null and taken.visible and taken.process_mode == Node.PROCESS_MODE_INHERIT, "the race takes the built track")
+	taken.free()
+	whole.queue_free()
+	await screen.dismiss()
+	await process_frame
+
+
+func _count_nodes(node: Node) -> int:
+	var n := 1
+	for child in node.get_children():
+		n += _count_nodes(child)
+	return n
+
+
+
 func _test_countdown_waits_for_loading() -> void:
 	_current = "countdown waits for loading"
 	print("- countdown waits for loading")
@@ -624,3 +686,27 @@ func _test_pause_volume(race: RaceManager) -> void:
 	pause.close()
 	GameSettings.set_volume("sfx", 1.0)
 	GameSettings.set_volume("music", 0.8)
+
+
+## Cars look 30% bigger on track (visual only); physics and menus unchanged.
+func _test_car_size(race: RaceManager) -> void:
+	var s := VehicleController.TRACK_VISUAL_SCALE
+	var ok_body := true
+	var ok_wheels := true
+	var ok_physics := true
+	for racer in race.racers:
+		var car := racer.vehicle
+		ok_body = ok_body and is_equal_approx(car.visual_scale, s) and (car.get_node("Body") as Node3D).scale.y > 1.2
+		for ray in car.find_children("Wheel*", "RayCast3D", false, false):
+			ok_wheels = ok_wheels and is_equal_approx((ray.get_node("Pivot/Mesh") as Node3D).scale.x, s)
+		var box := (car.get_node("CollisionShape3D") as CollisionShape3D).shape as BoxShape3D
+		ok_physics = ok_physics and box.size.is_equal_approx(Vector3(1.9, 0.55, 4.2))
+		ok_physics = ok_physics and is_equal_approx(absf((car.get_node("WheelFL") as Node3D).position.x), 0.85)
+	_check(ok_body, "every car's body is drawn 1.3x")
+	_check(ok_wheels, "and its wheels")
+	_check(ok_physics, "collider and wheel rays keep their tuned size")
+	var preview := VehiclePreview.new()
+	root.add_child(preview)
+	await process_frame
+	_check(is_equal_approx(preview.car.visual_scale, 1.0), "menu previews stay the original size")
+	preview.queue_free()

@@ -45,13 +45,25 @@ func place_on_track(p_track: TrackCircuit) -> void:
 	_root.name = "Generated"
 	add_child(_root)
 	_build_road_index()
-	build()
+	await build()
 	_commit()
 
 
-## Subclasses dress the track here.
+## Subclasses dress the track here. Long builds call step() between parts.
 func build() -> void:
-	pass
+	await step(1.0)
+
+
+## Set by the loading screen while it builds a track: called with how far
+## through build() this set is (0-1) and awaited, so the progress bar can be
+## drawn part-way. Unset (the normal case), step() returns at once and the
+## whole build runs in one go.
+static var stepper: Callable
+
+
+func step(share: float) -> void:
+	if stepper.is_valid():
+		await stepper.call(share)
 
 
 # --- placement helpers ---------------------------------------------------------
@@ -153,19 +165,62 @@ func textured(key: String, texture_name: String, tint: Color = Color.WHITE, metr
 	_materials[key] = texture_material(texture_name, tint, metres_per_tile, roughness, metallic)
 
 
+## Set by the loading screen while it builds a track: texture files then load
+## on worker threads while the geometry is built, and finish_textures() fills
+## them into their materials. Off, textures load right away.
+static var async_textures: bool = false
+## Texture path -> [[material, property], ...] waiting for a threaded load.
+static var _pending_textures: Dictionary = {}
+
+
+static func _set_texture(m: StandardMaterial3D, property: StringName, path: String) -> void:
+	if not async_textures or ResourceLoader.has_cached(path):
+		m.set(property, load(path) as Texture2D)
+		return
+	if not _pending_textures.has(path):
+		if ResourceLoader.load_threaded_request(path, "", true) != OK:
+			m.set(property, load(path) as Texture2D)
+			return
+		_pending_textures[path] = []
+	(_pending_textures[path] as Array).append([m, property])
+
+
+## Share of the queued texture loads that are done (1 when none are queued).
+static func texture_progress() -> float:
+	if _pending_textures.is_empty():
+		return 1.0
+	var total := 0.0
+	var progress := []
+	for path in _pending_textures:
+		var status := ResourceLoader.load_threaded_get_status(path, progress)
+		if status == ResourceLoader.THREAD_LOAD_IN_PROGRESS and not progress.is_empty():
+			total += float(progress[0])
+		elif status != ResourceLoader.THREAD_LOAD_IN_PROGRESS:
+			total += 1.0
+	return total / _pending_textures.size()
+
+
+## Waits for every queued texture and puts it on its materials.
+static func finish_textures() -> void:
+	for path in _pending_textures:
+		var texture := ResourceLoader.load_threaded_get(path) as Texture2D
+		for entry in _pending_textures[path]:
+			(entry[0] as StandardMaterial3D).set(entry[1], texture)
+	_pending_textures.clear()
+
+
 static func texture_material(texture_name: String, tint: Color = Color.WHITE, metres_per_tile: float = 4.0,
 		roughness: float = 0.85, metallic: float = 0.0) -> StandardMaterial3D:
 	var m := StandardMaterial3D.new()
-	m.albedo_texture = load(TEXTURES % [texture_name, texture_name, "diff"]) as Texture2D
+	_set_texture(m, &"albedo_texture", TEXTURES % [texture_name, texture_name, "diff"])
 	# The web build leaves the normal and roughness maps out (download size).
 	var normal_path := TEXTURES % [texture_name, texture_name, "nor"]
-	var normal := load(normal_path) as Texture2D if ResourceLoader.exists(normal_path) else null
-	if normal != null:
+	if ResourceLoader.exists(normal_path):
 		m.normal_enabled = true
-		m.normal_texture = normal
+		_set_texture(m, &"normal_texture", normal_path)
 	var rough_path := TEXTURES % [texture_name, texture_name, "rough"]
 	if ResourceLoader.exists(rough_path):
-		m.roughness_texture = load(rough_path) as Texture2D
+		_set_texture(m, &"roughness_texture", rough_path)
 	m.albedo_color = tint
 	m.roughness = roughness
 	m.metallic = metallic

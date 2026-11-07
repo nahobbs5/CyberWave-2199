@@ -120,7 +120,8 @@ func _test_title() -> void:
 	await process_frame
 	var order := ", ".join(title.button_texts())
 	_check(order == "Single Player, Multiplayer, Settings, Credits, Exit", "title buttons (%s)" % order)
-	_check(ProjectSettings.get_setting("application/run/main_scene") == TITLE, "the title is the main scene")
+	_check(ProjectSettings.get_setting("application/run/main_scene") == "res://scenes/boot.tscn" and Boot.NEXT_SCENE == TITLE,
+			"the game boots into the title (through the loading splash)")
 	title.queue_free()
 	await process_frame
 

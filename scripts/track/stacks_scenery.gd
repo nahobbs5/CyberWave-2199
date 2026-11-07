@@ -63,20 +63,29 @@ func build() -> void:
 	# Great Hall: the grandest room, windows both sides.
 	HallBuilder.build(self, great_from, great_to, {"width": 18.0, "height": 24.0, "bay": 14.0,
 			"windows_left": true, "windows_right": true, "chandelier_every": 30.0})
+	await step(0.10)
 	_great_hall(great_from, great_to)
+	await step(0.20)
 	# Gallery: shelves on the east side, tall windows to the west.
 	HallBuilder.build(self, great_to, gallery_to, {"width": 15.0, "height": 18.0, "bay": 12.0,
 			"windows_right": true, "shelves_left": true, "chandelier_every": 36.0})
+	await step(0.30)
 	# Archive: lower and narrower, shelves both sides.
 	HallBuilder.build(self, gallery_to, archive_to, {"width": 13.0, "height": 12.0, "bay": 9.0,
 			"shelves_left": true, "shelves_right": true, "chandelier_every": 40.0})
+	await step(0.40)
 	_archive_stacks()
+	await step(0.50)
 	_reading_room()
+	await step(0.60)
 	_courtyard(court_from, court_to)
+	await step(0.70)
 	# Card-catalogue corridor north, then the long hall west to the start.
 	HallBuilder.build(self, corridor_from, top_from, {"width": 15.0, "height": 16.0, "bay": 12.0,
 			"windows_left": true, "shelves_right": true, "chandelier_every": 36.0})
+	await step(0.80)
 	_card_catalogue(corridor_from, top_from)
+	await step(0.90)
 	HallBuilder.build(self, top_from, great_from, {"width": 15.0, "height": 18.0, "bay": 12.0,
 			"windows_left": true, "shelves_right": true, "chandelier_every": 36.0})
 

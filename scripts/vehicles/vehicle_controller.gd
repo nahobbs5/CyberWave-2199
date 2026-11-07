@@ -21,6 +21,13 @@ signal heavy_impact(speed_lost: float)
 ## Emitted after a teleport/recovery has been applied.
 signal teleported
 
+## How much bigger cars look on track than in the menus (visual only: the
+## collider, wheel rays and handling keep their tuned size).
+const TRACK_VISUAL_SCALE := 1.3
+## Half the collider's height: the body is lifted so a bigger chassis still
+## sits on the road.
+const BODY_HALF_HEIGHT := 0.28
+
 ## Steering needed to pick a direction when starting a Shift drift.
 const SHIFT_DRIFT_STEER_THRESHOLD := 0.3
 
@@ -63,6 +70,10 @@ var _pending_teleport: Transform3D
 var _prev_forward_speed: float = 0.0
 var _wheel_spin: float = 0.0
 var _wheels: Array[RayCast3D] = []
+## Visual size (see set_visual_scale); 1 = as built.
+var visual_scale: float = 1.0
+## Per-wheel offset of the drawn wheel from its ray, for a scaled-up look.
+var _wheel_offsets: Dictionary = {}
 
 @onready var drift: DriftController = $DriftController
 @onready var recovery: VehicleRecovery = $VehicleRecovery
@@ -128,6 +139,29 @@ func _read_player_input() -> void:
 ## This car's version of an input action (see input_prefix).
 func action(base: StringName) -> StringName:
 	return InputSetup.action(input_prefix, base)
+
+
+## Makes the car look `s` times bigger (body, wheels, effects) without
+## touching its physics. Call once, after the cosmetics are applied.
+func set_visual_scale(s: float) -> void:
+	var change := s / visual_scale
+	visual_scale = s
+	var body := get_node_or_null("Body") as Node3D
+	if body != null:
+		body.scale *= change
+		body.position.y = BODY_HALF_HEIGHT * (s - 1.0)
+	var feedback := get_node_or_null("Feedback") as Node3D
+	if feedback != null:
+		feedback.scale = Vector3.ONE * s
+	var radius := stats.wheel_radius if stats != null else 0.38
+	for ray in _wheels:
+		var mesh := ray.get_node_or_null("Pivot/Mesh") as Node3D
+		if mesh != null:
+			mesh.scale = Vector3.ONE * s
+		# Out to the bigger body's corners, and up so the bigger wheel's
+		# bottom stays on the road.
+		_wheel_offsets[ray] = Vector3(ray.position.x, 0.0, ray.position.z) * (s - 1.0) \
+				+ Vector3(0.0, radius * (s - 1.0), 0.0)
 
 
 ## Moves the car on the next physics step and clears all motion.
@@ -391,7 +425,7 @@ func _update_boost_timer(dt: float) -> void:
 
 
 func _update_wheel_visuals(delta: float) -> void:
-	_wheel_spin = fmod(_wheel_spin - forward_speed / stats.wheel_radius * delta, TAU)
+	_wheel_spin = fmod(_wheel_spin - forward_speed / (stats.wheel_radius * visual_scale) * delta, TAU)
 	var steer_angle := -steer_input * 0.45
 	if drift.is_drifting():
 		steer_angle = float(drift.direction) * -0.25 + -steer_input * 0.2
@@ -403,6 +437,6 @@ func _update_wheel_visuals(delta: float) -> void:
 		if ray.is_colliding():
 			var dist := (ray.global_position - ray.get_collision_point()).dot(global_transform.basis.y)
 			spring_length = clampf(dist - stats.wheel_radius, 0.0, stats.suspension_rest_length)
-		pivot.position = Vector3(0.0, -spring_length, 0.0)
+		pivot.position = Vector3(0.0, -spring_length, 0.0) + _wheel_offsets.get(ray, Vector3.ZERO)
 		var yaw := steer_angle if ray.name.begins_with("WheelF") else 0.0
 		pivot.rotation = Vector3(_wheel_spin, yaw, 0.0)

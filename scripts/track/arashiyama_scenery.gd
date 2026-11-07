@@ -91,14 +91,18 @@ func build() -> void:
 	_garden()
 	if not track.shortcuts.is_empty():
 		_shrine_path(track.shortcuts[0])
+	await step(0.05)
 	SceneryTerrain.build(self, TERRAIN_BOUNDS, 7.0, TERRAIN_AMPLITUDE, WATER_LEVEL, "litter", "moss", "river", TERRAIN_SEED, _carve)
 	_far_ground()
 	_hills()
+	await step(0.15)
 
 	bamboo = BambooBuilder.new(self, random_seed)
-	_grove()
+	# The grove is most of the build: it steps the bar on its own, up to 0.85.
+	await _grove(0.15, 0.85)
 	_canopy()
 	bamboo.commit()
+	await step(0.9)
 	_fence_rails()
 	_light_shafts()
 
@@ -317,7 +321,8 @@ func _hills() -> void:
 ## Culms in a band up to 42 m either side of every road: dense against the
 ## fences, thinning into the haze. Near the road they bow in to form the
 ## canopy (not by the open sections).
-func _grove() -> void:
+## Bamboo along every road; reports its progress as `from`-`to` of the build.
+func _grove(from: float = 0.0, to: float = 1.0) -> void:
 	var tiles := {}
 	var curves: Array[Curve3D] = [track.curve]
 	for sc in track.shortcuts:
@@ -336,7 +341,11 @@ func _grove() -> void:
 	var young := Color(0.78, 0.92, 0.42)
 	var mid := Color(0.5, 0.72, 0.3)
 	var old := Color(0.58, 0.64, 0.44)
+	var done := 0
 	for tile: Vector2i in tiles:
+		done += 1
+		if done % 150 == 0:
+			await step(lerpf(from, to, float(done) / tiles.size()))
 		for iz in 4:
 			for ix in 4:
 				var p := Vector3(tile.x * 10.0 + (ix + 0.5) * step + rng.randf_range(-1.0, 1.0), 0,

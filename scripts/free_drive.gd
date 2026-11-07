@@ -17,6 +17,7 @@ func _ready() -> void:
 	var vehicle := VehicleCatalog.by_id(profile.selected_vehicle)
 	car.set_stats(vehicle.stats)
 	VehicleCosmetics.apply(car, vehicle, profile.loadout_for(vehicle.id), profile.plate_text)
+	car.set_visual_scale(VehicleController.TRACK_VISUAL_SCALE)
 	var spawn := track.get_spawn_transform()
 	car.global_transform = spawn
 	car.recovery.set_track(track, track.get_spawn_offset())

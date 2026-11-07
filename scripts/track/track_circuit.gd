@@ -118,8 +118,14 @@ var shortcuts: Array[TrackShortcut] = []
 var _rebuild_queued: bool = false
 
 
+## Set while the loading screen adds a track: _ready then leaves the build to
+## it, so it can run build_base() and each placeable in steps with a progress bar.
+static var defer_build: bool = false
+
+
 func _ready() -> void:
-	rebuild()
+	if not defer_build:
+		rebuild()
 
 
 func _queue_rebuild() -> void:
@@ -130,6 +136,15 @@ func _queue_rebuild() -> void:
 
 
 func rebuild() -> void:
+	if not build_base():
+		return
+	for node in placeables():
+		node.place_on_track(self)
+
+
+## Builds the curve, road, barriers, gantry, lights, signs and checkpoints, but
+## not the placeables. False if the curve is empty (nothing to place on).
+func build_base() -> bool:
 	_rebuild_queued = false
 	_build_curve()
 	for child in get_children():
@@ -137,7 +152,7 @@ func rebuild() -> void:
 			remove_child(child)
 			child.queue_free()
 	if length <= 0.0:
-		return
+		return false
 	shortcuts.clear()
 	for child in get_children():
 		if child is TrackShortcut:
@@ -151,9 +166,16 @@ func rebuild() -> void:
 	_build_lights()
 	_build_corner_signs()
 	_build_checkpoints()
+	return true
+
+
+## Children that dress themselves along the road (features, scenery).
+func placeables() -> Array[Node]:
+	var out: Array[Node] = []
 	for child in get_children():
 		if child.has_method("place_on_track"):
-			child.place_on_track(self)
+			out.append(child)
+	return out
 
 
 # --- Track-space queries -------------------------------------------------
