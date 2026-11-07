@@ -1,0 +1,177 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/track/track_circuit.gd" id="1_track"]
+[ext_resource type="Script" path="res://scripts/track/track_shortcut.gd" id="2_shortcut"]
+[ext_resource type="Script" path="res://scripts/track/track_feature.gd" id="3_feature"]
+[ext_resource type="Script" path="res://scripts/track/gardens_scenery.gd" id="4_scenery"]
+
+[sub_resource type="StandardMaterial3D" id="Glass_road"]
+transparency = 1
+cull_mode = 2
+albedo_color = Color(0.45, 0.75, 0.95, 0.32)
+metallic = 0.5
+roughness = 0.06
+emission_enabled = true
+emission = Color(0.2, 0.55, 0.8, 1)
+emission_energy_multiplier = 0.12
+
+[sub_resource type="StandardMaterial3D" id="Glass_wall"]
+transparency = 1
+cull_mode = 2
+albedo_color = Color(0.6, 0.85, 1, 0.2)
+metallic = 0.5
+roughness = 0.05
+emission_enabled = true
+emission = Color(0.4, 0.7, 1, 1)
+emission_energy_multiplier = 0.08
+
+[sub_resource type="ProceduralSkyMaterial" id="Sky_night"]
+sky_top_color = Color(0.015, 0.02, 0.06, 1)
+sky_horizon_color = Color(0.2, 0.09, 0.22, 1)
+sky_energy_multiplier = 0.6
+ground_bottom_color = Color(0.01, 0.015, 0.02, 1)
+ground_horizon_color = Color(0.12, 0.06, 0.14, 1)
+sun_angle_max = 6.0
+
+[sub_resource type="Sky" id="Sky_gardens"]
+sky_material = SubResource("Sky_night")
+
+[sub_resource type="Environment" id="Environment_gardens"]
+background_mode = 2
+sky = SubResource("Sky_gardens")
+ambient_light_source = 2
+ambient_light_color = Color(0.45, 0.42, 0.7, 1)
+ambient_light_energy = 0.45
+reflected_light_source = 2
+tonemap_mode = 3
+tonemap_white = 6.0
+glow_enabled = true
+glow_intensity = 0.9
+glow_bloom = 0.1
+glow_hdr_threshold = 0.9
+fog_enabled = true
+fog_light_color = Color(0.16, 0.12, 0.26, 1)
+fog_light_energy = 0.7
+fog_density = 0.0009
+fog_height = -10.0
+fog_height_density = 0.04
+adjustment_enabled = true
+adjustment_saturation = 1.15
+
+[node name="Track" type="Node3D"]
+script = ExtResource("1_track")
+control_points = PackedVector3Array(-200, 0, 0, -180.54, 0, 0, -161.08, 0, 0, -141.62, 0, 0, -122.16, 0, 0, -102.7, 0, 0, -83.24, 0, 0, -63.77, 0, 0, -44.31, 0, 0, -24.85, 0, 0, -13.15, 0, 1.15, -1.89, 0, 4.57, 8.48, 0, 10.11, 17.57, 0, 17.57, 29.13, 0, 29.13, 40.69, 0, 40.69, 52.24, 0, 52.24, 63.8, 0, 63.8, 75.36, 0, 75.36, 82.93, 0, 81.57, 91.58, 0, 86.19, 100.96, 0, 89.04, 110.71, 0, 90, 130.35, 0, 90, 149.98, 0, 90, 169.62, 0, 90, 189.26, 0, 90, 208.89, 0, 90, 218.91, 0, 89.08, 228.6, 0, 86.35, 237.62, 0, 81.9, 245.69, 0, 75.88, 259.13, 0, 63.79, 272.57, 0, 51.69, 286.01, 0, 39.59, 299.45, 0, 27.5, 312.89, 0, 15.4, 321.68, 0, 8.84, 331.53, 0, 3.98, 342.09, 0, 1, 353.02, 0, 0, 371.02, 0, 0, 389.01, 0, 0, 407.01, 0, 0, 425, 0, 0, 433.78, 0, 0.86, 442.22, 0, 3.43, 450, 0, 7.58, 456.82, 0, 13.18, 462.42, 0, 20, 466.57, 0, 27.78, 469.14, 0, 36.22, 470, 0, 45, 470, 0, 63.33, 470, 0, 81.67, 470, 0, 100, 470, 0, 118.33, 470, 0, 136.67, 470, 0, 155, 470.86, 0, 163.78, 473.43, 0, 172.22, 477.58, 0, 180, 483.18, 0, 186.82, 490, 0, 192.42, 497.78, 0, 196.57, 506.22, 0, 199.14, 515, 0, 200, 520, 0, 200, 528.78, 0, 199.14, 537.22, 0, 196.57, 545, 0, 192.42, 551.82, 0, 186.82, 557.42, 0, 180, 561.57, 0, 172.22, 564.14, 0, 163.78, 565, 0, 155, 565, 0, 135, 565, 0, 115, 565, 0, 95, 565, 0, 75, 565.86, 0, 66.22, 568.43, 0, 57.78, 572.58, 0, 50, 578.18, 0, 43.18, 585, 0, 37.58, 592.78, 0, 33.43, 601.22, 0, 30.86, 610, 0, 30, 621.89, 0, 30, 631.4, 0, 30.91, 640.58, 0, 33.62, 649.06, 0, 38.03, 656.56, 0, 43.97, 662.78, 0, 51.23, 667.51, 0, 59.54, 670.57, 0, 68.6, 671.85, 0, 78.08, 672.59, 0, 97.33, 673.33, 0, 116.58, 674.07, 0, 135.83, 674.81, 0, 155.08, 675.55, 0, 174.33, 676.29, 0, 193.58, 677.03, 0, 212.83, 677.77, 0, 232.08, 678.51, 0, 251.33, 679.25, 0, 270.58, 678.43, 0, 283.06, 675.04, 0, 295.1, 669.22, 0, 306.17, 658.32, 0, 322.51, 647.43, 0, 338.86, 636.53, 0, 355.2, 625.64, 0, 371.54, 614.74, 0, 387.89, 603.85, 0, 404.23, 595.93, 0, 413.79, 586.22, 0, 421.52, 575.12, 0, 427.08, 563.12, 0, 430.24, 550.72, 0, 430.86, 538.46, 0, 428.92, 520.63, 0, 424.17, 502.8, 0, 419.41, 484.97, 0, 414.66, 467.14, 0, 409.91, 449.32, 0, 405.15, 439.88, 0, 403.5, 430.31, 0, 403.51, 420.88, 0, 405.18, 411.89, 0, 408.45, 395.74, 0, 415.99, 379.59, 0, 423.53, 363.44, 0, 431.06, 347.29, 0, 438.6, 331.14, 0, 446.14, 314.99, 0, 453.67, 298.84, 0, 461.21, 289.5, 0, 464.58, 279.71, 0, 466.21, 269.79, 0, 466.06, 260.06, 0, 464.13, 241.06, 0, 458.55, 222.07, 0, 452.96, 203.08, 0, 447.38, 184.08, 0, 441.79, 165.09, 0, 436.2, 146.09, 0, 430.62, 127.1, 0, 425.03, 115.77, 0, 422.85, 104.24, 0, 422.88, 92.93, 0, 425.12, 75.03, 0, 430.49, 57.13, 0, 435.86, 39.24, 0, 441.23, 21.34, 0, 446.6, 3.44, 0, 451.97, -14.46, 0, 457.34, -32.36, 0, 462.71, -50.25, 0, 468.08, -68.15, 0, 473.45, -86.05, 0, 478.81, -89.95, 0, 480.12, -93.77, 0, 481.68, -110.39, 0, 489.06, -127.01, 0, 496.45, -143.63, 0, 503.83, -160.25, 0, 511.22, -176.87, 0, 518.61, -193.48, 0, 525.99, -210.1, 0, 533.38, -226.72, 0, 540.77, -243.34, 0, 548.15, -253.61, 0, 551.64, -264.34, 0, 553.23, -275.18, 0, 552.86, -285.78, 0, 550.54, -295.78, 0, 546.35, -312.06, 0, 537.74, -328.33, 0, 529.12, -344.6, 0, 520.51, -360.87, 0, 511.89, -377.15, 0, 503.28, -393.42, 0, 494.66, -409.69, 0, 486.05, -420.02, 0, 479.12, -428.7, 0, 470.21, -435.36, 0, 459.7, -439.71, 0, 448.04, -441.56, 0, 435.74, -442.46, 0, 415.88, -443.36, 0, 396.01, -444.27, 0, 376.14, -445.17, 0, 356.28, -446.07, 0, 336.41, -446.98, 0, 316.55, -447.88, 0, 296.68, -448.78, 0, 276.81, -449.68, 0, 256.95, -449.6, 0, 250.03, -448.72, 0, 243.17, -445.48, 0, 225.89, -442.24, 0, 208.62, -439, 0, 191.35, -435.77, 0, 174.08, -432.53, 0, 156.81, -429.29, 0, 139.54, -426.05, 0, 122.27, -422.81, 0, 105, -420.12, 0, 95.46, -415.75, 0, 86.56, -409.86, 0, 78.59, -398.87, 0, 66.23, -387.88, 0, 53.87, -376.9, 0, 41.51, -365.91, 0, 29.14, -354.92, 0, 16.78, -348.8, 0, 10.97, -341.8, 0, 6.28, -334.11, 0, 2.82, -325.95, 0, 0.71, -317.55, 0, 0, -297.96, 0, 0, -278.36, 0, 0, -258.77, 0, 0, -239.18, 0, 0, -219.59, 0, 0)
+road_width = 12.0
+barrier_height = 1.2
+checkpoint_count = 10
+crate_row_offsets = PackedFloat32Array(392, 1050, 1608, 2435, 3047)
+crate_lateral_positions = PackedFloat32Array(-4.2, -1.4, 1.4, 4.2)
+coin_offsets = PackedFloat32Array(268, 278, 814, 824, 1377, 1387, 1877, 1887, 2618, 2628)
+coin_laterals = PackedFloat32Array(2.5, 2.5, -2.5, -2.5, 2.5, 2.5, -2.5, -2.5, 2.5, 2.5)
+road_color = Color(0.45, 0.75, 0.95, 1)
+edge_line_color = Color(1, 0.62, 0.28, 1)
+ground_color = Color(0.1, 0.14, 0.1, 1)
+barrier_color = Color(0.6, 0.85, 1, 1)
+neon_energy = 1.4
+edge_line_energy = 1.2
+centre_markings = false
+ground_texture = "forest_leaves_02"
+neon_left_color = Color(1, 0.6, 0.28, 1)
+neon_right_color = Color(1, 0.6, 0.28, 1)
+light_colors = PackedColorArray(0.7, 0.3, 1, 1)
+light_energy = 0.0
+corner_sign_color = Color(0.85, 0.3, 1, 1)
+corner_sign_width = 2.6
+corner_sign_gap = 0.2
+road_material = SubResource("Glass_road")
+barrier_material = SubResource("Glass_wall")
+elevated = true
+ground_depth = 24.0
+open_edges = PackedVector3Array(1815, 1926, -1, 2755, 2855, -1)
+curb_color = Color(0.55, 0.34, 0.18, 1)
+light_spacing = 5000.0
+ground_margin = 250.0
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_gardens")
+
+[node name="Moon" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.8682, 0.2796, -0.4099, -0.0000, 0.8261, 0.5635, 0.4961, -0.4893, 0.7172, 0, 0, 0)
+light_color = Color(0.65, 0.72, 1, 1)
+light_energy = 0.35
+shadow_enabled = false
+
+[node name="CloudForestWalk" type="Node3D" parent="."]
+script = ExtResource("2_shortcut")
+control_points = PackedVector3Array(20, 0, 445, -60, 0, 410, -110, 0, 350, -150, 0, 300, -210, 0, 285, -260, 0, 315, -310, 0, 335, -370, 0, 320, -446, 0, 262)
+road_width = 10.0
+speed_limit = 32.0
+ai_chance = 0.4
+coin_distances = PackedFloat32Array(140, 300, 430)
+display_name = "Cloud Forest walk"
+open_edges = PackedVector3Array(170, 215, 1, 290, 330, -1)
+
+[node name="BoostPadSBends" type="Node3D" parent="."]
+script = ExtResource("3_feature")
+kind = 0
+offset = 0
+lateral = 0
+anchor_point = Vector3(160, 0, 90)
+item_boxes = true
+
+[node name="BoostRingGreatWrap" type="Node3D" parent="."]
+script = ExtResource("3_feature")
+kind = 1
+offset = 0
+lateral = 0
+anchor_point = Vector3(565, 0, 110)
+boost_extra = 8.0
+boost_duration = 1.2
+boost_kick = 5.0
+
+[node name="SkywayJump" type="Node3D" parent="."]
+script = ExtResource("3_feature")
+kind = 4
+offset = 0
+lateral = 0
+anchor_point = Vector3(676, 0, 170)
+width = 12.0
+length = 14.0
+ramp_height = 1.2
+
+[node name="RainWetGlass" type="Node3D" parent="."]
+script = ExtResource("3_feature")
+kind = 5
+offset = 0
+lateral = 0
+anchor_point = Vector3(200, 0, 445)
+width = 12.0
+length = 45.0
+
+[node name="EmpSparkBayfront" type="Node3D" parent="."]
+script = ExtResource("3_feature")
+kind = 2
+offset = 30
+lateral = -3
+anchor_point = Vector3(-180, 0, 520)
+
+[node name="CloudForestGlass" type="Node3D" parent="."]
+script = ExtResource("3_feature")
+kind = 3
+offset = 55
+lateral = 0
+on_shortcut = "CloudForestWalk"
+width = 10.0
+
+[node name="BoostRingCloudForest" type="Node3D" parent="."]
+script = ExtResource("3_feature")
+kind = 1
+offset = 470
+lateral = 0
+on_shortcut = "CloudForestWalk"
+boost_extra = 8.0
+boost_duration = 1.2
+boost_kick = 5.0
+
+[node name="Scenery" type="Node3D" parent="."]
+script = ExtResource("4_scenery")

@@ -12,8 +12,10 @@ extends RefCounted
 ## - "pine": a tall straight pine with a high canopy (misty pine forest).
 ## - "bare": a twisted leafless deciduous tree with forked branches.
 ## - "snag": a broken dead trunk.
+## - "rainforest": a tall tropical tree with a broad, dense umbrella crown.
+## - "palm": a slim, slightly curved palm with drooping fronds.
 
-const KINDS: Array[String] = ["crooked", "pine", "bare", "snag"]
+const KINDS: Array[String] = ["crooked", "pine", "bare", "snag", "rainforest", "palm"]
 const VARIANTS := 2
 ## Instances further than this from the camera are hidden (fog hides them).
 const VISIBLE_RANGE := 300.0
@@ -150,6 +152,52 @@ func _build_mesh(kind: String) -> ArrayMesh:
 			_tube(bark, path, _rng.randf_range(0.35, 0.5), 0.2, 7)
 			# A jagged break at the top.
 			_tube(bark, PackedVector3Array([Vector3(0, h, 0) + tilt, Vector3(0.15, h + 1.2, 0.1) + tilt]), 0.2, 0.0, 4)
+		"rainforest":
+			var h := _rng.randf_range(13.0, 18.0)
+			var lean := Vector3(_rng.randf_range(-0.8, 0.8), 0, _rng.randf_range(-0.8, 0.8))
+			var path := PackedVector3Array()
+			for i in 5:
+				var t := i / 4.0
+				path.append(Vector3(0, h * t, 0) + lean * t)
+			_tube(bark, path, _rng.randf_range(0.45, 0.6), 0.2, 7)
+			# A few limbs fanning out under a broad, dense crown.
+			var top := Vector3(0, h, 0) + lean
+			for b in 4:
+				var ang := TAU * b / 4.0 + _rng.randf_range(-0.4, 0.4)
+				var out := Vector3(cos(ang), 0, sin(ang)) * _rng.randf_range(2.5, 4.0)
+				_tube(bark, PackedVector3Array([top - Vector3(0, 2.5, 0), top + out * 0.6 + Vector3(0, 0.6, 0), top + out + Vector3(0, 1.0, 0)]), 0.22, 0.08, 5)
+			var spread := _rng.randf_range(5.5, 7.5)
+			_blob(leaves, top + Vector3(0, 1.4, 0), Vector3(spread, spread * 0.42, spread))
+			for c in 5:
+				var a2 := TAU * c / 5.0 + _rng.randf_range(-0.3, 0.3)
+				var o := Vector3(cos(a2), 0, sin(a2)) * spread * _rng.randf_range(0.5, 0.8)
+				_blob(leaves, top + o + Vector3(0, _rng.randf_range(0.2, 1.6), 0),
+						Vector3(spread * 0.55, spread * 0.32, spread * 0.55))
+			has_leaves = true
+		"palm":
+			var h := _rng.randf_range(9.0, 14.0)
+			var bend := Vector3(_rng.randf_range(-1.6, 1.6), 0, _rng.randf_range(-1.6, 1.6))
+			var path := PackedVector3Array()
+			for i in 6:
+				var t := i / 5.0
+				path.append(Vector3(0, h * t, 0) + bend * t * t)
+			_tube(bark, path, 0.3, 0.2, 6)
+			var top := Vector3(0, h, 0) + bend
+			for f in 9:
+				var ang := TAU * f / 9.0 + _rng.randf_range(-0.2, 0.2)
+				var dir := Vector3(cos(ang), 0, sin(ang))
+				var side := dir.cross(Vector3.UP) * 0.7
+				var mid := top + dir * 2.6 + Vector3(0, 0.5, 0)
+				var tip := top + dir * 5.0 - Vector3(0, _rng.randf_range(1.2, 2.2), 0)
+				# Two quads: up and out to the middle, then drooping to the tip.
+				for q in [[top, mid, 0.25, 1.0], [mid, tip, 1.0, 0.1]]:
+					var a: Vector3 = q[0]
+					var b: Vector3 = q[1]
+					var wa: float = q[2]
+					var wb: float = q[3]
+					for v in [a - side * wa, b - side * wb, b + side * wb, a - side * wa, b + side * wb, a + side * wa]:
+						_vert(leaves, v, Vector3.UP)
+			has_leaves = true
 	var mesh := ArrayMesh.new()
 	bark.generate_tangents()
 	bark.commit(mesh)

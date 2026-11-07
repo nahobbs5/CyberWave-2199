@@ -185,9 +185,9 @@ func is_roofed(p: Vector3) -> bool:
 # --- materials ----------------------------------------------------------------------------
 
 func _setup_materials() -> void:
-	register_material("trunk", _house_material(0.0, 0.45))
-	register_material("lava", _house_material(1.0, 0.2))
-	register_material("bark", _house_material(0.0, 0.25))
+	register_material("trunk", _house_material(0.0, 0.18))
+	register_material("lava", _house_material(0.85, 0.1))
+	register_material("bark", _house_material(0.0, 0.1))
 	material("bone", Color(0.92, 0.87, 0.74), 0.06, 0.0, 0.55)
 	material("step", Color(0.62, 0.55, 0.47), 0.0, 0.0, 0.8)
 	material("trim", Color(0.32, 0.19, 0.1), 0.0, 0.0, 0.7)

@@ -8,6 +8,7 @@ The authoritative design is [`docs/Game Design Document.md`](docs/Game%20Design%
 
 **Current milestone: Phase 6, content and polish** (GDD §16), in progress. Done so far:
 - **All eight tracks** in three cups: the **American Cup** (Vegas Overdrive, Six Flags New Orleans, The Stacks), the **Europe Cup** (Hoia Baciu Run, Catacombs Descent, Vatnajökull Glacier) and the **Asia Cup** (Arashiyama Circuit, Crazy House),
+- **Parque Quinta Normal Greenhouse** (Santiago, Chile), race 1 of the new **South America Cup** (locked for Grand Prix until its other two tracks exist; raceable in Versus now),
 - **Split-screen multiplayer** for 2–4 players (keyboard + gamepads): top/bottom halves for two, corners for three or four, a live spectator view in the spare corner for three, one shared minimap,
 - **Mario Kart style Versus:** pick how many races (1–16), then each track from one screen listing every cup; points add up over the set,
 - **eight vehicle models**, built procedurally after the roster art, with support for swapping in your own `.glb` models,
@@ -368,6 +369,17 @@ Asia Cup race 2. A 2.9 km race **inside Hang Nga's Crazy House** in Da Lat, Viet
 - About 29 staircases (1,500 steps) in all, eight shafts of daylight through roof windows.
 - **No race music yet** (silent until a track is chosen). The location is spelled "Da Lat" because the game fonts lack the Vietnamese "ạ".
 - Built from code: `CrazyHouseScenery` on the same `CaveShellBuilder` as the glacier (with slow "bulge" swellings), organic tube and blob helpers for bones, branches, railings and figures, and a procedural bark-and-drips shader (`assets/shaders/crazy_house.gdshader`, with a lava variant). Poly Haven dirty_concrete (road), patterned_plaster_wall (barriers), brown_mud_leaves_01 (floor) and hinoki_planks (the gables).
+
+#### Parque Quinta Normal Greenhouse (GDD §8.6d)
+
+South America Cup race 1. A 3.1 km race on a **bright summer day through and around the old Victorian greenhouse in Santiago's Parque Quinta Normal**, with **wire mesh everywhere**: every road edge outside the glasshouses has a tall welded-mesh fence on iron posts over a low brick wall, and the glasshouses have mesh walls under their glass vaults. The sun is high in the north-west, so the iron ribs throw striped shadows on the road. The road is 13 m of worn cobbles. In driving order:
+- **The main wing** (start / finish): the grid sits under a long barrel-vaulted glasshouse, iron ribs every 2.5 m, about a third of the glass gone and some yellowed, bougainvillea climbing the outside, a railed catwalk along the ridge. It comes in two spans with a sunny courtyard of flower beds between them (boost pad).
+- **The avenue** south between hedges and plane trees.
+- **The Rotunda**: a short stalk leads into the domed pavilion, where the road sweeps **about 310° round the checkerboard plinth** (palms, flowering shrubs and graffiti-covered low walls in the middle, more graffiti outside), then leaves along a parallel stalk beside the way in, with a mesh-fenced divider between the two (boost ring).
+- **The south**: hedge-lined S-bends past the infield's **tiered dome** (exterior iron staircase, gallery, open lantern) and its two glass wings (sprinkler puddle).
+- The south-west corner, the west side (spark puddle EMP), and back into the main wing.
+
+The Andes fill the eastern horizon; Santiago's Gran Torre and skyline stand to the north-east. **Shortcut:** the **Fern Wing**, through a smashable glass panel into a narrow, mesh-caged glasshouse across the south-west corner (9 m wide, about 110 m shorter). Built from `GlasshouseBuilder` (`scripts/track/scenery/glasshouse_builder.gd`: barrel wings, ribbed domes with a drum, lantern, gallery and stair, and the wire mesh) and `QuintaNormalScenery`. Race music is still to be chosen. Checks: `tests/test_quinta_normal.gd`.
 
 #### Six Flags New Orleans (GDD §8.2)
 

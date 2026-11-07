@@ -9,7 +9,7 @@
 background_mode = 1
 background_color = Color(0.08, 0.06, 0.05, 1)
 ambient_light_source = 2
-ambient_light_color = Color(1, 0.86, 0.68, 1)
+ambient_light_color = Color(1, 0.93, 0.84, 1)
 ambient_light_energy = 0.55
 reflected_light_source = 1
 tonemap_mode = 3
@@ -19,15 +19,15 @@ glow_intensity = 0.8
 glow_bloom = 0.08
 glow_hdr_threshold = 1.0
 fog_enabled = true
-fog_light_color = Color(0.55, 0.42, 0.3, 1)
+fog_light_color = Color(0.42, 0.38, 0.34, 1)
 fog_light_energy = 0.8
-fog_density = 0.006
+fog_density = 0.0035
 volumetric_fog_enabled = true
 volumetric_fog_density = 0.006
 volumetric_fog_albedo = Color(1, 0.9, 0.75, 1)
 volumetric_fog_length = 100.0
 adjustment_enabled = true
-adjustment_saturation = 1.1
+adjustment_saturation = 1.05
 
 [node name="Track" type="Node3D"]
 script = ExtResource("1_track")

@@ -17,6 +17,7 @@ const CATACOMBS := "res://scenes/tracks/catacombs_descent.tscn"
 const ARASHIYAMA := "res://scenes/tracks/arashiyama_circuit.tscn"
 const GLACIER := "res://scenes/tracks/vatnajokull_glacier.tscn"
 const CRAZY := "res://scenes/tracks/crazy_house.tscn"
+const GARDENS := "res://scenes/tracks/gardens_by_the_bay.tscn"
 
 var _passed: int = 0
 var _failed: int = 0
@@ -44,11 +45,13 @@ func _run_all() -> void:
 	await _test_layout(ARASHIYAMA, "Arashiyama Circuit", 3000.0, 3250.0, 7, 120.0)
 	await _test_layout(GLACIER, "Vatnajökull Glacier", 2950.0, 3200.0, 7, 100.0)
 	await _test_layout(CRAZY, "Crazy House", 2750.0, 3050.0, 7, 100.0)
+	await _test_layout(GARDENS, "Gardens by the Bay", 3200.0, 3500.0, 7, 100.0)
 	_test_forest()
 	_test_catacombs()
 	_test_arashiyama()
 	_test_glacier()
 	_test_crazy_house()
+	await _test_gardens()
 	await _test_build_times()
 	await _run("features on Vegas", _test_features, _vegas_config(), false)
 	await _run("item boxes on ramps and boosters (The Stacks)", _test_item_boxes, _config(STACKS, "The Stacks"), false)
@@ -56,9 +59,11 @@ func _run_all() -> void:
 	await _run("shortcut: recovery and positions", _test_shortcut_recovery, _vegas_config(), false)
 	await _run("deep water recovers (Arashiyama)", _test_deep_water, _config(ARASHIYAMA, "Arashiyama Circuit"), false)
 	await _run("deep water recovers (Six Flags)", _test_deep_water, _config(SIX_FLAGS, "Six Flags New Orleans"), false)
+	await _run("falling off the skyway recovers (Gardens)", _test_skyway_fall, _config(GARDENS, "Gardens by the Bay"), false)
 	_test_menus_and_gp()
 	for track in [[VEGAS, "Vegas Overdrive"], [SIX_FLAGS, "Six Flags New Orleans"], [STACKS, "The Stacks"], [HOIA, "Hoia Baciu Run"],
-			[CATACOMBS, "Catacombs Descent"], [ARASHIYAMA, "Arashiyama Circuit"], [GLACIER, "Vatnajökull Glacier"], [CRAZY, "Crazy House"]]:
+			[CATACOMBS, "Catacombs Descent"], [ARASHIYAMA, "Arashiyama Circuit"], [GLACIER, "Vatnajökull Glacier"], [CRAZY, "Crazy House"],
+			[GARDENS, "Gardens by the Bay"]]:
 		var forced := _config(track[0], track[1])
 		forced.total_laps = 1
 		await _run("%s: everyone takes the shortcut (1 lap)" % track[1], _test_forced_shortcut, forced, true)
@@ -470,7 +475,7 @@ func _test_menus_and_gp() -> void:
 func _test_build_times() -> void:
 	_current = "scenery build times"
 	print("- scenery build times")
-	for path in [VEGAS, SIX_FLAGS, STACKS, HOIA, CATACOMBS, ARASHIYAMA, GLACIER, CRAZY]:
+	for path in [VEGAS, SIX_FLAGS, STACKS, HOIA, CATACOMBS, ARASHIYAMA, GLACIER, CRAZY, GARDENS]:
 		var t0 := Time.get_ticks_msec()
 		var track := (load(path) as PackedScene).instantiate() as TrackCircuit
 		root.add_child(track)
@@ -735,7 +740,7 @@ func _test_crazy_house() -> void:
 	_check(TrackCatalog.scene_path("Crazy House") == CRAZY and TrackCatalog.location("Crazy House").contains("Vietnam"),
 			"the Crazy House is in the track list (Vietnam)")
 	var asia := load("res://resources/grand_prix/asia_circuit.tres") as GrandPrixData
-	_check(asia.race_count() == 2 and asia.track_scenes[1] == CRAZY and asia.track_names[1] == "Crazy House", "Asia Cup race 2 is the Crazy House")
+	_check(asia.race_count() >= 2 and asia.track_scenes[1] == CRAZY and asia.track_names[1] == "Crazy House", "Asia Cup race 2 is the Crazy House")
 	var track := (load(CRAZY) as PackedScene).instantiate() as TrackCircuit
 	root.add_child(track)
 	var scenery := track.get_node("Scenery") as CrazyHouseScenery
@@ -760,3 +765,96 @@ func _test_crazy_house() -> void:
 	_check(scenery.window_shafts >= 4 and track.find_children("WindowShaft*", "SpotLight3D", true, false).size() >= 4,
 			"daylight through roof windows")
 	track.queue_free()
+
+
+## Gardens by the Bay: Asia Cup race 3. A glass skyway 24 m above the
+## jungle: the deck has its own collider, the barriers are left out on the
+## open edges (main loop and shortcut) so cars can fall, and the Supertree
+## canopies never hang at road level over a road.
+func _test_gardens() -> void:
+	_current = "Gardens by the Bay"
+	print("- Gardens by the Bay")
+	_check(TrackCatalog.scene_path("Gardens by the Bay") == GARDENS and TrackCatalog.location("Gardens by the Bay").contains("Singapore"),
+			"Gardens by the Bay is in the track list (Singapore)")
+	var asia := load("res://resources/grand_prix/asia_circuit.tres") as GrandPrixData
+	_check(asia.race_count() == 3 and asia.track_scenes[2] == GARDENS and asia.track_names[2] == "Gardens by the Bay",
+			"Asia Cup race 3 is Gardens by the Bay")
+	var track := (load(GARDENS) as PackedScene).instantiate() as TrackCircuit
+	root.add_child(track)
+	await physics_frame
+	await physics_frame
+	_check(track.elevated and track.find_child("*Deck", false, false) is StaticBody3D, "an elevated deck with its own collider")
+	var ground := track.find_child("*Ground", false, false)
+	var slab := ground.get_child(0) as CollisionShape3D if ground != null else null
+	_check(slab != null and is_equal_approx(slab.position.y, -track.ground_depth - 1.0), "the ground is 24 m below the deck")
+	_check(track.road_material != null and (track.road_material as BaseMaterial3D).transparency != BaseMaterial3D.TRANSPARENCY_DISABLED,
+			"the road is glass")
+	_check(track.open_edges.size() >= 2, "open edges on the main loop (%d)" % track.open_edges.size())
+	var space := track.get_world_3d().direct_space_state
+	var drop := func(pos: Vector3) -> float:
+		var hit := space.intersect_ray(PhysicsRayQueryParameters3D.create(pos + Vector3.UP * 10.0, pos + Vector3.DOWN * 40.0))
+		return (hit.position as Vector3).y if hit else -INF
+	var edge := track.road_width * 0.5 + track.barrier_thickness * 0.5
+	var open_ok := true
+	for e in track.open_edges:
+		var mid := (e.x + e.y) * 0.5
+		var side := signf(e.z)
+		open_ok = open_ok and absf(drop.call(track.get_safe_transform(mid, side * edge, 0.0).origin)) < 0.1 \
+				and drop.call(track.get_safe_transform(mid, side * (edge + 2.5), 0.0).origin) < -20.0 \
+				and drop.call(track.get_safe_transform(mid, -side * edge, 0.0).origin) > 3.0
+	_check(open_ok, "open edges: no wall (only the deck under the edge, a drop beyond), the far side still walled")
+	var walled := drop.call(track.get_safe_transform(track.start_line_offset, edge, 0.0).origin) as float
+	_check(walled > 3.0, "elsewhere the barrier is there (%.1f m)" % walled)
+	_check(drop.call(track.get_safe_transform(500.0, 0.0, 0.0).origin) > -0.1, "the deck holds the road up")
+	_check(not track.is_open_edge(track.start_line_offset, -1.0) and track.is_open_edge(track.open_edges[0].x + 1.0, track.open_edges[0].z),
+			"is_open_edge answers")
+	var sc := track.shortcuts[0]
+	_check(sc.open_edges.size() >= 2, "the Cloud Forest walk has open edges too")
+	var e0 := sc.open_edges[0]
+	var mid_d := (e0.x + e0.y) * 0.5
+	var t := sc.tangent_at(mid_d)
+	var right := t.cross(Vector3.UP).normalized()
+	var sc_edge := sc.road_width * 0.5 + track.barrier_thickness * 0.5
+	var p := track.to_global(sc.point_at(mid_d) + right * signf(e0.z) * sc_edge)
+	_check(absf(drop.call(p)) < 0.1, "no wall on the shortcut's open edge")
+	var glass := track.find_children("*", "TrackFeature", true, false).filter(func(f: TrackFeature) -> bool:
+		return f.kind == TrackFeature.Kind.BREAKABLE and f.on_shortcut == sc.name)
+	_check(glass.size() == 1, "a smashable glass panel at the Cloud Forest entrance")
+	var scenery := track.get_node("Scenery") as GardensScenery
+	_check(scenery.supertrees.placed.size() >= 12, "a grove of Supertrees (%d)" % scenery.supertrees.placed.size())
+	var wrap := scenery.supertrees.placed.filter(func(t2: Array) -> bool:
+		return Vector2((t2[0] as Vector3).x, (t2[0] as Vector3).z).distance_to(Vector2(GardensScenery.WRAP_TREE.x, GardensScenery.WRAP_TREE.z)) < 1.0)
+	_check(wrap.size() == 1 and wrap[0][1] >= 50.0, "the tallest Supertree stands inside the Great Wrap")
+	var low: Array[String] = []
+	for t2 in scenery.supertrees.placed:
+		var base := t2[0] as Vector3
+		var span := SupertreeBuilder.canopy_span(base.y, t2[1])
+		var at_road_level := span.y > -1.0 and span.x < GardensScenery.ROAD_CLEARANCE
+		var top := Vector3(base.x, 0, base.z)
+		if scenery.edge_distance(top) < 2.0 or (at_road_level and scenery.edge_distance(top) < t2[2]):
+			low.append("(%d, %d)" % [base.x, base.z])
+	_check(low.is_empty(), "no Supertree trunk on a road or canopy at road level over one (%s)" % [low])
+	track.queue_free()
+	await process_frame
+
+
+## Drive off an open edge: the car falls into the jungle and comes back on the deck.
+func _test_skyway_fall(race: RaceManager) -> void:
+	var track := race.track
+	var me := race.player.vehicle
+	await _frames(30)
+	var e := track.open_edges[0]
+	var mid := (e.x + e.y) * 0.5
+	var out := track.get_safe_transform(mid, signf(e.z) * (track.road_width * 0.5 + 4.0), 1.0)
+	me.teleport(out)
+	var fell := false
+	var frames := 0
+	while frames < 240 and me.recovery.last_reason == "":
+		fell = fell or me.global_position.y < -3.0
+		await physics_frame
+		frames += 1
+	_check(fell, "the car drops off the edge")
+	_check(me.recovery.last_reason in ["out of bounds", "off track"], "and is recovered (%s)" % me.recovery.last_reason)
+	await _frames(150)
+	_check(track.is_on_road(me.global_position) and me.global_position.y > -0.5 and me.global_position.y < 3.0,
+			"back on the deck (y %.1f)" % me.global_position.y)

@@ -77,7 +77,7 @@ func _build() -> void:
 	center.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	page.add_child(center)
 	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 28)
+	row.add_theme_constant_override("separation", 28 if cups.size() <= 3 else 16)
 	center.add_child(row)
 	for i in cups.size():
 		var card := _card(i)
@@ -95,7 +95,9 @@ func _card(index: int) -> Button:
 	var cup := cups[index]
 	var card := UIStyle.button("", pick.bind(index))
 	card.name = "Cup%d" % (index + 1)
-	card.custom_minimum_size = Vector2(380, 430)
+	# Four or more cups: narrower cards so they still fit at 1280x720.
+	var compact := cups.size() > 3
+	card.custom_minimum_size = Vector2(380, 430) if not compact else Vector2(284, 410)
 	var shut := not cup.is_open(is_grand_prix())
 	card.disabled = shut
 	var box := VBoxContainer.new()
@@ -104,11 +106,11 @@ func _card(index: int) -> Button:
 	box.add_theme_constant_override("separation", 6)
 	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	card.add_child(box)
-	var trophy := TrophyIcon.new(cup.emblem, shut, 190.0)
+	var trophy := TrophyIcon.new(cup.emblem, shut, 190.0 if not compact else 160.0)
 	trophy.name = "Trophy"
 	trophy.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	box.add_child(trophy)
-	var name_label := UIStyle.heading(cup.display_name.to_upper(), 30, UIStyle.GOLD if not shut else UIStyle.MUTED)
+	var name_label := UIStyle.heading(cup.display_name.to_upper(), 30 if not compact else 23, UIStyle.GOLD if not shut else UIStyle.MUTED)
 	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(name_label)
 	for i in cup.track_names.size():

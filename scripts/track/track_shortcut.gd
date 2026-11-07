@@ -21,6 +21,9 @@ extends Node3D
 ## Extra coins along the shortcut, as distances from its start (GDD 8.8).
 @export var coin_distances: PackedFloat32Array = PackedFloat32Array()
 @export var display_name: String = "Shortcut"
+## Stretches with no barrier (on an elevated track you can fall off):
+## (from distance, to distance along the shortcut, side -1 left / +1 right).
+@export var open_edges: PackedVector3Array = PackedVector3Array()
 
 var curve: Curve3D
 var length: float = 0.0

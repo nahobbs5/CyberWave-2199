@@ -182,8 +182,8 @@ func _test_cups() -> void:
 	var europe := GrandPrixData.cup_by_path(GrandPrixData.CUPS[1])
 	var asia := GrandPrixData.cup_by_path(GrandPrixData.CUPS[2])
 	_check(europe.display_name == "Europe Cup" and europe.emblem == "europe", "Europe Cup with the Europe trophy")
-	_check(asia.display_name == "Asia Cup" and asia.emblem == "japan" and asia.track_names == PackedStringArray(["Arashiyama Circuit", "Crazy House"]),
-			"Asia Cup (Arashiyama, Crazy House) with the rising-sun trophy")
+	_check(asia.display_name == "Asia Cup" and asia.emblem == "japan" and asia.track_names == PackedStringArray(["Arashiyama Circuit", "Crazy House", "Gardens by the Bay"]),
+			"Asia Cup (Arashiyama, Crazy House, Gardens by the Bay) with the rising-sun trophy")
 	var europe_ok := true
 	for shape in TrophyIcon.europe_polygons(Rect2(0, 0, 100, 60)):
 		europe_ok = europe_ok and shape.size() >= 5 and not Geometry2D.triangulate_polygon(shape).is_empty()
@@ -212,7 +212,7 @@ func _test_cups() -> void:
 	var tracks := (load("res://scenes/menu/track_select.tscn") as PackedScene).instantiate() as TrackSelect
 	root.add_child(tracks)
 	await _frames(2)
-	_check(tracks.cards.size() == 8, "every cup's tracks on one screen (%d)" % tracks.cards.size())
+	_check(tracks.cards.size() == 9, "every cup's tracks on one screen (%d)" % tracks.cards.size())
 	var outlines_ok := true
 	for card in tracks.cards:
 		var thumb := card.find_child("Thumbnail", true, false) as TrackThumbnail

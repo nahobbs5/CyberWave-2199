@@ -22,6 +22,10 @@ const TRACKS := [
 	# Music to come for the glacier and the Crazy House (the user is choosing); silent until then.
 	["Vatnajökull Glacier", "res://scenes/tracks/vatnajokull_glacier.tscn", "Vatnajökull, Iceland", ""],
 	["Crazy House", "res://scenes/tracks/crazy_house.tscn", "Hang Nga Villa, Da Lat, Vietnam", ""],
+	# Music to come (the user is choosing); silent until then.
+	["Gardens by the Bay", "res://scenes/tracks/gardens_by_the_bay.tscn", "Marina Bay, Singapore", ""],
+	# Music to come (the user is choosing); silent until then.
+	["Parque Quinta Normal", "res://scenes/tracks/quinta_normal.tscn", "Santiago, Chile", ""],
 	["Test Circuit", TEST_CIRCUIT, "Graybox", ""],
 ]
 

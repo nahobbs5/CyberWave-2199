@@ -1,5 +1,5 @@
 # CYBERWAVE 2199
-## Game Design Document — Version 3.3
+## Game Design Document — Version 3.5
 
 **Status:** Development Baseline  
 **Engine:** Godot 4  
@@ -67,7 +67,7 @@ The race concludes when the player finishes or is otherwise removed from competi
 
 ## 2.2 Grand Prix
 
-Three cups, each a championship of its tracks raced back to back (three races, except the two-race Asia Cup). As in Mario Kart, Grand Prix and Versus both start by choosing a cup; Versus then picks one of that cup's tracks.
+Three cups, each a championship of its tracks raced back to back (three races each). As in Mario Kart, Grand Prix and Versus both start by choosing a cup; Versus then picks one of that cup's tracks.
 
 ### American Cup (trophy: a map of the USA)
 
@@ -91,8 +91,19 @@ Three cups, each a championship of its tracks raced back to back (three races, e
 |---|---|---|
 | 1 | Arashiyama Circuit | Kyoto, Japan |
 | 2 | Crazy House | Hang Nga Villa, Da Lat, Vietnam |
+| 3 | Gardens by the Bay | Marina Bay, Singapore |
 
-All three cups are playable. The Europe Cup was the World Cup; its save id is unchanged, so earlier results still count. The cup-win coin bonus is 100 for a three-race cup, scaled by the number of races (§9.3).
+### South America Cup (trophy: a map of South America)
+
+| Race | Track | Location |
+|---|---|---|
+| 1 | Parque Quinta Normal | Santiago, Chile |
+| 2 | Coming soon | |
+| 3 | Coming soon | |
+
+The South America Cup is locked for Grand Prix until its other two tracks are built; Parque Quinta Normal can already be raced in Versus.
+
+The American, Europe and Asia Cups are playable. The Europe Cup was the World Cup; its save id is unchanged, so earlier results still count. The cup-win coin bonus is 100 for a three-race cup, scaled by the number of races (§9.3).
 
 ### Starting Grid
 
@@ -663,6 +674,45 @@ Built at about 2.9 km with a 13 m road and constant linked corners (40–70 m ra
 
 Smaller staircases climb the walls all round the lap (about 29 flights, 1,500 steps). The shortcut is the Rib Tunnel: a narrow passage lined with bone ribs that carries straight on where the road turns into the Gables. It's about 250 m shorter, but a bone barricade (smashable) blocks the entrance. Race music is still to be chosen.
 
+## 8.6c Gardens by the Bay
+
+**Location:** Marina Bay, Singapore
+
+A night race along a glass skyway high above the jungle, through the Supertree Grove during the Garden Rhapsody light show.
+
+**Identity:** Height and exposure. It is the only track in the air: the road is a narrow glass deck 24 m above the treetops and the bay, and in places there is nothing at the edge.
+
+Built at about 3.4 km with a 12 m road and winding, linked corners (45–90 m radius). The deck is clear glass framed in wood, with wooden beams under the glass, wooden strips across it, and glass side walls topped by amber-lit wooden handrails. Steel pylons hold it up. Below is dense rainforest with palms; a few tall trees break through near the deck. The Supertrees (26–52 m) slowly change colour together, a wave of purple, cyan, green and magenta rolling across the grove. Marina Bay Sands and the city skyline glow beyond. The road is flat (the deck stays level); landmarks in driving order:
+- the Supertree Grove: the start, with the grid between two Supertrees under a GARDENS BY THE BAY sign;
+- the Skyway S-bends: weaving between Supertrees, Marina Bay Sands ahead (boost pad);
+- the Great Wrap: a hairpin round the tallest Supertree (boost ring);
+- the east side: a long run with a jump on the deck;
+- the Canopy Run: low over the treetops, with rain-wet glass (standing water) and an **open edge**;
+- the Bayfront: over the water past the Flower Dome, where the wooden dragon perches on its tree (spark puddle EMP), with a second **open edge** over the bay; then back to the grove.
+
+**Open edges:** stretches with no side wall, only a low wooden curb. A car that goes over falls into the jungle (or the bay) and is recovered onto the deck. The open edges are on straights, on the outside of the loop, so racing lines don't need to touch them.
+
+The shortcut is the Cloud Forest walk: through a smashable glass panel into the Cloud Forest dome, round the misty waterfall mountain on a narrow walkway with two open edges of its own, and out to rejoin the Bayfront. It is about 150 m shorter. Race music is still to be chosen.
+
+## 8.6d Parque Quinta Normal Greenhouse
+
+**Location:** Parque Quinta Normal, Santiago, Chile
+
+A bright summer race through and around the park's old Victorian greenhouse: iron ribs, missing and yellowed glass, bougainvillea, and **wire mesh everywhere**.
+
+**Identity:** An iron-and-glass cage. Every road edge outside the glasshouses has a tall welded-mesh fence on iron posts above a low brick wall, and the glasshouses themselves have mesh walls below their glass vaults, so the whole lap reads as one big enclosure. The sun is high in the north-west (southern hemisphere), and the iron ribs throw striped shadows across the road.
+
+Built at about 3.1 km with a 13 m road. Landmarks in driving order:
+- **the main wing** (start / finish): the grid and start lights under a long barrel-vaulted glasshouse with mesh walls and a railed catwalk on the ridge, in two spans with a sunny courtyard of flower beds between them (boost pad near the end);
+- **the avenue**: south between hedges and plane trees, mesh fences both sides;
+- **the Rotunda**: the road turns off along a short stalk into the domed pavilion and sweeps about 310° round the round checkerboard plinth (garden of palms, flowering shrubs and graffiti-covered low walls inside, more graffiti walls outside), then leaves along a parallel stalk beside the way in, with a mesh-fenced divider between them (boost ring);
+- **the south**: hedge-lined S-bends past the infield, where the tiered dome (exterior iron staircase, gallery and open lantern) and its two glass wings stand in open lawns (a sprinkler puddle of standing water);
+- **the south-west corner**, then the west side (spark puddle EMP) and back into the main wing.
+
+The Andes stand on the eastern horizon and Santiago's skyline (the Gran Torre) to the north-east.
+
+The shortcut is the **Fern Wing**: through a smashable glass panel into a narrow (9 m), mesh-caged glasshouse that cuts across the south-west corner. It is about 110 m shorter. Race music is still to be chosen.
+
 ## 8.7 Shared Track Features
 
 Tracks may contain:
@@ -677,6 +727,7 @@ Tracks may contain:
 - Electrified hazards
 - Traction-altering surfaces (standing water: about 12% lower top speed and 25% less grip while in it)
 - Starting gantries
+- Open edges on elevated tracks (no wall; falling off means a recovery)
 - Lap and elimination checkpoints
 - Vehicle recovery points
 
@@ -1293,5 +1344,7 @@ Changes after Version 1.0 should be tracked as revisions rather than silently re
 | 3.1 | 2026-11-07 | Firewall shield drawn as an animated force-field shader: rim glow, hex grid, fade in / dissolve out, flash on block (§6). |
 | 3.2 | 2026-11-07 | Vatnajökull Glacier built at about 3.1 km: a roomy, bright ice cave with icicles, sky-light shafts, a frozen lake and the Crystal Tube shortcut (§8.6a). The World Cup becomes the Europe Cup (Hoia Baciu, Catacombs, Vatnajökull); Arashiyama moves to the new Asia Cup. Cup-win bonus scales with the cup's race count (§2.2). |
 | 3.3 | 2026-11-07 | Crazy House built at about 2.9 km: inside a giant hollow tree (Hang Nga Villa, Da Lat, Vietnam), staircases everywhere, bone arches, Rib Tunnel shortcut (§8.6b). It is Asia Cup race 2 (§2.2). The road stays flat; elevation is planned as a later engine upgrade. |
+| 3.4 | 2026-11-07 | Gardens by the Bay built at about 3.4 km: a night glass skyway 24 m above the jungle among glowing Supertrees, with open edges you can fall off, the Great Wrap hairpin, and the Cloud Forest walk shortcut (§8.6c). It is Asia Cup race 3, so all cups have three races (§2.2). Engine: elevated decks with their own collider and open edges (§8.7).
+| 3.5 | 2026-11-07 | Parque Quinta Normal Greenhouse built at about 3.1 km: Victorian iron-and-glass greenhouse in Santiago, wire mesh throughout, start in the barrel-vaulted main wing, a 310° roundabout round the Rotunda's checkerboard plinth, the Fern Wing shortcut (§8.6d). It starts the new South America Cup, locked for Grand Prix until its other two tracks exist (§2.2). |
 
-**End of Game Design Document — Version 3.3**
+**End of Game Design Document — Version 3.5**

@@ -113,6 +113,22 @@ signal checkpoint_crossed(index: int, body: Node3D)
 @export var road_texture: String = ""
 @export var barrier_texture: String = ""
 @export var ground_texture: String = ""
+## Optional materials used instead of the colour / texture ones above
+## (e.g. a glass road and glass walls).
+@export var road_material: Material
+@export var barrier_material: Material
+@export_group("Skyway")
+## The road is a deck high in the air: the ground slab drops ground_depth
+## below it and the deck gets its own collider, so a car that leaves the
+## deck falls (and VehicleRecovery's kill_height respawns it).
+@export var elevated: bool = false
+@export var ground_depth: float = 24.0
+@export var deck_thickness: float = 0.6
+## Stretches with no barrier: (from offset, to offset, side), side -1 = left,
+## +1 = right. A low curb (visual only) marks the edge.
+@export var open_edges: PackedVector3Array = PackedVector3Array()
+@export var curb_height: float = 0.25
+@export var curb_color: Color = Color(0.55, 0.36, 0.2)
 @export_group("")
 ## Ground extends this far beyond the layout's bounds on every side.
 @export var ground_margin: float = 300.0
@@ -167,6 +183,8 @@ func build_base() -> bool:
 			if (child as TrackShortcut).is_valid():
 				shortcuts.append(child)
 	_build_ground()
+	if elevated:
+		_build_deck()
 	_build_road()
 	_build_barriers()
 	_build_start_gantry()
@@ -371,6 +389,7 @@ func _build_ground() -> void:
 	var center := (lo + hi) * 0.5
 	var extent := (hi - lo) + Vector2.ONE * ground_margin * 2.0
 
+	var floor_y := -ground_depth if elevated else 0.0
 	var body := StaticBody3D.new()
 	body.collision_layer = 1
 	body.collision_mask = 0
@@ -378,7 +397,7 @@ func _build_ground() -> void:
 	var box := BoxShape3D.new()
 	box.size = Vector3(extent.x, 2.0, extent.y)
 	shape.shape = box
-	shape.position = Vector3(center.x, -1.0, center.y)
+	shape.position = Vector3(center.x, floor_y - 1.0, center.y)
 	body.add_child(shape)
 
 	var mesh_instance := MeshInstance3D.new()
@@ -386,7 +405,7 @@ func _build_ground() -> void:
 	plane.size = extent
 	plane.material = _surface_material(ground_texture, ground_color, 6.0, 0.95)
 	mesh_instance.mesh = plane
-	mesh_instance.position = Vector3(center.x, 0.0, center.y)
+	mesh_instance.position = Vector3(center.x, floor_y, center.y)
 	mesh_instance.visible = ground_visible
 	body.add_child(mesh_instance)
 	_add_generated(body, "Ground")
@@ -436,7 +455,7 @@ func _build_road() -> void:
 
 	var holder := Node3D.new()
 	_add_generated(holder, "Road")
-	_add_mesh(holder, "Surface", road, _surface_material(road_texture, road_color, 5.0, 0.55))
+	_add_mesh(holder, "Surface", road, road_material if road_material != null else _surface_material(road_texture, road_color, 5.0, 0.55))
 	_add_mesh(holder, "EdgeLines", edges, _material(edge_line_color, edge_line_energy))
 	if faded_markings:
 		_add_mesh(holder, "CentreDashes", dashes, _material(Color(0.42, 0.41, 0.38), 0.0, 0.9))
@@ -468,6 +487,7 @@ func _build_barriers() -> void:
 	var right_lengths: Array[float] = []
 	# Main loop: walls are left out where a shortcut road crosses them.
 	var main := _samples()
+	var curbs: Array = []
 	var edge := road_width * 0.5 + barrier_thickness * 0.5
 	for side in [-1.0, 1.0]:
 		for i in main.size():
@@ -476,6 +496,9 @@ func _build_barriers() -> void:
 			var p0: Vector3 = s0.center + s0.right * edge * side
 			var p1: Vector3 = s1.center + s1.right * edge * side
 			if _inside_shortcut((p0 + p1) * 0.5, null):
+				continue
+			if _in_open_edge(open_edges, s0.offset, side, length):
+				curbs.append([p0, p1])
 				continue
 			_add_wall(body, p0, p1, walls, lengths, left if side < 0.0 else right, left_lengths if side < 0.0 else right_lengths)
 	# Shortcuts: walls are left out inside the main road (the junctions).
@@ -489,11 +512,15 @@ func _build_barriers() -> void:
 				var mid := (p0 + p1) * 0.5
 				if _main_lateral(mid) < road_width * 0.5 + barrier_thickness * 1.5 or _inside_shortcut(mid, sc):
 					continue
+				if _in_open_edge(sc.open_edges, ss[i].offset, side, 0.0):
+					curbs.append([p0, p1])
+					continue
 				_add_wall(body, p0, p1, walls, lengths, left if side < 0.0 else right, left_lengths if side < 0.0 else right_lengths)
 
 	var wall_mesh := BoxMesh.new()
 	wall_mesh.size = Vector3(barrier_thickness, barrier_height, 1.0)
-	var wall_visual := _multimesh(wall_mesh, _surface_material(barrier_texture, barrier_color, 2.5, 0.8), walls, lengths)
+	var wall_mat: Material = barrier_material if barrier_material != null else _surface_material(barrier_texture, barrier_color, 2.5, 0.8)
+	var wall_visual := _multimesh(wall_mesh, wall_mat, walls, lengths)
 	wall_visual.name = "Walls"
 	body.add_child(wall_visual)
 	var strip_mesh := BoxMesh.new()
@@ -511,9 +538,87 @@ func _build_barriers() -> void:
 	var right_strip := _multimesh(strip_mesh, _material(neon_right_color, neon_energy), rx, right_lengths)
 	right_strip.name = "NeonRight"
 	body.add_child(right_strip)
+	if not curbs.is_empty():
+		body.add_child(_build_curbs(curbs))
 	# Added last: adding shapes to a body already in the tree rebuilds its
 	# physics shape every time (seconds for a whole lap).
 	_add_generated(body, "Barriers")
+
+
+## Whether an open-edge range covers this offset on this side. Main-loop
+## ranges wrap round the lap (loop_length > 0); shortcut ranges don't.
+static func _in_open_edge(ranges: PackedVector3Array, offset: float, side: float, loop_length: float) -> bool:
+	for r in ranges:
+		if signf(r.z) != signf(side):
+			continue
+		var inside: bool
+		if loop_length > 0.0:
+			inside = fposmod(offset - r.x, loop_length) <= fposmod(r.y - r.x, loop_length)
+		else:
+			inside = offset >= r.x and offset <= r.y
+		if inside:
+			return true
+	return false
+
+
+## Whether the barrier is left out here (main loop offset, side -1 / +1).
+func is_open_edge(offset: float, side: float) -> bool:
+	return _in_open_edge(open_edges, wrap_offset(offset), side, length)
+
+
+## Low curbs (visual only) where open edges leave the barrier out.
+func _build_curbs(segments: Array) -> MultiMeshInstance3D:
+	var xfs: Array[Transform3D] = []
+	var scales: Array[float] = []
+	for seg in segments:
+		var p0: Vector3 = seg[0]
+		var p1: Vector3 = seg[1]
+		var dir := p1 - p0
+		dir.y = 0.0
+		if dir.length() < 0.01:
+			continue
+		var mid := (p0 + p1) * 0.5 + Vector3(0.0, curb_height * 0.5, 0.0)
+		xfs.append(Transform3D(Basis.looking_at(dir.normalized(), Vector3.UP), mid))
+		scales.append(dir.length() + barrier_thickness * 0.3)
+	var mesh := BoxMesh.new()
+	mesh.size = Vector3(barrier_thickness * 0.6, curb_height, 1.0)
+	var curb := _multimesh(mesh, _material(curb_color, 0.0, 0.7), xfs, scales)
+	curb.name = "OpenEdgeCurbs"
+	return curb
+
+
+## Deck collider for an elevated road: one box per sample pair under the
+## road and its barriers, main loop and shortcuts (the top is at y = 0).
+func _build_deck() -> void:
+	var body := StaticBody3D.new()
+	body.collision_layer = 1
+	body.collision_mask = 0
+	var main := _samples()
+	var width := road_width + barrier_thickness * 2.0
+	for i in main.size():
+		_add_deck_box(body, main[i].center, main[(i + 1) % main.size()].center, width)
+	for sc in shortcuts:
+		var ss := _shortcut_samples(sc)
+		for i in ss.size() - 1:
+			_add_deck_box(body, ss[i].center, ss[i + 1].center, sc.road_width + barrier_thickness * 2.0)
+	_add_generated(body, "Deck")
+
+
+func _add_deck_box(body: StaticBody3D, p0: Vector3, p1: Vector3, width: float) -> void:
+	var dir := p1 - p0
+	dir.y = 0.0
+	var seg_length := dir.length()
+	if seg_length < 0.01:
+		return
+	var mid := (p0 + p1) * 0.5
+	mid.y = -deck_thickness * 0.5
+	var shape := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	# Overlap neighbours so the outside of a curve has no seams.
+	box.size = Vector3(width, deck_thickness, seg_length + 1.0)
+	shape.shape = box
+	shape.transform = Transform3D(Basis.looking_at(dir / seg_length, Vector3.UP), mid)
+	body.add_child(shape)
 
 
 func _add_wall(body: StaticBody3D, p0: Vector3, p1: Vector3, walls: Array[Transform3D], lengths: Array[float],

@@ -3,7 +3,7 @@ extends Control
 ## A cup's trophy, drawn in code: gold bowl, two handles, stem and a
 ## two-step base, with the cup's emblem on the bowl. "usa" is a silhouette
 ## of the lower 48 states; "europe" a map of Europe (with Britain, Ireland
-## and Iceland); "japan" a rising sun; "globe" a little globe. Locked cups
+## and Iceland); "south_america" the continent; "japan" a rising sun; "globe" a little globe. Locked cups
 ## are grey with a padlock.
 
 const GOLD := Color(1.0, 0.8, 0.22)
@@ -66,6 +66,20 @@ const EUROPE_LON_LAT: Array = [
 	[Vector2(-24.0, 65.5), Vector2(-22.0, 66.4), Vector2(-16.0, 66.5), Vector2(-13.6, 65.2), Vector2(-15.0, 64.3),
 	Vector2(-18.7, 63.4), Vector2(-22.7, 63.8), Vector2(-22.0, 64.6), Vector2(-24.0, 64.9)],
 ]
+## South America's outline (longitude, latitude), clockwise from Panama.
+const SOUTH_AMERICA_LON_LAT := [
+	Vector2(-77.5, 8.5), Vector2(-75.5, 10.8), Vector2(-71.5, 12.4), Vector2(-67, 10.6), Vector2(-62, 10.7), Vector2(-60, 8.5),
+	Vector2(-57, 6), Vector2(-52, 5), Vector2(-50, 1.8), Vector2(-48, -1), Vector2(-44, -2.5), Vector2(-39.5, -3),
+	Vector2(-35.3, -5.5), Vector2(-35, -9), Vector2(-37, -11), Vector2(-39, -15), Vector2(-39.5, -18), Vector2(-41, -22),
+	Vector2(-43, -23), Vector2(-46, -24), Vector2(-48.5, -26.5), Vector2(-48.8, -28.5), Vector2(-51, -31), Vector2(-53, -33.7),
+	Vector2(-55, -35), Vector2(-57.5, -35), Vector2(-57, -37), Vector2(-62, -39), Vector2(-62.3, -41), Vector2(-65, -42.5),
+	Vector2(-64, -45), Vector2(-67.5, -46.5), Vector2(-65.8, -47.8), Vector2(-68.5, -51), Vector2(-68.5, -52.5), Vector2(-66, -55),
+	Vector2(-70, -55.5), Vector2(-74, -52), Vector2(-75.5, -48), Vector2(-74, -44), Vector2(-73.5, -40), Vector2(-73.6, -37),
+	Vector2(-71.6, -33), Vector2(-71.5, -28), Vector2(-70.5, -23), Vector2(-70.3, -18.3), Vector2(-72, -17), Vector2(-76, -14),
+	Vector2(-77, -12), Vector2(-79.5, -7), Vector2(-81.2, -5), Vector2(-80, -2.5), Vector2(-80.5, 0), Vector2(-79, 1.5),
+	Vector2(-77.5, 4), Vector2(-77.4, 7),
+]
+
 const SUN_RED := Color(0.85, 0.12, 0.15)
 
 var emblem: String = ""
@@ -83,6 +97,11 @@ func _init(p_emblem: String = "", p_locked: bool = false, side: float = 120.0) -
 ## into `rect`, keeping its shape.
 static func usa_polygon(rect: Rect2) -> PackedVector2Array:
 	return outline_polygons([USA_LON_LAT], rect, 38.0)[0]
+
+
+## South America fitted into `rect`.
+static func south_america_polygon(rect: Rect2) -> PackedVector2Array:
+	return outline_polygons([SOUTH_AMERICA_LON_LAT], rect, -20.0)[0]
 
 
 ## Europe's outlines (mainland, Britain, Ireland, Iceland) fitted into `rect`.
@@ -156,6 +175,11 @@ func _draw() -> void:
 	match emblem:
 		"usa":
 			var poly := usa_polygon(badge.grow(-w * 0.015))
+			var fill := EMBLEM_BG if not locked else Color(0.25, 0.25, 0.3)
+			draw_colored_polygon(poly, fill)
+			draw_polyline(poly + PackedVector2Array([poly[0]]), light, maxf(1.0, w * 0.01), true)
+		"south_america":
+			var poly := south_america_polygon(badge.grow(-w * 0.015))
 			var fill := EMBLEM_BG if not locked else Color(0.25, 0.25, 0.3)
 			draw_colored_polygon(poly, fill)
 			draw_polyline(poly + PackedVector2Array([poly[0]]), light, maxf(1.0, w * 0.01), true)

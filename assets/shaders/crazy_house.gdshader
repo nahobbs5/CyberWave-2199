@@ -9,7 +9,7 @@ render_mode cull_disabled;
 uniform vec4 bark_dark : source_color = vec4(0.17, 0.12, 0.1, 1.0);
 uniform vec4 bark_grey : source_color = vec4(0.46, 0.43, 0.4, 1.0);
 uniform vec4 cream : source_color = vec4(0.93, 0.88, 0.76, 1.0);
-uniform vec4 lava_color : source_color = vec4(0.85, 0.3, 0.12, 1.0);
+uniform vec4 lava_color : source_color = vec4(0.72, 0.28, 0.13, 1.0);
 uniform float lava_amount : hint_range(0.0, 1.0) = 0.0;
 // How much of the wall the cream drips cover.
 uniform float drip_amount : hint_range(0.0, 1.0) = 0.45;
@@ -68,7 +68,7 @@ void fragment() {
 	float drip = smoothstep(0.55 - drip_amount * 0.25, 0.6 - drip_amount * 0.25, streak + local_pos.y * 0.004);
 	col = mix(col, cream.rgb * (0.85 + 0.15 * blotch), drip);
 	// Lava walls: orange-red with dark pits.
-	float pits = smoothstep(0.62, 0.7, vnoise(p * 9.0));
+	float pits = smoothstep(0.68, 0.74, vnoise(p * 26.0)) * 0.8;
 	vec3 lava = mix(lava_color.rgb * (0.75 + 0.5 * blotch), vec3(0.18, 0.05, 0.02), pits);
 	col = mix(col, lava, lava_amount * (1.0 - drip * 0.6));
 

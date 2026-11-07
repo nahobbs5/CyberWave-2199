@@ -10,6 +10,7 @@ const CUPS: Array[String] = [
 	# The Europe Cup (the file keeps its old World Cup name so saved results carry over).
 	"res://resources/grand_prix/world_circuit.tres",
 	"res://resources/grand_prix/asia_circuit.tres",
+	"res://resources/grand_prix/south_america_circuit.tres",
 ]
 
 @export var id: String = "grand_prix"
