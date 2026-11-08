@@ -9,6 +9,7 @@ The authoritative design is [`docs/Game Design Document.md`](docs/Game%20Design%
 **Current milestone: Phase 6, content and polish** (GDD §16), in progress. Done so far:
 - **All eight tracks** in three cups: the **American Cup** (Vegas Overdrive, Six Flags New Orleans, The Stacks), the **Europe Cup** (Hoia Baciu Run, Catacombs Descent, Vatnajökull Glacier) and the **Asia Cup** (Arashiyama Circuit, Crazy House),
 - **Parque Quinta Normal Greenhouse** (Santiago, Chile), race 1 of the new **South America Cup** (locked for Grand Prix until its other two tracks exist; raceable in Versus now),
+- **Vale da Lua** (Chapada dos Veadeiros, Brazil), race 2 of the **South America Cup**: smooth moon rock cut by moving water, rivers under rock bridges, waterfalls, and open rock shelves you can fall off,
 - **Split-screen multiplayer** for 2–4 players (keyboard + gamepads): top/bottom halves for two, corners for three or four, a live spectator view in the spare corner for three, one shared minimap,
 - **Mario Kart style Versus:** pick how many races (1–16), then each track from one screen listing every cup; points add up over the set,
 - **eight vehicle models**, built procedurally after the roster art, with support for swapping in your own `.glb` models,
@@ -381,6 +382,22 @@ South America Cup race 1. A 3.1 km race on a **bright summer day through and aro
 
 The Andes fill the eastern horizon; Santiago's Gran Torre and skyline stand to the north-east. **Shortcut:** the **Fern Wing**, through a smashable glass panel into a narrow, mesh-caged glasshouse across the south-west corner (9 m wide, about 110 m shorter). Built from `GlasshouseBuilder` (`scripts/track/scenery/glasshouse_builder.gd`: barrel wings, ribbed domes with a drum, lantern, gallery and stair, and the wire mesh) and `QuintaNormalScenery`. Race music is still to be chosen. Checks: `tests/test_quinta_normal.gd`.
 
+
+#### Vale da Lua (GDD §8.6e)
+
+South America Cup race 2. A 3.1 km race through **Brazil's Valley of the Moon**: smooth grey "moon rock" sculpted by a fast river, under a soft daylight sky with green cerrado forest on the rock tops. The road is 13 m of pale stone with teal and white neon, with flowing 60–100 m corners. **The water moves**: a new animated water shader scrolls ripples, streaks and foam downstream, turns into fast white falling water on the waterfalls, and churns white at their feet. In driving order:
+- **Start straight** over the first **rock bridge**: the main river passes 5 m below the road. Boost pad with item boxes.
+- **First open rock shelf** (about 90 m): no barrier on the right, with a creek canyon right below the road edge. Run wide and you drop in, splash and are put back on the road.
+- **East stream bridge**, with spray from the falls across the road (water).
+- **The headland loop** (jump), which the shortcut cuts off.
+- **The deep gorge bridge**, 14 m above the main river where it leaves the valley.
+- A **rock hump jump**, then the **second open shelf**.
+- **West stream bridge** and the cerrado (boost ring), back to the start.
+- **Behind the Falls** (shortcut): a ledge under a rock overhang, with a stream pouring off the overhang as a curtain past its outer edge into a pool. About 250 m shorter, but **driftwood logs** (smashable) block the entrance. Boost ring at the exit, three bonus coins.
+- Inside the loop the main river drops over two waterfalls and both streams fall into it: **six waterfalls** in all, with white churn and mist. About **900 smooth boulders** (instanced, water-worn shapes) line the canyons, sit in the water and hold up the bridges and the overhang. Bleached driftwood is jammed in the channels.
+- The road is **elevated** (Gardens by the Bay's skyway mode) so the shelves are real drops. One water `RecoveryZone` runs along every river at the water line.
+- **No race music yet** (silent until a track is chosen).
+- Built from code: `ValeDaLuaScenery` (river polylines generated with the layout, slot-canyon meshes with smooth normals, water ribbons, boulder MultiMeshes), `SceneryTerrain` carved by the rivers plus a rock dome, `TreeBuilder` rainforest and palm trees, and two new procedural shaders: `assets/shaders/moon_rock.gdshader` (erosion ripples, potholes, a wet band toward the water) and `assets/shaders/flowing_water.gdshader`.
 #### Six Flags New Orleans (GDD §8.2)
 
 A 3.1 km circuit through a **realistic, eerie, abandoned amusement park**, after the real park left to rot after Hurricane Katrina. It goes for believable decay, not supernatural effects. The only clean light is the illegal racing neon on the barriers, dimmed to fit the scene. The road is 18 m wide.

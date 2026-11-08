@@ -162,17 +162,17 @@ func _wings() -> void:
 	for span in WINGS:
 		var d0 := track.get_offset_at(Vector3(span[0], 0, WING_Z))
 		var d1 := track.get_offset_at(Vector3(span[1], 0, WING_Z))
-		gh.barrel(track.curve, true, d0, d1, WING_HALF, WING_WALL, 2.5, 0.3, true)
+		gh.barrel(track.curve, true, d0, d1, WING_HALF, WING_WALL, 3.0, 0.3, true)
 
 
 func _fern_wing() -> void:
 	if _fern == null:
 		return
-	gh.barrel(_fern, false, 6.0, _fern.get_baked_length() - 6.0, FERN_HALF, FERN_WALL, 2.2, 0.45, false)
+	gh.barrel(_fern, false, 6.0, _fern.get_baked_length() - 6.0, FERN_HALF, FERN_WALL, 3.0, 0.45, false)
 
 
 func _rotunda() -> void:
-	gh.dome(ROTUNDA, ROTUNDA_R, ROTUNDA_WALL, ROTUNDA_RISE, 56, 0.3, false)
+	gh.dome(ROTUNDA, ROTUNDA_R, ROTUNDA_WALL, ROTUNDA_RISE, 48, 0.3, false)
 	# The plinth: a raised checkerboard disc on a brick rim with two steps.
 	add_cyl("brick", PLINTH_R + 2.2, 0.25, xform(ROTUNDA), 40)
 	add_cyl("brick", PLINTH_R + 1.1, 0.5, xform(ROTUNDA), 40)
@@ -210,9 +210,9 @@ func _low_wall_ring(c: Vector3, r: float, h: float, thick: float, n: int, gap_ch
 
 
 func _tiered_dome() -> void:
-	gh.dome(TIERED, TIERED_R, 8.0, 16.0, 40, 0.25, true)
+	gh.dome(TIERED, TIERED_R, 8.0, 16.0, 36, 0.25, true)
 	for w in TIERED_WINGS:
-		gh.barrel_line(w[0], w[1], 8.0, 4.0, 2.5, 0.25)
+		gh.barrel_line(w[0], w[1], 8.0, 4.0, 3.5, 0.25)
 	_bloom_bush(TIERED + Vector3(TIERED_R + 3.0, 0, -12), 4.0, 6.0)
 	_bloom_bush(TIERED + Vector3(-8, 0, -TIERED_R - 3.0), 3.0, 5.0)
 
@@ -327,7 +327,7 @@ func _bougainvillea() -> void:
 		var x: float = span[0]
 		while x < span[1]:
 			for side in [-1.0, 1.0]:
-				if rng.randf() < 0.3:
+				if rng.randf() < 0.22:
 					var base := Vector3(x, 0, WING_Z + side * (WING_HALF + 0.9))
 					_bloom_bush(base, rng.randf_range(1.6, 3.0), rng.randf_range(3.0, 8.5))
 			x += 6.0
@@ -342,7 +342,7 @@ func _bougainvillea() -> void:
 func _bloom_bush(base: Vector3, spread: float, height: float) -> void:
 	if not clear(base, spread * 0.6):
 		return
-	var blobs := int(spread * 3.0)
+	var blobs := int(spread * 1.6)
 	for i in blobs:
 		var p := base + Vector3(rng.randf_range(-spread, spread), rng.randf_range(0.6, height), rng.randf_range(-spread, spread) * 0.6)
 		var r := rng.randf_range(0.6, 1.4)

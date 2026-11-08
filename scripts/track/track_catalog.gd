@@ -26,6 +26,8 @@ const TRACKS := [
 	["Gardens by the Bay", "res://scenes/tracks/gardens_by_the_bay.tscn", "Marina Bay, Singapore", ""],
 	# Music to come (the user is choosing); silent until then.
 	["Parque Quinta Normal", "res://scenes/tracks/quinta_normal.tscn", "Santiago, Chile", ""],
+	# Music to come (the user is choosing); silent until then.
+	["Vale da Lua", "res://scenes/tracks/vale_da_lua.tscn", "Chapada dos Veadeiros, Brazil", ""],
 	["Test Circuit", TEST_CIRCUIT, "Graybox", ""],
 ]
 

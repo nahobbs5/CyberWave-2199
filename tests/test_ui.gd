@@ -212,12 +212,17 @@ func _test_cups() -> void:
 	var tracks := (load("res://scenes/menu/track_select.tscn") as PackedScene).instantiate() as TrackSelect
 	root.add_child(tracks)
 	await _frames(2)
-	_check(tracks.cards.size() == 9, "every cup's tracks on one screen (%d)" % tracks.cards.size())
+	var all_tracks := 0
+	for cup in GrandPrixData.all_cups():
+		all_tracks += cup.track_names.size()
+	_check(tracks.cards.size() == all_tracks, "every cup's tracks on one screen (%d of %d)" % [tracks.cards.size(), all_tracks])
 	var outlines_ok := true
 	for card in tracks.cards:
+		if card.disabled:
+			continue # "coming soon": no track yet
 		var thumb := card.find_child("Thumbnail", true, false) as TrackThumbnail
 		outlines_ok = outlines_ok and thumb != null and thumb.outline.size() >= 3
-	_check(outlines_ok, "every track card has its outline")
+	_check(outlines_ok, "every built track's card has its outline")
 	var down := tracks.cards[0].get_node(tracks.cards[0].focus_neighbor_bottom)
 	_check(down == tracks.cards[3], "down moves from the American Cup row to the Europe Cup row")
 	var asia_card := tracks.cards[tracks.track_names.find("Arashiyama Circuit")]

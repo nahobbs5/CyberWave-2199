@@ -1,0 +1,165 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/track/track_circuit.gd" id="1_track"]
+[ext_resource type="Script" path="res://scripts/track/track_shortcut.gd" id="2_shortcut"]
+[ext_resource type="Script" path="res://scripts/track/track_feature.gd" id="3_feature"]
+[ext_resource type="Script" path="res://scripts/track/vale_da_lua_scenery.gd" id="4_scenery"]
+[ext_resource type="Texture2D" path="res://assets/sky/kloofendal_overcast_puresky_2k.hdr" id="5_sky"]
+
+[sub_resource type="PanoramaSkyMaterial" id="Sky_day"]
+panorama = ExtResource("5_sky")
+energy_multiplier = 1.0
+
+[sub_resource type="Sky" id="Sky_res"]
+sky_material = SubResource("Sky_day")
+
+[sub_resource type="Environment" id="Environment_vale"]
+background_mode = 2
+sky = SubResource("Sky_res")
+ambient_light_source = 3
+ambient_light_color = Color(0.7, 0.74, 0.72, 1)
+ambient_light_sky_contribution = 0.55
+ambient_light_energy = 0.55
+reflected_light_source = 2
+tonemap_mode = 2
+tonemap_exposure = 0.9
+glow_enabled = true
+glow_intensity = 0.3
+glow_bloom = 0.03
+fog_enabled = true
+fog_light_color = Color(0.62, 0.7, 0.72, 1)
+fog_light_energy = 0.9
+fog_density = 0.0012
+fog_sky_affect = 0.4
+volumetric_fog_enabled = true
+volumetric_fog_density = 0.004
+volumetric_fog_albedo = Color(0.92, 0.96, 0.98, 1)
+volumetric_fog_anisotropy = 0.5
+volumetric_fog_length = 70.0
+adjustment_enabled = true
+adjustment_saturation = 1.05
+
+[node name="Track" type="Node3D"]
+script = ExtResource("1_track")
+control_points = PackedVector3Array(-93, 0, -21.9, -73.4, 0, -22.25, -53.8, 0, -22.6, -34.2, 0, -22.95, -14.6, 0, -23.31, 5, 0, -23.66, 24.6, 0, -24.01, 44.2, 0, -24.36, 63.79, 0, -24.71, 83.39, 0, -25.06, 102.99, 0, -25.41, 122.59, 0, -25.76, 142.19, 0, -26.12, 161.79, 0, -26.47, 181.39, 0, -26.82, 200.99, 0, -27.17, 220.59, 0, -27.52, 241.38, 0, -25.71, 261.34, 0, -19.63, 279.05, 0, -12.14, 296.76, 0, -4.65, 314.48, 0, 2.85, 332.19, 0, 10.34, 349.9, 0, 17.84, 367.62, 0, 25.33, 385.33, 0, 32.82, 403.04, 0, 40.32, 420.76, 0, 47.81, 438.47, 0, 55.31, 454, 0, 63.89, 467.42, 0, 75.51, 478.12, 0, 89.67, 485.66, 0, 105.74, 489.69, 0, 123.02, 491.8, 0, 139.83, 493.9, 0, 156.63, 496.01, 0, 173.43, 498.11, 0, 190.23, 500.22, 0, 207.04, 502.32, 0, 223.84, 504.68, 0, 234.58, 508.96, 0, 244.71, 515.03, 0, 253.89, 522.66, 0, 261.81, 531.61, 0, 268.2, 541.58, 0, 272.85, 558.64, 0, 278.98, 575.71, 0, 285.11, 592.77, 0, 291.23, 609.84, 0, 297.36, 626.9, 0, 303.49, 643.96, 0, 309.62, 656.41, 0, 315.52, 667.45, 0, 323.75, 676.67, 0, 333.99, 683.71, 0, 345.83, 688.29, 0, 358.82, 690.24, 0, 372.46, 691.1, 0, 392.17, 691.96, 0, 411.89, 692.81, 0, 431.6, 693.67, 0, 451.32, 694.53, 0, 471.03, 695.38, 0, 490.74, 694.57, 0, 504.88, 690.92, 0, 518.56, 684.59, 0, 531.23, 675.85, 0, 542.36, 665.04, 0, 551.51, 652.61, 0, 558.3, 634.22, 0, 566.04, 615.84, 0, 573.79, 597.45, 0, 581.53, 579.06, 0, 589.27, 560.67, 0, 597.01, 542.28, 0, 604.76, 523.89, 0, 612.5, 520.77, 0, 613.72, 517.6, 0, 614.8, 499.28, 0, 620.52, 480.96, 0, 626.25, 462.64, 0, 631.98, 444.32, 0, 637.7, 425.99, 0, 643.43, 407.67, 0, 649.15, 389.35, 0, 654.88, 371.03, 0, 660.6, 352.71, 0, 666.33, 334.38, 0, 672.05, 316.06, 0, 677.78, 297.74, 0, 683.51, 279.42, 0, 689.23, 261.1, 0, 694.96, 242.8, 0, 698.65, 224.14, 0, 698.48, 205.91, 0, 694.48, 188.9, 0, 686.79, 172.97, 0, 677.5, 157.03, 0, 668.2, 141.09, 0, 658.9, 125.15, 0, 649.61, 109.22, 0, 640.31, 93.28, 0, 631.01, 77.34, 0, 621.72, 61.4, 0, 612.42, 45.47, 0, 603.12, 29.53, 0, 593.82, 18.02, 0, 588.45, 5.73, 0, 585.24, -6.94, 0, 584.3, -19.57, 0, 585.67, -31.74, 0, 589.3, -48.07, 0, 595.83, -64.4, 0, 602.36, -80.73, 0, 608.89, -97.06, 0, 615.43, -113.4, 0, 621.96, -129.73, 0, 628.49, -146.06, 0, 635.02, -161.06, 0, 639.28, -176.62, 0, 640.34, -192.06, 0, 638.16, -206.72, 0, 632.83, -219.96, 0, 624.59, -235.34, 0, 612.62, -250.73, 0, 600.65, -266.12, 0, 588.69, -281.5, 0, 576.72, -296.89, 0, 564.75, -312.28, 0, 552.79, -323.63, 0, 542.15, -332.86, 0, 529.62, -339.65, 0, 515.62, -343.77, 0, 500.62, -345.09, 0, 485.12, -343.56, 0, 469.64, -340.02, 0, 451.23, -336.48, 0, 432.83, -332.94, 0, 414.42, -329.4, 0, 396.01, -325.86, 0, 377.61, -322.32, 0, 359.2, -318.78, 0, 340.79, -315.24, 0, 322.39, -311.7, 0, 303.98, -310.45, 0, 291.86, -311.32, 0, 279.71, -314.29, 0, 267.89, -319.25, 0, 256.76, -328, 0, 241.03, -336.74, 0, 225.29, -345.48, 0, 209.56, -354.22, 0, 193.82, -362.96, 0, 178.08, -371.71, 0, 162.35, -378.25, 0, 146.97, -381.46, 0, 130.57, -381.19, 0, 113.87, -377.46, 0, 97.58, -370.43, 0, 82.42, -360.4, 0, 69.06, -349.33, 0, 57.14, -338.26, 0, 45.22, -327.19, 0, 33.3, -316.13, 0, 21.38, -305.06, 0, 9.46, -291.49, 0, -2.48, -275.82, 0, -11.47, -258.66, 0, -17.15, -240.71, 0, -19.28, -222.25, 0, -19.61, -203.78, 0, -19.94, -185.32, 0, -20.26, -166.86, 0, -20.59, -148.39, 0, -20.92, -129.93, 0, -21.25, -111.46, 0, -21.57)
+road_width = 13.0
+barrier_height = 1.3
+checkpoint_count = 10
+crate_row_offsets = PackedFloat32Array(462, 869, 1279, 2005, 2689)
+crate_lateral_positions = PackedFloat32Array(-4.2, -1.4, 1.4, 4.2)
+coin_offsets = PackedFloat32Array(193, 203, 1074, 1084, 1573, 1583, 2217, 2227, 2789, 2799)
+coin_laterals = PackedFloat32Array(2.5, 2.5, -2.5, -2.5, 2.5, 2.5, -2.5, -2.5, 2.5, 2.5)
+road_color = Color(0.8, 0.79, 0.76, 1)
+edge_line_color = Color(0.5, 1, 0.92, 1)
+ground_color = Color(0.45, 0.45, 0.44, 1)
+barrier_color = Color(0.72, 0.72, 0.7, 1)
+neon_energy = 0.45
+edge_line_energy = 0.35
+faded_markings = true
+centre_markings = false
+ground_visible = false
+road_texture = "pavement_01"
+barrier_texture = "mossy_rock"
+ground_texture = "mossy_rock"
+neon_left_color = Color(0.25, 0.95, 0.85, 1)
+neon_right_color = Color(0.9, 1, 0.98, 1)
+light_colors = PackedColorArray(0.6, 1, 0.9, 1)
+light_energy = 0.0
+corner_sign_color = Color(0.1, 0.85, 0.75, 1)
+corner_sign_width = 2.8
+corner_sign_gap = 0.5
+light_spacing = 5000.0
+elevated = true
+ground_depth = 24.0
+open_edges = PackedVector3Array(413, 534, 1, 2354, 2466, 1)
+curb_color = Color(0.6, 0.6, 0.58, 1)
+ground_margin = 300.0
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_vale")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.738485, 0.000000, -0.674269, -0.526879, 0.624021, -0.577058, 0.420758, 0.781408, 0.460830, 0, 90, 0)
+light_color = Color(1, 0.96, 0.88, 1)
+light_energy = 1.6
+light_volumetric_fog_energy = 1.2
+shadow_enabled = true
+shadow_opacity = 0.8
+directional_shadow_max_distance = 90.0
+
+[node name="BehindTheFalls" type="Node3D" parent="."]
+script = ExtResource("2_shortcut")
+control_points = PackedVector3Array(502, 0, 232, 498, 0, 307, 502, 0, 400, 511, 0, 493, 484, 0, 595, 437, 0, 640)
+road_width = 9.0
+speed_limit = 34.0
+ai_chance = 0.4
+coin_distances = PackedFloat32Array(100, 220, 330)
+display_name = "Behind the falls"
+
+[node name="BoostPadStart" type="Node3D" parent="."]
+script = ExtResource("3_feature")
+kind = 0
+offset = 0
+lateral = 0
+anchor_point = Vector3(40, 0, -25)
+item_boxes = true
+
+[node name="JumpHeadland" type="Node3D" parent="."]
+script = ExtResource("3_feature")
+kind = 4
+offset = 0
+lateral = 0
+anchor_point = Vector3(695, 0, 430)
+width = 12.0
+length = 14.0
+ramp_height = 1.1
+
+[node name="WaterSprayEastFalls" type="Node3D" parent="."]
+script = ExtResource("3_feature")
+kind = 5
+offset = 0
+lateral = 0
+anchor_point = Vector3(500, 0, 171)
+width = 13.0
+length = 14.0
+
+[node name="JumpRockHump" type="Node3D" parent="."]
+script = ExtResource("3_feature")
+kind = 4
+offset = 0
+lateral = 0
+anchor_point = Vector3(-95, 0, 615)
+width = 12.0
+length = 14.0
+ramp_height = 1.1
+
+[node name="BoostRingCerrado" type="Node3D" parent="."]
+script = ExtResource("3_feature")
+kind = 1
+offset = 0
+lateral = 0
+anchor_point = Vector3(-345, 0, 45)
+boost_extra = 8.0
+boost_duration = 1.2
+boost_kick = 5.0
+
+[node name="LogBarricade" type="Node3D" parent="."]
+script = ExtResource("3_feature")
+kind = 3
+offset = 40
+lateral = 0
+on_shortcut = "BehindTheFalls"
+width = 9.0
+
+[node name="BoostRingFallsExit" type="Node3D" parent="."]
+script = ExtResource("3_feature")
+kind = 1
+offset = 380
+lateral = 0
+on_shortcut = "BehindTheFalls"
+boost_extra = 8.0
+boost_duration = 1.2
+boost_kick = 5.0
+
+[node name="Scenery" type="Node3D" parent="."]
+script = ExtResource("4_scenery")

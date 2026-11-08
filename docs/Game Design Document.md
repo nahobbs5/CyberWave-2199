@@ -1,5 +1,5 @@
 # CYBERWAVE 2199
-## Game Design Document — Version 3.5
+## Game Design Document — Version 3.6
 
 **Status:** Development Baseline  
 **Engine:** Godot 4  
@@ -98,10 +98,10 @@ Three cups, each a championship of its tracks raced back to back (three races ea
 | Race | Track | Location |
 |---|---|---|
 | 1 | Parque Quinta Normal | Santiago, Chile |
-| 2 | Coming soon | |
+| 2 | Vale da Lua | Chapada dos Veadeiros, Brazil |
 | 3 | Coming soon | |
 
-The South America Cup is locked for Grand Prix until its other two tracks are built; Parque Quinta Normal can already be raced in Versus.
+The South America Cup is locked for Grand Prix until its third track is built; Parque Quinta Normal and Vale da Lua can already be raced in Versus.
 
 The American, Europe and Asia Cups are playable. The Europe Cup was the World Cup; its save id is unchanged, so earlier results still count. The cup-win coin bonus is 100 for a three-race cup, scaled by the number of races (§9.3).
 
@@ -557,7 +557,7 @@ AI must support:
 
 # 8. Tracks and Environments
 
-Eight tracks are included at launch.
+Eleven tracks are included at launch.
 
 ## 8.1 The Stacks
 
@@ -713,6 +713,25 @@ The Andes stand on the eastern horizon and Santiago's skyline (the Gran Torre) t
 
 The shortcut is the **Fern Wing**: through a smashable glass panel into a narrow (9 m), mesh-caged glasshouse that cuts across the south-west corner. It is about 110 m shorter. Race music is still to be chosen.
 
+## 8.6e Vale da Lua
+
+**Location:** Chapada dos Veadeiros, Brazil
+
+A race through the Valley of the Moon: smooth grey "moon rock" sculpted by a fast river.
+
+**Identity:** Moving water everywhere, and nerve on the open rock shelves.
+
+Built at about 3.1 km with a 13 m road and flowing corners (60–100 m radius) around a river system. The rock is smooth, pale-to-dark grey, with rippled erosion lines, dimples and round potholes, darker and glossier toward the water, with green cerrado forest on top. The water moves: a main river and two streams run through slot canyons beside the road. They pass under it at four natural rock bridges, 5–14 m below the road, and drop over six waterfalls with white churn and mist at their feet. The road is elevated (§8.7) with barriers most of the way, but two open rock shelves run right along creek canyons: a bad line drops you into the water, and you are put back on the road. Landmarks in driving order:
+- the start straight, over the first rock bridge (boost pad);
+- the first open shelf above a creek;
+- the east stream's bridge, with spray from the falls across the road (water);
+- the headland loop (jump), which the shortcut cuts off;
+- the deep gorge bridge, 14 m over the main river;
+- a rock hump jump, then the second open shelf;
+- the west stream's bridge and the cerrado (boost ring), back to the start.
+
+The shortcut is Behind the Falls: a ledge under a rock overhang, with a stream pouring off the overhang as a curtain past its outer edge into a pool. It's about 250 m shorter, but driftwood logs (smashable) block the entrance. Race music is still to be chosen.
+
 ## 8.7 Shared Track Features
 
 Tracks may contain:
@@ -757,6 +776,7 @@ The track concept art suggests one signature dynamic event per track. They are r
 | Arashiyama Circuit | Bamboo Collapse: falling bamboo hazards |
 | Vatnajökull Glacier | Ice Cave Collapse: falling icicles and blocks of ice |
 | Crazy House | Moving Staircases: stairs that swing into new routes |
+| Vale da Lua | Flash Flood: the river rises and floods the low bridges |
 
 ---
 
@@ -1346,5 +1366,6 @@ Changes after Version 1.0 should be tracked as revisions rather than silently re
 | 3.3 | 2026-11-07 | Crazy House built at about 2.9 km: inside a giant hollow tree (Hang Nga Villa, Da Lat, Vietnam), staircases everywhere, bone arches, Rib Tunnel shortcut (§8.6b). It is Asia Cup race 2 (§2.2). The road stays flat; elevation is planned as a later engine upgrade. |
 | 3.4 | 2026-11-07 | Gardens by the Bay built at about 3.4 km: a night glass skyway 24 m above the jungle among glowing Supertrees, with open edges you can fall off, the Great Wrap hairpin, and the Cloud Forest walk shortcut (§8.6c). It is Asia Cup race 3, so all cups have three races (§2.2). Engine: elevated decks with their own collider and open edges (§8.7).
 | 3.5 | 2026-11-07 | Parque Quinta Normal Greenhouse built at about 3.1 km: Victorian iron-and-glass greenhouse in Santiago, wire mesh throughout, start in the barrel-vaulted main wing, a 310° roundabout round the Rotunda's checkerboard plinth, the Fern Wing shortcut (§8.6d). It starts the new South America Cup, locked for Grand Prix until its other two tracks exist (§2.2). |
+| 3.6 | 2026-11-08 | Vale da Lua built at about 3.1 km: Brazil's Valley of the Moon, smooth moon rock cut by moving water (a river and streams under four rock bridges, six waterfalls), an elevated road with two open rock shelves over creeks, and the Behind the Falls shortcut (§8.6e). It is South America Cup race 2 (§2.2). Track count corrected to eleven. |
 
-**End of Game Design Document — Version 3.5**
+**End of Game Design Document — Version 3.6**

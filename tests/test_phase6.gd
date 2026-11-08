@@ -18,6 +18,7 @@ const ARASHIYAMA := "res://scenes/tracks/arashiyama_circuit.tscn"
 const GLACIER := "res://scenes/tracks/vatnajokull_glacier.tscn"
 const CRAZY := "res://scenes/tracks/crazy_house.tscn"
 const GARDENS := "res://scenes/tracks/gardens_by_the_bay.tscn"
+const VALE := "res://scenes/tracks/vale_da_lua.tscn"
 
 var _passed: int = 0
 var _failed: int = 0
@@ -59,6 +60,7 @@ func _run_all() -> void:
 	await _run("shortcut: recovery and positions", _test_shortcut_recovery, _vegas_config(), false)
 	await _run("deep water recovers (Arashiyama)", _test_deep_water, _config(ARASHIYAMA, "Arashiyama Circuit"), false)
 	await _run("deep water recovers (Six Flags)", _test_deep_water, _config(SIX_FLAGS, "Six Flags New Orleans"), false)
+	await _run("deep water recovers (Vale da Lua)", _test_deep_water, _config(VALE, "Vale da Lua"), false)
 	await _run("falling off the skyway recovers (Gardens)", _test_skyway_fall, _config(GARDENS, "Gardens by the Bay"), false)
 	_test_menus_and_gp()
 	for track in [[VEGAS, "Vegas Overdrive"], [SIX_FLAGS, "Six Flags New Orleans"], [STACKS, "The Stacks"], [HOIA, "Hoia Baciu Run"],
@@ -475,7 +477,7 @@ func _test_menus_and_gp() -> void:
 func _test_build_times() -> void:
 	_current = "scenery build times"
 	print("- scenery build times")
-	for path in [VEGAS, SIX_FLAGS, STACKS, HOIA, CATACOMBS, ARASHIYAMA, GLACIER, CRAZY, GARDENS]:
+	for path in [VEGAS, SIX_FLAGS, STACKS, HOIA, CATACOMBS, ARASHIYAMA, GLACIER, CRAZY, GARDENS, VALE]:
 		var t0 := Time.get_ticks_msec()
 		var track := (load(path) as PackedScene).instantiate() as TrackCircuit
 		root.add_child(track)

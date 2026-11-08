@@ -74,7 +74,7 @@ func barrel(curve: Curve3D, closed: bool, d0: float, d1: float, half_width: floa
 	var length := curve.get_baked_length()
 	if closed and d1 < d0:
 		d1 += length
-	var segs := 12
+	var segs := 8
 	var prev: Array = []
 	var d := d0
 	while d <= d1 + 0.01:
@@ -127,7 +127,6 @@ func _bay(a: Array, b: Array, wall_h: float, missing: float, inside: Vector3, ca
 		var p1: Vector3 = b[side]
 		mesh_panel(p0, p1, 0.0, wall_h)
 		_beam(p0 + Vector3.UP * wall_h, p1 + Vector3.UP * wall_h, 0.14, 0.14)
-		_beam(p0 + Vector3.UP * 1.0, p1 + Vector3.UP * 1.0, 0.08, 0.08)
 	var arc_a: Array = a[2]
 	var arc_b: Array = b[2]
 	for k in arc_a.size() - 1:
@@ -136,7 +135,7 @@ func _bay(a: Array, b: Array, wall_h: float, missing: float, inside: Vector3, ca
 			var key := "glass_old" if roll < missing + 0.14 else "glass"
 			var c: Vector3 = (arc_a[k] + arc_b[k + 1]) * 0.5
 			s._quad(s._st(key, c), arc_a[k], arc_a[k + 1], arc_b[k + 1], arc_b[k], inside)
-		if k % 3 == 0:
+		if k % 4 == 2:
 			_beam(arc_a[k], arc_b[k], 0.08, 0.1)
 	if catwalk:
 		var top_a: Vector3 = arc_a[arc_a.size() / 2] + Vector3.UP * 0.2
@@ -145,7 +144,6 @@ func _bay(a: Array, b: Array, wall_h: float, missing: float, inside: Vector3, ca
 		for side in [-1.0, 1.0]:
 			var off: Vector3 = (top_b - top_a).cross(Vector3.UP).normalized() * 0.6 * side
 			_beam(top_a + off + Vector3.UP * 1.0, top_b + off + Vector3.UP * 1.0, 0.05, 0.05)
-			_beam(top_a + off, top_a + off + Vector3.UP * 1.0, 0.05, 0.05)
 
 
 func _mark_roof(p: Vector3, right: Vector3, half_width: float) -> void:
@@ -188,7 +186,7 @@ func dome(center: Vector3, radius: float, wall_h: float, rise: float, ribs: int 
 			# An opening: a lintel of mesh above the road.
 			mesh_panel(a0, a1, wall_h - 2.0, wall_h)
 	# Dome shell: latitude rows from the ring beam up to the drum.
-	var rows := 9
+	var rows := 7
 	var shell: Array = []
 	for k in rows + 1:
 		var t := float(k) / rows
@@ -320,8 +318,8 @@ func _ring(c: Vector3, r: float, w: float, h: float, n: int) -> void:
 # --- wire mesh ------------------------------------------------------------------------
 
 ## A wire-mesh fence along a polyline (track-local, on the ground): iron posts
-## every `spacing` metres and mesh panels from h0 to h1, with a top rail and a
-## small scroll on every other post. Segments whose posts can't stand (on a
+## every other panel (panels `spacing` metres wide) and mesh panels from h0
+## to h1, with a top rail. Segments whose posts can't stand (on a
 ## road) are left out; `skip` (a Callable taking a point) leaves out others.
 func fence(points: PackedVector3Array, h0: float, h1: float, spacing: float = 3.0, skip: Callable = Callable()) -> void:
 	var posts: Array[Vector3] = []
@@ -339,11 +337,11 @@ func fence(points: PackedVector3Array, h0: float, h1: float, spacing: float = 3.
 		if skip.is_valid() and (skip.call(a) or skip.call(b)):
 			continue
 		mesh_panel(a, b, h0, h1)
-		s.add_box("iron", Vector3(0.12, h1 + 0.25, 0.12), Transform3D(Basis.IDENTITY, a + Vector3.UP * (h1 + 0.25) * 0.5))
-		_beam(a + Vector3.UP * h1, b + Vector3.UP * h1, 0.07, 0.07)
 		if i % 2 == 0:
-			var curl := a + Vector3.UP * (h1 + 0.25)
-			s.add_box("iron", Vector3(0.05, 0.05, 0.4), Transform3D(Basis.looking_at((b - a).normalized(), Vector3.UP), curl + (b - a).normalized() * 0.2))
+			# A post every other panel, with the top rail over the next two.
+			s.add_box("iron", Vector3(0.12, h1 + 0.25, 0.12), Transform3D(Basis.IDENTITY, a + Vector3.UP * (h1 + 0.25) * 0.5))
+			var c := b if i + 2 >= posts.size() else posts[i + 2]
+			_beam(a + Vector3.UP * h1, c + Vector3.UP * h1, 0.07, 0.07)
 
 
 ## A vertical wire-mesh panel between two ground points, from h0 to h1.
@@ -382,7 +380,8 @@ func commit() -> void:
 
 # --- helpers ------------------------------------------------------------------------
 
-## An iron beam (box) from a to b, w wide and h deep.
+## An iron beam from a to b, w wide and h deep: four sides, no end caps
+## (they're never seen at these sizes), so 24 vertices instead of 36.
 func _beam(a: Vector3, b: Vector3, w: float, h: float) -> void:
 	var dir := b - a
 	var len := dir.length()
@@ -390,4 +389,13 @@ func _beam(a: Vector3, b: Vector3, w: float, h: float) -> void:
 		return
 	var fwd := dir / len
 	var up := Vector3.UP if absf(fwd.dot(Vector3.UP)) < 0.98 else Vector3.RIGHT
-	s.add_box("iron", Vector3(w, h, len), Transform3D(Basis.looking_at(fwd, up), (a + b) * 0.5))
+	var basis := Basis.looking_at(fwd, up)
+	var x := basis.x * w * 0.5
+	var y := basis.y * h * 0.5
+	var mid := (a + b) * 0.5
+	var st := s._st("iron", mid)
+	var corners := [x + y, -x + y, -x - y, x - y]
+	for i in 4:
+		var c0: Vector3 = corners[i]
+		var c1: Vector3 = corners[(i + 1) % 4]
+		s._quad(st, a + c0, a + c1, b + c1, b + c0, mid)
