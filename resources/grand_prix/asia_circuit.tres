@@ -6,7 +6,7 @@
 script = ExtResource("1_gp")
 id = "asia_circuit"
 display_name = "Asia Cup"
-emblem = "japan"
+emblem = "asia"
 track_names = PackedStringArray("Arashiyama Circuit", "Crazy House", "Gardens by the Bay")
 locations = PackedStringArray("Kyoto, Japan", "Hang Nga Villa, Da Lat, Vietnam", "Marina Bay, Singapore")
 track_scenes = PackedStringArray("res://scenes/tracks/arashiyama_circuit.tscn", "res://scenes/tracks/crazy_house.tscn", "res://scenes/tracks/gardens_by_the_bay.tscn")

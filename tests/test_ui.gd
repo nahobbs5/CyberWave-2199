@@ -182,8 +182,12 @@ func _test_cups() -> void:
 	var europe := GrandPrixData.cup_by_path(GrandPrixData.CUPS[1])
 	var asia := GrandPrixData.cup_by_path(GrandPrixData.CUPS[2])
 	_check(europe.display_name == "Europe Cup" and europe.emblem == "europe", "Europe Cup with the Europe trophy")
-	_check(asia.display_name == "Asia Cup" and asia.emblem == "japan" and asia.track_names == PackedStringArray(["Arashiyama Circuit", "Crazy House", "Gardens by the Bay"]),
-			"Asia Cup (Arashiyama, Crazy House, Gardens by the Bay) with the rising-sun trophy")
+	_check(asia.display_name == "Asia Cup" and asia.emblem == "asia" and asia.track_names == PackedStringArray(["Arashiyama Circuit", "Crazy House", "Gardens by the Bay"]),
+			"Asia Cup (Arashiyama, Crazy House, Gardens by the Bay) with a map of Asia")
+	var asia_ok := true
+	for shape in TrophyIcon.asia_polygons(Rect2(0, 0, 100, 60)):
+		asia_ok = asia_ok and shape.size() >= 5 and not Geometry2D.triangulate_polygon(shape).is_empty()
+	_check(asia_ok and TrophyIcon.asia_polygons(Rect2(0, 0, 100, 60)).size() == 6, "Asia map: mainland, Japan (2), Sri Lanka, Sumatra, Borneo")
 	var europe_ok := true
 	for shape in TrophyIcon.europe_polygons(Rect2(0, 0, 100, 60)):
 		europe_ok = europe_ok and shape.size() >= 5 and not Geometry2D.triangulate_polygon(shape).is_empty()
@@ -195,9 +199,24 @@ func _test_cups() -> void:
 	var cups := (load("res://scenes/menu/cup_select.tscn") as PackedScene).instantiate() as CupSelect
 	root.add_child(cups)
 	await _frames(2)
-	var trophy := cups.cards[0].find_child("Trophy", true, false) as TrophyIcon
-	_check(trophy != null and trophy.emblem == "usa" and not trophy.locked, "the American card shows its trophy")
+	var badge := cups.cards[0].find_child("Badge", true, false) as CupBadge
+	_check(cups.cards.size() == GrandPrixData.CUPS.size() and badge != null and badge.emblem == "usa" and badge.selected,
+			"a badge per cup, the American one selected")
 	_check(cups.cards[0].has_focus(), "first cup focused")
+	var trophy := cups.board.find_child("Trophy", true, false) as TrophyIcon
+	_check(trophy != null and trophy.emblem == "usa", "its trophy and races show below")
+	cups.cards[2].grab_focus()
+	await _frames(2)
+	var shown: Array = cups.board.race_cards[2].filter(func(c: Button) -> bool: return c.is_visible_in_tree())
+	_check(cups.board.selected == 2 and shown.size() == 3, "moving to the Asia badge previews its 3 races (%d)" % shown.size())
+	cups.open(2)
+	await _frames(1)
+	_check(cups.board.confirm_button.has_focus(), "opening a cup focuses START GRAND PRIX")
+	var sa := GrandPrixData.CUPS.find("res://resources/grand_prix/south_america_circuit.tres")
+	if sa >= 0:
+		cups.board.preview(sa)
+		_check(cups.board.confirm_button.disabled and (cups.cards[sa].find_child("Badge", true, false) as CupBadge).locked,
+				"a cup locked for Grand Prix can't be confirmed")
 	cups.queue_free()
 	# Versus (Mario Kart style): race setup first, then every cup's tracks on one screen.
 	GameSession.setup_mode = RaceConfig.Mode.VERSUS
@@ -223,10 +242,15 @@ func _test_cups() -> void:
 		var thumb := card.find_child("Thumbnail", true, false) as TrackThumbnail
 		outlines_ok = outlines_ok and thumb != null and thumb.outline.size() >= 3
 	_check(outlines_ok, "every built track's card has its outline")
-	var down := tracks.cards[0].get_node(tracks.cards[0].focus_neighbor_bottom)
-	_check(down == tracks.cards[3], "down moves from the American Cup row to the Europe Cup row")
-	var asia_card := tracks.cards[tracks.track_names.find("Arashiyama Circuit")]
-	_check(tracks.cards[3].get_node(tracks.cards[3].focus_neighbor_bottom) == asia_card, "and on down to the Asia Cup")
+	_check(tracks.board.badges.size() == GrandPrixData.CUPS.size() + 1 and tracks.board.is_random(GrandPrixData.CUPS.size()),
+			"a badge per cup, then the Random badge")
+	tracks.board.open(1)
+	await _frames(1)
+	_check(tracks.cards[3].has_focus() and tracks.cards[3].is_visible_in_tree() and not tracks.cards[0].is_visible_in_tree(),
+			"opening the Europe Cup focuses its first race")
+	tracks.board.open(GrandPrixData.CUPS.size())
+	await _frames(1)
+	_check(tracks.random_card.has_focus(), "the Random badge opens the RANDOM card")
 	var glacier_at := tracks.track_names.find("Vatnajökull Glacier")
 	_check(glacier_at == 5 and not tracks.cards[glacier_at].disabled, "the glacier is the Europe Cup's third track")
 	tracks.pick(0)

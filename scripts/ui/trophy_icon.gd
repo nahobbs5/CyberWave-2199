@@ -3,7 +3,7 @@ extends Control
 ## A cup's trophy, drawn in code: gold bowl, two handles, stem and a
 ## two-step base, with the cup's emblem on the bowl. "usa" is a silhouette
 ## of the lower 48 states; "europe" a map of Europe (with Britain, Ireland
-## and Iceland); "south_america" the continent; "japan" a rising sun; "globe" a little globe. Locked cups
+## and Iceland); "south_america" the continent; "asia" a map of Asia; "japan" a rising sun; "globe" a little globe. Locked cups
 ## are grey with a padlock.
 
 const GOLD := Color(1.0, 0.8, 0.22)
@@ -82,6 +82,47 @@ const SOUTH_AMERICA_LON_LAT := [
 
 const SUN_RED := Color(0.85, 0.12, 0.15)
 
+## Asia as (longitude, latitude): the mainland from the Bosporus and Arabia
+## round India and Indochina to the Bering Strait, then Japan (Honshu with
+## Kyushu and Shikoku, and Hokkaido), Sri Lanka, Sumatra and Borneo.
+## Simplified; for an icon.
+const ASIA_LON_LAT: Array = [
+	[Vector2(29.0, 41.1), Vector2(31.0, 41.2), Vector2(36.0, 41.7), Vector2(41.5, 41.5), Vector2(47.0, 43.0),
+	Vector2(51.5, 47.0), Vector2(59.0, 52.0), Vector2(60.0, 60.0), Vector2(65.0, 69.5), Vector2(70.0, 73.0),
+	Vector2(80.0, 73.5), Vector2(95.0, 76.0), Vector2(105.0, 77.7), Vector2(113.0, 73.5), Vector2(130.0, 71.0),
+	Vector2(140.0, 72.5), Vector2(150.0, 71.0), Vector2(160.0, 69.5), Vector2(170.0, 70.0), Vector2(180.0, 68.5),
+	Vector2(180.0, 65.0), Vector2(177.0, 64.5), Vector2(170.0, 60.0), Vector2(163.0, 59.5), Vector2(160.0, 61.0),
+	Vector2(163.0, 57.0), Vector2(156.5, 51.0), Vector2(156.0, 57.0), Vector2(152.0, 59.0), Vector2(143.0, 59.0),
+	Vector2(137.0, 54.0), Vector2(141.0, 52.0), Vector2(140.0, 48.0), Vector2(135.0, 43.0), Vector2(131.0, 42.6),
+	Vector2(129.0, 40.5), Vector2(129.5, 35.2), Vector2(126.5, 34.5), Vector2(126.0, 37.5), Vector2(124.0, 39.8),
+	Vector2(121.5, 40.9), Vector2(119.0, 39.2), Vector2(118.5, 37.8), Vector2(122.5, 37.0), Vector2(120.0, 35.0),
+	Vector2(121.8, 31.0), Vector2(122.0, 29.0), Vector2(119.5, 25.5), Vector2(116.0, 22.8), Vector2(110.5, 21.0),
+	Vector2(108.0, 21.5), Vector2(106.0, 19.5), Vector2(109.0, 15.0), Vector2(109.0, 11.5), Vector2(105.0, 8.6),
+	Vector2(103.0, 10.5), Vector2(100.5, 13.5), Vector2(99.5, 10.0), Vector2(100.3, 6.5), Vector2(103.5, 3.5),
+	Vector2(104.2, 1.4), Vector2(103.5, 1.3), Vector2(101.0, 2.8), Vector2(100.3, 5.5), Vector2(98.3, 8.0),
+	Vector2(98.5, 12.0), Vector2(97.5, 16.5), Vector2(94.5, 16.0), Vector2(94.2, 19.5), Vector2(92.0, 21.5),
+	Vector2(90.0, 22.0), Vector2(88.0, 22.0), Vector2(86.5, 20.0), Vector2(84.5, 18.5), Vector2(80.3, 15.5),
+	Vector2(80.2, 13.0), Vector2(79.8, 10.3), Vector2(77.5, 8.1), Vector2(76.0, 10.5), Vector2(74.8, 13.0),
+	Vector2(73.0, 17.5), Vector2(72.8, 21.0), Vector2(70.0, 22.5), Vector2(68.5, 23.5), Vector2(66.5, 25.4),
+	Vector2(61.5, 25.2), Vector2(57.5, 25.7), Vector2(56.4, 27.1), Vector2(54.0, 26.7), Vector2(51.0, 27.9),
+	Vector2(48.5, 30.0), Vector2(47.9, 29.4), Vector2(50.0, 26.8), Vector2(51.6, 25.9), Vector2(52.0, 24.0),
+	Vector2(54.5, 24.3), Vector2(56.0, 24.8), Vector2(56.6, 24.2), Vector2(58.8, 23.5), Vector2(59.8, 22.5),
+	Vector2(57.8, 19.0), Vector2(55.0, 17.0), Vector2(52.0, 16.0), Vector2(48.0, 14.0), Vector2(45.0, 12.8),
+	Vector2(43.3, 12.6), Vector2(42.8, 15.0), Vector2(41.0, 19.0), Vector2(39.0, 21.5), Vector2(37.0, 25.5),
+	Vector2(35.0, 28.0), Vector2(34.5, 29.5), Vector2(34.3, 31.3), Vector2(35.0, 33.0), Vector2(35.9, 35.5),
+	Vector2(36.0, 36.7), Vector2(32.0, 36.3), Vector2(30.0, 36.2), Vector2(28.0, 36.8), Vector2(26.5, 38.0),
+	Vector2(26.3, 40.0)],
+	[Vector2(130.9, 33.9), Vector2(132.5, 35.4), Vector2(136.0, 35.9), Vector2(139.5, 38.2), Vector2(140.0, 40.5),
+	Vector2(141.4, 41.4), Vector2(141.9, 39.0), Vector2(140.9, 36.9), Vector2(140.8, 35.1), Vector2(138.8, 34.6),
+	Vector2(137.0, 34.6), Vector2(135.2, 33.5), Vector2(133.3, 33.3), Vector2(131.5, 31.2), Vector2(130.2, 31.5)],
+	[Vector2(140.0, 42.0), Vector2(141.5, 45.4), Vector2(145.5, 43.3), Vector2(143.2, 42.0), Vector2(140.6, 41.8)],
+	[Vector2(79.8, 9.8), Vector2(81.8, 7.5), Vector2(81.3, 6.2), Vector2(80.1, 6.0), Vector2(79.7, 8.0)],
+	[Vector2(95.3, 5.6), Vector2(98.0, 4.0), Vector2(103.8, -1.0), Vector2(106.0, -5.8), Vector2(104.5, -5.9),
+	Vector2(101.0, -2.5), Vector2(98.6, 1.8)],
+	[Vector2(109.0, 1.5), Vector2(111.5, 2.8), Vector2(116.0, 7.0), Vector2(119.0, 5.0), Vector2(117.5, 1.0),
+	Vector2(116.0, -3.8), Vector2(111.0, -3.5), Vector2(109.5, -1.0)],
+]
+
 var emblem: String = ""
 var locked: bool = false
 
@@ -107,6 +148,11 @@ static func south_america_polygon(rect: Rect2) -> PackedVector2Array:
 ## Europe's outlines (mainland, Britain, Ireland, Iceland) fitted into `rect`.
 static func europe_polygons(rect: Rect2) -> Array[PackedVector2Array]:
 	return outline_polygons(EUROPE_LON_LAT, rect, 52.0)
+
+
+## Asia's outlines (mainland, Japan, Sri Lanka, Sumatra, Borneo) fitted into `rect`.
+static func asia_polygons(rect: Rect2) -> Array[PackedVector2Array]:
+	return outline_polygons(ASIA_LON_LAT, rect, 35.0)
 
 
 ## Map outlines given as (longitude, latitude) lists, projected (x = lon *
@@ -172,29 +218,37 @@ func _draw() -> void:
 	draw_rect(Rect2(o + Vector2(w * 0.26, w * 0.82), Vector2(w * 0.48, w * 0.025)), gold)
 	# Emblem on the bowl.
 	var badge := Rect2(o + Vector2(w * 0.265, w * 0.14), Vector2(w * 0.47, w * 0.32))
+	var fill := EMBLEM_BG if not locked else Color(0.25, 0.25, 0.3)
+	draw_emblem(self, emblem, badge, fill, light, maxf(1.0, w * 0.01), locked)
+	if locked:
+		var lc := o + Vector2(w * 0.5, w * 0.52)
+		draw_arc(lc - Vector2(0, w * 0.06), w * 0.07, PI, TAU, 16, Color(0.9, 0.9, 0.95), w * 0.025, true)
+		draw_rect(Rect2(lc - Vector2(w * 0.1, w * 0.06), Vector2(w * 0.2, w * 0.15)), Color(0.9, 0.9, 0.95))
+
+
+## Draws a cup's emblem into `rect` on any CanvasItem (trophies, cup badges):
+## a map filled with `fill` and outlined with `line`, or the rising sun or
+## globe.
+static func draw_emblem(ci: CanvasItem, emblem: String, rect: Rect2, fill: Color, line: Color, line_w: float,
+		locked: bool = false) -> void:
+	var inner := rect.grow(-line_w * 1.5)
+	var shapes: Array[PackedVector2Array] = []
 	match emblem:
 		"usa":
-			var poly := usa_polygon(badge.grow(-w * 0.015))
-			var fill := EMBLEM_BG if not locked else Color(0.25, 0.25, 0.3)
-			draw_colored_polygon(poly, fill)
-			draw_polyline(poly + PackedVector2Array([poly[0]]), light, maxf(1.0, w * 0.01), true)
+			shapes = [usa_polygon(inner)]
 		"south_america":
-			var poly := south_america_polygon(badge.grow(-w * 0.015))
-			var fill := EMBLEM_BG if not locked else Color(0.25, 0.25, 0.3)
-			draw_colored_polygon(poly, fill)
-			draw_polyline(poly + PackedVector2Array([poly[0]]), light, maxf(1.0, w * 0.01), true)
+			shapes = [south_america_polygon(inner)]
 		"europe":
-			var fill := EMBLEM_BG if not locked else Color(0.25, 0.25, 0.3)
-			for poly in europe_polygons(badge.grow(-w * 0.015)):
-				draw_colored_polygon(poly, fill)
-				draw_polyline(poly + PackedVector2Array([poly[0]]), light, maxf(1.0, w * 0.008), true)
+			shapes = europe_polygons(inner)
+		"asia":
+			shapes = asia_polygons(inner)
 		"japan":
 			# Rising sun: red rays around a red disc on white.
-			var c := badge.get_center() + Vector2(0, badge.size.y * 0.08)
-			var r := minf(badge.size.x, badge.size.y) * 0.5
+			var c := rect.get_center() + Vector2(0, rect.size.y * 0.08)
+			var r := minf(rect.size.x, rect.size.y) * 0.5
 			var white := Color(0.97, 0.96, 0.92) if not locked else Color(0.75, 0.75, 0.78)
 			var red := SUN_RED if not locked else Color(0.4, 0.4, 0.45)
-			draw_circle(c, r, white)
+			ci.draw_circle(c, r, white)
 			var rays := 16
 			for i in rays:
 				if i % 2 == 1:
@@ -205,27 +259,25 @@ func _draw() -> void:
 				for k in 5:
 					var a := lerpf(a0, a1, k / 4.0)
 					ray.append(c + Vector2(cos(a), sin(a)) * r)
-				draw_colored_polygon(ray, red)
-			draw_circle(c, r * 0.38, red)
-			draw_arc(c, r, 0.0, TAU, 32, light, maxf(1.0, w * 0.01), true)
+				ci.draw_colored_polygon(ray, red)
+			ci.draw_circle(c, r * 0.38, red)
+			ci.draw_arc(c, r, 0.0, TAU, 32, line, line_w, true)
 		"globe":
-			var c := badge.get_center()
-			var r := minf(badge.size.x, badge.size.y) * 0.5
-			draw_circle(c, r, EMBLEM_BG if not locked else Color(0.25, 0.25, 0.3))
-			var line_w := maxf(1.0, w * 0.01)
-			draw_arc(c, r, 0.0, TAU, 32, light, line_w, true)
-			draw_line(c - Vector2(r, 0), c + Vector2(r, 0), light, line_w, true)
+			var c := rect.get_center()
+			var r := minf(rect.size.x, rect.size.y) * 0.5
+			ci.draw_circle(c, r, fill)
+			ci.draw_arc(c, r, 0.0, TAU, 32, line, line_w, true)
+			ci.draw_line(c - Vector2(r, 0), c + Vector2(r, 0), line, line_w, true)
 			for k in [0.45, 0.85]:
 				var pts := PackedVector2Array()
 				for i in 17:
 					var a := -PI * 0.5 + PI * float(i) / 16.0
 					pts.append(c + Vector2(cos(a) * r * k, sin(a) * r))
-				draw_polyline(pts, light, line_w, true)
+				ci.draw_polyline(pts, line, line_w, true)
 				var mirrored := PackedVector2Array()
 				for p in pts:
 					mirrored.append(Vector2(2.0 * c.x - p.x, p.y))
-				draw_polyline(mirrored, light, line_w, true)
-	if locked:
-		var lc := o + Vector2(w * 0.5, w * 0.52)
-		draw_arc(lc - Vector2(0, w * 0.06), w * 0.07, PI, TAU, 16, Color(0.9, 0.9, 0.95), w * 0.025, true)
-		draw_rect(Rect2(lc - Vector2(w * 0.1, w * 0.06), Vector2(w * 0.2, w * 0.15)), Color(0.9, 0.9, 0.95))
+				ci.draw_polyline(mirrored, line, line_w, true)
+	for poly in shapes:
+		ci.draw_colored_polygon(poly, fill)
+		ci.draw_polyline(poly + PackedVector2Array([poly[0]]), line, line_w * (0.8 if shapes.size() > 1 else 1.0), true)

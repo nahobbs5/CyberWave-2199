@@ -1,5 +1,5 @@
 # CYBERWAVE 2199
-## Game Design Document — Version 3.6
+## Game Design Document — Version 3.7
 
 **Status:** Development Baseline  
 **Engine:** Godot 4  
@@ -57,7 +57,7 @@ The initial release focuses on polished single-player racing. Additional feature
 A race, or a set of races, against seven AI opponents. Set up Mario Kart style:
 
 1. Race setup: vehicle, race type (Standard or Elimination), **number of races** (1, 2, 3, 4, 6, 8, 12 or 16), lap count (three by default), Easy / Normal / Hard AI, weapons on or off.
-2. Track screen: every cup's tracks on one screen, one row per cup. Pick any of the eight tracks, or the **RANDOM** card below them for a random built track (in a series, one not raced yet while any are left).
+2. Cup screen (Versus): a row of cup badges plus a "?" Random badge. Moving across the badges previews each cup's races; opening a cup moves into its race cards, and picking one races it. The Random badge opens a **RANDOM** card for a random built track from any cup (in a series, one not raced yet while any are left). Built tracks of a cup that's locked for Grand Prix can be raced here.
 
 With more than one race, the track screen comes back before each race (showing "RACE 2 OF 4" and the points so far). Points and the next grid work like a Grand Prix (§2.2). The final results name the series winner. A series isn't saved: quitting part-way ends it. Each race pays its normal coins, with no cup bonus.
 
@@ -67,7 +67,7 @@ The race concludes when the player finishes or is otherwise removed from competi
 
 ## 2.2 Grand Prix
 
-Three cups, each a championship of its tracks raced back to back (three races each). As in Mario Kart, Grand Prix and Versus both start by choosing a cup; Versus then picks one of that cup's tracks.
+Three cups, each a championship of its tracks raced back to back (three races each). As in Mario Kart, Grand Prix and Versus both pick from the same cup screen: a row of round cup badges (each a gold-rimmed medallion in the cup's colours with its map, the selected one larger and glowing) above a panel that previews the focused cup's races (outline, name, location, best time). Opening a cup (click, Enter or A) moves into the panel. In Grand Prix you confirm the cup with START GRAND PRIX (a cup locked for Grand Prix shows "coming soon" and can't be confirmed). In Versus you pick one of its races (§2.1). Back from the panel returns to the badges.
 
 ### American Cup (trophy: a map of the USA)
 
@@ -85,7 +85,7 @@ Three cups, each a championship of its tracks raced back to back (three races ea
 | 2 | Catacombs Descent | Paris, France |
 | 3 | Vatnajökull Glacier | Vatnajökull, Iceland |
 
-### Asia Cup (trophy: a rising sun)
+### Asia Cup (trophy: a map of Asia)
 
 | Race | Track | Location |
 |---|---|---|
@@ -192,7 +192,7 @@ Two to four players on one PC, Mario Kart style. The title menu offers **Single 
    - Player 1 drives their Garage loadout. Players 2–4 drive the stock car painted in their player colour (P1 cyan, P2 magenta, P3 gold, P4 green).
    - Everyone can set a license plate (§9.5) with Y (gamepad) or Tab (keyboard). The keyboard player types; gamepad players use a letter picker (up / down changes the letter, left / right moves, X deletes, A done). Player 1's plate is saved to their profile; players 2–4 default to "P2"–"P4".
 3. **Race setup.** Mode (Grand Prix or Versus); in Versus, race type (Standard or Elimination) and number of races; NPCs on or off (the computer-driven cars: on fills the grid to eight, off races the humans only; Elimination needs NPCs); NPC difficulty (shown only with NPCs on); laps; weapons. A panel explains the chosen mode and race type, including how Elimination knocks cars out.
-   - Grand Prix goes to the cup screen. Versus goes to the all-cups track screen (§2.1), before every race of the set.
+   - Grand Prix goes to the cup screen. Versus goes to the cup screen to pick a race (§2.1), before every race of the set.
 
 Leaving a race, or finishing a set, returns to step 2 with the same players joined.
 
@@ -926,7 +926,7 @@ The game opens on a title menu: Single Player, Multiplayer (§2.4), Settings, Cr
 
 ## 11.3 Race Setup
 
-Grand Prix: cup screen, then race setup. Versus: race setup first (including the number of races), then the all-cups track screen (§2.1).
+Grand Prix: cup screen, then race setup. Versus: race setup first (including the number of races), then the cup screen to pick a race (§2.1).
 
 - Championship (Grand Prix) or number of races (Versus)
 - Vehicle selection
@@ -1367,5 +1367,6 @@ Changes after Version 1.0 should be tracked as revisions rather than silently re
 | 3.4 | 2026-11-07 | Gardens by the Bay built at about 3.4 km: a night glass skyway 24 m above the jungle among glowing Supertrees, with open edges you can fall off, the Great Wrap hairpin, and the Cloud Forest walk shortcut (§8.6c). It is Asia Cup race 3, so all cups have three races (§2.2). Engine: elevated decks with their own collider and open edges (§8.7).
 | 3.5 | 2026-11-07 | Parque Quinta Normal Greenhouse built at about 3.1 km: Victorian iron-and-glass greenhouse in Santiago, wire mesh throughout, start in the barrel-vaulted main wing, a 310° roundabout round the Rotunda's checkerboard plinth, the Fern Wing shortcut (§8.6d). It starts the new South America Cup, locked for Grand Prix until its other two tracks exist (§2.2). |
 | 3.6 | 2026-11-08 | Vale da Lua built at about 3.1 km: Brazil's Valley of the Moon, smooth moon rock cut by moving water (a river and streams under four rock bridges, six waterfalls), an elevated road with two open rock shelves over creeks, and the Behind the Falls shortcut (§8.6e). It is South America Cup race 2 (§2.2). Track count corrected to eleven. |
+| 3.7 | 2026-11-08 | Mario Kart style cup screen for both modes: a row of cup badges (gold-rimmed medallions with each cup's map) above a panel of the selected cup's races; confirm the cup for Grand Prix, pick a race for Versus, plus a Random badge (§2.1, §2.2). The Asia Cup's emblem is now a map of Asia. |
 
-**End of Game Design Document — Version 3.6**
+**End of Game Design Document — Version 3.7**
