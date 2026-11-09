@@ -33,8 +33,11 @@ func _run_all() -> void:
 	_test_rival_cars_rules()
 	_test_slipstream_rules()
 	await _test_credits()
+	await _test_settings_screen()
+	await _test_garage_screen()
 	await _test_start_menus()
 	await _test_cups()
+	await _test_neon_setup()
 	_test_stacks_rename()
 	await _test_practice_minimap()
 	await _test_loading_card()
@@ -210,8 +213,88 @@ func _test_credits() -> void:
 	_check(credits.back_button != null and credits.back_button.has_focus(), "Back is focused")
 	var labels := credits.find_children("*", "Label", true, false).filter(func(n: Node) -> bool: return (n as Label).text.contains("Poly Haven"))
 	_check(not labels.is_empty(), "the credits are on screen")
+	_check(credits.music_grid != null and credits.music_grid.get_child_count() == Credits.MUSIC.size() * 4,
+			"music table has a row per song")
+	_check(credits.layout.street != null and credits.layout.title_label.text == "CREDITS", "neon frame with the street behind")
 	credits.queue_free()
 	await process_frame
+
+
+func _test_garage_screen() -> void:
+	_current = "garage screen"
+	print("- garage screen and the garage room")
+	var garage := (load("res://scenes/menu/garage.tscn") as PackedScene).instantiate() as Garage
+	root.add_child(garage)
+	await _frames(2)
+	_check(garage._preview.size.is_equal_approx(garage.size) and garage._preview.detail == VehiclePreview.Detail.FULL,
+			"the garage room fills the screen")
+	_check(garage.cosmetics_tab.is_lit() and not garage.info_tab.is_lit() and not garage._info_panel.visible,
+			"opens on COSMETICS")
+	garage.info_tab.pressed.emit()
+	await _frames(1)
+	var info := garage.info_text()
+	_check(garage.info_open and garage.info_tab.is_lit() and garage._info_panel.visible and not garage._cosmetics_panel.visible,
+			"INFO tab opens the car's details")
+	_check(info.contains(garage.vehicle().display_name.to_upper()) and info.contains("km/h") and info.contains("EQUIPPED"),
+			"INFO lists the name, specs and what's equipped")
+	garage.select_vehicle(garage.vehicle_index + 1)
+	await _frames(1)
+	_check(garage.info_text().contains(garage.vehicle().display_name.to_upper()), "INFO follows the car")
+	garage.cosmetics_tab.pressed.emit()
+	_check(not garage.info_open and garage._cosmetics_panel.visible, "COSMETICS comes back")
+	garage.queue_free()
+	await process_frame
+	var full := VehiclePreview.new()
+	var lite := VehiclePreview.new()
+	lite.detail = VehiclePreview.Detail.LITE
+	root.add_child(full)
+	root.add_child(lite)
+	await process_frame
+	_check(lite.light_count() < full.light_count() and lite.room_mesh_count() < full.room_mesh_count(),
+			"LITE garage has fewer lights (%d < %d) and meshes (%d < %d)" % [lite.light_count(), full.light_count(),
+			lite.room_mesh_count(), full.room_mesh_count()])
+	full.queue_free()
+	lite.queue_free()
+	GameSession.mp_devices = PackedInt32Array([-1, 0])
+	var cars := (load("res://scenes/menu/multiplayer_cars.tscn") as PackedScene).instantiate() as MultiplayerCars
+	root.add_child(cars)
+	await _frames(2)
+	_check(cars.previews.size() == 2 and cars.previews.all(func(p: VehiclePreview) -> bool: return p.detail == VehiclePreview.Detail.LITE),
+			"split-screen car cards use the LITE garage")
+	cars.queue_free()
+	GameSession.mp_devices = PackedInt32Array()
+	GameSession.split_screen = false
+	await process_frame
+	_fresh()
+
+
+func _test_settings_screen() -> void:
+	_current = "settings screen"
+	print("- settings screen")
+	var settings := (load("res://scenes/menu/settings_menu.tscn") as PackedScene).instantiate() as SettingsMenu
+	root.add_child(settings)
+	await _frames(2)
+	_check(settings._first.has_focus() and not settings.controls_tab_lit(), "opens on HUD scale with DISPLAY & AUDIO lit")
+	var rb := InputEventJoypadButton.new()
+	rb.button_index = JOY_BUTTON_RIGHT_SHOULDER
+	rb.pressed = true
+	settings._unhandled_input(rb)
+	await _frames(1)
+	var focus := settings.get_viewport().gui_get_focus_owner()
+	_check(focus == settings._first_binding and settings.controls_tab_lit(), "RB jumps to the controls and lights CONTROLS")
+	settings.display_tab.pressed.emit()
+	await _frames(1)
+	_check(settings._first.has_focus() and not settings.controls_tab_lit(), "the DISPLAY & AUDIO tab jumps back")
+	var was := GameSettings.motion_blur
+	settings._motion_blur.button_pressed = not was
+	_check(GameSettings.motion_blur == not was, "motion blur toggle applies")
+	GameSettings.reset_values()
+	GameSettings.load_settings()
+	_check(GameSettings.motion_blur == not was, "and is saved")
+	_check(SettingsMenu._title_case("Trick (off a ramp)") == "Trick (Off a Ramp)", "action names in title case")
+	settings.queue_free()
+	await process_frame
+	_fresh()
 
 
 func _test_cups() -> void:
@@ -303,6 +386,86 @@ func _test_cups() -> void:
 	GameSession.cup_path = ""
 	GameSession.track_name = ""
 	GameSession.versus_template = null
+	await process_frame
+
+
+## The neon race setup and cup screens ("Neon Versus Race Setup UI.png",
+## "Cyberwave 2199_ Europe Cup Grand Prix.png").
+func _test_neon_setup() -> void:
+	_current = "neon setup"
+	GameSession.setup_mode = RaceConfig.Mode.VERSUS
+	var setup := (load("res://scenes/menu/race_setup.tscn") as PackedScene).instantiate() as RaceSetup
+	root.add_child(setup)
+	await _frames(2)
+	_check(setup._laps is NeonStepper and setup._races is NeonStepper and setup._weapons is NeonToggle,
+			"settings are < value > steppers and an ON / OFF toggle")
+	var emitted := [-1]
+	setup._laps.item_selected.connect(func(i: int) -> void: emitted[0] = i)
+	setup._laps.selected = 2
+	setup._laps.step(1)
+	_check(setup._laps.selected == 3 and emitted[0] == 3 and setup._laps.value_text() == "4", "stepping right picks the next value")
+	setup._laps.step(-5)
+	_check(setup._laps.selected == 7, "and wraps around at the ends (%d)" % setup._laps.selected)
+	var right := InputEventAction.new()
+	right.action = &"ui_right"
+	right.pressed = true
+	setup._races.selected = 0
+	setup._races.grab_focus()
+	setup._races._gui_input(right)
+	_check(setup._races.selected == 1 and setup._summary.text == "VERSUS  ·  2 RACES", "right on a focused row steps it (%s)" % setup._summary.text)
+	setup._weapons.button_pressed = false
+	_check(not setup.make_config().weapons_enabled, "Items OFF turns weapons off")
+	_check(setup.layout.title_label.text == "VERSUS - RACE SETUP", "titled VERSUS - RACE SETUP")
+	setup._weapons.button_pressed = true
+	setup.queue_free()
+	await process_frame
+	GameSession.setup_mode = RaceConfig.Mode.GRAND_PRIX
+	GameSession.cup_path = GrandPrixData.CUPS[1]
+	setup = (load("res://scenes/menu/race_setup.tscn") as PackedScene).instantiate() as RaceSetup
+	root.add_child(setup)
+	await _frames(2)
+	_check(setup._race_type == null and setup._races == null and not setup._laps_row.visible
+			and setup._summary.text == "EUROPE CUP", "Grand Prix setup: the cup's banner, no race type, races or laps")
+	_check((setup._start as NeonMenuButton).text == "Start Grand Prix", "and a Start Grand Prix button")
+	setup.open_garage()
+	_check(GameSession.garage_return == GameSession.RACE_SETUP_SCENE, "Y / G opens the garage and remembers to come back")
+	GameSession.back_from_garage(self)
+	_check(GameSession.garage_return == GameSession.MAIN_MENU_SCENE and GameSession.setup_mode == RaceConfig.Mode.GRAND_PRIX,
+			"the garage's Back returns to the setup once")
+	setup.queue_free()
+	await process_frame
+	GameSession.cup_path = ""
+
+	var cups := (load("res://scenes/menu/cup_select.tscn") as PackedScene).instantiate() as CupSelect
+	root.add_child(cups)
+	await _frames(2)
+	var start := cups.board.selected
+	cups.board.next_arrow.pressed.emit()
+	_check(cups.board.selected == (start + 1) % cups.cards.size(), "the > arrow moves to the next cup")
+	cups.board.prev_arrow.pressed.emit()
+	cups.board.prev_arrow.pressed.emit()
+	_check(cups.board.selected == posmod(start - 1, cups.cards.size()), "and < back past it")
+	_check(not cups.board.is_ancestor_of(cups.board.confirm_button) and cups.board.confirm_button is SetupWidgets.GoldAction,
+			"START GRAND PRIX is the gold button at the bottom of the screen")
+	cups.board.open(0)
+	await _frames(1)
+	_check(cups.board.confirm_button.has_focus(), "opening a cup still focuses it")
+	_check(cups.board.handle_back() and cups.cards[0].has_focus(), "Back from it returns to the cup card")
+	var vegas := cups.board.race_cards[0][0] as TrackCard
+	_check(vegas.has_photo() == (TrackCard.photo_path("res://scenes/tracks/vegas_overdrive.tscn") != ""),
+			"a race card shows the track's screenshot when there is one")
+	var photos_ok := true
+	for card: TrackCard in cups.board.flat_cards:
+		if card.disabled:
+			continue
+		var thumb := card.find_child("Thumbnail", true, false) as TrackThumbnail
+		photos_ok = photos_ok and thumb != null and thumb.outline.size() >= 3 and card.number > 0
+	_check(photos_ok, "every built card has its number and outline (mini map or fallback)")
+	var shut := GrandPrixData.CUPS.find("res://resources/grand_prix/south_america_circuit.tres")
+	if shut >= 0:
+		var art := cups.cards[shut].find_child("Badge", true, false) as CupBadge
+		_check(art.locked and art.title == "SOUTH AMERICA CUP", "the locked cup's card is titled and padlocked")
+	cups.queue_free()
 	await process_frame
 
 

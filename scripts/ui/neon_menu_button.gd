@@ -19,6 +19,12 @@ var description: String = ""
 ## out a little at each row).
 var lean: float = 0.0
 var font_size: int = 30
+## A second icon drawn after the first (the Settings tabs).
+var extra_icon_kind: String = ""
+## Draw the ">>" on the lit button's right end.
+var chevrons: bool = true
+## Tabs: when set (true / false) this, not focus, decides the gold look.
+var lit_override: Variant = null
 
 var _font: Font
 
@@ -40,7 +46,7 @@ func _init(label_text: String = "", kind: String = "", info: String = "") -> voi
 		add_theme_color_override(c, Color(0, 0, 0, 0))
 	_font = UIStyle.slanted_font(true)
 	mouse_entered.connect(func() -> void:
-		if not disabled:
+		if not disabled and focus_mode != Control.FOCUS_NONE:
 			grab_focus())
 	focus_entered.connect(queue_redraw)
 	focus_exited.connect(queue_redraw)
@@ -49,7 +55,12 @@ func _init(label_text: String = "", kind: String = "", info: String = "") -> voi
 
 
 func is_lit() -> bool:
-	return has_focus()
+	return bool(lit_override) if lit_override != null else has_focus()
+
+
+func set_lit(on: bool) -> void:
+	lit_override = on
+	queue_redraw()
 
 
 func _pop() -> void:
@@ -101,6 +112,10 @@ func _draw() -> void:
 		var tex := UIStyle.cached_icon(icon_kind, icon_size)
 		draw_texture_rect(tex, Rect2(Vector2(ix, (h - icon_size) * 0.5), Vector2(icon_size, icon_size)), false, ink)
 	var tx := ix + icon_size + 22.0
+	if extra_icon_kind != "":
+		var tex2 := UIStyle.cached_icon(extra_icon_kind, icon_size)
+		draw_texture_rect(tex2, Rect2(Vector2(ix + icon_size + 6.0, (h - icon_size) * 0.5), Vector2(icon_size, icon_size)), false, ink)
+		tx += icon_size + 6.0
 	var asc := _font.get_ascent(font_size)
 	var desc := _font.get_descent(font_size)
 	var baseline := (h + asc - desc) * 0.5
@@ -108,7 +123,7 @@ func _draw() -> void:
 		draw_string(_font, Vector2(tx + 2, baseline + 2), text.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, font_size,
 				Color(0, 0, 0, 0.6))
 	draw_string(_font, Vector2(tx, baseline), text.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, ink)
-	if lit:
+	if lit and chevrons:
 		# ">>" on the right end.
 		var cx := x1 - slant * 0.5 - 40.0
 		var cy := h * 0.5

@@ -2,11 +2,15 @@ class_name RaceSetup
 extends Control
 ## Race setup (GDD 11.3): vehicle (with the license plate on the preview),
 ## AI difficulty and race settings. Choices are remembered in the profile.
-##   Grand Prix: after picking a cup; Start race begins the championship.
+##   Grand Prix: after picking a cup; Start Grand Prix begins the championship.
 ##   Versus: straight from the main menu (Mario Kart style). Race type
 ##   (Standard or Elimination, always 3 laps), number of races, laps; Next
 ##   goes to the track screen, which lists every cup's tracks.
 ## Opened directly (tests), Grand Prix uses the remembered or first cup.
+## Laid out after "reference files/Neon Versus Race Setup UI.png": settings
+## rows with < value > steppers on the left under a gold banner, the car on
+## the right (CarShowcase, neon style), on the dimmed 3D street
+## (NeonScreenLayout). Y / G opens the garage and comes back here.
 
 const ROSTER := "res://resources/racers/rival_roster.tres"
 const DIFFICULTIES: Array[String] = ["easy", "normal", "hard"]
@@ -42,21 +46,24 @@ var vehicle_index: int = 0
 var cup: GrandPrixData
 var cup_path: String = ""
 
+var layout: NeonScreenLayout
+## The gold banner's text ("VERSUS  ·  1 RACE" / the cup's name).
 var _summary: Label
-var _difficulty: OptionButton
-var _laps: OptionButton
-var _laps_row: HBoxContainer
+var _difficulty: NeonStepper
+var _laps: NeonStepper
+var _laps_row: Control
 ## Versus only: Standard / Elimination.
-var _race_type: OptionButton
+var _race_type: NeonStepper
 ## Versus only: number of races.
-var _races: OptionButton
+var _races: NeonStepper
 var _title: Label
-var _weapons: CheckButton
+var _weapons: NeonToggle
 var showcase: CarShowcase
 ## The showcase's 3D preview.
 var _preview: VehiclePreview
-var _note: Label
+var _note: RichTextLabel
 var _start: Button
+var _hints: MenuHints
 
 
 func _ready() -> void:
@@ -127,6 +134,14 @@ func start() -> void:
 		GameSession.begin_versus(get_tree(), make_config(), race_count(), difficulty_id())
 
 
+## Y / G: the garage, coming back here afterwards.
+func open_garage() -> void:
+	_remember()
+	GameSession.setup_mode = mode
+	GameSession.garage_return = GameSession.RACE_SETUP_SCENE
+	GameSession.to_garage(get_tree())
+
+
 func _remember() -> void:
 	var profile := PlayerProfile.get_profile()
 	var setup := profile.last_setup
@@ -158,7 +173,15 @@ func _restore() -> void:
 
 
 func _update_note() -> void:
-	var lines: PackedStringArray = [describe(mode, race_count())]
+	var lines: PackedStringArray = []
+	for line in describe(mode, race_count()).split("\n"):
+		# "STANDARD: pick any ..." -> a gold "Standard:", then the rest.
+		var colon := line.find(":")
+		if colon > 0 and colon < 24:
+			lines.append("[color=#%s]%s:[/color]%s" % [UIStyle.GOLD.to_html(false),
+					line.substr(0, colon).to_lower().capitalize(), line.substr(colon + 1)])
+		else:
+			lines.append(line)
 	match mode:
 		RaceConfig.Mode.GRAND_PRIX:
 			lines.append("Races: " + ", ".join(cup.track_names) + ". Saved between races.")
@@ -168,92 +191,172 @@ func _update_note() -> void:
 			if Championship.load_saved() != null:
 				lines.append("Starting a new Grand Prix replaces the saved one.")
 		_:
-			lines.append("Next you pick the track from every cup.")
+			lines.append("Next: you'll pick the track from every cup.")
 	_note.text = "\n".join(lines)
 
 
 func _build() -> void:
-	UIStyle.background(self)
-	var margin := MarginContainer.new()
-	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	for side in ["left", "right", "top", "bottom"]:
-		margin.add_theme_constant_override("margin_" + side, 40)
-	add_child(margin)
-	var page := VBoxContainer.new()
-	page.add_theme_constant_override("separation", 16)
-	margin.add_child(page)
-	var coins := UIStyle.header(page, _title_text())
-	_title = coins.get_parent().get_child(0) as Label
-	coins.text = "%d coins" % PlayerProfile.get_profile().coins
+	layout = NeonScreenLayout.new(_title_text(), "flags")
+	add_child(layout)
+	_title = layout.title_label
+	# No logo here (like the mockup): the long titles need the room.
+	var title_row := _title.get_parent()
+	for i in 2:
+		(title_row.get_child(i) as CanvasItem).visible = false
+	layout.back_button.pressed.connect(back)
+	SetupWidgets.add_coin_pill(self, PlayerProfile.get_profile().coins)
 
 	var columns := HBoxContainer.new()
-	columns.add_theme_constant_override("separation", 40)
-	columns.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	page.add_child(columns)
+	columns.add_theme_constant_override("separation", 26)
+	columns.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layout.content.add_child(columns)
 
+	# Left: the settings panel, then the gold Next / Start button.
 	var left := VBoxContainer.new()
-	left.add_theme_constant_override("separation", 12)
+	left.add_theme_constant_override("separation", 14)
+	left.custom_minimum_size = Vector2(470, 0)
 	columns.add_child(left)
-	# Grand Prix: the cup picked on the cup screen. Versus: how many races.
-	var picked := HBoxContainer.new()
-	picked.add_theme_constant_override("separation", 12)
-	left.add_child(picked)
-	if is_grand_prix():
-		picked.add_child(TrophyIcon.new(cup.emblem, false, 64.0))
-	_summary = UIStyle.heading(summary_text(), 22, UIStyle.GOLD)
-	_summary.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	picked.add_child(_summary)
+	var panel := NeonPanel.new(0, Color(0.3, 0.5, 1.0), Color(0.55, 0.3, 1.0))
+	panel.radius = 18.0
+	left.add_child(panel)
+	var inner := VBoxContainer.new()
+	inner.add_theme_constant_override("separation", 8)
+	panel.add_child(inner)
+	var art: Control = TrophyIcon.new(cup.emblem, false, 54.0) if is_grand_prix() else null
+	var banner := SetupWidgets.gold_banner(summary_text(), art)
+	inner.add_child(banner)
+	_summary = banner.label
+	var rows := VBoxContainer.new()
+	rows.add_theme_constant_override("separation", 8)
+	var rows_margin := MarginContainer.new()
+	for side in ["left", "right"]:
+		rows_margin.add_theme_constant_override("margin_" + side, 14)
+	rows_margin.add_theme_constant_override("margin_bottom", 14)
+	rows_margin.add_child(rows)
+	inner.add_child(rows_margin)
 	if mode != RaceConfig.Mode.GRAND_PRIX:
-		_race_type = OptionButton.new()
+		_race_type = NeonStepper.new()
 		for t in RACE_TYPES:
 			_race_type.add_item(t)
 		_race_type.selected = 1 if mode == RaceConfig.Mode.ELIMINATION else 0
 		_race_type.item_selected.connect(set_race_type)
-		left.add_child(_row("Race type", _race_type))
-		_races = OptionButton.new()
+		rows.add_child(SetupWidgets.setting_row("flags", "Race Type", _race_type))
+		_races = NeonStepper.new()
 		for n in RACE_COUNTS:
-			_races.add_item("%d race%s" % [n, "" if n == 1 else "s"])
+			_races.add_item("%d Race%s" % [n, "" if n == 1 else "s"])
 		_races.item_selected.connect(func(_i: int) -> void:
 			_summary.text = summary_text()
 			_update_note())
-		left.add_child(_row("Races", _races))
-	_difficulty = OptionButton.new()
+		rows.add_child(SetupWidgets.setting_row("checker", "Races", _races))
+	_difficulty = NeonStepper.new()
 	for d in DIFFICULTIES:
 		_difficulty.add_item(d.capitalize())
-	left.add_child(_row("NPC difficulty", _difficulty))
-	_laps = OptionButton.new()
+	rows.add_child(SetupWidgets.setting_row("robot", "NPC Difficulty", _difficulty))
+	_laps = NeonStepper.new()
 	for i in range(1, 10):
 		_laps.add_item(str(i))
 	_laps.item_selected.connect(func(_i: int) -> void: _update_note())
-	_laps_row = _row("Laps", _laps)
+	_laps_row = SetupWidgets.setting_row("flags", "Laps", _laps)
 	_laps_row.visible = mode == RaceConfig.Mode.VERSUS
-	left.add_child(_laps_row)
-	_weapons = CheckButton.new()
-	left.add_child(_row("Weapons", _weapons))
-	_note = UIStyle.label("", 14, Color(1, 1, 1, 0.65))
-	_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_note.custom_minimum_size = Vector2(420, 0)
-	left.add_child(_note)
-	var spacer := Control.new()
-	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	left.add_child(spacer)
-	_start = UIStyle.primary_button("Start race" if is_grand_prix() else "Next: pick a track", start)
-	_start.custom_minimum_size = Vector2(420, 52)
+	rows.add_child(_laps_row)
+	_weapons = NeonToggle.new()
+	var weapons_row := SetupWidgets.setting_row("item_box", "Items (Weapons)", _weapons)
+	weapons_row.add_theme_constant_override("margin_right", 14)
+	rows.add_child(weapons_row)
+	rows.add_child(_note_box())
+	_start = SetupWidgets.gold_action("Start Grand Prix" if is_grand_prix() else "Next: Pick a Track", start)
 	left.add_child(_start)
-	left.add_child(UIStyle.button("Back", back))
 
+	# Right: the car.
 	var right := VBoxContainer.new()
-	right.add_theme_constant_override("separation", 6)
+	right.add_theme_constant_override("separation", 4)
 	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	columns.add_child(right)
-	right.add_child(UIStyle.label("VEHICLE", 18, UIStyle.CYAN))
-	showcase = CarShowcase.new(280.0)
+	showcase = CarShowcase.new(230.0, true)
 	showcase.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	showcase.vehicle_changed.connect(select_vehicle)
+	# LB / RB and the mouse change the car; the d-pad stays on the settings.
+	showcase.prev_button.focus_mode = Control.FOCUS_NONE
+	showcase.next_button.focus_mode = Control.FOCUS_NONE
 	right.add_child(showcase)
 	_preview = showcase.preview
-	right.add_child(UIStyle.label("Plate: %s   (edit it in the Garage)" % PlayerProfile.get_profile().plate_text,
-			14, Color(1, 1, 1, 0.6)))
+	var plate := HBoxContainer.new()
+	plate.add_theme_constant_override("separation", 10)
+	plate.add_child(RaceIcons.rect("pencil", 22))
+	var plate_label := UIStyle.label("Plate: %s   (Edit it in the Garage)" % PlayerProfile.get_profile().plate_text, 18,
+			Color(1, 1, 1, 0.85))
+	plate_label.add_theme_font_override("font", UIStyle.slanted_font(false))
+	plate.add_child(plate_label)
+	right.add_child(plate)
+
+	_hints = MenuHints.new([["B", "Esc", "Back"], ["A", "Enter", "Start" if is_grand_prix() else "Next"],
+			["Y", "G", "Garage"]])
+	_hints.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
+	_hints.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	_hints.offset_right = -24
+	_hints.offset_top = -66
+	_hints.offset_bottom = -22
+	_hints.alignment = BoxContainer.ALIGNMENT_END
+	add_child(_hints)
+	_link_focus()
+
+
+## The (i) note under the settings, with the mode's name in gold.
+func _note_box() -> Control:
+	var box := PanelContainer.new()
+	var style := UIStyle.box_style(Color(0.03, 0.02, 0.1, 0.7), Color(0.4, 0.45, 1.0, 0.7), 0, 2)
+	style.set_corner_radius_all(14)
+	style.content_margin_left = 16
+	style.content_margin_right = 14
+	style.content_margin_top = 8
+	style.content_margin_bottom = 8
+	box.add_theme_stylebox_override("panel", style)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 14)
+	box.add_child(row)
+	var info := NeonWidgets.icon("info", 28)
+	info.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	row.add_child(info)
+	_note = RichTextLabel.new()
+	_note.bbcode_enabled = true
+	_note.fit_content = true
+	_note.scroll_active = false
+	_note.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_note.custom_minimum_size = Vector2(300, 0)
+	_note.add_theme_font_override("normal_font", UIStyle.slanted_font(false))
+	_note.add_theme_font_size_override("normal_font_size", 17)
+	_note.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(_note)
+	return box
+
+
+## Up / down through the visible settings, then the gold button and Back.
+func _link_focus() -> void:
+	var chain: Array[Control] = []
+	for c: Control in [_race_type, _races, _difficulty, _laps, _weapons, _start, layout.back_button]:
+		if c != null and (c != _laps or _laps_row.visible):
+			chain.append(c)
+	for i in chain.size():
+		chain[i].focus_neighbor_top = chain[i].get_path_to(chain[(i - 1 + chain.size()) % chain.size()])
+		chain[i].focus_neighbor_bottom = chain[i].get_path_to(chain[(i + 1) % chain.size()])
+		if not chain[i] is NeonStepper:
+			chain[i].focus_neighbor_left = NodePath(".")
+			chain[i].focus_neighbor_right = NodePath(".")
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel"):
+		get_viewport().set_input_as_handled()
+		back()
+		return
+	var garage := false
+	if event is InputEventJoypadButton:
+		garage = event.pressed and (event as InputEventJoypadButton).button_index == JOY_BUTTON_Y
+	elif event is InputEventKey:
+		garage = event.pressed and not event.echo and (event as InputEventKey).keycode == KEY_G
+	if garage:
+		get_viewport().set_input_as_handled()
+		open_garage()
 
 
 ## "AMERICAN CUP" (Grand Prix) or "VERSUS  ·  4 RACES".
@@ -293,18 +396,9 @@ func set_race_type(index: int) -> void:
 	_title.text = _title_text()
 	_summary.text = summary_text()
 	_laps_row.visible = mode == RaceConfig.Mode.VERSUS
+	_link_focus()
 	_update_note()
 
 
 func _title_text() -> String:
-	return RaceConfig.MODE_NAMES[mode].to_upper() + "  -  RACE SETUP"
-
-
-func _row(text: String, control: Control) -> HBoxContainer:
-	var row := HBoxContainer.new()
-	var l := UIStyle.label(text, 17)
-	l.custom_minimum_size = Vector2(160, 0)
-	row.add_child(l)
-	control.custom_minimum_size = Vector2(260, 36)
-	row.add_child(control)
-	return row
+	return RaceConfig.MODE_NAMES[mode].to_upper() + " - RACE SETUP"

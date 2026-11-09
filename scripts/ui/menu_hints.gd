@@ -6,6 +6,7 @@ extends HBoxContainer
 
 const PAD_A := Color(0.2, 0.85, 0.3)
 const PAD_B := Color(1.0, 0.2, 0.6)
+const PAD_Y := Color(1.0, 0.8, 0.15)
 
 var _gamepad: bool = false
 var _glyphs: Array[_Glyph] = []
@@ -75,7 +76,7 @@ class _Glyph extends Control:
 		var font := UIStyle.bold_font()
 		if gamepad:
 			var c := size * 0.5
-			var col := MenuHints.PAD_A if pad_label == "A" else MenuHints.PAD_B
+			var col := MenuHints.PAD_A if pad_label == "A" else (MenuHints.PAD_Y if pad_label == "Y" else MenuHints.PAD_B)
 			draw_circle(c, 18.0, Color(col, 0.3))
 			draw_circle(c, 15.5, col.darkened(0.2))
 			draw_arc(c, 15.5, 0.0, TAU, 32, col.lightened(0.4), 2.0, true)

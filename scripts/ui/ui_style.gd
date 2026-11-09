@@ -445,8 +445,9 @@ static func cached_icon(kind: String, size: int) -> Texture2D:
 
 
 ## Distance (in icon widths, 0..1 space) from q to a start-menu icon:
-## person, group, gear, exit, back, flags, trophy, stopwatch, car, play.
-## Filled areas return a negative distance.
+## person, group, gear, exit, back, flags, trophy, stopwatch, car, play
+## (any other kind comes from NeonIcons). Filled areas return a negative
+## distance.
 static func _menu_icon_distance(kind: String, q: Vector2) -> float:
 	var d := INF
 	match kind:
@@ -516,6 +517,8 @@ static func _menu_icon_distance(kind: String, q: Vector2) -> float:
 			var lamp := q.distance_to(Vector2(0.22, 0.62)) < 0.065 or q.distance_to(Vector2(0.78, 0.62)) < 0.065
 			if (body or cabin or wheel) and not window and not lamp:
 				d = -1.0
+		_:
+			d = NeonIcons.distance(kind, q)
 	return d
 
 

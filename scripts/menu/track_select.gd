@@ -7,13 +7,17 @@ extends Control
 ## built track for you (in a series, one not raced yet while there are any).
 ## In a series it says which race is next and shows the points so far; the
 ## screen comes back after each race until the series is done. See CupBoard.
+## Same neon frame as the Grand Prix cup screen (NeonScreenLayout).
 
 ## Every race card, cup by cup (flat), and the track each one races.
 var cards: Array[Button] = []
 var track_names: PackedStringArray = PackedStringArray()
 var random_card: Button
 var board: CupBoard
+var layout: NeonScreenLayout
 
+## The screen title (the mode); the race / "choose a track" line is the
+## subtitle under it.
 var _title: Label
 
 
@@ -108,36 +112,35 @@ func _laps() -> int:
 
 
 func _build() -> void:
-	UIStyle.background(self)
-	var margin := MarginContainer.new()
-	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	for side in ["left", "right", "top", "bottom"]:
-		margin.add_theme_constant_override("margin_" + side, 28)
-	add_child(margin)
-	var page := VBoxContainer.new()
-	page.add_theme_constant_override("separation", 10)
-	margin.add_child(page)
-	_title = UIStyle.heading(title_text(), 30, UIStyle.MAGENTA)
-	page.add_child(_title)
+	var parts := title_text().split("  -  ")
+	layout = NeonScreenLayout.new(parts[0], "flags")
+	add_child(layout)
+	_title = layout.title_label
+	layout.back_button.pressed.connect(back)
+	layout.back_button.focus_mode = Control.FOCUS_NONE
+	var s := GameSession.series
+	if s != null and s.race_index > 0:
+		layout.back_button.text = "Quit series"
+	CupSelect.add_subtitle(layout, parts[1] if parts.size() > 1 else "CHOOSE A TRACK")
+	if not GameSession.split_screen:
+		SetupWidgets.add_coin_pill(self, PlayerProfile.get_profile().coins)
 
 	board = CupBoard.new()
 	board.name = "CupBoard"
 	# Points so far, part-way through a series, beside the races.
-	var s := GameSession.series
 	if s != null and s.race_index > 0:
-		var table := UIStyle.section_panel(12)
 		var box := VBoxContainer.new()
 		box.add_theme_constant_override("separation", 0)
-		table.add_child(box)
-		box.add_child(UIStyle.stat("POINTS", 15, UIStyle.CYAN))
+		box.custom_minimum_size = Vector2(190, 0)
+		box.add_child(UIStyle.stat("POINTS", 17, UIStyle.CYAN))
 		var ranking := s.standings()
 		for i in ranking.size():
 			var id := ranking[i]
 			var color := UIStyle.MUTED
 			if RaceConfig.is_human_id(id):
 				color = SplitScreen.PLAYER_COLORS[RaceConfig.human_slot(id)] if s.is_multiplayer() else UIStyle.MAGENTA
-			box.add_child(UIStyle.stat("%d   %s   %d" % [i + 1, _racer_name(s, id), int(s.points.get(id, 0))], 14, color))
-		board.side_panel = table
+			box.add_child(UIStyle.stat("%d   %s   %d" % [i + 1, _racer_name(s, id), int(s.points.get(id, 0))], 15, color))
+		board.side_panel = box
 	var cups := GrandPrixData.all_cups()
 	var any_built := false
 	for cup in cups:
@@ -146,15 +149,19 @@ func _build() -> void:
 	board.setup(cups, false, true, _laps(), "A track you haven't raced yet" if s != null else "Surprise me", any_built)
 	board.race_picked.connect(pick_track)
 	board.random_picked.connect(pick_random)
-	page.add_child(board)
+	layout.content.add_theme_constant_override("margin_top", 26)
+	layout.content.add_child(board)
 	cards.assign(board.flat_cards)
 	track_names = board.flat_tracks
 	random_card = board.random_card
 
-	var back_button := UIStyle.button("Quit series" if s != null and s.race_index > 0 else "Back", back)
-	back_button.focus_mode = Control.FOCUS_NONE
-	back_button.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	page.add_child(back_button)
+	var hints := MenuHints.new([["A", "Enter", "Select"], ["B", "Esc", "Back"]])
+	hints.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
+	hints.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	hints.offset_right = -24
+	hints.offset_top = -66
+	hints.offset_bottom = -22
+	add_child(hints)
 
 
 static func _racer_name(s: Championship, id: int) -> String:

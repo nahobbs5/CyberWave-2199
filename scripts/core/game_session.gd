@@ -51,6 +51,9 @@ static var versus_template: RaceConfig
 static var series: Championship
 ## Where Settings / Credits go back to (the title or the single-player menu).
 static var menu_return: String = TITLE_SCENE
+## Where the garage's Back goes: the main menu, or the race setup when the
+## garage was opened from there (Y / G).
+static var garage_return: String = MAIN_MENU_SCENE
 ## Headless tests turn this off so menu buttons don't change scene.
 static var scene_changes_enabled: bool = true
 
@@ -198,6 +201,16 @@ static func to_track_select(tree: SceneTree) -> void:
 
 static func to_garage(tree: SceneTree) -> void:
 	_change(tree, GARAGE_SCENE)
+
+
+## Back from the garage: the race setup it was opened from, else the main menu.
+static func back_from_garage(tree: SceneTree) -> void:
+	var target := garage_return
+	garage_return = MAIN_MENU_SCENE
+	if target == RACE_SETUP_SCENE:
+		to_race_setup(tree, setup_mode)
+	else:
+		to_main_menu(tree)
 
 
 static func to_settings(tree: SceneTree) -> void:

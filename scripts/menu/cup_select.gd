@@ -1,16 +1,19 @@
 class_name CupSelect
 extends Control
-## Grand Prix, step 1 (Mario Kart style): a row of cup badges. Moving across
+## Grand Prix, step 1 (Mario Kart style): a row of cup cards. Moving across
 ## them previews each cup's races below; opening one (click, Enter or A)
 ## shows its races and START GRAND PRIX to confirm. Cups locked for Grand
 ## Prix say "coming soon" and can't be confirmed. Confirming goes to the race
 ## setup (or, in split screen, straight into the Grand Prix). See CupBoard.
+## Laid out after "reference files/Cyberwave 2199_ Europe Cup Grand
+## Prix.png" on the dimmed 3D street (NeonScreenLayout).
 
 var mode: RaceConfig.Mode = RaceConfig.Mode.GRAND_PRIX
 var cups: Array[GrandPrixData] = []
 ## One badge button per cup.
 var cards: Array[Button] = []
 var board: CupBoard
+var layout: NeonScreenLayout
 
 
 func _ready() -> void:
@@ -81,25 +84,53 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _build() -> void:
-	UIStyle.background(self)
-	var margin := MarginContainer.new()
-	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	for side in ["left", "right", "top", "bottom"]:
-		margin.add_theme_constant_override("margin_" + side, 28)
-	add_child(margin)
-	var page := VBoxContainer.new()
-	page.add_theme_constant_override("separation", 10)
-	margin.add_child(page)
 	var title := "GRAND PRIX" if is_grand_prix() else RaceConfig.MODE_NAMES[mode].to_upper()
-	var coins := UIStyle.header(page, title + "  -  CHOOSE A CUP")
-	coins.text = "%d coins" % PlayerProfile.get_profile().coins
+	layout = NeonScreenLayout.new(title, "trophy")
+	add_child(layout)
+	layout.back_button.pressed.connect(back)
+	layout.back_button.focus_mode = Control.FOCUS_NONE
+	CupSelect.add_subtitle(layout, "CHOOSE A CUP")
+	SetupWidgets.add_coin_pill(self, PlayerProfile.get_profile().coins)
+	# START GRAND PRIX sits bottom right, level with Back.
+	var footer := HBoxContainer.new()
+	footer.alignment = BoxContainer.ALIGNMENT_END
+	footer.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
+	footer.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	footer.offset_right = -40
+	footer.offset_top = -84
+	footer.offset_bottom = -18
+	add_child(footer)
 	board = CupBoard.new()
 	board.name = "CupBoard"
+	board.footer = footer
 	board.setup(cups, true, false)
 	board.confirmed.connect(func(_i: int) -> void: confirm())
-	page.add_child(board)
+	layout.content.add_theme_constant_override("margin_top", 26)
+	layout.content.add_child(board)
 	cards.assign(board.badges)
-	var back_button := UIStyle.button("Back", back)
-	back_button.focus_mode = Control.FOCUS_NONE
-	back_button.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	page.add_child(back_button)
+
+
+## A spaced-out magenta subtitle tucked under the screen title ("CHOOSE A
+## CUP"), like the Grand Prix mockup.
+static func add_subtitle(p_layout: NeonScreenLayout, text: String) -> Label:
+	var spaced := ""
+	for ch in text:
+		spaced += ch + " "
+	var sub := UIStyle.stat(spaced.strip_edges(), 20, Color(1, 1, 1, 0.92))
+	sub.name = "Subtitle"
+	sub.add_theme_font_override("font", UIStyle.slanted_font(true))
+	var bar := StyleBoxFlat.new()
+	bar.bg_color = Color(UIStyle.MAGENTA, 0.75)
+	bar.skew = Vector2(0.4, 0)
+	bar.content_margin_left = 16
+	bar.content_margin_right = 30
+	sub.add_theme_stylebox_override("normal", bar)
+	sub.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	p_layout.add_child(sub)
+	# Under the title text, once the title row has its size.
+	var place := func() -> void:
+		var t := p_layout.title_label
+		sub.position = t.get_global_rect().position - p_layout.get_global_rect().position + Vector2(6, t.size.y - 2)
+	p_layout.title_label.resized.connect(place)
+	place.call_deferred()
+	return sub

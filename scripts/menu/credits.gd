@@ -2,33 +2,45 @@ class_name Credits
 extends Control
 ## Credits: who made the game and where the music, sounds, fonts, textures
 ## and art come from. Back (or Esc / gamepad B) returns to the main menu.
+## Laid out after "reference files/Cyberwave 2199 Neon Credits.png"
+## (NeonScreenLayout): one neon panel of rows, each a slanted heading tab
+## with an icon on the left and the credit on the right.
 
-## [heading, [lines...]]; the README's Credits section lists the same.
+## [heading, icon kind, [lines...]]; the README's Credits section lists the
+## same. MUSIC is drawn from MUSIC below instead of its lines.
 const SECTIONS := [
-	["GAME", ["Cyberwave 2199 by Nathan Hobbs"]],
-	["MUSIC", [
-		"\"Cyberpunk\" by ikoliks_aj  (main theme)",
-		"\"Wings of Hope\" by ikoliks  (garage)",
-		"\"Cyber Dreams\" by Lilex  (The Stacks)",
-		"\"Race Winner\" by TheBoysBeats  (Six Flags New Orleans)",
-		"\"Heavy Racing\" by SPmusic  (Vegas Overdrive)",
-		"\"Cyberpunk Music\" by kulakovka  (Hoia Baciu Run)",
-		"\"Hard Cyberpunk\" by kulakovka  (Catacombs Descent)",
-		"\"The Cyber Geisha\" by Ob-Lix  (Arashiyama Circuit)",
-	]],
-	["SOUND", ["Short beep countdown by freesound_community"]],
-	["FONTS", [
+	["GAME", "car", ["Cyberwave 2199 by Nathan Hobbs"]],
+	["MUSIC", "note", []],
+	["SOUND", "speaker", ["Short beep countdown by freesound_community"]],
+	["FONTS", "fonts", [
 		"Oxanium and Rajdhani  (SIL Open Font License 1.1)",
 	]],
-	["TEXTURES AND SKY", [
+	["TEXTURES AND SKY", "layers", [
 		"Poly Haven (polyhaven.com), CC0: asphalt, concrete, rust, metal, brick, wood,",
 		"grass, mud, stone, paving, reed and tile textures, and the kloofendal overcast sky",
 	]],
-	["ART", ["Weapon icons from the Weapon Arsenal concept art"]],
-	["ENGINE", ["Made with Godot Engine (godotengine.org), MIT License"]],
+	["ART", "palette", ["Weapon icons from the Weapon Arsenal concept art"]],
+	["ENGINE", "gear", ["Made with Godot Engine (godotengine.org), MIT License"]],
 ]
 
+## [title, artist, where it plays].
+const MUSIC := [
+	["Cyberpunk", "ikoliks_aj", "main theme"],
+	["Wings of Hope", "ikoliks", "garage"],
+	["Cyber Dreams", "Lilex", "The Stacks"],
+	["Race Winner", "TheBoysBeats", "Six Flags New Orleans"],
+	["Heavy Racing", "SPmusic", "Vegas Overdrive"],
+	["Cyberpunk Music", "kulakovka", "Hoia Baciu Run"],
+	["Hard Cyberpunk", "kulakovka", "Catacombs Descent"],
+	["The Cyber Geisha", "Ob-Lix", "Arashiyama Circuit"],
+]
+
+const TAB_WIDTH := 300.0
+
+var layout: NeonScreenLayout
 var back_button: Button
+## The music table (title, dots, artist, note per song).
+var music_grid: GridContainer
 
 
 func _ready() -> void:
@@ -44,7 +56,10 @@ func get_text() -> String:
 	var lines: PackedStringArray = []
 	for section in SECTIONS:
 		lines.append(section[0])
-		lines.append_array(PackedStringArray(section[1]))
+		if section[0] == "MUSIC":
+			for song in MUSIC:
+				lines.append("\"%s\" by %s  (%s)" % song)
+		lines.append_array(PackedStringArray(section[2]))
 	return "\n".join(lines)
 
 
@@ -60,35 +75,106 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _build() -> void:
 	UIStyle.background(self)
-	var margin := MarginContainer.new()
-	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	for side in ["left", "right", "top", "bottom"]:
-		margin.add_theme_constant_override("margin_" + side, 40)
-	add_child(margin)
-	var page := VBoxContainer.new()
-	page.add_theme_constant_override("separation", 16)
-	margin.add_child(page)
-	var header := UIStyle.header(page, "CREDITS")
-	header.text = ""
+	layout = NeonScreenLayout.new("CREDITS", "clapper")
+	add_child(layout)
+	layout.content.add_theme_constant_override("margin_left", 60)
+	layout.content.add_theme_constant_override("margin_right", 60)
+	back_button = layout.back_button
+	back_button.pressed.connect(back)
+	var frame := NeonPanel.new(16, UIStyle.MAGENTA, UIStyle.CYAN)
+	frame.fill_color = Color(0.05, 0.02, 0.12, 0.7)
+	frame.radius = 22.0
+	frame.glow = 16.0
+	frame.edge_width = 3.0
+	layout.content.add_child(frame)
 	var scroll := ScrollContainer.new()
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	page.add_child(scroll)
-	var center := CenterContainer.new()
-	center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll.add_child(center)
+	frame.add_child(scroll)
 	var list := VBoxContainer.new()
-	list.add_theme_constant_override("separation", 4)
-	center.add_child(list)
+	list.add_theme_constant_override("separation", 6)
+	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	list.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.add_child(list)
 	for section in SECTIONS:
-		var heading := UIStyle.stat(section[0], 17, UIStyle.CYAN)
-		heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		list.add_child(heading)
-		for line in section[1]:
-			var l := UIStyle.label(line, 19, Color.WHITE)
-			l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-			list.add_child(l)
-		list.add_child(Control.new())
-	back_button = UIStyle.button("Back", back)
-	back_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	page.add_child(back_button)
+		list.add_child(_section_row(section))
+
+
+func _section_row(section: Array) -> Control:
+	var row := NeonPanel.new(0, Color(0.45, 0.55, 1.0), Color(0.75, 0.45, 1.0))
+	row.fill_color = Color(0.08, 0.04, 0.18, 0.85)
+	row.radius = 10.0
+	row.glow = 5.0
+	row.edge_width = 1.5
+	var line := HBoxContainer.new()
+	line.add_theme_constant_override("separation", 26)
+	row.add_child(line)
+	var tab := _HeadingTab.new()
+	tab.custom_minimum_size = Vector2(TAB_WIDTH, 44)
+	var tab_row := HBoxContainer.new()
+	tab_row.add_theme_constant_override("separation", 14)
+	tab.add_child(tab_row)
+	tab_row.add_child(NeonWidgets.icon(section[1], 32))
+	var heading := UIStyle.stat(section[0], 25 if section[0].length() < 12 else 20, UIStyle.CYAN)
+	heading.add_theme_font_override("font", UIStyle.slanted_font(true))
+	heading.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	tab_row.add_child(heading)
+	line.add_child(tab)
+	var body := VBoxContainer.new()
+	body.add_theme_constant_override("separation", 0)
+	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	body.alignment = BoxContainer.ALIGNMENT_CENTER
+	line.add_child(body)
+	if section[0] == "MUSIC":
+		tab.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+		body.add_child(_music_table())
+	for text in section[2]:
+		body.add_child(UIStyle.label(text, 20, Color.WHITE))
+	if section[0] == "GAME":
+		var checker := NeonWidgets.Checker.new(Color(0.6, 0.35, 1.0, 0.55), 2, true)
+		checker.custom_minimum_size = Vector2(170, 44)
+		line.add_child(checker)
+	return row
+
+
+func _music_table() -> GridContainer:
+	music_grid = GridContainer.new()
+	music_grid.columns = 4
+	music_grid.add_theme_constant_override("h_separation", 18)
+	music_grid.add_theme_constant_override("v_separation", -2)
+	var italic := UIStyle.slanted_font(false)
+	for song in MUSIC:
+		var title := UIStyle.label("\"%s\"" % song[0], 19, Color.WHITE)
+		title.custom_minimum_size = Vector2(170, 0)
+		music_grid.add_child(title)
+		var dots := UIStyle.label(". ".repeat(16), 15, Color(1, 1, 1, 0.45))
+		music_grid.add_child(dots)
+		var artist := UIStyle.stat(song[1], 19, Color.WHITE)
+		artist.custom_minimum_size = Vector2(120, 0)
+		music_grid.add_child(artist)
+		var where := UIStyle.label("(%s)" % song[2], 18, Color(0.85, 0.82, 0.95))
+		where.add_theme_font_override("font", italic)
+		music_grid.add_child(where)
+	return music_grid
+
+
+## The slanted heading block on the left of each credits row.
+class _HeadingTab extends MarginContainer:
+	func _init() -> void:
+		add_theme_constant_override("margin_left", 30)
+		add_theme_constant_override("margin_right", 30)
+		add_theme_constant_override("margin_top", 6)
+		add_theme_constant_override("margin_bottom", 2)
+		resized.connect(queue_redraw)
+
+	func _draw() -> void:
+		var h := minf(size.y, 56.0)
+		var s := h * 0.32
+		var pts := PackedVector2Array([Vector2(8, 0), Vector2(size.x, 0), Vector2(size.x - s, h), Vector2(8, h)])
+		var cols := PackedColorArray()
+		for p in pts:
+			cols.append(Color(0.22, 0.14, 0.45, 0.95).lerp(Color(0.14, 0.08, 0.3, 0.95), p.x / size.x))
+		draw_polygon(pts, cols)
+		var edge := pts.duplicate()
+		edge.append(pts[0])
+		draw_polyline(edge, Color(0.55, 0.6, 1.0, 0.25), 5.0, true)
+		draw_polyline(edge, Color(0.6, 0.65, 1.0, 0.85), 1.5, true)

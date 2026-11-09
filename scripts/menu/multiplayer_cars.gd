@@ -374,6 +374,8 @@ func _card(i: int, width: float) -> PanelContainer:
 	device.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	head.add_child(device)
 	var preview := VehiclePreview.new()
+	# Four of these can be on screen: the lighter garage.
+	preview.detail = VehiclePreview.Detail.LITE
 	preview.custom_minimum_size = Vector2(width - 20.0, 170)
 	preview.spin_speed = 0.6
 	preview.mouse_filter = Control.MOUSE_FILTER_IGNORE

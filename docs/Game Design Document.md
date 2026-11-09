@@ -1,5 +1,5 @@
 # CYBERWAVE 2199
-## Game Design Document — Version 3.8
+## Game Design Document — Version 4.1
 
 **Status:** Development Baseline  
 **Engine:** Godot 4  
@@ -67,7 +67,7 @@ The race concludes when the player finishes or is otherwise removed from competi
 
 ## 2.2 Grand Prix
 
-Three cups, each a championship of its tracks raced back to back (three races each). As in Mario Kart, Grand Prix and Versus both pick from the same cup screen: a row of round cup badges (each a gold-rimmed medallion in the cup's colours with its map, the selected one larger and glowing) above a panel that previews the focused cup's races (outline, name, location, best time). Opening a cup (click, Enter or A) moves into the panel. In Grand Prix you confirm the cup with START GRAND PRIX (a cup locked for Grand Prix shows "coming soon" and can't be confirmed). In Versus you pick one of its races (§2.1). Back from the panel returns to the badges.
+Three cups, each a championship of its tracks raced back to back (three races each). As in Mario Kart, Grand Prix and Versus both pick from the same cup screen: a row of cup cards between gold arrows (each a rounded card in the cup's colours with its white map between gold laurels and its name; the selected one is larger, edged in gold and points down at the panel; a cup locked for Grand Prix is grey with a padlock) above a neon panel that previews the focused cup's races (trophy, name, race count and best finish, then a card per race with a screenshot of the track, its race number, name and location, and in Versus your best time). Opening a cup (click, Enter or A) moves into the panel. In Grand Prix you confirm the cup with START GRAND PRIX (a cup locked for Grand Prix shows "coming soon" and can't be confirmed). In Versus you pick one of its races (§2.1). Back from the panel returns to the badges.
 
 ### American Cup (trophy: a map of the USA)
 
@@ -934,6 +934,11 @@ Both menus share one look, taken from the start-menu reference art:
 - Controller hints sit in the bottom-right corner: A Select / B Back on a gamepad, Enter / Esc on a keyboard.
 - The main menu also shows the coin balance at the top right. The title menu doesn't.
 
+Settings and Credits use the same street, dimmed, behind rounded neon panels. The logo, an icon and the screen name sit along the top, and a slanted Back button sits at the bottom left.
+
+- **Settings** shows two panels side by side. On the left are Display & Accessibility (sliders and ON / OFF switches) and Audio. On the right is the Controls table: one row per action, with its icon and keyboard and gamepad bindings, plus Reset to Defaults. The DISPLAY & AUDIO and CONTROLS tabs above the panels jump between the two sides, as do LB / RB or Q / E. The tab for the side that has focus is lit gold.
+- **Credits** is one panel of rows. Each row has a slanted heading tab with an icon on the left and the credit on the right. Music is a table of title, artist and where the song plays.
+
 ## 11.3 Race Setup
 
 Grand Prix: cup screen, then race setup. Versus: race setup first (including the number of races), then the cup screen to pick a race (§2.1).
@@ -947,6 +952,11 @@ Grand Prix: cup screen, then race setup. Versus: race setup first (including the
 
 Previously selected settings should be remembered.
 
+The setup, cup and track screens share the Settings look (§11.2): the dimmed street behind them, the screen name along the top, coins at the top right and Back at the bottom left.
+
+- **Race setup.** On the left is a panel under a gold banner ("VERSUS · 1 RACE", or the cup's name and trophy in Grand Prix). The panel has one rounded row per setting, each with an icon and a ‹ value › stepper (left / right changes it): Race Type, Races, NPC Difficulty, Laps, and an ON / OFF switch for Items (Weapons). Grand Prix shows only NPC Difficulty and Items. A note explains the race type. Below the panel is a big gold button: Next: Pick a Track, or Start Grand Prix. On the right is the car on its platform with gold arrows (LB / RB also change it), its name on a magenta banner, a cyan type tag, segmented stat bars with icons, a top-speed card and the plate. Hints along the bottom: B Back, A Next, Y Garage. The garage's Back returns to the setup.
+- **Cup screen (Grand Prix) and track screen (Versus).** These use the cup cards and race panel described in §2.2. Grand Prix confirms with a gold START GRAND PRIX button at the bottom right. A track without a screenshot shows its outline instead.
+
 ## 11.4 Garage
 
 - Rotating 3D vehicle preview
@@ -957,7 +967,18 @@ Previously selected settings should be remembered.
 - Cosmetic shop
 - Coin balance
 
-Layout follows the "Neon Cyberwave Garage Interface" reference art: logo and coin balance across the top; on the left the car on a neon turntable with previous / next arrows and a dot per car, then its name, type, stat bars and top speed, and the license plate; on the right a Cosmetics panel with the eight categories in a list beside that category's items (swatch, name, Buy / Equip / Equipped). There are no performance upgrades, so the reference's Upgrades, Performance and Details tabs are left out. Clicking an item previews it on the car; Apply equips every owned item being previewed; Back discards previews. The car spins slowly on its own and can be turned by dragging it (or with the right stick); the spin resumes shortly after. Race setup uses the same car showcase.
+The layout follows the "Cyberwave 2199 Neon Garage" reference art.
+
+- **The garage room** fills the screen. The car sits on a thick turntable with a glowing magenta band and cyan rings. Behind it is a roll-up door with a big "CW-2199" stencil, with neon tubes, tool chests, tyre stacks, a banner with crossed checkered flags, ceiling lights and a checkered floor. The same room appears behind the car everywhere a car is picked: race setup shows it in a framed stage, and the split-screen car cards use a lighter version with no props and fewer lights.
+- **Top:** the logo and GARAGE at the top left, the coin balance at the top right.
+- **Left:** the car with gold previous / next arrows and a dot per car. Below it are the name on a magenta banner, a cyan type tag, segmented stat bars with icons, a top-speed card, and the license plate.
+- **Right:** COSMETICS and INFO tabs over a neon panel.
+  - Cosmetics lists the eight categories, each with an icon, beside that category's items: swatch, name, and Buy / Equip / Equipped.
+  - Info shows how the car drives, its specs (top speed, 0–100 km/h, braking, reverse, handling, drift, grip, gold drift boost) and what's equipped on it.
+  - There are no performance upgrades, so the reference's Tuning tab is left out.
+- **Bottom:** Back (B / Esc) and a gold Apply (A / Enter).
+
+Clicking an item previews it on the car; Apply equips every owned item being previewed; Back discards previews. The car spins slowly on its own and can be turned by dragging it (or with the right stick); the spin resumes shortly after. LB / RB change the car.
 
 ## 11.5 Race HUD
 
@@ -1379,5 +1400,8 @@ Changes after Version 1.0 should be tracked as revisions rather than silently re
 | 3.6 | 2026-11-08 | Vale da Lua built at about 3.1 km: Brazil's Valley of the Moon, smooth moon rock cut by moving water (a river and streams under four rock bridges, six waterfalls), an elevated road with two open rock shelves over creeks, and the Behind the Falls shortcut (§8.6e). It is South America Cup race 2 (§2.2). Track count corrected to eleven. |
 | 3.7 | 2026-11-08 | Mario Kart style cup screen for both modes: a row of cup badges (gold-rimmed medallions with each cup's map) above a panel of the selected cup's races; confirm the cup for Grand Prix, pick a race for Versus, plus a Random badge (§2.1, §2.2). The Asia Cup's emblem is now a map of Asia. |
 | 3.8 | 2026-11-09 | Title and main menus restyled after the start-menu reference art: a live 3D night street with the player's garage car, slanted neon buttons with icons, a description panel for the focused option, controller hints, and coins on the main menu (§11.2). The main menu list now matches the game. |
+| 3.9 | 2026-11-09 | Settings and Credits restyled after their reference art to match the start menus: dimmed live street, neon panels, icon rows, Settings tabs that jump between the display / audio and controls panels (§11.2). |
+| 4.0 | 2026-11-09 | Race setup, cup screen and Versus track screen restyled after their reference art: settings rows with ‹ value › steppers under a gold banner, a neon car showcase, cup cards with maps between laurels, race cards with track screenshots, and gold Next / Start Grand Prix buttons. Y opens the garage from the race setup and returns to it (§2.2, §11.3). |
+| 4.1 | 2026-11-09 | Garage restyled after its new reference art: a full-screen neon garage room behind the car, COSMETICS / INFO tabs (Info lists the car's specs and equipped items), category icons, and B Back / A Apply buttons. The same garage room is now behind the car in race setup and the split-screen car cards (§11.4). |
 
-**End of Game Design Document — Version 3.8**
+**End of Game Design Document — Version 4.1**
