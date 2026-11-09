@@ -2,11 +2,11 @@ class_name TitleMenu
 extends Control
 ## The first menu: Single Player (the main menu: Grand Prix, Versus,
 ## Practice, Garage...), Multiplayer (split-screen lobby), Settings,
-## Credits, Exit.
+## Credits, Exit. Laid out after "reference files/Cyberwave 2199 Racing
+## Menu.png" (see StartMenuLayout).
 
-const LOGO := preload("res://assets/logo/Cyberwave 2199 Neon Cityscape.png")
-const LOGO_SHADER := preload("res://assets/logo/logo_blend.gdshader")
-
+## Logo, buttons, info box and the garage car on a night street.
+var layout: StartMenuLayout
 var _buttons: Array[Button] = []
 
 
@@ -30,33 +30,19 @@ func _ready() -> void:
 
 func _build() -> void:
 	UIStyle.background(self)
-	var center := CenterContainer.new()
-	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	add_child(center)
-	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 12)
-	center.add_child(box)
-	var logo := TextureRect.new()
-	logo.texture = LOGO
-	logo.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	logo.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	logo.custom_minimum_size = Vector2(600, 210)
-	logo.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var blend := ShaderMaterial.new()
-	blend.shader = LOGO_SHADER
-	logo.material = blend
-	box.add_child(logo)
-	box.add_child(Control.new())
-
+	layout = StartMenuLayout.new(false, false)
+	add_child(layout)
 	var tree := get_tree()
-	var entries: Array[Button] = [
-		UIStyle.primary_button("Single Player", func() -> void: GameSession.to_main_menu(tree)),
-		UIStyle.primary_button("Multiplayer", func() -> void: GameSession.to_multiplayer(tree)),
-		UIStyle.button("Settings", func() -> void: GameSession.to_settings(tree)),
-		UIStyle.button("Credits", func() -> void: GameSession.to_credits(tree)),
-		UIStyle.button("Exit", func() -> void: tree.quit()),
+	var entries: Array[NeonMenuButton] = [
+		layout.add_entry("Single Player", "person", "Race in Grand Prix, Versus, or Practice mode.",
+				func() -> void: GameSession.to_main_menu(tree)),
+		layout.add_entry("Multiplayer", "group", "Split-screen racing for 2 to 4 players.",
+				func() -> void: GameSession.to_multiplayer(tree)),
+		layout.add_entry("Settings", "gear", "Controls, audio and video.",
+				func() -> void: GameSession.to_settings(tree)),
+		layout.add_entry("Credits", "info", "The people, music and assets behind Cyberwave 2199.",
+				func() -> void: GameSession.to_credits(tree)),
+		layout.add_entry("Exit", "exit", "Close the game.", func() -> void: tree.quit()),
 	]
-	for b in entries:
-		b.custom_minimum_size = Vector2(440, 50 if _buttons.size() < 2 else 44)
-		box.add_child(b)
-		_buttons.append(b)
+	layout.finish()
+	_buttons.assign(entries)

@@ -1,5 +1,5 @@
 # CYBERWAVE 2199
-## Game Design Document — Version 3.7
+## Game Design Document — Version 3.8
 
 **Status:** Development Baseline  
 **Engine:** Godot 4  
@@ -916,13 +916,23 @@ Visual effects should never compromise gameplay readability.
 
 The game opens on a title menu: Single Player, Multiplayer (§2.4), Settings, Credits, Exit. Single Player opens the main menu:
 
-- Versus
+- Continue Grand Prix, when a championship is saved
 - Grand Prix
-- Continue Grand Prix, when applicable
-- Elimination
+- Versus (Standard or Elimination, picked on the race setup screen)
+- Practice
 - Garage
 - Settings
-- Exit
+- Credits
+- Back (to the title)
+
+Both menus share one look, taken from the start-menu reference art:
+
+- A live 3D night street fills the screen: a wet road, a neon skyline in front of a big magenta sun, an elevated highway with moving traffic lights, and chevron signs.
+- The player's car is parked on the right, seen from behind at three-quarters with its tail lights on. It is always the car selected in the Garage, with its equipped cosmetics and license plate.
+- The logo is at the top left, with a column of slanted neon buttons under it. Each button has an icon. The focused button turns gold and shows a ">>" chevron.
+- A panel at the bottom right names the focused option and describes it in one line.
+- Controller hints sit in the bottom-right corner: A Select / B Back on a gamepad, Enter / Esc on a keyboard.
+- The main menu also shows the coin balance at the top right. The title menu doesn't.
 
 ## 11.3 Race Setup
 
@@ -1368,5 +1378,6 @@ Changes after Version 1.0 should be tracked as revisions rather than silently re
 | 3.5 | 2026-11-07 | Parque Quinta Normal Greenhouse built at about 3.1 km: Victorian iron-and-glass greenhouse in Santiago, wire mesh throughout, start in the barrel-vaulted main wing, a 310° roundabout round the Rotunda's checkerboard plinth, the Fern Wing shortcut (§8.6d). It starts the new South America Cup, locked for Grand Prix until its other two tracks exist (§2.2). |
 | 3.6 | 2026-11-08 | Vale da Lua built at about 3.1 km: Brazil's Valley of the Moon, smooth moon rock cut by moving water (a river and streams under four rock bridges, six waterfalls), an elevated road with two open rock shelves over creeks, and the Behind the Falls shortcut (§8.6e). It is South America Cup race 2 (§2.2). Track count corrected to eleven. |
 | 3.7 | 2026-11-08 | Mario Kart style cup screen for both modes: a row of cup badges (gold-rimmed medallions with each cup's map) above a panel of the selected cup's races; confirm the cup for Grand Prix, pick a race for Versus, plus a Random badge (§2.1, §2.2). The Asia Cup's emblem is now a map of Asia. |
+| 3.8 | 2026-11-09 | Title and main menus restyled after the start-menu reference art: a live 3D night street with the player's garage car, slanted neon buttons with icons, a description panel for the focused option, controller hints, and coins on the main menu (§11.2). The main menu list now matches the game. |
 
-**End of Game Design Document — Version 3.7**
+**End of Game Design Document — Version 3.8**

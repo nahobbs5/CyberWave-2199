@@ -192,27 +192,9 @@ static func fill_stat_grid(grid: GridContainer, v: VehicleData, bar_width: float
 		grid.add_child(number)
 
 
-static var _slant_heading: FontVariation
-static var _slant_body: FontVariation
-
-
 ## Oxanium (or Rajdhani Bold) leaned forward like the reference's car name.
 static func _slanted(heading: bool = true) -> Font:
-	var cached := _slant_heading if heading else _slant_body
-	if cached == null:
-		cached = FontVariation.new()
-		if heading:
-			# Built on the font file itself: a variation of a variation drops the weight.
-			cached.base_font = load(UIStyle.HEADING_FONT_PATH) as FontFile
-			cached.variation_opentype = {TextServerManager.get_primary_interface().name_to_tag("wght"): 700}
-		else:
-			cached.base_font = UIStyle.bold_font()
-		cached.variation_transform = Transform2D(Vector2(1, 0), Vector2(0.22, 1), Vector2.ZERO)
-		if heading:
-			_slant_heading = cached
-		else:
-			_slant_body = cached
-	return cached
+	return UIStyle.slanted_font(heading)
 
 
 ## Big neon chevron arrow drawn in code.

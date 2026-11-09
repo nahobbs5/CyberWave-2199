@@ -3,14 +3,13 @@ extends Control
 ## Single-player menu (GDD 11.2), opened from the title's Single Player:
 ## Continue Grand Prix (only when a championship is saved), Grand Prix,
 ## Versus (Standard or Elimination, picked on the setup screen), Practice
-## (free drive), Garage, Settings, Credits, Back to the title.
+## (free drive), Garage, Settings, Credits, Back to the title. Laid out
+## after "reference files/Cyberwave 2199 Neon Racing Menu.png" (see
+## StartMenuLayout); the car on the street is the garage's selected car.
 
-const LOGO := preload("res://assets/logo/Cyberwave 2199 Neon Cityscape.png")
-## Additive blend drops the logo's black background, leaving only the neon;
-## the edges fade out so the image's faint texture doesn't show as a box.
-const LOGO_SHADER := preload("res://assets/logo/logo_blend.gdshader")
-
-var _continue_button: Button
+## Logo, buttons, info box, coins and the garage car on a night street.
+var layout: StartMenuLayout
+var _continue_button: NeonMenuButton
 var _buttons: Array[Button] = []
 
 
@@ -50,43 +49,34 @@ func continue_grand_prix() -> void:
 
 func _build() -> void:
 	UIStyle.background(self)
-	var center := CenterContainer.new()
-	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	add_child(center)
-	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 10)
-	center.add_child(box)
-	var logo := TextureRect.new()
-	logo.texture = LOGO
-	logo.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	logo.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	logo.custom_minimum_size = Vector2(540, 180)
-	logo.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var blend := ShaderMaterial.new()
-	blend.shader = LOGO_SHADER
-	logo.material = blend
-	box.add_child(logo)
-	box.add_child(Control.new())
-
+	layout = StartMenuLayout.new(true, true)
+	add_child(layout)
+	layout.set_coins(PlayerProfile.get_profile().coins)
 	var saved := Championship.load_saved()
-	_continue_button = UIStyle.button("Continue Grand Prix", continue_grand_prix)
+	var tree := get_tree()
+	_continue_button = layout.add_entry("Continue Grand Prix", "play", "", continue_grand_prix)
 	_continue_button.visible = saved != null
 	if saved != null:
-		_continue_button.text = "Continue Grand Prix  (%s, race %d / %d)" % [
+		_continue_button.description = "Pick up the %s at race %d of %d." % [
 				saved.gp.display_name, saved.race_index + 1, saved.race_count()]
-	var tree := get_tree()
-	var entries: Array[Button] = [
+	var entries: Array[NeonMenuButton] = [
 		_continue_button,
-		UIStyle.button("Grand Prix", func() -> void: GameSession.to_cup_select(tree, RaceConfig.Mode.GRAND_PRIX)),
-		UIStyle.button("Versus", func() -> void: GameSession.to_race_setup(tree, GameSession.last_versus_mode())),
-		UIStyle.button("Practice", func() -> void: GameSession.to_free_drive(tree)),
-		UIStyle.button("Garage", func() -> void: GameSession.to_garage(tree)),
-		UIStyle.button("Settings", func() -> void: GameSession.to_settings(tree)),
-		UIStyle.button("Credits", func() -> void: GameSession.to_credits(tree)),
-		UIStyle.button("Back", func() -> void: GameSession.to_title(tree)),
+		layout.add_entry("Grand Prix", "flags", "Compete in a cup and aim for the highest overall finish!",
+				func() -> void: GameSession.to_cup_select(tree, RaceConfig.Mode.GRAND_PRIX)),
+		layout.add_entry("Versus", "trophy", "Pick your tracks and race the field, standard or elimination.",
+				func() -> void: GameSession.to_race_setup(tree, GameSession.last_versus_mode())),
+		layout.add_entry("Practice", "stopwatch", "Free drive with no rivals to learn the handling.",
+				func() -> void: GameSession.to_free_drive(tree)),
+		layout.add_entry("Garage", "car", "Choose your car, buy paint and parts, and set your plate.",
+				func() -> void: GameSession.to_garage(tree)),
+		layout.add_entry("Settings", "gear", "Controls, audio and video.",
+				func() -> void: GameSession.to_settings(tree)),
+		layout.add_entry("Credits", "info", "The people, music and assets behind Cyberwave 2199.",
+				func() -> void: GameSession.to_credits(tree)),
+		layout.add_entry("Back", "back", "Return to the title screen.",
+				func() -> void: GameSession.to_title(tree)),
 	]
+	layout.finish()
 	for b in entries:
-		b.custom_minimum_size = Vector2(440, 44)
-		box.add_child(b)
 		if b.visible:
 			_buttons.append(b)

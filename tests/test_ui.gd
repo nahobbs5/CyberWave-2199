@@ -33,6 +33,7 @@ func _run_all() -> void:
 	_test_rival_cars_rules()
 	_test_slipstream_rules()
 	await _test_credits()
+	await _test_start_menus()
 	await _test_cups()
 	_test_stacks_rename()
 	await _test_practice_minimap()
@@ -154,6 +155,47 @@ func _ids(values: Array) -> Array[int]:
 	for v in values:
 		out.append(int(v))
 	return out
+
+
+func _test_start_menus() -> void:
+	_current = "start menus"
+	print("- start menus (street scene, garage car, info box, coins)")
+	_fresh()
+	var profile := PlayerProfile.get_profile()
+	profile.set_selected_vehicle("orbiter")
+	profile.coins = 384
+	var title := (load("res://scenes/menu/title_menu.tscn") as PackedScene).instantiate() as TitleMenu
+	root.add_child(title)
+	await process_frame
+	await process_frame
+	var street := title.layout.street
+	_check(street != null and street.car != null, "title builds the street scene with a car")
+	_check(street.vehicle_id() == "orbiter", "title car is the garage's selected car (%s)" % street.vehicle_id())
+	_check(title.layout.coin_pill == null, "no coin pill on the title")
+	_check(title.layout.info_box.title_text() == "Single Player", "info box starts on the first button")
+	var buttons := title.find_children("*", "NeonMenuButton", true, false)
+	_check(buttons.size() == 5, "title has 5 menu buttons")
+	(buttons[2] as NeonMenuButton).grab_focus()
+	await process_frame
+	_check(title.layout.info_box.title_text() == "Settings"
+			and title.layout.info_box.body_text() == (buttons[2] as NeonMenuButton).description,
+			"info box follows focus (%s)" % title.layout.info_box.title_text())
+	profile.set_selected_vehicle("aurora_gt")
+	street.refresh_car()
+	_check(street.vehicle_id() == "aurora_gt", "refresh_car picks up a new garage car")
+	title.queue_free()
+	await process_frame
+	var menu := (load("res://scenes/menu/main_menu.tscn") as PackedScene).instantiate() as MainMenu
+	root.add_child(menu)
+	await process_frame
+	await process_frame
+	_check(menu.layout.coin_pill != null and menu.layout.coin_text() == "384 Coins",
+			"main menu shows the coin pill (%s)" % menu.layout.coin_text())
+	_check(menu.layout.street.vehicle_id() == "aurora_gt", "main menu car follows the garage")
+	_check(menu.layout.info_box.title_text() == "Grand Prix", "main menu info box starts on Grand Prix")
+	menu.queue_free()
+	await process_frame
+	_fresh()
 
 
 func _test_credits() -> void:

@@ -401,7 +401,8 @@ static func section_panel(padding: int = 14) -> PanelContainer:
 
 
 ## Small line icons drawn into an image (fonts lack these glyphs):
-## "check" (a tick) or "info" (a ringed i).
+## "check" (a tick), "info" (a ringed i), and the start-menu icons
+## (see _menu_icon_distance).
 static func icon_texture(kind: String, size: int, color: Color) -> Texture2D:
 	var img := Image.create(size, size, false, Image.FORMAT_RGBA8)
 	var s := float(size)
@@ -419,6 +420,8 @@ static func icon_texture(kind: String, size: int, color: Color) -> Texture2D:
 					d = absf(p.distance_to(c) - (s * 0.5 - w))
 					d = minf(d, _segment_distance(p, Vector2(0.5, 0.45) * s, Vector2(0.5, 0.74) * s))
 					d = minf(d, p.distance_to(Vector2(0.5, 0.29) * s) - w * 0.4)
+				_:
+					d = _menu_icon_distance(kind, p / s) * s
 			var a := clampf(w * 0.5 + 0.5 - d, 0.0, 1.0)
 			img.set_pixel(x, y, Color(color, color.a * a))
 	return ImageTexture.create_from_image(img)
@@ -428,3 +431,147 @@ static func _segment_distance(p: Vector2, a: Vector2, b: Vector2) -> float:
 	var ab := b - a
 	var t := clampf((p - a).dot(ab) / ab.length_squared(), 0.0, 1.0)
 	return p.distance_to(a + ab * t)
+
+
+static var _icon_cache: Dictionary = {}
+
+
+## icon_texture, made once per kind and size, in white (tint it with modulate).
+static func cached_icon(kind: String, size: int) -> Texture2D:
+	var key := "%s/%d" % [kind, size]
+	if not _icon_cache.has(key):
+		_icon_cache[key] = icon_texture(kind, size, Color.WHITE)
+	return _icon_cache[key]
+
+
+## Distance (in icon widths, 0..1 space) from q to a start-menu icon:
+## person, group, gear, exit, back, flags, trophy, stopwatch, car, play.
+## Filled areas return a negative distance.
+static func _menu_icon_distance(kind: String, q: Vector2) -> float:
+	var d := INF
+	match kind:
+		"person":
+			d = _person_distance(q, Vector2(0.5, 0.0), 1.0)
+		"group":
+			d = minf(_person_distance(q, Vector2(0.24, 0.1), 0.72), _person_distance(q, Vector2(0.76, 0.1), 0.72))
+			# The middle person stands in front: clear a gap around them.
+			var front := _person_distance(q, Vector2(0.5, 0.02), 0.92)
+			if front < 0.05:
+				d = front
+		"gear":
+			var r := q.distance_to(Vector2(0.5, 0.5))
+			var a := atan2(q.y - 0.5, q.x - 0.5)
+			var tooth := fposmod(a / TAU * 8.0, 1.0) < 0.5
+			var outer := 0.46 if tooth else 0.34
+			d = maxf(r - outer, 0.13 - r)
+		"exit":
+			for seg in [[Vector2(0.55, 0.14), Vector2(0.18, 0.14)], [Vector2(0.18, 0.14), Vector2(0.18, 0.86)],
+					[Vector2(0.18, 0.86), Vector2(0.55, 0.86)], [Vector2(0.42, 0.5), Vector2(0.9, 0.5)],
+					[Vector2(0.72, 0.32), Vector2(0.9, 0.5)], [Vector2(0.9, 0.5), Vector2(0.72, 0.68)]]:
+				d = minf(d, _segment_distance(q, seg[0], seg[1]))
+		"back":
+			for seg in [[Vector2(0.86, 0.5), Vector2(0.16, 0.5)], [Vector2(0.4, 0.26), Vector2(0.16, 0.5)],
+					[Vector2(0.16, 0.5), Vector2(0.4, 0.74)]]:
+				d = minf(d, _segment_distance(q, seg[0], seg[1]))
+		"play":
+			d = -1.0 if Geometry2D.is_point_in_polygon(q, PackedVector2Array([
+					Vector2(0.28, 0.16), Vector2(0.84, 0.5), Vector2(0.28, 0.84)])) else INF
+		"flags":
+			d = minf(_segment_distance(q, Vector2(0.18, 0.92), Vector2(0.56, 0.08)),
+					_segment_distance(q, Vector2(0.82, 0.92), Vector2(0.44, 0.08)))
+			for side in [-1.0, 1.0]:
+				# Checkered flag hanging off each pole top.
+				var local := Vector2((q.x - 0.5) * side, q.y)
+				if local.x > 0.0 and local.x < 0.46 and local.y > 0.1 + local.x * 0.15 and local.y < 0.44 + local.x * 0.15:
+					var cell := Vector2i(floori(local.x / 0.115), floori((local.y - local.x * 0.15) / 0.11))
+					if (cell.x + cell.y) % 2 == 0:
+						d = -1.0
+					else:
+						d = minf(d, 0.04)
+		"trophy":
+			var bowl := q.y >= 0.12 and q.y <= 0.52 and absf(q.x - 0.5) <= 0.29 * sqrt(maxf(1.0 - pow((q.y - 0.12) / 0.4, 2.0), 0.0))
+			if bowl or (q.y >= 0.12 and q.y <= 0.18 and absf(q.x - 0.5) <= 0.29):
+				d = -1.0
+			for hx in [0.2, 0.8]:
+				d = minf(d, absf(q.distance_to(Vector2(hx, 0.27)) - 0.1))
+			if absf(q.x - 0.5) <= 0.05 and q.y >= 0.5 and q.y <= 0.74:
+				d = -1.0
+			if absf(q.x - 0.5) <= 0.2 and q.y >= 0.74 and q.y <= 0.88:
+				d = -1.0
+		"stopwatch":
+			var c := Vector2(0.5, 0.57)
+			d = absf(q.distance_to(c) - 0.33)
+			d = minf(d, _segment_distance(q, Vector2(0.4, 0.1), Vector2(0.6, 0.1)))
+			d = minf(d, _segment_distance(q, Vector2(0.5, 0.1), Vector2(0.5, 0.22)))
+			d = minf(d, _segment_distance(q, c, Vector2(0.5, 0.37)))
+			d = minf(d, _segment_distance(q, c, Vector2(0.64, 0.6)))
+		"car":
+			var body := Geometry2D.is_point_in_polygon(q, PackedVector2Array([
+					Vector2(0.08, 0.5), Vector2(0.92, 0.5), Vector2(0.95, 0.76), Vector2(0.05, 0.76)]))
+			var cabin := Geometry2D.is_point_in_polygon(q, PackedVector2Array([
+					Vector2(0.28, 0.24), Vector2(0.72, 0.24), Vector2(0.84, 0.52), Vector2(0.16, 0.52)]))
+			var window := Geometry2D.is_point_in_polygon(q, PackedVector2Array([
+					Vector2(0.32, 0.31), Vector2(0.68, 0.31), Vector2(0.75, 0.47), Vector2(0.25, 0.47)]))
+			var wheel := (q.y > 0.74 and q.y < 0.9) and ((q.x > 0.12 and q.x < 0.3) or (q.x > 0.7 and q.x < 0.88))
+			var lamp := q.distance_to(Vector2(0.22, 0.62)) < 0.065 or q.distance_to(Vector2(0.78, 0.62)) < 0.065
+			if (body or cabin or wheel) and not window and not lamp:
+				d = -1.0
+	return d
+
+
+## A head and shoulders, filled: offset moves it, scale shrinks it towards
+## the bottom centre.
+static func _person_distance(q: Vector2, offset: Vector2, scale: float) -> float:
+	# Icon space -> the person's own 0..1 box (feet on the bottom edge).
+	var p := Vector2((q.x - offset.x) / scale + 0.5, (q.y - offset.y - (1.0 - scale)) / scale)
+	var head := p.distance_to(Vector2(0.5, 0.3)) - 0.17
+	var shoulders := maxf(p.distance_to(Vector2(0.5, 0.95)) - 0.36, p.y - 0.88)
+	return minf(head, shoulders) * scale
+
+
+## Coin balance pill (gold outline, coin, count) like the reference art's
+## top-right corner. Returns the pill; the count label is named "Count".
+static func coin_pill(font_size: int = 22) -> PanelContainer:
+	var pill := PanelContainer.new()
+	var pill_style := box_style(Color(0.06, 0.03, 0.1, 0.9), Color(MAGENTA, 0.8), 0, 2)
+	pill_style.set_corner_radius_all(22)
+	pill_style.content_margin_left = 10
+	pill_style.content_margin_right = 20
+	pill_style.content_margin_top = 6
+	pill_style.content_margin_bottom = 6
+	pill_style.shadow_color = Color(MAGENTA, 0.3)
+	pill_style.shadow_size = 6
+	pill.add_theme_stylebox_override("panel", pill_style)
+	var inner := HBoxContainer.new()
+	inner.add_theme_constant_override("separation", 10)
+	pill.add_child(inner)
+	inner.add_child(CoinIcon.new(font_size + 10.0))
+	var count := stat("", font_size, Color.WHITE)
+	count.name = "Count"
+	count.add_theme_font_override("font", slanted_font(false))
+	inner.add_child(count)
+	return pill
+
+
+static var _slant_heading: FontVariation
+static var _slant_body: FontVariation
+
+
+## Oxanium Bold (heading) or Rajdhani Bold leaned forward, like the
+## reference art's menu and car-name lettering.
+static func slanted_font(heading: bool = true) -> Font:
+	var cached := _slant_heading if heading else _slant_body
+	if cached == null:
+		cached = FontVariation.new()
+		if heading:
+			# Built on the font file itself: a variation of a variation drops the weight.
+			cached.base_font = load(HEADING_FONT_PATH) as FontFile
+			cached.variation_opentype = {TextServerManager.get_primary_interface().name_to_tag("wght"): 700}
+		else:
+			cached.base_font = bold_font()
+		cached.variation_transform = Transform2D(Vector2(1, 0), Vector2(0.22, 1), Vector2.ZERO)
+		if heading:
+			_slant_heading = cached
+		else:
+			_slant_body = cached
+	return cached
