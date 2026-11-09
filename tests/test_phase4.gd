@@ -19,6 +19,8 @@ var _current: String = ""
 
 
 func _initialize() -> void:
+	# Races open the results without the podium ceremony (see test_podium.gd).
+	PodiumCeremony.instant = true
 	# Never touch the real profile or settings: races now pay out coins.
 	PlayerProfile.save_path = "user://test_phase4_profile.json"
 	GameSettings.path = "user://test_phase4_settings.cfg"

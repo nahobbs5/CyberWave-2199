@@ -88,3 +88,48 @@ static func device_name(device: int, with_model: bool = true) -> String:
 	if with_model and model != "":
 		text += "  -  " + model
 	return text
+
+
+## What this device looks like, for its icon: "keyboard", "xbox",
+## "playstation", "nintendo" or "generic".
+static func controller_kind(device: int) -> String:
+	if device < 0:
+		return "keyboard"
+	return kind_from(Input.get_joy_name(device), Input.get_joy_info(device))
+
+
+## The pad kind from its name and Input.get_joy_info() (the vendor id wins
+## when the platform reports one).
+static func kind_from(joy_name: String, info: Dictionary = {}) -> String:
+	match int(info.get("vendor_id", 0)):
+		0x045E:
+			return "xbox"
+		0x054C:
+			return "playstation"
+		0x057E:
+			return "nintendo"
+	var n := joy_name.to_lower()
+	for word in ["xbox", "xinput", "x-box"]:
+		if word in n:
+			return "xbox"
+	for word in ["playstation", "dualshock", "dualsense", "sony", "ps3", "ps4", "ps5"]:
+		if word in n:
+			return "playstation"
+	for word in ["nintendo", "switch", "joy-con", "joycon", "pro controller"]:
+		if word in n:
+			return "nintendo"
+	return "generic"
+
+
+## "XBOX CONTROLLER", "KEYBOARD", ...
+static func kind_label(kind: String) -> String:
+	match kind:
+		"keyboard":
+			return "KEYBOARD"
+		"xbox":
+			return "XBOX CONTROLLER"
+		"playstation":
+			return "PLAYSTATION CONTROLLER"
+		"nintendo":
+			return "SWITCH CONTROLLER"
+	return "GAMEPAD"

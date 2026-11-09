@@ -14,6 +14,8 @@ var time_value: Label
 ## Coin count (the number only); the coin symbol sits to its right.
 var coin_label: Label
 var coin_icon: CoinIcon
+## The coin count + symbol row (hidden in split screen).
+var coin_row: HBoxContainer
 var elim_label: Label
 
 ## Places gained / lost since the start (tests).
@@ -65,7 +67,7 @@ func _init() -> void:
 	grid.add_child(time_value)
 
 	# Coins: the count with a coin symbol on its right.
-	var coin_row := HBoxContainer.new()
+	coin_row = HBoxContainer.new()
 	coin_row.add_theme_constant_override("separation", 6)
 	box.add_child(coin_row)
 	coin_label = UIStyle.heading("0", 22, UIStyle.GOLD)
@@ -116,6 +118,11 @@ func position_changed(gained: bool) -> void:
 	if gained:
 		pos_cue.text = "POSITION UP!"
 		_cue_time = 1.0
+
+
+## Shows or hides the coin counter (split screen has no coins).
+func set_coins_visible(on: bool) -> void:
+	coin_row.visible = on
 
 
 ## Gold pulse on the count and coin, and a floating "+1".

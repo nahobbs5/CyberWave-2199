@@ -35,6 +35,8 @@ var body_hop: float = 0.0
 ## Tyre smoke emitters (rear wheels) and the skid loop.
 var smoke: Array[CPUParticles3D] = []
 var skid_player: AudioStreamPlayer
+## Neon arches shown while drafting (see SlipstreamRing).
+var ring: SlipstreamRing
 
 @onready var _glow: OmniLight3D = $UnderGlow
 @onready var _sparks: Array[MeshInstance3D] = [$SparkL, $SparkR]
@@ -58,6 +60,9 @@ func _ready() -> void:
 	_glow.visible = false
 	_build_spray()
 	_build_smoke()
+	ring = SlipstreamRing.new()
+	add_child(ring)
+	ring.attach(_vehicle)
 	skid_player = AudioStreamPlayer.new()
 	skid_player.name = "SkidPlayer"
 	skid_player.bus = &"SFX"

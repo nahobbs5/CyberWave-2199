@@ -90,7 +90,8 @@ func _build() -> void:
 	layout.back_button.pressed.connect(back)
 	layout.back_button.focus_mode = Control.FOCUS_NONE
 	CupSelect.add_subtitle(layout, "CHOOSE A CUP")
-	SetupWidgets.add_coin_pill(self, PlayerProfile.get_profile().coins)
+	if not GameSession.split_screen:
+		SetupWidgets.add_coin_pill(self, PlayerProfile.get_profile().coins)
 	# START GRAND PRIX sits bottom right, level with Back.
 	var footer := HBoxContainer.new()
 	footer.alignment = BoxContainer.ALIGNMENT_END

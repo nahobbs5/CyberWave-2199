@@ -260,7 +260,7 @@ func _build() -> void:
 	_laps_row.visible = mode == RaceConfig.Mode.VERSUS
 	rows.add_child(_laps_row)
 	_weapons = NeonToggle.new()
-	var weapons_row := SetupWidgets.setting_row("item_box", "Items (Weapons)", _weapons)
+	var weapons_row := SetupWidgets.setting_row("item_box", "Items", _weapons)
 	weapons_row.add_theme_constant_override("margin_right", 14)
 	rows.add_child(weapons_row)
 	rows.add_child(_note_box())

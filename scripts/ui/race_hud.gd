@@ -15,6 +15,8 @@ const MAGENTA := UIStyle.MAGENTA
 const POSITION_SETTLE := 3.0
 ## At most one "1ST PLACE!" this often.
 const LEAD_COOLDOWN := 10.0
+## Seconds between FINISH! and the podium ceremony.
+const PODIUM_DELAY := 1.5
 
 var race: RaceManager
 ## The player this HUD follows (split screen: one HUD per view). Null until
@@ -83,6 +85,7 @@ func setup(manager: RaceManager) -> void:
 	results.continue_pressed.connect(func() -> void: race.continue_after_results())
 	results.menu_pressed.connect(func() -> void: race.quit_to_menu())
 	info.mode_label.text = _mode_text()
+	info.set_coins_visible(not race.is_multiplayer())
 	minimap.setup(race)
 	if split_view:
 		minimap.get_parent().visible = false
@@ -281,7 +284,9 @@ func _on_player_finished(who: RaceProgress) -> void:
 	else:
 		announcer.announce("FINISH!", 2.0, MAGENTA, "%s PLACE" % ResultsScreen.ordinal(who.finish_position))
 	if not split_view:
-		results.open(race)
+		# The podium first when this race ends a set (or is a single Versus
+		# race), after a beat so FINISH! registers; then the results.
+		PodiumCeremony.open_then(race, results, PODIUM_DELAY)
 
 
 func _on_coin_collected(total: int) -> void:

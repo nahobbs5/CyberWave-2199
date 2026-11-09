@@ -13,6 +13,7 @@ const CONNECT := "res://scenes/menu/multiplayer_connect.tscn"
 const CARS := "res://scenes/menu/multiplayer_cars.tscn"
 const SETUP := "res://scenes/menu/multiplayer_setup.tscn"
 const TRACKS := "res://scenes/menu/track_select.tscn"
+const CUPS := "res://scenes/menu/cup_select.tscn"
 const GP1 := "res://resources/grand_prix/american_circuit.tres"
 const ROSTER := "res://resources/racers/rival_roster.tres"
 const TEST_SAVE := "user://test_mp_gp.json"
@@ -23,6 +24,8 @@ var _current: String = ""
 
 
 func _initialize() -> void:
+	# Races open the results without the podium ceremony (see test_podium.gd).
+	PodiumCeremony.instant = true
 	PlayerProfile.save_path = "user://test_mp_profile.json"
 	GameSettings.path = "user://test_mp_settings.cfg"
 	PlayerProfile.delete_save()
@@ -202,11 +205,23 @@ func _test_lobby() -> void:
 	_check(GameSession.split_screen, "the connect screen turns split screen on")
 	connect._input(_key(KEY_ENTER))
 	_check(connect.devices == [-1] and not connect.is_ready(-1), "Enter joins the keyboard as P1 (not ready yet)")
+	_check(connect.card_kind(0) == "keyboard" and connect.card_kind(1) == "generic", "P1's card shows a keyboard; empty slots a plain pad")
+	_check(connect.next_button.disabled and connect.cards[0].state == 1, "P1 joined, not ready: Next is off")
+	_check(connect.controllers_found_text() == str(Input.get_connected_joypads().size()), "Controllers found counts the connected pads")
+	_check(DeviceInput.kind_from("Xbox Series Controller") == "xbox" and DeviceInput.kind_from("XInput Gamepad (GLFW)") == "xbox",
+			"Xbox pads are recognised by name")
+	_check(DeviceInput.kind_from("PS5 Controller") == "playstation" and DeviceInput.kind_from("Sony DualSense") == "playstation",
+			"PlayStation pads are recognised by name")
+	_check(DeviceInput.kind_from("Nintendo Switch Pro Controller") == "nintendo", "Switch pads are recognised by name")
+	_check(DeviceInput.kind_from("USB Gamepad", {"vendor_id": 0x054C}) == "playstation" and DeviceInput.kind_from("Logitech F310") == "generic",
+			"the vendor id wins; unknown pads are generic")
 	connect._input(_key(KEY_ENTER))
 	_check(connect.is_ready(-1) and not connect.can_continue(), "the second press is READY; P1 alone can't go on")
 	connect._input(_joy_button(0, JOY_BUTTON_A))
 	connect._input(_joy_button(3, JOY_BUTTON_START))
 	_check(connect.devices == [-1, 0, 3], "pads join as P2 and P3 in order")
+	_check(connect.cards[0].state == 2 and connect.cards[0].icon.excited and connect.card_kind(1) == DeviceInput.controller_kind(0),
+			"P1's card shows READY; P2's shows its pad")
 	connect._input(_joy_button(0, JOY_BUTTON_A))
 	_check(connect.is_ready(0) and GameSession.mp_devices.is_empty(), "P2 ready, but P3 isn't: nobody moves on")
 	connect._input(_joy_button(0, JOY_BUTTON_B))
@@ -215,6 +230,7 @@ func _test_lobby() -> void:
 	_check(connect.devices == [-1, 0], "B on a player who isn't ready leaves")
 	connect._input(_joy_button(0, JOY_BUTTON_A))
 	_check(connect.confirm_banner.visible and GameSession.mp_devices.is_empty(), "everyone ready: ALL READY banner, waiting for a final press")
+	_check(not connect.next_button.disabled, "everyone ready: Next is on")
 	connect._input(_key(KEY_ESCAPE))
 	_check(not connect.is_ready(-1) and not connect.confirm_banner.visible, "Esc on the banner takes P1's READY back")
 	connect._input(_key(KEY_ENTER))
@@ -229,6 +245,8 @@ func _test_lobby() -> void:
 	root.add_child(cars)
 	await process_frame
 	_check(cars.slots.size() == 2 and cars.previews.size() == 2, "a car card per player")
+	_check(not cars.quadrants() and cars.thumb_count(0) == mini(4, VehicleCatalog.all().size()), "2 players: tall cards with a car strip")
+	_check(cars.next_button.disabled and cars.cards[1].preview.ring_color == SplitScreen.PLAYER_COLORS[1], "Next is off; the turntable glows in the player colour")
 	var stats_match := true
 	for i in 2:
 		var v := cars.vehicle_of(i)
@@ -286,11 +304,30 @@ func _test_lobby() -> void:
 	cars._input(_joy_button(0, JOY_BUTTON_A))
 	cars._input(_key(KEY_ENTER))
 	_check(cars.all_ready() and cars.confirm_banner.visible and GameSession.mp_plates.is_empty(), "everyone ready: ALL READY banner, not moving on yet")
+	_check(not cars.next_button.disabled, "everyone ready: Next is on")
 	cars._input(_joy_button(0, JOY_BUTTON_START))
 	_check(GameSession.mp_vehicles.size() == 2 and GameSession.mp_vehicles[1] == v1.id, "final confirm: cars stored, on to setup")
 	_check(GameSession.mp_plates == PackedStringArray(["ZAP 9", "PC"]), "and the plates (%s)" % [GameSession.mp_plates])
 	cars.queue_free()
 	await process_frame
+	# Three and four players: a 2x2 grid; with three, the fourth cell lists the controls.
+	var kept := [GameSession.mp_devices, GameSession.mp_vehicles, GameSession.mp_plates]
+	for n in [3, 4]:
+		GameSession.mp_devices = PackedInt32Array([-1, 0, 1, 2].slice(0, n))
+		GameSession.mp_vehicles = PackedStringArray()
+		GameSession.mp_plates = PackedStringArray()
+		var quad := (load(CARS) as PackedScene).instantiate() as MultiplayerCars
+		root.add_child(quad)
+		await process_frame
+		_check(quad.quadrants() and quad.cards.size() == n and quad.thumb_count(0) == 0, "%d players: quadrant cards (no strip)" % n)
+		_check((quad.help_panel != null) == (n == 3), "%d players: controls panel only with three" % n)
+		quad._input(_joy_button(1, JOY_BUTTON_DPAD_RIGHT))
+		_check(int(quad.slots[2].vehicle) == posmod(2 + 1, VehicleCatalog.all().size()), "%d players: P3 steps their own car" % n)
+		quad.queue_free()
+		await process_frame
+	GameSession.mp_devices = kept[0]
+	GameSession.mp_vehicles = kept[1]
+	GameSession.mp_plates = kept[2]
 
 	_current = "setup"
 	var setup := (load(SETUP) as PackedScene).instantiate() as MultiplayerSetup
@@ -300,6 +337,7 @@ func _test_lobby() -> void:
 	var labels: Array = setup.find_children("*", "Label", true, false).map(func(n: Node) -> String: return (n as Label).text)
 	_check(labels.has("NPCs") and labels.has("NPC difficulty") and not labels.has("AI rivals"), "rows say NPCs / NPC difficulty")
 	_check(not labels.any(func(t: String) -> bool: return t.begins_with("No coins")), "no 'No coins or records' line")
+	_check(labels.has("Items") and not labels.has("Weapons"), "the item toggle says Items")
 	setup.set_ai_rivals(false)
 	_check(not setup._difficulty_row.visible, "NPC difficulty hidden with NPCs off")
 	_check(not setup.elimination_allowed(), "Elimination needs NPCs")
@@ -324,6 +362,13 @@ func _test_lobby() -> void:
 	setup.next()
 	_check(GameSession.setup_mode == RaceConfig.Mode.GRAND_PRIX, "Grand Prix goes to the cup screen")
 	setup.queue_free()
+	await process_frame
+	var cups := (load(CUPS) as PackedScene).instantiate() as Control
+	root.add_child(cups)
+	await process_frame
+	var pill_labels := cups.find_children("Count", "Label", true, false).filter(func(n: Node) -> bool: return (n as Label).text.ends_with("Coins"))
+	_check(GameSession.split_screen and pill_labels.is_empty(), "no coin pill on the cup screen")
+	cups.queue_free()
 	await process_frame
 	var again := (load(CONNECT) as PackedScene).instantiate() as MultiplayerConnect
 	root.add_child(again)
@@ -383,6 +428,10 @@ func _test_views(players: int) -> void:
 	for hud in split.huds:
 		hidden = hidden and not hud.minimap.is_visible_in_tree()
 	_check(hidden, "the per-view minimaps are hidden")
+	var no_coins := race.coins.available_count() == 0
+	for hud in split.huds:
+		no_coins = no_coins and not hud.info.coin_icon.is_visible_in_tree()
+	_check(no_coins, "no coins on the track or in any view's HUD")
 	_check(race.wrong_way_signs.size() == players and race.weapon_manager._reticles.size() == players,
 			"a wrong-way sign and lock-on ring per player")
 	var sign_layer := true

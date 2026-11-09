@@ -40,6 +40,8 @@ const START_YAW := 4.45
 @export var view_offset: Vector2 = Vector2.ZERO
 ## Camera distance scale (>1 shows more of the room).
 @export var zoom: float = 1.0
+## Colour of the turntable's inner glow ring (set before adding to the tree).
+@export var ring_color: Color = UIStyle.CYAN
 
 var car: VehicleController
 
@@ -294,7 +296,7 @@ func _build_showroom() -> void:
 	_disc(TABLE_RADIUS + 0.03, 0.1, ROOM_FLOOR + 0.13, WeaponManager.glow_material(UIStyle.MAGENTA, 3.2))
 	_disc(TABLE_RADIUS, 0.06, FLOOR_Y - 0.03, base_mat)
 	_ring(TABLE_RADIUS - 0.12, 0.025, Color(0.9, 0.85, 1.0), 1.6, FLOOR_Y + 0.005)
-	_ring(TABLE_RADIUS - 0.55, 0.035, UIStyle.CYAN, 2.0, FLOOR_Y + 0.005)
+	_ring(TABLE_RADIUS - 0.55, 0.035, ring_color, 2.0, FLOOR_Y + 0.005)
 	_ring(TABLE_RADIUS + 0.55, 0.02, UIStyle.MAGENTA.darkened(0.2), 1.2, ROOM_FLOOR + 0.01)
 
 

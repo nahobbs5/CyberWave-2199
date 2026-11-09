@@ -203,7 +203,7 @@ func _build() -> void:
 	_laps_row = _row("Laps", _laps)
 	right.add_child(_laps_row)
 	_weapons = CheckButton.new()
-	right.add_child(_row("Weapons", _weapons))
+	right.add_child(_row("Items", _weapons))
 
 	# What the chosen mode means (Elimination especially).
 	var about := UIStyle.section_panel(14)

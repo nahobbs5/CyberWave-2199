@@ -270,7 +270,7 @@ func _build_overlay(count: int) -> void:
 		for hud in huds:
 			hud.announcer.announce("", 0.01, Color.WHITE)
 		minimap.get_parent().visible = false
-		results.open(race))
+		PodiumCeremony.open_then(race, results))
 	HudScaler.apply(overlay, GameSettings.hud_scale)
 
 

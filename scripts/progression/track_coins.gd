@@ -29,8 +29,12 @@ var _spin: float = 0.0
 var _material: StandardMaterial3D
 
 
-func setup(track: TrackCircuit, line: RacingLine, player: VehicleController) -> void:
+## `spawn` false (split screen): no coins on the track at all.
+func setup(track: TrackCircuit, line: RacingLine, player: VehicleController, spawn: bool = true) -> void:
 	_player = player
+	if not spawn:
+		collecting = false
+		return
 	_material = WeaponManager.glow_material(Color(1.0, 0.8, 0.2), 1.6)
 	_material.metallic = 1.0
 	_material.roughness = 0.2

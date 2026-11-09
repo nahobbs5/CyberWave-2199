@@ -137,7 +137,7 @@ func _ready() -> void:
 	coins = TrackCoins.new()
 	coins.name = "TrackCoins"
 	add_child(coins)
-	coins.setup(track, line, player.vehicle)
+	coins.setup(track, line, player.vehicle, not is_multiplayer()) # no coins in split screen
 	for i in range(1, players.size()):
 		coins.add_collector(players[i].vehicle)
 	if config.is_elimination():
@@ -360,23 +360,7 @@ func _spawn_grid() -> void:
 		var color := player_color if is_player else profile.color
 		if is_player and is_multiplayer():
 			color = SplitScreen.PLAYER_COLORS[human]
-		if is_player and human == 0:
-			var p := PlayerProfile.get_profile()
-			VehicleCosmetics.apply(car, human_vehicle, p.loadout_for(human_vehicle.id), _human_plate(0, p.plate_text))
-		elif is_player:
-			# Players 2-4: the stock car in their player colour, their own plate.
-			VehicleCosmetics.apply_model(car, human_vehicle)
-			car.set_body_color(color.darkened(0.15))
-			VehicleCosmetics.add_plate(car, _human_plate(human, "P%d" % (human + 1)), null)
-		else:
-			# Rivals drive the car rolled for this series (real model and
-			# stats), painted in their own colour, with their own plate.
-			VehicleCosmetics.apply_model(car, rival_vehicle)
-			car.set_body_color(color)
-			var plate := profile.plate_text
-			if config != null and id >= 0 and id < config.rival_plates.size():
-				plate = config.rival_plates[id]
-			VehicleCosmetics.add_plate(car, plate, null)
+		apply_look(car, racer_look(id, color))
 		# Bigger on track than in the menus, so cars are easy to tell apart.
 		car.set_visual_scale(VehicleController.TRACK_VISUAL_SCALE)
 		var racer_name := profile.display_name if not is_player else ("You" if not is_multiplayer() else "P%d" % (human + 1))
@@ -407,6 +391,41 @@ func _spawn_grid() -> void:
 	for racer in racers:
 		if racer.is_player:
 			players[RaceConfig.human_slot(racer.racer_id)] = racer
+
+
+## How racer `id` looks: {vehicle, plate, and either loadout (player 1's
+## garage cosmetics) or paint (a flat body colour)}. `color` is the racer's
+## colour. Shared by the grid and the podium so both show the same cars.
+func racer_look(id: int, color: Color) -> Dictionary:
+	if RaceConfig.is_human_id(id):
+		var human := RaceConfig.human_slot(id)
+		var vehicle := _human_vehicle(human)
+		if human == 0:
+			var p := PlayerProfile.get_profile()
+			return {"vehicle": vehicle, "loadout": p.loadout_for(vehicle.id), "plate": _human_plate(0, p.plate_text)}
+		# Players 2-4: the stock car in their player colour, their own plate.
+		return {"vehicle": vehicle, "paint": color.darkened(0.15), "plate": _human_plate(human, "P%d" % (human + 1))}
+	# Rivals drive the car rolled for this series (real model and stats),
+	# painted in their own colour, with their own plate.
+	var plate := "RIVAL"
+	if rival_roster != null and id >= 0 and id < rival_roster.rivals.size():
+		plate = rival_roster.rivals[id].plate_text
+	if config != null and id >= 0 and id < config.rival_plates.size():
+		plate = config.rival_plates[id]
+	return {"vehicle": _rival_vehicle(id), "paint": color, "plate": plate}
+
+
+## Dresses `car` as described by racer_look().
+static func apply_look(car: VehicleController, look: Dictionary) -> void:
+	var vehicle := look.get("vehicle") as VehicleData
+	if vehicle == null:
+		return
+	if look.has("loadout"):
+		VehicleCosmetics.apply(car, vehicle, look.loadout, str(look.get("plate", "")))
+		return
+	VehicleCosmetics.apply_model(car, vehicle)
+	car.set_body_color(look.get("paint", Color.WHITE))
+	VehicleCosmetics.add_plate(car, str(look.get("plate", "")), null)
 
 
 ## A split-screen player's plate from the car screen, else `fallback`.

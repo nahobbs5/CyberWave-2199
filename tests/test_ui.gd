@@ -19,6 +19,8 @@ var _current: String = ""
 
 
 func _initialize() -> void:
+	# Races open the results without the podium ceremony (see test_podium.gd).
+	PodiumCeremony.instant = true
 	PlayerProfile.save_path = "user://test_ui_profile.json"
 	GameSettings.path = "user://test_ui_settings.cfg"
 	Championship.save_path = "user://test_ui_gp.json"

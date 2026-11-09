@@ -1,5 +1,5 @@
 # CYBERWAVE 2199
-## Game Design Document — Version 4.1
+## Game Design Document — Version 4.6
 
 **Status:** Development Baseline  
 **Engine:** Godot 4  
@@ -187,8 +187,8 @@ Two to four players on one PC, Mario Kart style. The title menu offers **Single 
 
 ### Setup Screens
 
-1. **Connect controllers.** Each player presses Enter (keyboard) or A / Start (gamepad) once to join, then again to confirm READY. That device is theirs for the session: the keyboard can be one player and each gamepad another. Each slot shows its device; connected pads are listed. Back / B takes back READY, then leaves. When two to four have joined and all are ready, an **ALL READY** banner appears; one more Enter / A / Start from any player opens step 2 (Back / B still takes a READY back).
-2. **Choose your cars.** One card per player: the car turning on its platform, its name and type, and its stats (top speed, acceleration, handling, drift as 1–10 bars). Left / right changes car on that player's device; Enter / A readies up; Back / B un-readies, or returns to step 1. When everyone is ready, an **ALL READY** banner asks for one more Enter / A / Start before step 3 opens.
+1. **Connect controllers.** Each player presses Enter (keyboard) or A / Start (gamepad) once to join, then again to confirm READY. That device is theirs for the session: the keyboard can be one player and each gamepad another. Each slot is a P1–P4 card whose icon shows the joined device: an Xbox, PlayStation or Switch pad (recognised by name or vendor), any other pad, or the keyboard; empty slots show a grey pad. A line under the cards counts the connected controllers, and a gold Next: Player Setup button lights up once everyone is ready. Back / B takes back READY, then leaves. When two to four have joined and all are ready, an **ALL READY** banner appears; one more Enter / A / Start from any player opens step 2 (Back / B still takes a READY back).
+2. **Choose your cars.** One neon card per player in their colour: a header with the player tag, their device and READY, the car turning on a turntable that glows in the player's colour, its name and type, and its stats (top speed, acceleration, handling, drift as 1–10 bars). Two players get tall side-by-side cards with a strip of car pictures (click one to pick it); three or four get a 2×2 grid of wide cards with a car counter, and with three the fourth cell lists the controls and who is still choosing. Left / right changes car on that player's device; Enter / A readies up; Back / B un-readies, or returns to step 1. When everyone is ready, an **ALL READY** banner asks for one more Enter / A / Start before step 3 opens.
    - Player 1 drives their Garage loadout. Players 2–4 drive the stock car painted in their player colour (P1 cyan, P2 magenta, P3 gold, P4 green).
    - Everyone can set a license plate (§9.5) with Y (gamepad) or Tab (keyboard). The keyboard player types; gamepad players use a letter picker (up / down changes the letter, left / right moves, X deletes, A done). Player 1's plate is saved to their profile; players 2–4 default to "P2"–"P4".
 3. **Race setup.** Mode (Grand Prix or Versus); in Versus, race type (Standard or Elimination) and number of races; NPCs on or off (the computer-driven cars: on fills the grid to eight, off races the humans only; Elimination needs NPCs); NPC difficulty (shown only with NPCs on); laps; weapons. A panel explains the chosen mode and race type, including how Elimination knocks cars out.
@@ -212,7 +212,7 @@ Leaving a race, or finishing a set, returns to step 2 with the same players join
 
 ### Rules
 
-- Split screen pays no coins and records no personal bests or Grand Prix results. Versus sets of races work as in §2.1, with each human scoring points. Track coins can still be collected for the HUD count.
+- Split screen pays no coins and records no personal bests or Grand Prix results. Versus sets of races work as in §2.1, with each human scoring points. There are no coins at all in split screen: none on the track, no coin counter on the HUD and no coin balance on the menus.
 - A split-screen Grand Prix is kept in memory only, so it never replaces a saved single-player championship. Every human scores points; any player can be champion.
 - Rubber-banding, coin respawns and the final-lap music follow the leading human.
 - Any player's pause button pauses the race for everyone.
@@ -315,6 +315,12 @@ Proposed behavior:
 - Leaving the ground suspends or ends charging.
 - Losing control ends the drift.
 - Normal steering corrections do not immediately cancel it.
+
+## 4.5 Slipstream
+
+Tuck in 2–16 m behind another car, going the same way at speed, and a slipstream meter fills (faster the closer you are). When it's full you get a short boost; out of the tow the meter drains. Every racer can draft, AI included.
+
+Feedback: "SLIPSTREAM nn%" on the speed panel, wind streaks at the screen edges, and two glowing cyan arches standing around the car, rising from the road on each side and over the roof (after the reference art *Cyberpunk Slipstream Under the Neon Moon*). The arches ripple backward and brighten as the meter fills, and shoot back and fade when the boost fires. Other players see them on any car that is drafting. With Reduced flashing the arches hold a steady glow with no ripple or burst.
 
 ---
 
@@ -954,7 +960,7 @@ Previously selected settings should be remembered.
 
 The setup, cup and track screens share the Settings look (§11.2): the dimmed street behind them, the screen name along the top, coins at the top right and Back at the bottom left.
 
-- **Race setup.** On the left is a panel under a gold banner ("VERSUS · 1 RACE", or the cup's name and trophy in Grand Prix). The panel has one rounded row per setting, each with an icon and a ‹ value › stepper (left / right changes it): Race Type, Races, NPC Difficulty, Laps, and an ON / OFF switch for Items (Weapons). Grand Prix shows only NPC Difficulty and Items. A note explains the race type. Below the panel is a big gold button: Next: Pick a Track, or Start Grand Prix. On the right is the car on its platform with gold arrows (LB / RB also change it), its name on a magenta banner, a cyan type tag, segmented stat bars with icons, a top-speed card and the plate. Hints along the bottom: B Back, A Next, Y Garage. The garage's Back returns to the setup.
+- **Race setup.** On the left is a panel under a gold banner ("VERSUS · 1 RACE", or the cup's name and trophy in Grand Prix). The panel has one rounded row per setting, each with an icon and a ‹ value › stepper (left / right changes it): Race Type, Races, NPC Difficulty, Laps, and an ON / OFF switch for Items. Grand Prix shows only NPC Difficulty and Items. A note explains the race type. Below the panel is a big gold button: Next: Pick a Track, or Start Grand Prix. On the right is the car on its platform with gold arrows (LB / RB also change it), its name on a magenta banner, a cyan type tag, segmented stat bars with icons, a top-speed card and the plate. Hints along the bottom: B Back, A Next, Y Garage. The garage's Back returns to the setup.
 - **Cup screen (Grand Prix) and track screen (Versus).** These use the cup cards and race panel described in §2.2. Grand Prix confirms with a gold START GRAND PRIX button at the bottom right. A track without a screenshot shows its outline instead.
 
 ## 11.4 Garage
@@ -1015,6 +1021,27 @@ Additional information:
 - Newly available cosmetics
 - Next race grid preview
 
+## 11.7a Podium Ceremony
+
+A victory podium plays before the results screen (laid out after the "Neon Grand Prix Victory Podium" reference art). It plays after the last race of a Grand Prix, after the last race of a Versus set (Versus or Elimination races), and after a single Versus race. A single Elimination race goes straight to the results.
+
+- A night street in the neon city (the start-menu backdrop) with three neon platforms on the road: gold 1st in the middle (tallest), silver 2nd on the left, magenta 3rd on the right, each with its place number.
+- The top three's cars, dressed as they raced (player 1's garage cosmetics, players 2–4 in their player colour, rivals in their colours, everyone's own plate).
+- A place tag on each platform ("1ST | NAME"). Player names use the split-screen player colours (single player: magenta); rivals are white. The winner's tag carries CUP CHAMPION / SET WINNER / RACE WINNER.
+- The banner reads "CONGRATULATIONS!" when a human made the top three, else "FINAL PODIUM".
+- A gold crown over the winner, sweeping spotlights, confetti and a short fanfare (a placeholder synthesized call; a `sounds/victory_fanfare` .ogg/.mp3/.wav replaces it). Reduced flashing stops the spotlight sweep and halves the confetti.
+- The camera starts wide and slowly pushes in towards the winner.
+- A / Enter (or a click) skips to the end; once "A Continue" appears, it opens the results.
+
+| | Grand Prix | Versus (set or single race) |
+|---|---|---|
+| Who stands on it | Overall cup standings | Set: overall set points; single race: finishing order |
+| Extras | The cup's trophy, corner confetti cannons, 4 spotlights | 2 spotlights |
+| Length | ~10 s | ~7 s |
+| Continue to | Championship results | Race results |
+
+Timeline (Grand Prix / Versus): cars drive onto the lowered platforms (0–2 s / 0–1.5 s), the platforms rise 3rd, 2nd, then 1st (2–5 s / 1.5–3.5 s), celebration with crown, confetti and fanfare (5–8 s / 3.5–5.5 s), then the Continue prompt (8–10 s / 5.5–7 s). In single player it starts 1.5 s after FINISH!. In split screen it starts once every player is done.
+
 ## 11.8 Race Presentation
 
 - Loading card while a track builds (races and free drive): logo, track name, location, mode (and "Race N of M" in a set), track outline, LOADING. The countdown starts only after it fades out.
@@ -1025,7 +1052,7 @@ Additional information:
 - Position-change feedback
 - Distinct drift boost effects
 - Clear finish-line presentation
-- Grand Prix podium ceremony
+- Podium ceremony after a Grand Prix, a Versus set or a single Versus race (§11.7a)
 
 ## 11.9 Accessibility
 
@@ -1403,5 +1430,10 @@ Changes after Version 1.0 should be tracked as revisions rather than silently re
 | 3.9 | 2026-11-09 | Settings and Credits restyled after their reference art to match the start menus: dimmed live street, neon panels, icon rows, Settings tabs that jump between the display / audio and controls panels (§11.2). |
 | 4.0 | 2026-11-09 | Race setup, cup screen and Versus track screen restyled after their reference art: settings rows with ‹ value › steppers under a gold banner, a neon car showcase, cup cards with maps between laurels, race cards with track screenshots, and gold Next / Start Grand Prix buttons. Y opens the garage from the race setup and returns to it (§2.2, §11.3). |
 | 4.1 | 2026-11-09 | Garage restyled after its new reference art: a full-screen neon garage room behind the car, COSMETICS / INFO tabs (Info lists the car's specs and equipped items), category icons, and B Back / A Apply buttons. The same garage room is now behind the car in race setup and the split-screen car cards (§11.4). |
+| 4.2 | 2026-11-09 | Split-screen connect screen restyled after its reference art: P1–P4 neon cards with an icon for each joined device (Xbox, PlayStation, Switch, other pad or keyboard), a gold READY! plate, a controllers-found count and a gold Next: Player Setup button (§2.4). |
+| 4.3 | 2026-11-09 | Podium ceremony before the results after a Grand Prix, a Versus set or a single Versus race: the top three's cars on rising neon platforms, a crown over the winner, spotlights, confetti, a fanfare and A to continue (§11.7a). |
+| 4.4 | 2026-11-09 | Slipstream written up (§4.5) and given a slipstream ring: glowing cyan arches around a drafting car, after its reference art. |
+| 4.5 | 2026-11-09 | Split-screen car screen restyled after its reference art in the connect screen's style: player-colour cards with device and READY headers, stat bars, a car picture strip for two players and a 2×2 grid for three or four, a controls bar and a gold Next: Race Setup button (§2.4). |
+| 4.6 | 2026-11-09 | No coins in split screen (track, HUD or menus). The item toggle is labelled just "Items" in single-player and split-screen setup (§2.4, §11.3). |
 
-**End of Game Design Document — Version 4.1**
+**End of Game Design Document — Version 4.6**
