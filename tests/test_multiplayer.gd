@@ -335,7 +335,15 @@ func _test_lobby() -> void:
 	await process_frame
 	setup.set_mode(false)
 	var labels: Array = setup.find_children("*", "Label", true, false).map(func(n: Node) -> String: return (n as Label).text)
-	_check(labels.has("NPCs") and labels.has("NPC difficulty") and not labels.has("AI rivals"), "rows say NPCs / NPC difficulty")
+	_check(labels.has("NPCs") and labels.has("NPC Difficulty") and not labels.has("AI rivals"), "rows say NPCs / NPC Difficulty")
+	_check(setup.player_pills.size() == GameSession.mp_devices.size(), "a pill per player with their car")
+	_check(setup._mode is NeonStepper and setup._ai is NeonToggle and setup._weapons is NeonToggle,
+			"rows use the single-player steppers and toggles")
+	_check(setup.next_button.text == "Next: Pick a Track" and setup._laps_row.visible, "Versus: Next picks a track; laps shown")
+	setup.set_mode(true)
+	_check(setup.next_button.text == "Next: Pick a Cup" and not setup._laps_row.visible and not setup._races_row.visible,
+			"Grand Prix: Next picks a cup; no laps or races rows")
+	setup.set_mode(false)
 	_check(not labels.any(func(t: String) -> bool: return t.begins_with("No coins")), "no 'No coins or records' line")
 	_check(labels.has("Items") and not labels.has("Weapons"), "the item toggle says Items")
 	setup.set_ai_rivals(false)

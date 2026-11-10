@@ -38,7 +38,10 @@ func setup(vehicle: VehicleController, camera: ChaseCamera, track: TrackCircuit)
 	_camera = camera
 	_track = track
 	speed_panel.setup(vehicle)
-	vehicle.slipstream_boost.connect(func() -> void: _show_notice("SLIPSTREAM!", Slipstream.BOOST_COLOR))
+	# In races RaceHUD's SLIPSTREAM banner shows the boost; free drive gets a notice.
+	vehicle.slipstream_boost.connect(func() -> void:
+		if show_lap_info:
+			_show_notice("SLIPSTREAM!", Slipstream.BOOST_COLOR))
 	if vehicle.trick != null:
 		vehicle.trick.trick_started.connect(func() -> void: _show_notice("TRICK!", UIStyle.MAGENTA))
 		vehicle.trick.trick_landed.connect(func() -> void: _show_notice("TRICK BOOST!", VehicleTrick.BOOST_COLOR))

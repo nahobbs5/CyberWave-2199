@@ -788,4 +788,4 @@ The racing has **not** been played on screen yet.
 - **The Aggressor wins most simulated races.** Its personality never backs off behind slower cars, which pays off in AI-only races. Balancing rivals is Phase 6 work.
 - **No pre-race camera sweep or podium ceremony yet** (GDD §11.8).
 - **Split screen hasn't been played with real gamepads,** and four views on the heaviest tracks (the Hoia Baciu forest, the Arashiyama bamboo) may be slow. Checked headless and in screenshots only.
-- **Rival names are placeholders** ("The Technician", etc.), following GDD §7.3. AI cars show a floating name tag.
+- **Rivals race under callsigns** (Kilo, Razor, Maverick, Zenith, Spike, Void, Hex), one per GDD §7.3 archetype. AI cars show a floating name tag.

@@ -580,6 +580,22 @@ func _on_checkpoint_crossed(index: int, body: Node3D) -> void:
 				_classify_remaining()
 			if racer.is_player:
 				_on_player_finished(racer)
+			_check_last_car()
+
+
+## All but one car is home: the last one is placed last without waiting for
+## it, and the race is over (not Elimination, which ends at the first finish).
+func _check_last_car() -> void:
+	if elimination != null or racers.size() < 2:
+		return
+	var left := racers.filter(func(r: RaceProgress) -> bool: return not r.finished)
+	if left.size() == 1:
+		_classify_remaining()
+
+
+## Every car has a final position.
+func is_race_complete() -> bool:
+	return racers.all(func(r: RaceProgress) -> bool: return r.finished)
 
 
 ## Gives everyone still racing a final position in their current order.

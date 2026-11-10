@@ -4,9 +4,9 @@
 [ext_resource type="Script" path="res://scripts/race/rival_roster.gd" id="2_g5d4e"]
 
 [sub_resource type="Resource" id="Resource_pgn00"]
-resource_name = "The Technician"
+resource_name = "Kilo"
 script = ExtResource("1_i1q6q")
-display_name = "The Technician"
+display_name = "Kilo"
 plate_text = "TECH-01"
 color = Color(0.2, 0.85, 1, 1)
 drift_tendency = 0.9
@@ -14,9 +14,9 @@ aggression = 0.35
 precision_wander = 0.4
 
 [sub_resource type="Resource" id="Resource_iqljy"]
-resource_name = "The Aggressor"
+resource_name = "Razor"
 script = ExtResource("1_i1q6q")
-display_name = "The Aggressor"
+display_name = "Razor"
 plate_text = "AGGR-02"
 archetype = "Aggressor"
 color = Color(1, 0.25, 0.2, 1)
@@ -27,9 +27,9 @@ aggression = 1.0
 precision_wander = 1.1
 
 [sub_resource type="Resource" id="Resource_110sa"]
-resource_name = "The Drifter"
+resource_name = "Maverick"
 script = ExtResource("1_i1q6q")
-display_name = "The Drifter"
+display_name = "Maverick"
 plate_text = "DRIFT-03"
 archetype = "Drifter"
 color = Color(1, 0.2, 0.85, 1)
@@ -38,9 +38,9 @@ corner_speed_bias = 0.98
 drift_tendency = 1.6
 
 [sub_resource type="Resource" id="Resource_f2eb1"]
-resource_name = "The Strategist"
+resource_name = "Zenith"
 script = ExtResource("1_i1q6q")
-display_name = "The Strategist"
+display_name = "Zenith"
 plate_text = "STRAT-04"
 archetype = "Strategist"
 color = Color(0.55, 0.4, 1, 1)
@@ -51,9 +51,9 @@ aggression = 0.3
 precision_wander = 0.7
 
 [sub_resource type="Resource" id="Resource_fqcuu"]
-resource_name = "The Daredevil"
+resource_name = "Spike"
 script = ExtResource("1_i1q6q")
-display_name = "The Daredevil"
+display_name = "Spike"
 plate_text = "DARE-05"
 archetype = "Daredevil"
 color = Color(1, 0.6, 0.1, 1)
@@ -64,9 +64,9 @@ aggression = 0.8
 precision_wander = 1.4
 
 [sub_resource type="Resource" id="Resource_8facc"]
-resource_name = "The Speedster"
+resource_name = "Void"
 script = ExtResource("1_i1q6q")
-display_name = "The Speedster"
+display_name = "Void"
 plate_text = "SPEED-06"
 archetype = "Speedster"
 color = Color(0.3, 1, 0.4, 1)
@@ -76,9 +76,9 @@ aggression = 0.75
 precision_wander = 0.9
 
 [sub_resource type="Resource" id="Resource_gopx8"]
-resource_name = "The Opportunist"
+resource_name = "Hex"
 script = ExtResource("1_i1q6q")
-display_name = "The Opportunist"
+display_name = "Hex"
 plate_text = "OPPO-07"
 archetype = "Opportunist"
 color = Color(1, 0.9, 0.3, 1)

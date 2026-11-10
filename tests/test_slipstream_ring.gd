@@ -61,39 +61,47 @@ func _test_on_car() -> void:
 	_check(ring != null and ring.vehicle == car, "every car gets a ring")
 	_check(not ring.is_shown(), "hidden before drafting")
 
+	# Charging behind a car: no rings yet.
 	car.in_slipstream = true
-	car.slipstream_charge = 0.1
-	await _frames(30)
-	var low := ring.strength
-	_check(ring.is_shown() and low > 0.3, "shows while drafting (%.2f)" % low)
 	car.slipstream_charge = 0.9
 	await _frames(30)
-	_check(ring.strength > low + 0.3, "brighter as the meter fills (%.2f -> %.2f)" % [low, ring.strength])
+	_check(not ring.is_shown(), "hidden while the meter is still filling")
 
+	# The meter filled: the boost runs, the rings snap in.
 	car.in_slipstream = false
 	car.slipstream_charge = 0.0
-	car.slipstream_boost.emit()
+	_fire_boost(car)
 	await _frames(2)
-	_check(ring.burst > 0.8 and ring.is_shown(), "bursts when the boost fires (%.2f)" % ring.burst)
-	await _frames(60)
-	_check(ring.burst == 0.0 and not ring.is_shown(), "then fades out")
+	_check(ring.is_shown() and ring.burst > 0.5, "snaps in when the boost fires (%.2f)" % ring.burst)
+	await _frames(20)
+	_check(ring.is_shown() and ring.strength > 0.95 and car.is_slipstream_boosting(), "stays while the boost runs (%.2f)" % ring.strength)
+	car.boost_time_left = 0.0
+	await _frames(40)
+	_check(not ring.is_shown(), "fades out when the boost ends")
 
 	GameSettings.reduced_flashing = true
-	car.in_slipstream = true
-	car.slipstream_charge = 0.5
-	await _frames(30)
+	_fire_boost(car)
+	await _frames(1)
+	_check(ring.burst == 0.0, "reduced flashing: no snap")
+	await _frames(15)
 	var z := (ring.get_child(0) as Node3D).position.z
 	await _frames(10)
 	_check(ring.is_shown() and is_equal_approx((ring.get_child(0) as Node3D).position.z, z), "reduced flashing: steady, no ripple")
-	car.slipstream_boost.emit()
-	await _frames(1)
-	_check(ring.burst == 0.0, "reduced flashing: no burst")
+	car.boost_time_left = 0.0
+	await _frames(40)
 	GameSettings.reduced_flashing = false
 
 	car.set_visual_scale(VehicleController.TRACK_VISUAL_SCALE)
 	_check(is_equal_approx(ring.global_transform.basis.get_scale().x, VehicleController.TRACK_VISUAL_SCALE), "follows the car's visual scale")
 	car.queue_free()
 	await process_frame
+
+
+## What Slipstream does when the meter fills.
+func _fire_boost(car: VehicleController) -> void:
+	car.start_external_boost(Slipstream.BOOST_EXTRA, Slipstream.BOOST_TIME, Slipstream.BOOST_KICK,
+			Slipstream.BOOST_LABEL, Slipstream.BOOST_COLOR)
+	car.slipstream_boost.emit()
 
 
 func _test_in_race() -> void:
@@ -121,17 +129,21 @@ func _test_in_race() -> void:
 	while leader.forward_speed < 24.0 and frames < 60 * 20:
 		await physics_frame
 		frames += 1
-	var shown := false
-	var burst := false
+	var shown_early := false
+	var charged := 0.0
+	var boosted := false
 	for i in 60 * 4:
 		me.global_transform = leader.global_transform.translated_local(Vector3(0, 0, 7.0))
 		me.linear_velocity = leader.linear_velocity
 		await physics_frame
-		shown = shown or ring.is_shown()
-		if ring.burst > 0.0:
-			burst = true
+		if me.is_slipstream_boosting():
+			boosted = true
 			break
-	_check(shown, "the ring shows behind a car")
-	_check(burst, "and bursts on the Slipstream boost")
+		charged = maxf(charged, me.slipstream_charge)
+		shown_early = shown_early or ring.is_shown()
+	_check(charged > 0.3 and not shown_early, "no ring while the meter fills (%.2f)" % charged)
+	await process_frame
+	await process_frame
+	_check(boosted and ring.is_shown(), "the ring shows once the Slipstream boost fires")
 	race.queue_free()
 	await process_frame

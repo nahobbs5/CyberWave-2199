@@ -1,11 +1,12 @@
 class_name SlipstreamRing
 extends Node3D
-## Neon arches standing around the car while it drafts (see Slipstream):
-## a bright inner ring and a fainter outer one, rippling backward like
-## rushing air and brightening as the slipstream meter fills. When the
-## boost fires they shoot back, widen and fade. Reduced flashing: no ripple
-## or burst, just a steady glow. Lives under the car's Feedback node, so it
-## follows the car's visual scale.
+## Neon arches standing around the car while its slipstream boost runs
+## (see Slipstream): a bright inner ring and a fainter outer one. They don't
+## show while the meter is still filling behind a car (the screen-edge wind
+## lines and the gauge's SLIPSTREAM n% cover that); when the boost fires
+## they snap in from wider, ripple backward like rushing air for the boost,
+## then fade out. Reduced flashing: no snap or ripple, just a steady glow.
+## Lives under the car's Feedback node, so it follows the car's visual scale.
 
 const SHADER := preload("res://assets/shaders/slipstream_ring.gdshader")
 const COLOR := Color(0.2, 0.9, 1.0)
@@ -21,16 +22,19 @@ const CENTRE_Y := -0.45
 const RIPPLE_DIST := 0.8
 const RIPPLE_GROW := 0.12
 const RIPPLE_RATE := 1.2
-## Burst on the boost: duration (s), how far back (m) and how much wider.
-const BURST_TIME := 0.45
-const BURST_DIST := 3.0
-const BURST_GROW := 0.6
+## Snap-in when the boost fires: duration (s), and how much wider the rings
+## start before closing in.
+const BURST_TIME := 0.25
+const BURST_GROW := 0.5
+## Fade in / out times (s).
+const FADE_IN := 0.12
+const FADE_OUT := 0.3
 const SEGMENTS := 40
 
 var vehicle: VehicleController
-## Current brightness 0..1 (eased toward the meter; tests).
+## Current brightness 0..1 (1 while the slipstream boost runs; tests).
 var strength: float = 0.0
-## 1 right after a slipstream boost, falling to 0 (tests).
+## 1 right as the slipstream boost fires, falling to 0 (tests).
 var burst: float = 0.0
 
 var _meshes: Array[MeshInstance3D] = []
@@ -54,7 +58,7 @@ func _init() -> void:
 		_materials.append(material)
 
 
-## Follows `car`: lights up with its slipstream and bursts on its boost.
+## Follows `car`: shows while its slipstream boost runs.
 func attach(car: VehicleController) -> void:
 	vehicle = car
 	car.slipstream_boost.connect(_on_boost)
@@ -72,10 +76,8 @@ func _on_boost() -> void:
 
 func _process(delta: float) -> void:
 	_time += delta
-	var want := 0.0
-	if is_instance_valid(vehicle) and vehicle.in_slipstream:
-		want = 0.35 + 0.65 * vehicle.slipstream_charge
-	strength = move_toward(strength, want, delta * 3.0)
+	var want := 1.0 if is_instance_valid(vehicle) and vehicle.is_slipstream_boosting() else 0.0
+	strength = move_toward(strength, want, delta / (FADE_IN if want > strength else FADE_OUT))
 	burst = move_toward(burst, 0.0, delta / BURST_TIME)
 	var calm := GameSettings.reduced_flashing
 	var shown := strength > 0.01 or burst > 0.0
@@ -89,11 +91,9 @@ func _process(delta: float) -> void:
 		var grow := 1.0
 		var bright: float = spec[3]
 		if burst > 0.0:
-			# Shoot back and widen, fading as it goes.
-			var t := 1.0 - burst
-			z += BURST_DIST * t
-			grow += BURST_GROW * t
-			bright *= maxf(strength, burst)
+			# Snap in from wider as the boost fires.
+			grow += BURST_GROW * burst * burst
+			bright *= maxf(strength, 1.0 - burst * 0.5)
 		elif not calm:
 			# Ripple backward, half a loop apart, fading in and out.
 			var phase := fposmod(_time * RIPPLE_RATE + 0.5 * i, 1.0)

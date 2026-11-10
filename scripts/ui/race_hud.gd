@@ -1,12 +1,16 @@
 class_name RaceHUD
 extends CanvasLayer
-## Race HUD (GDD 11.5): builds the parts and feeds them from the race.
-##   top left      RaceInfoPanel: position, lap, time, coins, Elimination info
-##   left          StandingsPanel: compact live standings
-##   top centre    HudAnnouncer: countdown, FINAL LAP!, NEW BEST LAP!, FINISH!, warnings
-##   top right     ItemSlots: held items, lock-on, effects, combat notices
-##   bottom right  Minimap
-##   (bottom left  speed + drift, in PrototypeHUD underneath)
+## Race HUD (GDD 11.5), laid out after "reference files/Cyberpunk
+## Slipstream Under the Neon Moon.png": builds the parts and feeds them.
+##   top left       RaceInfoPanel: POSITION, Elimination info
+##   left           StandingsPanel: live standings
+##   top right      LAP, race time, coins under the time (info.lap_block)
+##   top centre     HudAnnouncer: countdown, FINAL LAP!, NEW BEST LAP!, FINISH!, warnings
+##   bottom right   Minimap, with the ItemSlots squares under it
+##   bottom centre  SlipstreamBanner while a slipstream boost runs
+##   (bottom left   speed gauge + drift charge, in PrototypeHUD underneath)
+## Split screen views keep the lap block under the position and the items
+## top right, so the bottom-right corner stays free (see SplitScreen).
 ## plus the ResultsScreen when you finish, and placeholder audio cues.
 
 const CYAN := UIStyle.CYAN
@@ -17,6 +21,8 @@ const POSITION_SETTLE := 3.0
 const LEAD_COOLDOWN := 10.0
 ## Seconds between FINISH! and the podium ceremony.
 const PODIUM_DELAY := 1.5
+## Loaded by path so the HUD doesn't depend on the editor's class list.
+const BANNER_SCRIPT := preload("res://scripts/ui/hud/slipstream_banner.gd")
 
 var race: RaceManager
 ## The player this HUD follows (split screen: one HUD per view). Null until
@@ -35,6 +41,10 @@ var items: ItemSlots
 var results: ResultsScreen
 var minimap: Minimap
 var wind_lines: SlipstreamLines
+## SLIPSTREAM banner (slipstream_banner.gd).
+var slipstream_banner: Control
+## Single player: the minimap over the item squares, bottom right.
+var right_column: VBoxContainer
 
 # Kept for the existing tests.
 var _coin_label: Label
@@ -79,6 +89,7 @@ func setup(manager: RaceManager) -> void:
 	if racer != null:
 		racer.vehicle.slipstream_boost.connect(func() -> void: _play("slipstream"))
 		wind_lines.vehicle = racer.vehicle
+		slipstream_banner.vehicle = racer.vehicle
 	if trick != null:
 		trick.trick_started.connect(func() -> void: _play("trick"))
 		trick.trick_landed.connect(func() -> void: _play("trick_land"))
@@ -88,7 +99,7 @@ func setup(manager: RaceManager) -> void:
 	info.set_coins_visible(not race.is_multiplayer())
 	minimap.setup(race)
 	if split_view:
-		minimap.get_parent().visible = false
+		minimap.visible = false
 	info.elim_label.visible = race.elimination != null
 	items.visible = race.combat_enabled()
 	if race.combat_enabled():
@@ -379,17 +390,28 @@ func _play(tone: String) -> void:
 # --- layout ----------------------------------------------------------------------
 
 func _build() -> void:
-	# Left column: race info, then the compact standings.
+	# Left column: POSITION, then the standings (split screen: lap and time
+	# under the position too).
 	_left_column = VBoxContainer.new()
 	_left_column.name = "LeftColumn"
 	_left_column.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_left_column.position = Vector2(20, 16)
-	_left_column.add_theme_constant_override("separation", 8)
+	_left_column.position = Vector2(12, 10)
+	_left_column.add_theme_constant_override("separation", 4)
 	add_child(_left_column)
 	info = RaceInfoPanel.new()
 	_left_column.add_child(info)
+	if split_view:
+		info.lap_block.set_right_aligned(false)
+		_left_column.add_child(info.lap_block)
 	standings = StandingsPanel.new()
 	_left_column.add_child(standings)
+	if not split_view:
+		var lap := info.lap_block
+		lap.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+		lap.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+		lap.offset_right = -12.0
+		lap.offset_top = 10.0
+		add_child(lap)
 
 	# Wind streaks while drafting, behind everything else.
 	wind_lines = SlipstreamLines.new()
@@ -399,19 +421,45 @@ func _build() -> void:
 	announcer = HudAnnouncer.new()
 	add_child(announcer)
 
+	slipstream_banner = BANNER_SCRIPT.new()
+	add_child(slipstream_banner)
+
 	items = ItemSlots.new()
 	items.visible = false
-	add_child(items)
-
-	# Minimap, bottom right (GDD 11.5).
-	var map_anchor := Control.new()
-	map_anchor.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
-	map_anchor.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(map_anchor)
 	minimap = Minimap.new()
 	minimap.name = "Minimap"
-	minimap.position = -Minimap.MAP_SIZE - Vector2(20, 20)
-	map_anchor.add_child(minimap)
+	if split_view:
+		# Top right; the shared overlay has the minimap.
+		add_child(items)
+		var map_anchor := Control.new()
+		map_anchor.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
+		map_anchor.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(map_anchor)
+		minimap.position = -Minimap.MAP_SIZE - Vector2(20, 20)
+		map_anchor.add_child(minimap)
+	else:
+		# Bottom right: the minimap with the item squares under it.
+		right_column = VBoxContainer.new()
+		right_column.name = "RightColumn"
+		right_column.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		right_column.alignment = BoxContainer.ALIGNMENT_END
+		right_column.add_theme_constant_override("separation", 6)
+		right_column.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
+		right_column.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+		right_column.grow_vertical = Control.GROW_DIRECTION_BEGIN
+		right_column.offset_right = -16.0
+		right_column.offset_bottom = -12.0
+		add_child(right_column)
+		var map_holder := Control.new()
+		map_holder.name = "MinimapHolder"
+		map_holder.custom_minimum_size = Minimap.MAP_SIZE
+		map_holder.size_flags_horizontal = Control.SIZE_SHRINK_END
+		map_holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		right_column.add_child(map_holder)
+		map_holder.add_child(minimap)
+		items.set_bottom_anchored()
+		items.size_flags_horizontal = Control.SIZE_SHRINK_END
+		right_column.add_child(items)
 
 	results = ResultsScreen.new()
 	add_child(results)

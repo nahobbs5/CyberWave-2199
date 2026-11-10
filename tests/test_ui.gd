@@ -554,6 +554,13 @@ func _test_slipstream_race(race: RaceManager) -> void:
 	_check(saw_label, "the HUD says SLIPSTREAM")
 	_check(boosts[0] == 1 and me.is_boosting() and me.boost_label == "Slipstream", "then a Slipstream boost")
 	_check(race.race_hud.wind_lines.vehicle == me, "wind lines follow the player")
+	await process_frame
+	await process_frame
+	_check(race.race_hud.slipstream_banner.is_shown(), "SLIPSTREAM banner while the boost runs")
+	me.boost_time_left = 0.0
+	for i in 30:
+		await process_frame
+	_check(not race.race_hud.slipstream_banner.is_shown(), "and gone after it")
 
 
 func _test_tricks(race: RaceManager) -> void:
@@ -656,6 +663,10 @@ func _test_hud(race: RaceManager) -> void:
 	_check(hud.info.coin_label.text == "0" and hud.info.coin_icon.is_visible_in_tree()
 			and hud.info.coin_icon.get_global_rect().position.x > hud.info.coin_label.get_global_rect().end.x,
 			"coins: the count with the coin symbol on its right (%s)" % hud.info.coin_label.text)
+	var time_rect := hud.info.time_value.get_global_rect()
+	var coin_rect := hud.info.coin_label.get_global_rect()
+	_check(coin_rect.get_center().y > time_rect.get_center().y + 15.0 and absf(coin_rect.end.x - time_rect.end.x) < 60.0,
+			"coins sit under the race time (%s / %s)" % [coin_rect, time_rect])
 
 	# Position change: pretend we were a place behind.
 	await _settle(race)
@@ -732,6 +743,7 @@ func _test_layout(race: RaceManager) -> void:
 			"race info": hud.info,
 			"standings": hud.standings,
 			"items": hud.items,
+			"lap / time": hud.info.lap_block,
 			"minimap": hud.minimap,
 			"speed / drift": race.prototype_hud.speed_panel,
 		}

@@ -1,5 +1,5 @@
 # CYBERWAVE 2199
-## Game Design Document — Version 4.6
+## Game Design Document — Version 4.8
 
 **Status:** Development Baseline  
 **Engine:** Godot 4  
@@ -64,6 +64,8 @@ With more than one race, the track screen comes back before each race (showing "
 The player starts in eighth position.
 
 The race concludes when the player finishes or is otherwise removed from competition under the active mode's rules.
+
+The race ends for everyone once all but one car have crossed the finish line on the final lap: the last car (human or AI) is placed last at once, without having to finish, and its time reads "classified". Cars keep driving behind the results. This applies to every mode except Elimination, which ends when the first finalist crosses.
 
 ## 2.2 Grand Prix
 
@@ -191,7 +193,7 @@ Two to four players on one PC, Mario Kart style. The title menu offers **Single 
 2. **Choose your cars.** One neon card per player in their colour: a header with the player tag, their device and READY, the car turning on a turntable that glows in the player's colour, its name and type, and its stats (top speed, acceleration, handling, drift as 1–10 bars). Two players get tall side-by-side cards with a strip of car pictures (click one to pick it); three or four get a 2×2 grid of wide cards with a car counter, and with three the fourth cell lists the controls and who is still choosing. Left / right changes car on that player's device; Enter / A readies up; Back / B un-readies, or returns to step 1. When everyone is ready, an **ALL READY** banner asks for one more Enter / A / Start before step 3 opens.
    - Player 1 drives their Garage loadout. Players 2–4 drive the stock car painted in their player colour (P1 cyan, P2 magenta, P3 gold, P4 green).
    - Everyone can set a license plate (§9.5) with Y (gamepad) or Tab (keyboard). The keyboard player types; gamepad players use a letter picker (up / down changes the letter, left / right moves, X deletes, A done). Player 1's plate is saved to their profile; players 2–4 default to "P2"–"P4".
-3. **Race setup.** Mode (Grand Prix or Versus); in Versus, race type (Standard or Elimination) and number of races; NPCs on or off (the computer-driven cars: on fills the grid to eight, off races the humans only; Elimination needs NPCs); NPC difficulty (shown only with NPCs on); laps; weapons. A panel explains the chosen mode and race type, including how Elimination knocks cars out.
+3. **Race setup.** Mode (Grand Prix or Versus); in Versus, race type (Standard or Elimination) and number of races; NPCs on or off (the computer-driven cars: on fills the grid to eight, off races the humans only; Elimination needs NPCs); NPC difficulty (shown only with NPCs on); laps; items. The rows are the single-player race setup's (‹ value › steppers and ON / OFF switches) in a RACE SETTINGS panel with two columns, under a pill per player showing their car. A box underneath explains the chosen mode and race type, including how Elimination knocks cars out and that it needs NPCs. A gold Next button says where it goes: Pick a Cup (Grand Prix) or Pick a Track (Versus).
    - Grand Prix goes to the cup screen. Versus goes to the cup screen to pick a race (§2.1), before every race of the set.
 
 Leaving a race, or finishing a set, returns to step 2 with the same players joined.
@@ -320,7 +322,7 @@ Proposed behavior:
 
 Tuck in 2–16 m behind another car, going the same way at speed, and a slipstream meter fills (faster the closer you are). When it's full you get a short boost; out of the tow the meter drains. Every racer can draft, AI included.
 
-Feedback: "SLIPSTREAM nn%" on the speed panel, wind streaks at the screen edges, and two glowing cyan arches standing around the car, rising from the road on each side and over the roof (after the reference art *Cyberpunk Slipstream Under the Neon Moon*). The arches ripple backward and brighten as the meter fills, and shoot back and fade when the boost fires. Other players see them on any car that is drafting. With Reduced flashing the arches hold a steady glow with no ripple or burst.
+Feedback while the meter fills: "SLIPSTREAM nn%" under the speed gauge (its charge cells fill too) and faint wind streaks at the screen edges. Once the meter is full and the boost fires: two glowing cyan arches stand around the car, rising from the road on each side and over the roof (after the reference art *Cyberpunk Slipstream Under the Neon Moon*), and a SLIPSTREAM banner shows at the bottom centre of the HUD. The arches snap in, ripple backward for as long as the boost lasts, then fade. Other players see them on any car with a slipstream boost running. With Reduced flashing the arches hold a steady glow with no snap or ripple.
 
 ---
 
@@ -533,13 +535,15 @@ Their exact names and visual designs may be finalized during content development
 
 Proposed driving archetypes:
 
-1. **Technician:** Precise and consistent.
-2. **Aggressor:** Weapon-heavy and assertive.
-3. **Drifter:** Excels through corners.
-4. **Strategist:** Conserves and times weapons.
-5. **Daredevil:** Uses risky shortcuts and jumps.
-6. **Speedster:** Favors acceleration and overtaking.
-7. **Opportunist:** Exploits openings and mistakes.
+1. **Kilo (Technician):** Precise and consistent.
+2. **Razor (Aggressor):** Weapon-heavy and assertive.
+3. **Maverick (Drifter):** Excels through corners.
+4. **Zenith (Strategist):** Conserves and times weapons.
+5. **Spike (Daredevil):** Uses risky shortcuts and jumps.
+6. **Void (Speedster):** Favors acceleration and overtaking.
+7. **Hex (Opportunist):** Exploits openings and mistakes.
+
+The rivals race under fighter-pilot callsigns (from the slipstream reference art).
 
 Each rival has a preferred vehicle and recognizable behavior.
 
@@ -988,6 +992,8 @@ Clicking an item previews it on the car; Apply equips every owned item being pre
 
 ## 11.5 Race HUD
 
+Laid out after *Cyberpunk Slipstream Under the Neon Moon*: top left, POSITION with a big slanted number and the live standings under it (place box, a shield emblem in the racer's colour, NAME; your row in gold); top right, LAP, the race time and (single player) the coin count under the time; bottom left, a round speed gauge (km/h) with the drift charge cells under the number; bottom right, the minimap with the two item squares (number badges 1 and 2) under it; bottom centre, the SLIPSTREAM banner while a slipstream boost runs. Split-screen views keep lap and time under the position and the items top right, so the corner by the shared minimap stays clear.
+
 Display:
 - Current position out of eight
 - Lap number
@@ -1037,10 +1043,10 @@ A victory podium plays before the results screen (laid out after the "Neon Grand
 |---|---|---|
 | Who stands on it | Overall cup standings | Set: overall set points; single race: finishing order |
 | Extras | The cup's trophy, corner confetti cannons, 4 spotlights | 2 spotlights |
-| Length | ~10 s | ~7 s |
+| Length | ~13.5 s | ~11 s |
 | Continue to | Championship results | Race results |
 
-Timeline (Grand Prix / Versus): cars drive onto the lowered platforms (0–2 s / 0–1.5 s), the platforms rise 3rd, 2nd, then 1st (2–5 s / 1.5–3.5 s), celebration with crown, confetti and fanfare (5–8 s / 3.5–5.5 s), then the Continue prompt (8–10 s / 5.5–7 s). In single player it starts 1.5 s after FINISH!. In split screen it starts once every player is done.
+Timeline (Grand Prix / Versus): cars drive onto the lowered platforms (0–3.5 s for both), the platforms rise 3rd, 2nd, then 1st (3.5–8.5 s / 3.5–7.5 s), celebration with crown, confetti and fanfare (8.5–11.5 s / 7.5–9.5 s), then the Continue prompt (11.5–13.5 s / 9.5–11 s). In single player it starts 1.5 s after FINISH!. In split screen it starts once every player is done.
 
 ## 11.8 Race Presentation
 
@@ -1435,5 +1441,8 @@ Changes after Version 1.0 should be tracked as revisions rather than silently re
 | 4.4 | 2026-11-09 | Slipstream written up (§4.5) and given a slipstream ring: glowing cyan arches around a drafting car, after its reference art. |
 | 4.5 | 2026-11-09 | Split-screen car screen restyled after its reference art in the connect screen's style: player-colour cards with device and READY headers, stat bars, a car picture strip for two players and a 2×2 grid for three or four, a controls bar and a gold Next: Race Setup button (§2.4). |
 | 4.6 | 2026-11-09 | No coins in split screen (track, HUD or menus). The item toggle is labelled just "Items" in single-player and split-screen setup (§2.4, §11.3). |
+| 4.7 | 2026-11-10 | Split-screen race setup restyled after its reference art, matching the connect and car screens: player car pills, a RACE SETTINGS panel using the single-player setting rows, an info box and a gold Next: Pick a Cup / Pick a Track button (§2.4). |
+| 4.8 | 2026-11-10 | The race ends once all but one car have finished: the last car is placed last automatically (§2.1). |
+| 4.9 | 2026-11-10 | Race HUD rebuilt after *Cyberpunk Slipstream Under the Neon Moon*: POSITION and gold-highlighted standings top left, LAP / time with coins under it top right, a round speed gauge, minimap over the item squares, and a SLIPSTREAM banner (§11.5). Slipstream arches now appear only once the boost fires (§4.5). Rivals renamed to callsigns: Kilo, Razor, Maverick, Zenith, Spike, Void, Hex (§7.3). |
 
-**End of Game Design Document — Version 4.6**
+**End of Game Design Document — Version 4.9**

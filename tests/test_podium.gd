@@ -239,9 +239,9 @@ func _test_versus_race() -> void:
 		await _end(race)
 		return
 	_check(not race.race_hud.is_results_visible(), "before the results")
-	_check(ceremony.winner_text == "RACE WINNER" and ceremony.duration() < 8.0, "short single-race ceremony")
+	_check(ceremony.winner_text == "RACE WINNER" and ceremony.duration() < PodiumStage.timeline(true)[3], "shorter single-race ceremony")
 	frames = 0
-	while not ceremony.is_prompt_shown() and frames < 60 * 12:
+	while not ceremony.is_prompt_shown() and frames < 60 * 14:
 		await process_frame
 		frames += 1
 	_check(ceremony.is_prompt_shown(), "it plays through to the prompt (%d frames)" % frames)

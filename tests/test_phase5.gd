@@ -472,7 +472,7 @@ func _test_race_coins(race: RaceManager) -> void:
 	var me := race.player.vehicle
 	_check(me.stats.top_speed == VehicleCatalog.by_id("v8_specter").stats.top_speed, "default vehicle: V8 Specter")
 	_check(VehicleCosmetics.get_plate_text(me) == PlayerProfile.get_profile().plate_text, "player plate shown")
-	var tech := race.racers.filter(func(r: RaceProgress) -> bool: return r.display_name == "The Technician")[0] as RaceProgress
+	var tech := race.racers.filter(func(r: RaceProgress) -> bool: return r.display_name == "Kilo")[0] as RaceProgress
 	var tech_plate := VehicleCosmetics.get_plate_text(tech.vehicle)
 	_check(tech_plate == race.config.rival_plates[0] and RegEx.create_from_string("^[A-Z]{3}-[0-9]{3}$").search(tech_plate) != null,
 			"AI show the series' random plates (%s)" % tech_plate)

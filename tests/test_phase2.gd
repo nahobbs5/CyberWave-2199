@@ -270,10 +270,14 @@ func _test_full_race(race: RaceManager) -> void:
 	for i in standings.size():
 		var racer := standings[i]
 		positions[racer.finish_position] = true
+		_check(racer.position == i + 1 and racer.finish_position == i + 1, "%s standings match finish order" % racer.display_name)
+		if i == standings.size() - 1:
+			# The last car is placed last as soon as everyone else is home.
+			_check(racer.finish_time < 0.0, "%s placed last without crossing the line" % racer.display_name)
+			continue
 		_check(racer.lap_times.size() == 3, "%s logged 3 laps" % racer.display_name)
 		_check(racer.checkpoints_passed == 3 * race.track.checkpoint_count + 1,
 				"%s crossed every gate (%d)" % [racer.display_name, racer.checkpoints_passed])
-		_check(racer.position == i + 1 and racer.finish_position == i + 1, "%s standings match finish order" % racer.display_name)
 		if i > 0:
 			_check(racer.finish_time >= standings[i - 1].finish_time, "finish times ascend with position")
 	_check(positions.size() == 8, "8 distinct finishing positions")

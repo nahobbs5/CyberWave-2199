@@ -378,16 +378,18 @@ func _test_hud_layout(race: RaceManager) -> void:
 	var hud := race.race_hud
 	var view := race.get_viewport().get_visible_rect().size
 	var slot := hud._slot_panels[1].get_global_rect()
-	_check(slot.position.x > view.x * 0.5 and slot.end.y < view.y * 0.25,
-			"weapon slots are in the top right (%s in %s)" % [slot, view])
+	_check(slot.position.x > view.x * 0.5 and slot.position.y > view.y * 0.6,
+			"weapon slots are in the bottom right (%s in %s)" % [slot, view])
 	var info := hud.info.get_global_rect()
 	_check(info.end.x < view.x * 0.5 and info.position.y < view.y * 0.25, "race info in the top left (%s)" % info)
+	var lap := hud.info.lap_block.get_global_rect()
+	_check(lap.position.x > view.x * 0.5 and lap.position.y < view.y * 0.25, "lap and time in the top right (%s)" % lap)
 	_check(hud._standings_label.get_global_rect().position.y >= info.end.y, "standings sit below the race info")
-	# The minimap owns the bottom-right corner; nothing else sits there.
-	var corner := Rect2(view * 0.6, view * 0.4)
+	# The minimap sits right, above the item squares; nothing else overlaps it.
 	var map := hud.minimap
 	var map_rect := map.get_global_rect()
-	_check(map.is_visible_in_tree() and corner.encloses(map_rect), "minimap in the bottom-right corner (%s)" % map_rect)
+	_check(map.is_visible_in_tree() and map_rect.position.x > view.x * 0.5 and map_rect.end.y <= slot.position.y,
+			"minimap on the right, above the items (%s)" % map_rect)
 	var clashes: Array[String] = []
 	for layer in [hud, race.get_node_or_null("PrototypeHUD")]:
 		if layer == null:

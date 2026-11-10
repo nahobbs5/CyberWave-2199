@@ -45,8 +45,8 @@ var _podium_root: Node3D
 ## Phase ends in seconds: [cars parked, platforms up, celebration over, total].
 static func timeline(p_grand: bool) -> Array[float]:
 	if p_grand:
-		return [2.0, 5.0, 8.0, 10.0]
-	return [1.5, 3.5, 5.5, 7.0]
+		return [3.5, 8.5, 11.5, 13.5]
+	return [3.5, 7.5, 9.5, 11.0]
 
 
 func setup(p_entries: Array, p_grand: bool) -> void:

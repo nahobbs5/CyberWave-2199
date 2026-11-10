@@ -290,23 +290,6 @@ static func ready_banner(prompt: String) -> PanelContainer:
 	return banner
 
 
-## The shared heading for the car and race setup screens ("STEP 2 OF 3").
-static func title_row(page: Container, text: String, step: int) -> void:
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 18)
-	page.add_child(row)
-	row.add_child(UIStyle.logo(Vector2(170, 56)))
-	var title := UIStyle.heading("MULTIPLAYER  -  " + text, 30, UIStyle.MAGENTA)
-	title.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	row.add_child(title)
-	var spacer := Control.new()
-	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	row.add_child(spacer)
-	var steps := UIStyle.stat("STEP %d OF 3" % step, 18, UIStyle.CYAN)
-	steps.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	row.add_child(steps)
-
-
 # --- pieces ------------------------------------------------------------------
 
 ## One player's slot: a tall neon card with a slanted "P1" tag on its top

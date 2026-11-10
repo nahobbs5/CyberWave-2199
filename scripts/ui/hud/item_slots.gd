@@ -1,13 +1,17 @@
 class_name ItemSlots
 extends VBoxContainer
-## Held items, top right. The active slot is larger with a magenta border
-## and an ACTIVE caption; the other is smaller, purple, STORED. Switching
+## Held items: two neon squares with a number badge in the corner (after
+## the slipstream art). Bottom right in single player (bottom_anchored: the
+## notices stack above the squares), top right in split screen. The active
+## slot is larger with a bright cyan edge and an ACTIVE caption; the other
+## is smaller and dim, STORED. Switching
 ## slots resizes them briefly; picking an item up flashes the slot and pops
 ## the icon in; using one (or losing a charge) puffs the icon out. Under the
 ## slots: target lock, active effects and combat notices.
 
-const ACTIVE_SIZE := 96.0
+const ACTIVE_SIZE := 88.0
 const STORED_SIZE := 72.0
+const ACTIVE_BORDER := Color(0.25, 0.9, 1.0)
 const STORED_BORDER := Color(0.5, 0.35, 0.75, 0.8)
 
 var panels: Array[PanelContainer] = []
@@ -21,6 +25,8 @@ var empties: Array[Label] = []
 var lock_label: Label
 var status_label: Label
 var notice: Label
+## Notices above the squares (bottom-right placement).
+var bottom_anchored: bool = false
 ## "1  Firewall", "2  EMPTY", "1  Triple Nitro  x3"
 var slot_text: Array[String] = ["1  EMPTY", "2  EMPTY"]
 
@@ -51,6 +57,8 @@ func _init() -> void:
 		row.add_child(_build_slot(i))
 	lock_label = _right(UIStyle.stat("", 17, UIStyle.MAGENTA))
 	status_label = _right(UIStyle.stat("", 15, UIStyle.GOLD))
+	lock_label.visible = false
+	status_label.visible = false
 	notice = _right(UIStyle.stat("", 20, Color.WHITE))
 	notice.visible = false
 
@@ -67,7 +75,9 @@ func _build_slot(i: int) -> Control:
 	column.alignment = BoxContainer.ALIGNMENT_BEGIN
 	var panel := PanelContainer.new()
 	panel.name = "Slot%d" % (i + 1)
-	panel.add_theme_stylebox_override("panel", UIStyle.box_style(UIStyle.PANEL_BG, STORED_BORDER, 3, 2))
+	var style := UIStyle.box_style(UIStyle.PANEL_BG, STORED_BORDER, 3, 2)
+	style.set_corner_radius_all(12)
+	panel.add_theme_stylebox_override("panel", style)
 	panel.custom_minimum_size = Vector2.ONE * STORED_SIZE
 	panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	panel.resized.connect(func() -> void: panel.pivot_offset = panel.size * 0.5)
@@ -93,13 +103,23 @@ func _build_slot(i: int) -> Control:
 	empty.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	empty.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	stack.add_child(empty)
-	var key := UIStyle.stat(str(i + 1), 14, Color(1, 1, 1, 0.3))
-	key.position = Vector2(3, -2)
+	# Number badge in the bottom-right corner.
+	var key := UIStyle.heading(str(i + 1), 20, Color(1, 1, 1, 0.3))
+	key.add_theme_font_override("font", UIStyle.slanted_font(true))
+	var badge := UIStyle.box_style(Color(0.02, 0.01, 0.06, 0.9), Color(1, 1, 1, 0.0), 0, 0)
+	badge.set_corner_radius_all(6)
+	badge.content_margin_left = 6
+	badge.content_margin_right = 5
+	key.add_theme_stylebox_override("normal", badge)
+	key.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
+	key.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	key.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	key.offset_right = 2
+	key.offset_bottom = 2
 	stack.add_child(key)
 	var count := UIStyle.heading("", 16, UIStyle.GOLD)
-	count.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
+	count.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
 	count.grow_horizontal = Control.GROW_DIRECTION_BEGIN
-	count.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	count.offset_right = -3
 	stack.add_child(count)
 	var caption := UIStyle.stat("STORED", 13, UIStyle.MUTED)
@@ -113,6 +133,14 @@ func _build_slot(i: int) -> Control:
 	counts.append(count)
 	captions.append(caption)
 	return column
+
+
+## Bottom-right placement: the notices go above the squares, which sit at
+## the bottom of this column (the owner positions the column).
+func set_bottom_anchored() -> void:
+	bottom_anchored = true
+	alignment = BoxContainer.ALIGNMENT_END
+	move_child(get_child(0), get_child_count() - 1)
 
 
 func show_notice(text: String, color: Color) -> void:
@@ -156,14 +184,17 @@ func refresh(race: RaceManager, delta: float) -> void:
 		counts[i].text = "x%d" % charges if weapon != null and weapon.charges > 1 else ""
 		var style := panels[i].get_theme_stylebox("panel") as StyleBoxFlat
 		if selected:
-			style.border_color = UIStyle.MAGENTA
-			style.bg_color = Color(0.12, 0.03, 0.16, 0.85) if weapon != null else Color(0.05, 0.02, 0.1, 0.5)
+			style.border_color = ACTIVE_BORDER
+			style.bg_color = Color(0.06, 0.04, 0.2, 0.88) if weapon != null else Color(0.05, 0.02, 0.14, 0.55)
+			style.shadow_color = Color(ACTIVE_BORDER, 0.35)
+			style.shadow_size = 8
 		else:
 			style.border_color = STORED_BORDER if weapon != null else Color(1, 1, 1, 0.12)
-			style.bg_color = Color(0.03, 0.01, 0.06, 0.7 if weapon != null else 0.3)
+			style.bg_color = Color(0.04, 0.02, 0.12, 0.75 if weapon != null else 0.35)
+			style.shadow_size = 0
 		style.set_border_width_all(3 if selected else 2)
 		captions[i].text = "ACTIVE" if selected else "STORED"
-		captions[i].add_theme_color_override("font_color", UIStyle.MAGENTA if selected else UIStyle.MUTED)
+		captions[i].add_theme_color_override("font_color", ACTIVE_BORDER if selected else UIStyle.MUTED)
 	if inventory.selected != _last_selected:
 		_resize_slots(inventory.selected, _last_selected != -1)
 		_last_selected = inventory.selected
@@ -180,6 +211,7 @@ func refresh(race: RaceManager, delta: float) -> void:
 		lock_label.add_theme_color_override("font_color", Color(1, 1, 1, 0.4))
 	else:
 		lock_label.text = ""
+	lock_label.visible = lock_label.text != ""
 
 	var effects: PackedStringArray = []
 	if car.status != null:
@@ -188,6 +220,7 @@ func refresh(race: RaceManager, delta: float) -> void:
 		if car.status.is_protected():
 			effects.append("PROTECTED")
 	status_label.text = "  ".join(effects)
+	status_label.visible = status_label.text != ""
 
 	if _notice_time > 0.0:
 		_notice_time -= delta

@@ -305,6 +305,11 @@ func is_boosting() -> bool:
 	return boost_time_left > 0.0
 
 
+## The slipstream's own boost is running (the meter filled behind a car).
+func is_slipstream_boosting() -> bool:
+	return is_boosting() and boost_label == Slipstream.BOOST_LABEL
+
+
 func get_speed_cap() -> float:
 	var multiplier := status.speed_multiplier() if status != null else 1.0
 	return (stats.top_speed + _boost_extra_speed) * multiplier

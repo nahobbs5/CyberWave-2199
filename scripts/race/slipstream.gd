@@ -25,6 +25,8 @@ const BOOST_EXTRA := 4.5
 const BOOST_TIME := 1.2
 const BOOST_KICK := 2.5
 const BOOST_COLOR := Color(0.75, 0.95, 1.0)
+## boost_label of the slipstream boost (VehicleController.is_slipstream_boosting).
+const BOOST_LABEL := "Slipstream"
 ## No new meter for this long after a slipstream boost.
 const COOLDOWN := 2.0
 
@@ -83,7 +85,7 @@ func update(racers: Array[RaceProgress], delta: float) -> void:
 				car.slipstream_charge = 0.0
 				car.in_slipstream = false
 				_cooldowns[car] = COOLDOWN
-				car.start_external_boost(BOOST_EXTRA, BOOST_TIME, BOOST_KICK, "Slipstream", BOOST_COLOR)
+				car.start_external_boost(BOOST_EXTRA, BOOST_TIME, BOOST_KICK, BOOST_LABEL, BOOST_COLOR)
 				car.slipstream_boost.emit()
 		else:
 			car.slipstream_charge = maxf(0.0, car.slipstream_charge - delta * DRAIN_FACTOR / FILL_CLOSE)

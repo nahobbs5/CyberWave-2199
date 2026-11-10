@@ -90,7 +90,8 @@ func open(manager: RaceManager) -> void:
 	if mp:
 		placement.text = "%s  %s" % [player.display_name, "WINS!" if place == 1 else ordinal(place)]
 		placement.add_theme_color_override("font_color", SplitScreen.PLAYER_COLORS[race.player_slot(player)])
-	time_value.text = ("OUT  LAP %d" % player.eliminated_lap) if player.eliminated else RaceProgress.format_time(player.finish_time)
+	time_value.text = ("OUT  LAP %d" % player.eliminated_lap) if player.eliminated \
+			else (RaceProgress.format_time(player.finish_time) if player.finish_time >= 0.0 else "CLASSIFIED")
 	best_value.text = RaceProgress.format_time(player.best_lap)
 	_fill_rewards()
 	if mp:
@@ -341,7 +342,8 @@ func _fill_players() -> void:
 		var place := UIStyle.heading("OUT" if p.eliminated else ordinal(p.finish_position), 20, Color.WHITE)
 		place.custom_minimum_size = Vector2(64, 0)
 		row.add_child(place)
-		var time := ("lap %d" % p.eliminated_lap) if p.eliminated else RaceProgress.format_time(p.finish_time)
+		var time := ("lap %d" % p.eliminated_lap) if p.eliminated \
+				else (RaceProgress.format_time(p.finish_time) if p.finish_time >= 0.0 else "classified")
 		row.add_child(UIStyle.stat("%s    best %s" % [time, RaceProgress.format_time(p.best_lap)], 16, UIStyle.MUTED))
 		players_box.add_child(row)
 
