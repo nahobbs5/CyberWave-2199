@@ -9,6 +9,8 @@ extends Node
 ##   emp             no weapon use, no drift charging, lower top speed (EMP Pulse)
 ##   traction        greatly reduced grip (Road Spike)
 ##   jammed          weapons offline; outlasts the EMP itself (EMP Pulse)
+##   override        lower top speed and acceleration, no drift charging;
+##                   never stacks or extends (System Override)
 ##   shield          blocks the next incoming attack (Firewall)
 ##   wet             standing water: a little slower and less grip (track
 ##                   surface, refreshed while driving through it)
@@ -32,8 +34,8 @@ const FORCE_FIELD_SHADER := preload("res://assets/shaders/force_field.gdshader")
 @export var wet_speed_multiplier: float = 0.88
 @export var wet_grip_multiplier: float = 0.75
 ## System Override (Advanced Weapons §3): top speed and acceleration kept.
-@export var override_speed_multiplier: float = 0.7
-@export var override_accel_multiplier: float = 0.6
+@export var override_speed_multiplier: float = 0.75
+@export var override_accel_multiplier: float = 0.7
 
 var _timers: Dictionary = {}
 var _protection: float = 0.0
@@ -61,6 +63,10 @@ func apply_attack(effect: StringName, duration: float) -> bool:
 	if has(&"overdrive"):
 		attack_blocked.emit(effect, &"overdrive")
 		return false
+	# System Override never stacks: a second hack changes nothing (and
+	# doesn't waste a Firewall).
+	if effect == &"override" and has(&"override"):
+		return false
 	if has(&"shield"):
 		_end(&"shield")
 		_shield_flash = 1.0
@@ -86,6 +92,8 @@ func apply_buff(effect: StringName, duration: float) -> void:
 	# Starting an Overdrive shrugs off a System Override.
 	if effect == &"overdrive":
 		_end(&"override")
+	if effect == &"shield" and not has(&"shield"):
+		CombatSfx.play_on(_vehicle, CombatSfx.SHIELD_UP, "ShieldUp")
 	_start(effect, duration)
 
 
@@ -144,7 +152,7 @@ func can_use_weapons() -> bool:
 
 
 func can_charge_drift() -> bool:
-	return not is_stunned() and not has(&"emp")
+	return not is_stunned() and not has(&"emp") and not has(&"override")
 
 
 func speed_multiplier() -> float:
@@ -187,6 +195,9 @@ func _end(effect: StringName) -> void:
 	if not _timers.has(effect):
 		return
 	_timers.erase(effect)
+	# Firewall gone, whether it ran out or blocked a hit.
+	if effect == &"shield":
+		CombatSfx.play_on(_vehicle, CombatSfx.SHIELD_DOWN, "ShieldDown")
 	if HARD_STUNS.has(effect) and not is_stunned():
 		_protection = stun_protection_time
 	effect_ended.emit(effect)

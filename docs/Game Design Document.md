@@ -382,6 +382,13 @@ There is no persistent health meter.
 - Strong impacts may temporarily reduce speed.
 - Vehicles should resist excessive flipping and physics instability.
 
+**Suspension and landings** (docs/Cyberwave_2199_Vehicle_Physics_Implementation_Guide.md):
+- Four raycast wheels with spring/damper suspension on a 1200 kg body; grip and steering stay arcade (velocity-driven).
+- Traction is weighted by how loaded each wheel is (a wheel barely touching the road barely steers) and bridged over 2-step contact glitches; airborne and landing checks for tricks, drifts and slipstream are unchanged.
+- After real airtime, landings get 1.5x spring damping and a 0.3 s pitch/roll stabiliser (yaw untouched), so cars no longer bounce back into the air; jump distances are unchanged.
+- Front/rear anti-roll bars exist (`anti_roll_stiffness`) but are off: cars don't roll in corners on flat tracks, so they would only stiffen curb hits. Intended for banked/hilly tracks.
+- F3 (debug builds) shows a live physics readout.
+
 ## 5.5 Recovery
 
 Both manual and automatic recovery are supported.
@@ -504,6 +511,8 @@ Crate odds by race position (each column adds up to 100%; with fewer than 8 race
 | Hunter-Killer | 0% | 3% | 5% | 5% |
 | Overdrive | 0% | 2% | 6% | 10% |
 | System Override | 0% | 5% | 9% | 16% |
+
+**System Override** hacks every racer ahead of the user: −25% top speed, −30% acceleration, drift charge lost and no charging while hacked; steering and weapons still work. Time hacked is fixed from position at activation: 1st 12 s, 2nd 10.5 s, 3rd 9 s, 4th 7.5 s, 5th 6 s, 6th 4.5 s, 7th 3 s. A repeat hit does nothing; Firewall blocks it (shield used up); Overdrive is immune.
 
 ---
 
@@ -1459,5 +1468,6 @@ Changes after Version 1.0 should be tracked as revisions rather than silently re
 | 4.8 | 2026-11-10 | The race ends once all but one car have finished: the last car is placed last automatically (§2.1). |
 | 4.9 | 2026-11-10 | Race HUD rebuilt after *Cyberpunk Slipstream Under the Neon Moon*: POSITION and gold-highlighted standings top left, LAP / time with coins under it top right, a round speed gauge, minimap over the item squares, and a SLIPSTREAM banner (§11.5). Slipstream arches now appear only once the boost fires (§4.5). Rivals renamed to callsigns: Kilo, Razor, Maverick, Zenith, Spike, Void, Hex (§7.3). |
 | 5.0 | 2026-11-10 | Crate odds rebalanced: every weapon, rare items included, now has a set percent chance for each pair of positions (§6.5). |
+| 5.1 | 2026-11-10 | System Override revised (§6.5; Advanced Weapons §3): −25% top speed, −30% acceleration, drift charge lost and can't rebuild while hacked; time hacked follows position at activation (1st 12 s down to 7th 3 s, 1.5 s steps); never stacks or extends. Weapons stay usable. |
 
-**End of Game Design Document — Version 5.0**
+**End of Game Design Document — Version 5.1**

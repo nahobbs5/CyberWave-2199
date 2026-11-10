@@ -19,13 +19,14 @@ const TRACKS := [
 			"res://music/kulakovka-hard-cyberpunk-281149.mp3"],
 	["Arashiyama Circuit", "res://scenes/tracks/arashiyama_circuit.tscn", "Kyoto, Japan",
 			"res://music/ob-lix-the-cyber-geisha-world-ethnic-amp-fantasy-background-music-110365.mp3"],
-	# Music to come for the glacier and the Crazy House (the user is choosing); silent until then.
-	["Vatnajökull Glacier", "res://scenes/tracks/vatnajokull_glacier.tscn", "Vatnajökull, Iceland", ""],
-	["Crazy House", "res://scenes/tracks/crazy_house.tscn", "Hang Nga Villa, Da Lat, Vietnam", ""],
+	["Vatnajökull Glacier", "res://scenes/tracks/vatnajokull_glacier.tscn", "Vatnajökull, Iceland",
+			"res://music/ed-musicproductions-besieged-castle-397025.mp3"],
+	["Crazy House", "res://scenes/tracks/crazy_house.tscn", "Hang Nga Villa, Da Lat, Vietnam",
+			"res://music/sonican-spooky-halloween-strange-house-420678.mp3"],
 	# Music to come (the user is choosing); silent until then.
 	["Gardens by the Bay", "res://scenes/tracks/gardens_by_the_bay.tscn", "Marina Bay, Singapore", ""],
-	# Music to come (the user is choosing); silent until then.
-	["Parque Quinta Normal", "res://scenes/tracks/quinta_normal.tscn", "Santiago, Chile", ""],
+	["Parque Quinta Normal", "res://scenes/tracks/quinta_normal.tscn", "Santiago, Chile",
+			"res://music/theorienvibes-to-the-moon-and-back-232892.mp3"],
 	# Music to come (the user is choosing); silent until then.
 	["Vale da Lua", "res://scenes/tracks/vale_da_lua.tscn", "Chapada dos Veadeiros, Brazil", ""],
 	["Test Circuit", TEST_CIRCUIT, "Graybox", ""],

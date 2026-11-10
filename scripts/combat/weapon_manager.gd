@@ -119,7 +119,9 @@ func use_weapon(vehicle: VehicleController) -> bool:
 
 
 ## Applies a weapon's effect to a racer. Returns true if it landed.
-func apply_hit(target: VehicleController, weapon: WeaponData, shooter: VehicleController) -> bool:
+## `duration` < 0 uses the weapon's own effect_duration.
+func apply_hit(target: VehicleController, weapon: WeaponData, shooter: VehicleController,
+		duration: float = -1.0) -> bool:
 	if target == null or target.status == null:
 		return false
 	if target == shooter and not weapon.can_affect_owner:
@@ -128,7 +130,7 @@ func apply_hit(target: VehicleController, weapon: WeaponData, shooter: VehicleCo
 	if progress == null or progress.finished:
 		return false
 	_last_block = &""
-	var landed := target.status.apply_attack(weapon.effect, weapon.effect_duration)
+	var landed := target.status.apply_attack(weapon.effect, duration if duration >= 0.0 else weapon.effect_duration)
 	hit_resolved.emit(target, weapon, shooter, &"" if landed else _last_block)
 	if not landed:
 		return false
@@ -188,6 +190,7 @@ func _deploy(user: VehicleController, weapon: WeaponData) -> void:
 			shot.position = user.global_transform * muzzle_offset
 			shot.direction = _aim(user, weapon, shot.position, forward)
 			add_child(shot)
+			CombatSfx.play_on(user, CombatSfx.RAILGUN, "Railgun")
 		WeaponData.Kind.GUIDED:
 			var drone := HunterDrone.new()
 			drone.manager = self
@@ -210,6 +213,7 @@ func _deploy(user: VehicleController, weapon: WeaponData) -> void:
 			blast.color = weapon.color
 			blast.position = user.global_position
 			add_child(blast)
+			CombatSfx.play_on(user, CombatSfx.EMP, "Emp")
 		WeaponData.Kind.HAZARD:
 			var spike := RoadSpike.new()
 			spike.manager = self
@@ -220,6 +224,7 @@ func _deploy(user: VehicleController, weapon: WeaponData) -> void:
 			drop.y = track.get_center_at(track.get_offset_at(drop)).y
 			spike.transform = Transform3D(Basis.looking_at(flat, Vector3.UP), drop)
 			add_child(spike)
+			CombatSfx.play_on(spike, CombatSfx.SPIKE_DROP, "SpikeDrop")
 		WeaponData.Kind.SELF_BOOST:
 			user.start_external_boost(weapon.boost_extra_speed, weapon.effect_duration,
 					weapon.boost_kick, weapon.display_name, weapon.color)
@@ -244,7 +249,9 @@ func _deploy(user: VehicleController, weapon: WeaponData) -> void:
 
 
 ## System Override: every racer ahead of the user right now is hacked
-## (slowed); nobody behind is touched (Advanced Weapons §3).
+## (slowed); nobody behind is touched (Advanced Weapons §3). The leader is
+## hacked longest: each victim's time comes from their position right now.
+## Already-hacked cars are skipped (no stacking, no extending).
 func _system_override(user: VehicleController, weapon: WeaponData) -> Array[VehicleController]:
 	var hit: Array[VehicleController] = []
 	var me := race.progress_of(user)
@@ -252,18 +259,30 @@ func _system_override(user: VehicleController, weapon: WeaponData) -> Array[Vehi
 		return hit
 	# Snapshot first, so hits can't reshuffle who counts as "ahead".
 	var ahead: Array[VehicleController] = []
+	var places: Array[int] = []
 	for racer in race.get_standings():
 		if racer.vehicle != user and racer.position < me.position and not racer.finished and not racer.eliminated:
 			ahead.append(racer.vehicle)
-	for car in ahead:
-		if is_targetable(car) and apply_hit(car, weapon, user):
+			places.append(racer.position)
+	for i in ahead.size():
+		var car := ahead[i]
+		if car.status != null and car.status.has(weapon.effect):
+			continue
+		var seconds := weapon.duration_for(places[i])
+		if is_targetable(car) and apply_hit(car, weapon, user, seconds):
 			hit.append(car)
-			_attach_override_sparks(car, weapon.effect_duration, weapon.color)
+			_attach_override_sparks(car, seconds, weapon.color)
 	var pulse := EmpBlast.new()
 	pulse.radius = 14.0
 	pulse.color = weapon.color
 	pulse.position = user.global_position
 	add_child(pulse)
+	# Heard at the user, and on hacked human cars (they may be far ahead).
+	# Not on hacked AI cars: a pack of them stacked up far too loud.
+	CombatSfx.play_on(user, CombatSfx.OVERRIDE, "Override")
+	for car in hit:
+		if car.is_player:
+			CombatSfx.play_on(car, CombatSfx.OVERRIDE, "Override")
 	return hit
 
 

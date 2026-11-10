@@ -189,6 +189,9 @@ func _test_grand_prix_ceremony() -> void:
 			"the winner's car is up on its platform")
 	_check(ceremony._played_fanfare and ceremony.confetti.size() == 3 and ceremony.confetti[0].emitting,
 			"confetti and fanfare")
+	_check(ceremony.is_race_sound_muted() and AudioServer.is_bus_mute(AudioServer.get_bus_index(&"SFX")),
+			"race sound effects are muted during the ceremony")
+	_check(ceremony.fanfare.bus == &"Music", "the fanfare isn't on the muted SFX bus")
 	var tags_ok := true
 	for tag in ceremony.tags:
 		tags_ok = tags_ok and tag.modulate.a > 0.9
@@ -196,6 +199,7 @@ func _test_grand_prix_ceremony() -> void:
 	await _press_accept()
 	_check(race.race_hud.is_results_visible(), "Continue opens the results")
 	_check(ceremony.is_finished(), "and the ceremony closes")
+	_check(not AudioServer.is_bus_mute(AudioServer.get_bus_index(&"SFX")), "race sound effects come back after it")
 	for i in 40:
 		await process_frame
 	_check(not is_instance_valid(ceremony), "then frees itself")

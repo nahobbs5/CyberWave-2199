@@ -24,6 +24,14 @@ func _initialize() -> void:
 
 
 func _run_all() -> void:
+	print("- first launch")
+	# The title opens mid scene change, before the music player is in the tree.
+	change_scene_to_file("res://scenes/menu/title_menu.tscn")
+	await _seconds(1.0)
+	_check(Music.current_path() == Music.MENU and Music.get_player() != null and Music.get_player().playing,
+			"the main theme plays when the app opens")
+	current_scene.queue_free()
+	await process_frame
 	GameSession.scene_changes_enabled = false
 	print("- menu music")
 	await _open(MAIN_MENU)
@@ -59,6 +67,7 @@ func _run_all() -> void:
 	await process_frame
 
 	await _test_final_lap_music()
+	_test_track_music()
 	print("\n%d checks passed, %d failed" % [_passed, _failed])
 	quit(1 if _failed > 0 else 0)
 
@@ -101,10 +110,46 @@ func _test_final_lap_music() -> void:
 			if lap < laps - 1 or laps == 1:
 				_check(is_equal_approx(Music.get_speed(), expected),
 						"%d-lap race after lap %d: speed %.2f (want %.2f)" % [laps, lap + 1, Music.get_speed(), expected])
+		# Finished: podium, then results, both to the victory theme.
+		var waited := 0.0
+		while Music.current_path() != Music.VICTORY and waited < 8.0:
+			await _seconds(0.25)
+			waited += 0.25
+		_check(Music.current_path() == Music.VICTORY, "%d-lap race: victory music after the finish" % laps)
+		var ceremony := race.find_child("PodiumCeremony", true, false) as PodiumCeremony
+		if ceremony != null:
+			ceremony.skip()
+			ceremony.finish()
+			await _seconds(0.5)
+		_check(race.race_hud.is_results_visible() and Music.current_path() == Music.VICTORY and Music.get_player().playing,
+				"%d-lap race: victory music carries on into the results" % laps)
 		race.queue_free()
 		await process_frame
 	await _open(MAIN_MENU)
 	_check(Music.current_path() == Music.MENU and Music.get_speed() == 1.0, "back in the menus the music is at normal speed")
+
+
+func _test_track_music() -> void:
+	print("- track music")
+	var want := {
+		"Crazy House": "res://music/sonican-spooky-halloween-strange-house-420678.mp3",
+		"Vatnajökull Glacier": "res://music/ed-musicproductions-besieged-castle-397025.mp3",
+		"Parque Quinta Normal": "res://music/theorienvibes-to-the-moon-and-back-232892.mp3",
+	}
+	for track in want:
+		_check(TrackCatalog.music(track) == want[track] and ResourceLoader.exists(want[track]), "%s has its music" % track)
+	_check(ResourceLoader.exists(Music.VICTORY), "victory theme exists")
+	# The web build drops the .mp3s and plays music/web/<name>.ogg copies.
+	var songs: Array[String] = [Music.MENU, Music.GARAGE, Music.VICTORY]
+	for track in TrackCatalog.names():
+		if TrackCatalog.music(track) != "":
+			songs.append(TrackCatalog.music(track))
+	var missing: Array[String] = []
+	for song in songs:
+		var web := song.replace("res://music/", "res://music/web/").get_basename() + ".ogg"
+		if not (load(web) is AudioStreamOggVorbis):
+			missing.append(web.get_file())
+	_check(missing.is_empty(), "every song has a web .ogg copy (missing: %s)" % [missing])
 
 
 ## Opens a menu scene the way a scene change would, then lets fades finish.

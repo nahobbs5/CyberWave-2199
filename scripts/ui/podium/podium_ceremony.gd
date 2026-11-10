@@ -53,6 +53,8 @@ var fanfare: AudioStreamPlayer
 var time: float = 0.0
 var _done: bool = false
 var _played_fanfare: bool = false
+## True while this ceremony has the race's sound effects muted.
+var _race_sfx_muted: bool = false
 var _since_shown: float = 0.0
 
 
@@ -186,12 +188,34 @@ func finish() -> void:
 	if _done:
 		return
 	_done = true
+	mute_race_sounds(false)
 	finished.emit()
 	for p in confetti:
 		p.emitting = false
 	var tw := create_tween()
 	tw.tween_property(root, "modulate:a", 0.0, FADE)
 	tw.tween_callback(queue_free)
+
+
+func _exit_tree() -> void:
+	mute_race_sounds(false)
+
+
+## Silences the race behind the ceremony (AI weapons, drones, skids...) by
+## muting the SFX bus; the fanfare plays on the Music bus so it's still heard.
+## Unmuting goes back to the player's setting (a 0 SFX volume stays muted).
+func mute_race_sounds(on: bool) -> void:
+	if on == _race_sfx_muted:
+		return
+	var index := AudioServer.get_bus_index(&"SFX")
+	if index < 0:
+		return
+	_race_sfx_muted = on
+	AudioServer.set_bus_mute(index, on or GameSettings.volume("sfx") <= 0.001)
+
+
+func is_race_sound_muted() -> bool:
+	return _race_sfx_muted
 
 
 func _process(delta: float) -> void:
@@ -207,6 +231,8 @@ func _advance(delta: float) -> void:
 	if not root.visible:
 		root.visible = true
 		root.modulate.a = 0.0
+		Music.play(get_tree(), Music.VICTORY)
+	mute_race_sounds(true)
 	_since_shown += delta
 	root.modulate.a = minf(1.0, root.modulate.a + delta / FADE) if delta > 0.0 else root.modulate.a
 	stage.set_progress(minf(time, duration()))
@@ -496,7 +522,7 @@ static func _confetti_texture() -> Texture2D:
 
 func _build_fanfare() -> void:
 	fanfare = AudioStreamPlayer.new()
-	fanfare.bus = &"SFX"
+	fanfare.bus = &"Music"
 	fanfare.volume_db = -4.0
 	fanfare.stream = fanfare_stream(grand)
 	add_child(fanfare)

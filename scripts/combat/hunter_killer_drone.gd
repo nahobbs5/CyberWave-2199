@@ -37,6 +37,9 @@ var _route: float = 0.0
 var _reticle: MeshInstance3D
 var _beam: MeshInstance3D
 var _audio: AudioStreamPlayer3D
+## Lock-on beeps on the target while it warns (stopped when the drone hits,
+## gives up or burns out).
+var _warn_sfx: AudioStreamPlayer3D
 
 static var _whine: AudioStreamWAV
 
@@ -59,6 +62,7 @@ func _ready() -> void:
 	_audio.volume_db = -4.0
 	add_child(_audio)
 	_audio.play()
+	CombatSfx.play_on(shooter, CombatSfx.HK_LAUNCH, "HkLaunch")
 
 
 ## The leader for a launch by `user`: 1st place, or 2nd if `user` leads.
@@ -92,9 +96,12 @@ func _physics_process(delta: float) -> void:
 			if available and gap < HOMING_DISTANCE:
 				phase = Phase.WARNING
 				warning_left = WARNING_TIME
+				_stop_warning_sound()
+				_warn_sfx = CombatSfx.play_on(target, CombatSfx.HK_WARNING, "HkWarning")
 		Phase.WARNING:
 			if not available:
 				phase = Phase.CRUISE
+				_stop_warning_sound()
 				_route = target_offset - WAIT_BEHIND
 			else:
 				var behind := -target.global_transform.basis.z
@@ -108,6 +115,7 @@ func _physics_process(delta: float) -> void:
 		Phase.DIVE:
 			if not available:
 				phase = Phase.CRUISE
+				_stop_warning_sound()
 				_route = target_offset - WAIT_BEHIND
 			else:
 				var aim := target.global_position + Vector3.UP * 0.6
@@ -141,7 +149,18 @@ func _detonate() -> void:
 	manager.apply_hit(target, weapon, shooter)
 	manager.spawn_flash(global_position, BLAST_COLOR)
 	manager.spawn_arc_burst(target.global_position + Vector3.UP * 0.6, BLAST_COLOR)
+	CombatSfx.play_on(target, CombatSfx.HK_EXPLOSION, "HkExplosion")
 	queue_free()
+
+
+func _exit_tree() -> void:
+	_stop_warning_sound()
+
+
+func _stop_warning_sound() -> void:
+	if is_instance_valid(_warn_sfx):
+		_warn_sfx.queue_free()
+	_warn_sfx = null
 
 
 func _burn_out() -> void:

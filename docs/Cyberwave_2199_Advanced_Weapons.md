@@ -144,13 +144,20 @@ Sample the desired world-space transform from `PathFollow3D`, then move the kart
 |---|---|
 | Spawn positions | 3rd–8th |
 | Targets | All racers ahead at activation |
-| Debuff duration | 2.5 seconds |
-| Top speed | −30% |
-| Acceleration | −40% |
+| Debuff duration | By victim's position at activation (table below) |
+| Top speed | −25% |
+| Acceleration | −30% |
 | Drift steering | Unchanged |
-| Existing mini-turbo | Canceled |
-| Stacking | No stacking; define refresh policy |
-| Counter | Invulnerability Matrix / active Overdrive |
+| Existing mini-turbo | Canceled; can't build drift charge while hacked |
+| Weapons | Still usable |
+| Stacking | None: a repeat hit neither extends nor restarts it |
+| Counter | Firewall (blocks it, shield used up) / active Overdrive (immune; starting one clears it) |
+
+| Victim position | 1st | 2nd | 3rd | 4th | 5th | 6th | 7th | 8th* |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| Hacked for | 12.0 s | 10.5 s | 9.0 s | 7.5 s | 6.0 s | 4.5 s | 3.0 s | 1.5 s |
+
+*8th is reference only: nobody is behind the user. Durations live in `resources/weapons/system_override.tres` (`duration_by_position`).
 
 Use a status-effect modifier system rather than permanently editing a kart's base stats. Clamp overlapping slowdowns and make restoration deterministic.
 
@@ -170,7 +177,7 @@ func activate_system_override(user_kart: Node) -> void:
     # In multiplayer, only the authoritative server applies effects.
     for kart in targets:
         if not kart.has_override_immunity():
-            kart.apply_system_override(2.5)
+            kart.apply_system_override(duration_for(kart.race_position))
 ```
 
 In multiplayer, use a single authoritative snapshot to avoid position changes during target selection. Replicate target IDs, start time, and expiration time to clients.

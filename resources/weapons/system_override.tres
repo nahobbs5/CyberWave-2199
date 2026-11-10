@@ -13,5 +13,6 @@ kind = 8
 color = Color(1, 0.15, 0.4, 1)
 effect = &"override"
 effect_duration = 2.5
+duration_by_position = PackedFloat32Array(12, 10.5, 9, 7.5, 6, 4.5, 3, 1.5)
 position_chance = PackedFloat32Array(0, 0, 5, 5, 9, 9, 16, 16)
 rare = true

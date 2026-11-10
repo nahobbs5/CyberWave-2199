@@ -7,6 +7,8 @@ extends RefCounted
 
 const MENU := "res://music/ikoliks_aj-cyberpunk-cyberpunk-music-614562.mp3"
 const GARAGE := "res://music/ikoliks-wings-of-hope-no-copyright-music-background-corporate-380579.mp3"
+## Podium ceremony and the results screen (carries on from one to the other).
+const VICTORY := "res://music/alex-morgan-victory-591331.mp3"
 
 const FADE := 0.6
 const SILENT_DB := -40.0
@@ -48,7 +50,12 @@ static func play(tree: SceneTree, path: String) -> void:
 		_reset_speed(player)
 		player.stream = stream
 		player.volume_db = SILENT_DB
-		player.play())
+		# On first launch the player is still waiting to be added to the tree
+		# (the title opens mid scene change); start it once it's in.
+		if player.is_inside_tree():
+			player.play()
+		else:
+			player.tree_entered.connect(player.play, CONNECT_ONE_SHOT))
 	_tween.tween_property(player, "volume_db", 0.0, FADE)
 
 

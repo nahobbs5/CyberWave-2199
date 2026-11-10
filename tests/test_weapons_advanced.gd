@@ -124,10 +124,13 @@ func _test_status_rules() -> void:
 	print("- status rules")
 	var status := StatusEffects.new()
 	_check(status.apply_attack(&"override", 2.5), "override lands")
-	_check(is_equal_approx(status.speed_multiplier(), 0.7) and is_equal_approx(status.accel_multiplier(), 0.6),
-			"override: 70% top speed, 60% acceleration")
-	status.apply_attack(&"override", 1.0)
-	_check(is_equal_approx(status.time_left(&"override"), 2.5), "doesn't stack: a shorter hit doesn't cut it short")
+	_check(is_equal_approx(status.speed_multiplier(), 0.75) and is_equal_approx(status.accel_multiplier(), 0.7),
+			"override: 75% top speed, 70% acceleration")
+	_check(not status.can_charge_drift() and status.can_use_weapons(),
+			"override: no drift charging, weapons still usable")
+	_check(not status.apply_attack(&"override", 1.0), "a second override doesn't land")
+	status.apply_attack(&"override", 9.0)
+	_check(is_equal_approx(status.time_left(&"override"), 2.5), "doesn't stack: a repeat hit neither cuts nor extends it")
 	status.apply_buff(&"overdrive", 6.0)
 	_check(not status.has(&"override"), "starting an Overdrive clears an override")
 	_check(not status.apply_attack(&"override", 2.5) and not status.apply_attack(&"stun", 1.5),
@@ -198,9 +201,24 @@ func _test_override(race: RaceManager) -> void:
 	_check(behind_clean, "the user and everyone behind are untouched")
 	var victim: VehicleController = order[0]
 	_check(victim.get_node_or_null("OverrideSparks") != null, "red arcs on a victim")
-	_check(is_equal_approx(victim.get_speed_cap(), victim.stats.top_speed * 0.7), "victim's top speed is cut by 30%")
+	_check(is_equal_approx(victim.get_speed_cap(), victim.stats.top_speed * 0.75), "victim's top speed is cut by 25%")
+	# Time hacked follows position at activation: 1st 12 s ... 4th 7.5 s.
+	_check(absf(victim.status.time_left(&"override") - 12.0) < 0.1,
+			"the leader is hacked for 12 s (%.2f)" % victim.status.time_left(&"override"))
+	_check(absf(order[3].status.time_left(&"override") - 7.5) < 0.1,
+			"4th is hacked for 7.5 s (%.2f)" % order[3].status.time_left(&"override"))
+	_check(not victim.status.can_charge_drift() and victim.status.can_use_weapons(),
+			"hacked: no drift charge, weapons still work")
+	# A second Override from further back doesn't extend anyone already hacked.
+	var before: float = victim.status.time_left(&"override")
+	var rear: VehicleController = order[6]
+	rear.inventory.add(_weapon("override"))
+	race.weapon_manager.use_weapon(rear)
+	_check(victim.status.time_left(&"override") <= before, "a repeat Override doesn't extend the leader's hack")
+	_check(me.status.has(&"override") and absf(me.status.time_left(&"override") - 6.0) < 0.1,
+			"the earlier user (5th) is now hacked for 6 s")
 	# A hacked car really does accelerate slower.
-	var clean: VehicleController = order[5]
+	var clean: VehicleController = order[7]
 	for car: VehicleController in [victim, clean]:
 		# Stop the (disabled) AI from zeroing the inputs each frame.
 		race.get_ai(race.progress_of(car)).set_physics_process(false)
@@ -209,11 +227,17 @@ func _test_override(race: RaceManager) -> void:
 	_place(race, victim, 500.0, -4.0)
 	_place(race, clean, 500.0, 4.0)
 	await _frames(60)
-	_check(victim.forward_speed < clean.forward_speed * 0.8,
+	_check(victim.forward_speed < clean.forward_speed * 0.85,
 			"hacked car accelerates slower (%.1f vs %.1f m/s)" % [victim.forward_speed, clean.forward_speed])
-	await _frames(100)
-	_check(not victim.status.has(&"override") and is_equal_approx(victim.status.accel_multiplier(), 1.0),
-			"back to normal after 2.5 s")
+	# Wait out 4th place's 7.5 s: they recover while the leader is still hacked.
+	var fourth: VehicleController = order[3]
+	var frames := 0
+	while fourth.status.has(&"override") and frames < 600:
+		await physics_frame
+		frames += 1
+	_check(not fourth.status.has(&"override") and is_equal_approx(fourth.status.accel_multiplier(), 1.0)
+			and is_equal_approx(fourth.status.speed_multiplier(), 1.0), "4th back to normal when the timer ends")
+	_check(victim.status.has(&"override"), "the leader is still hacked")
 
 
 # --- Hunter-Killer Drone ---------------------------------------------------------

@@ -38,6 +38,7 @@ func setup(vehicle: VehicleController, camera: ChaseCamera, track: TrackCircuit)
 	_camera = camera
 	_track = track
 	speed_panel.setup(vehicle)
+	add_child(PhysicsDebugOverlay.new(vehicle))
 	# In races RaceHUD's SLIPSTREAM banner shows the boost; free drive gets a notice.
 	vehicle.slipstream_boost.connect(func() -> void:
 		if show_lap_info:

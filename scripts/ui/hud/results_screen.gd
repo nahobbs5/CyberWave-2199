@@ -71,6 +71,7 @@ func get_coins_shown() -> String:
 ## Shows the results for the player's finish and starts the animation.
 func open(manager: RaceManager) -> void:
 	race = manager
+	Music.play(race.get_tree(), Music.VICTORY)
 	var player := race.player
 	var c := race.championship
 	var mp := race.is_multiplayer()

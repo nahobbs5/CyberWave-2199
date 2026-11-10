@@ -256,3 +256,60 @@ If assets/scenes/resources needed are absent, identify the missing information r
 - [ ] Changes documented with before/after test observations
 
 **Future phase (not now):** banked roads and hills using road-normal-aware chassis stabilization, terrain-specific tire grip, and more elaborate per-wheel tire forces.
+
+---
+
+## 13. Results (implemented 2026-11-10)
+
+### Inspected scene and physics values
+
+All eight cars share `scenes/vehicles/placeholder_car.tscn`; the `.tres` stats don't override any suspension values.
+
+| Setting | Value |
+|---|---|
+| `RigidBody3D.mass` | 1200 kg |
+| `center_of_mass` | custom, (0, -0.35, 0) |
+| `gravity_scale` | 1 (default gravity 9.8 m/s²) |
+| `continuous_cd` | on |
+| `can_sleep` | off |
+| Physics engine / tick | Jolt, 60 ticks/s |
+| Collider | box 1.9 × 0.55 × 4.2 m, friction 0.2 |
+| Wheel rays | `WheelFL` (-0.85, 0, -1.35), `WheelFR` (0.85, 0, -1.35), `WheelRL` (-0.85, 0, 1.35), `WheelRR` (0.85, 0, 1.35); mask 1 (environment only), length = rest + radius = 0.83 m |
+| Springs | k 30000, c 3500, rest 0.45 m, wheel radius 0.38 m |
+
+At 1200 kg the springs are already well matched: static compression is 1200 · 9.8 / (4 · 30000) ≈ 0.098 m. Critical damping is 6000, so 3500 is about 0.58 of critical.
+
+### What changed (`vehicle_controller.gd`, `vehicle_stats.gd`)
+
+- **Per-step wheel cache:** `wheel_spring_length`, `wheel_compression` (0…rest), `wheel_load`, `ray_hit_wheels`, `traction_fraction`, `anti_roll_force`, `air_time`, `since_landing`. It is cleared on hold, flight and teleport, and `grounded_wheels` keeps its meaning.
+- **Spring force past full travel is not clamped.** It acts as a bump-stop. Clamping it shortened ramp jumps (airtime 2.45 → 2.38 s), because the take-off off a ramp face relies on it. Only the recorded compression is clamped.
+- **Traction:** each loaded wheel is weighted by `smoothstep(0, 0.25 · static compression, compression)`. Traction is held for `contact_grace_ticks` (2) steps over a contact glitch. This affects traction only, not the airborne or landing checks.
+- **Anti-roll** (`anti_roll_stiffness`, default 0, off): axles are paired from the wheel positions (`find_axles`). The force is equal and opposite on each axle (no net lift), and an axle is skipped when either of its wheels is unloaded.
+- **Landing** (on after more than 0.15 s of airtime): `landing_damping_multiplier` 1.5 from touchdown, plus `landing_stabilize_time` 0.3 s / `landing_stabilize_strength` 8, which damps pitch and roll rate only.
+- `max_suspension_force` exists but is off (0). The probe showed a cap at 20 kN shortened jumps and made the landing wobble worse.
+- **Debug readout:** `PhysicsDebugOverlay`, F3 in debug builds. It is added by `PrototypeHUD`, so there is one per split-screen view.
+
+### Measurements
+
+Measured with a headless probe on a flat floor, a 14° × 14 m ramp at 38 m/s, and a 6 cm curb at 25 m/s, at 60 ticks/s.
+
+| Test | Before | After |
+|---|---|---|
+| Rest (all 8 cars) | stable, 0 mm drift | identical |
+| Full-lock turn, 20 / 33 m/s | peak roll 0.07°, yaw 2.08 / 1.86 rad/s | identical |
+| Drift to gold boost | reaches level 3, fires | identical |
+| Curb, one side | peak roll 1.95°, 4 wheels loaded | identical |
+| Ramp airtime / peak height (default car) | 2.45 s / 9.78 m | identical (all 8 cars identical) |
+| Bounce back into the air after landing | 3 of 8 cars | 0 of 8 |
+| Upward rebound after landing | 2.18–2.74 m/s | 1.99–2.12 m/s |
+| Peak pitch/roll rate after landing | 1.03–3.20 rad/s | 0.34–1.98 rad/s |
+| Pitch after landing | 1.3–2.0° | 0.7–1.6° |
+
+### Settings tried and rejected
+
+- **Damping 4500 / 5000** (0.75–0.83 of critical): cut jump height by 0.7–0.8 m, which would change every jump and shortcut gap.
+- **Anti-roll 2000–16000:** turns already roll less than 0.1°, because grip steers the velocity directly. On a curb the bar made roll slightly worse (1.95° → 2.13°), as real anti-roll bars do on one-wheel bumps. Left off until banked or hilly tracks give it work to do.
+- **Spring force cap 20 kN:** shorter jumps and more landing wobble.
+- **Fresh `intersect_ray` contact queries:** not needed. No wheel lost contact in full-lock turns at up to 33 m/s or on the curb at 25 m/s.
+
+Tests: `tests/test_vehicle_physics.gd` covers resting for all 8 cars, contact data, axles, anti-roll, the ramp and landing, hold / flight / teleport hand-offs, and the overlay.

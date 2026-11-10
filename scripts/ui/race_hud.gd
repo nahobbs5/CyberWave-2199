@@ -362,7 +362,7 @@ func _on_hit_resolved(target: VehicleController, weapon: WeaponData, shooter: Ve
 			items.show_notice("%s!" % weapon.display_name.to_upper(), UIStyle.DANGER)
 			_play("hurt")
 			if weapon.kind == WeaponData.Kind.OVERRIDE:
-				announcer.announce("SYSTEM OVERRIDE", 1.4, weapon.color, "speed and acceleration down")
+				announcer.announce("SYSTEM OVERRIDE", 1.4, weapon.color, "speed down · drift charge lost")
 	elif shooter == player:
 		if blocked_by == &"":
 			items.show_notice("HIT  %s" % target_name, weapon.color)

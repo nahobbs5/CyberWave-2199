@@ -24,6 +24,9 @@ enum Kind { PROJECTILE, GUIDED, AREA, HAZARD, SELF_BOOST, SHIELD, LEADER_DRONE, 
 ## user for buffs (shield).
 @export var effect: StringName = &""
 @export var effect_duration: float = 1.0
+## Per-position durations (1st, 2nd, ...) for the victim's place at the
+## moment of the hit (System Override). Empty = effect_duration for everyone.
+@export var duration_by_position: PackedFloat32Array = PackedFloat32Array()
 ## A landed hit knocks out the victim's selected weapon.
 @export var strips_item: bool = false
 ## A landed hit takes the victim's weapons offline this long ("jammed").
@@ -57,6 +60,13 @@ enum Kind { PROJECTILE, GUIDED, AREA, HAZARD, SELF_BOOST, SHIELD, LEADER_DRONE, 
 ## True for the rare comeback items.
 func is_special() -> bool:
 	return rare
+
+
+## Effect duration for a victim in race `position` (1 = leader).
+func duration_for(position: int) -> float:
+	if duration_by_position.is_empty():
+		return effect_duration
+	return duration_by_position[clampi(position - 1, 0, duration_by_position.size() - 1)]
 
 
 ## Percent chance (0-100) for a racer in `position` of `racer_count`.

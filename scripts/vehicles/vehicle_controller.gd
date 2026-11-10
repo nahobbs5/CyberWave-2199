@@ -8,6 +8,17 @@ extends RigidBody3D
 ##
 ## Wheel nodes: RayCast3D children named "Wheel*" (front wheels "WheelF*"),
 ## each with a "Pivot" Node3D child holding the wheel mesh.
+##
+## Wheel contact, per physics step (docs/Cyberwave_2199_Vehicle_Physics_
+## Implementation_Guide.md):
+##   ray hit       the wheel ray reaches the road (ray_hit_wheels)
+##   loaded wheel  ...and its spring is compressed (grounded_wheels; tricks,
+##                 drifts and recovery read this, so its meaning is fixed)
+##   traction      0..1 share of grip/drive/steer: loaded wheels weighted by
+##                 how loaded they are (a wheel just kissing the road barely
+##                 steers), bridged over brief contact glitches
+## Anti-roll bars push the front and rear axles' left/right springs toward
+## each other, and a short landing stabiliser damps pitch/roll wobble.
 
 ## Drift boost fired (level 1-3).
 signal boost_started(level: int)
@@ -33,6 +44,8 @@ const GROUP := &"vehicles"
 
 ## Steering needed to pick a direction when starting a Shift drift.
 const SHIFT_DRIFT_STEER_THRESHOLD := 0.3
+## Airtime that counts as a real landing for the landing stabiliser.
+const LANDING_MIN_AIR_TIME := 0.15
 
 @export var stats: VehicleStats
 ## When true, inputs are read from the InputMap each physics frame.
@@ -54,7 +67,24 @@ var input_enabled: bool = true
 ## apart from input_enabled, which the race (countdown, elimination) owns.
 var recovery_lock: bool = false
 
+## Wheels whose spring is compressed (see the header).
 var grounded_wheels: int = 0
+## Wheel rays touching the road, loaded or not.
+var ray_hit_wheels: int = 0
+## Share of grip, drive and steering the tyres give this step (0..1).
+var traction_fraction: float = 0.0
+## This step's contact per wheel (index matches the Wheel* rays): spring
+## length (-1 = no hit), compression (0..rest length) and spring force (N).
+var wheel_spring_length: PackedFloat32Array = PackedFloat32Array()
+var wheel_compression: PackedFloat32Array = PackedFloat32Array()
+var wheel_load: PackedFloat32Array = PackedFloat32Array()
+## Anti-roll force (N) on the front and rear axles this step.
+var anti_roll_force: Vector2 = Vector2.ZERO
+## Seconds with no loaded wheel (0 while on the ground), and since landing.
+var air_time: float = 0.0
+var since_landing: float = 0.0
+## Shows the physics debug readout (F3, debug builds).
+static var debug_physics: bool = false
 var forward_speed: float = 0.0
 var lateral_speed: float = 0.0
 var ground_normal: Vector3 = Vector3.UP
@@ -92,6 +122,13 @@ var overdrive: OverdriveController
 var _prev_forward_speed: float = 0.0
 var _wheel_spin: float = 0.0
 var _wheels: Array[RayCast3D] = []
+## Wheel index pairs [left, right] for the front and rear axles; empty if
+## the wheels aren't a 2 x 2 layout (anti-roll is then off).
+var _axles: Array[Vector2i] = []
+var _last_traction: float = 0.0
+var _grace_left: int = 0
+var _stabilize_left: float = 0.0
+var _raw_traction: float = 0.0
 ## Visual size (see set_visual_scale); 1 = as built.
 var visual_scale: float = 1.0
 ## Visual-only body yaw (rad) and hop height (m) from the drift effects;
@@ -126,6 +163,13 @@ func _ready() -> void:
 			_wheels.append(ray)
 	if _wheels.is_empty():
 		push_error("VehicleController: no Wheel* RayCast3D children found.")
+	wheel_spring_length.resize(_wheels.size())
+	wheel_compression.resize(_wheels.size())
+	wheel_load.resize(_wheels.size())
+	_clear_wheel_cache()
+	_axles = find_axles(_wheels.map(func(r: RayCast3D) -> Vector3: return r.position))
+	if _axles.is_empty() and _wheels.size() > 0:
+		push_warning("VehicleController: wheels aren't a 2 x 2 layout, anti-roll is off.")
 	drift.drift_ended.connect(func(_level: int, _boosted: bool) -> void: _recover_left = stats.drift_recovery_time)
 	drift.drift_cancelled.connect(func(_reason: String) -> void: _recover_left = stats.drift_recovery_time)
 	trick = VehicleTrick.new()
@@ -365,6 +409,7 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 		_prev_forward_speed = 0.0
 		forward_speed = 0.0
 		lateral_speed = 0.0
+		_clear_wheel_cache()
 		if _held_moved:
 			_held_moved = false
 			teleported.emit.call_deferred()
@@ -380,6 +425,7 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 		grounded_wheels = 0
 		_pending_kick = 0.0
 		_pending_speed_scale = 1.0
+		_clear_wheel_cache()
 		return
 	if _pending_launch >= 0.0:
 		state.linear_velocity = -state.transform.basis.z * _pending_launch
@@ -396,6 +442,7 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 		_prev_forward_speed = 0.0
 		forward_speed = 0.0
 		lateral_speed = 0.0
+		_clear_wheel_cache()
 		teleported.emit.call_deferred()
 		return
 
@@ -406,7 +453,9 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 	var right := body_basis.x
 
 	_apply_suspension(state, up)
-	var traction := float(grounded_wheels) / maxf(1.0, float(_wheels.size()))
+	_apply_anti_roll(state, up)
+	var traction := _update_traction()
+	_update_landing(state, up, dt)
 
 	var velocity := state.linear_velocity
 	forward_speed = velocity.dot(fwd)
@@ -457,29 +506,149 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 
 func _apply_suspension(state: PhysicsDirectBodyState3D, up: Vector3) -> void:
 	grounded_wheels = 0
+	ray_hit_wheels = 0
 	var normal_sum := Vector3.ZERO
-	for ray in _wheels:
+	var weight_sum := 0.0
+	var full_weight := 0.25 * static_compression()
+	# Touching down after real airtime (air_time resets after this step).
+	var landing := air_time >= LANDING_MIN_AIR_TIME or _stabilize_left > 0.0
+	var damping := stats.suspension_damping * (stats.landing_damping_multiplier if landing else 1.0)
+	for i in _wheels.size():
+		var ray := _wheels[i]
+		wheel_spring_length[i] = -1.0
+		wheel_compression[i] = 0.0
+		wheel_load[i] = 0.0
 		if not ray.is_colliding():
 			continue
+		ray_hit_wheels += 1
 		var hit := ray.get_collision_point()
 		var origin := ray.global_position
 		# Measure along the car's up axis. The ray hit comes from the previous
 		# physics step, so a straight-line distance grows with speed and makes
 		# the springs read as uncompressed (the car then sinks onto its belly).
 		var spring_length := (origin - hit).dot(up) - stats.wheel_radius
+		wheel_spring_length[i] = spring_length
 		var compression := stats.suspension_rest_length - spring_length
 		if compression <= 0.0:
 			continue
+		# Past full travel the spring keeps pushing (a bump stop): ramp
+		# take-offs rely on it, so only the recorded value is clamped.
+		wheel_compression[i] = minf(compression, stats.suspension_rest_length)
 		grounded_wheels += 1
+		weight_sum += smoothstep(0.0, full_weight, compression)
 		normal_sum += ray.get_collision_normal()
 		var offset := origin - state.transform.origin
 		var point_velocity := state.linear_velocity + state.angular_velocity.cross(offset)
-		var force := stats.suspension_stiffness * compression - stats.suspension_damping * point_velocity.dot(up)
+		var force := stats.suspension_stiffness * compression - damping * point_velocity.dot(up)
+		if stats.max_suspension_force > 0.0:
+			force = minf(force, stats.max_suspension_force)
 		if force > 0.0:
+			wheel_load[i] = force
 			# An impulse changes velocity immediately, so the drive/grip code
 			# below reads (and writes back) a velocity that already includes it.
 			state.apply_impulse(up * force * state.step, offset)
 	ground_normal = normal_sum.normalized() if grounded_wheels > 0 else Vector3.UP
+	_raw_traction = weight_sum / maxf(1.0, float(_wheels.size()))
+
+
+## Spring compression that holds the car up at rest (m).
+func static_compression() -> float:
+	var n := maxf(1.0, float(_wheels.size()))
+	var g := ProjectSettings.get_setting("physics/3d/default_gravity", 9.8) as float
+	return mass * g * gravity_scale / (n * maxf(stats.suspension_stiffness, 1.0))
+
+
+## Anti-roll bars: on each axle with both wheels loaded, push the more
+## compressed side up and the other side down by the same amount (no net lift).
+func _apply_anti_roll(state: PhysicsDirectBodyState3D, up: Vector3) -> void:
+	anti_roll_force = Vector2.ZERO
+	if stats.anti_roll_stiffness <= 0.0:
+		return
+	for a in _axles.size():
+		var l := _axles[a].x
+		var r := _axles[a].y
+		if wheel_compression[l] <= 0.0 or wheel_compression[r] <= 0.0:
+			continue
+		var f := (wheel_compression[l] - wheel_compression[r]) * stats.anti_roll_stiffness
+		var origin := state.transform.origin
+		state.apply_impulse(up * f * state.step, _wheels[l].global_position - origin)
+		state.apply_impulse(-up * f * state.step, _wheels[r].global_position - origin)
+		anti_roll_force[a] = f
+
+
+## Traction for this step: the loaded-wheel weighting, held for a couple of
+## steps over a contact glitch.
+func _update_traction() -> float:
+	if _raw_traction > 0.0:
+		_last_traction = _raw_traction
+		_grace_left = stats.contact_grace_ticks
+		traction_fraction = _raw_traction
+	elif _grace_left > 0:
+		_grace_left -= 1
+		traction_fraction = _last_traction
+	else:
+		_last_traction = 0.0
+		traction_fraction = 0.0
+	return traction_fraction
+
+
+## Air time, and a short pitch/roll damping after a real landing.
+func _update_landing(state: PhysicsDirectBodyState3D, up: Vector3, dt: float) -> void:
+	if grounded_wheels == 0:
+		air_time += dt
+		since_landing = 0.0
+		_stabilize_left = 0.0
+		return
+	if air_time >= LANDING_MIN_AIR_TIME and grounded_wheels >= 2:
+		_stabilize_left = stats.landing_stabilize_time
+	if grounded_wheels >= 2:
+		air_time = 0.0
+	since_landing += dt
+	if _stabilize_left <= 0.0 or stats.landing_stabilize_strength <= 0.0:
+		return
+	_stabilize_left -= dt
+	var angular := state.angular_velocity
+	var yaw := up * angular.dot(up)
+	var keep := 1.0 - clampf(stats.landing_stabilize_strength * dt, 0.0, 1.0)
+	state.angular_velocity = yaw + (angular - yaw) * keep
+
+
+## Clears this step's wheel contact (hold, flight, teleport), so nothing
+## stale carries into the first step back on the road.
+func _clear_wheel_cache() -> void:
+	wheel_spring_length.fill(-1.0)
+	wheel_compression.fill(0.0)
+	wheel_load.fill(0.0)
+	ray_hit_wheels = 0
+	traction_fraction = 0.0
+	anti_roll_force = Vector2.ZERO
+	_raw_traction = 0.0
+	_last_traction = 0.0
+	_grace_left = 0
+	_stabilize_left = 0.0
+
+
+## Pairs wheels into axles from their local positions: front (-z) and rear
+## (+z), each [left (-x), right (+x)]. Empty unless exactly 2 x 2.
+static func find_axles(positions: Array) -> Array[Vector2i]:
+	var out: Array[Vector2i] = []
+	if positions.size() != 4:
+		return out
+	for front in [true, false]:
+		var left := -1
+		var right := -1
+		for i in 4:
+			var p: Vector3 = positions[i]
+			if (p.z < 0.0) != front:
+				continue
+			if p.x < 0.0 and left < 0:
+				left = i
+			elif p.x > 0.0 and right < 0:
+				right = i
+		if left < 0 or right < 0:
+			return [] as Array[Vector2i]
+		out.append(Vector2i(left, right))
+	return out
 
 
 func _apply_drive(velocity: Vector3, fwd: Vector3, dt: float, traction: float) -> Vector3:

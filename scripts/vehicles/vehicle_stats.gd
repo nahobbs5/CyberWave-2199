@@ -56,6 +56,25 @@ extends Resource
 @export var suspension_stiffness: float = 30000.0
 @export var suspension_damping: float = 3500.0
 @export var wheel_radius: float = 0.38
+## Cap on one wheel's spring force in N (0 = no cap).
+@export var max_suspension_force: float = 0.0
+## Anti-roll bar stiffness per axle, N per metre of left/right compression
+## difference (0 = off). Off for now: grip steers the velocity directly, so
+## cars barely roll in corners on flat tracks, and a bar only stiffens
+## one-wheel curb hits. Meant for banked/hilly tracks later.
+@export var anti_roll_stiffness: float = 0.0
+## Physics steps a wheel-contact glitch is bridged for traction only (never
+## for the airborne / landing checks that tricks and drifts use).
+@export var contact_grace_ticks: int = 2
+
+@export_group("Landing")
+## After real airtime, pitch and roll spin is damped for this long on landing (0 = off).
+@export var landing_stabilize_time: float = 0.3
+## How strongly (1/s) pitch and roll spin is damped during that window.
+@export var landing_stabilize_strength: float = 8.0
+## Spring damping is multiplied by this from touchdown through that window
+## (soaks up the rebound; takeoffs and normal driving are unchanged).
+@export var landing_damping_multiplier: float = 1.5
 
 @export_group("Stability")
 ## Upright correction while all wheels are on the ground.

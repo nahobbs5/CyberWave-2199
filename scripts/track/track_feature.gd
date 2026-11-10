@@ -344,6 +344,7 @@ func _on_body_entered(body: Node3D) -> void:
 
 func _smash() -> void:
 	_broken_time = rebuild_time
+	CombatSfx.play_on(self, CombatSfx.BARRIER_SMASH, "Smash")
 	for child in _visual.get_children():
 		if child is MeshInstance3D:
 			var block := child as MeshInstance3D
