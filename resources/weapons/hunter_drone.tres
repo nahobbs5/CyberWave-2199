@@ -17,5 +17,4 @@ effect_duration = 0.8
 strips_item = true
 speed = 62.0
 lifetime = 8.0
-weight_front = 0.3
-weight_back = 1.5
+position_chance = PackedFloat32Array(8, 8, 12, 12, 15, 15, 14, 14)

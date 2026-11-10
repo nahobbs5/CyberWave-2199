@@ -4,7 +4,8 @@ extends MenuStreetScene
 ## Victory Podium.png": the start menus' night street (sun, skyline,
 ## highway) with three neon platforms on the road: gold 1st in the middle,
 ## silver 2nd on the left, magenta 3rd on the right. The top three's cars
-## drive in, their platforms rise, a crown drops over the winner and
+## drive in, then one at a time (3rd, 2nd, 1st) a platform rises and its
+## name tag shows (PodiumCeremony), a crown drops over the winner and
 ## spotlights sweep. Everything is posed from one number (set_progress), so
 ## skipping to the end is exact. Display only.
 
@@ -17,6 +18,10 @@ const LOW := 0.14
 ## Final car headings: noses towards the camera, angled in a little.
 const YAWS: Array[float] = [PI + 0.18, PI - 0.3, PI + 0.3]
 const PLACE_COLORS: Array[Color] = [Color(1.0, 0.78, 0.18), Color(0.72, 0.8, 1.0), Color(1.0, 0.25, 0.85)]
+## Share of each place's slot spent rising; the rest is its name beat.
+const RISE_SHARE := 0.6
+## Name tag fade-in time.
+const NAME_FADE := 0.3
 ## How far down the street the cars start.
 const RUN_IN := 34.0
 
@@ -77,14 +82,33 @@ func screen_point(world: Vector3) -> Vector2:
 	return p * (size / vp) if vp.x > 0.0 and vp.y > 0.0 else p
 
 
+## Place `i`'s platform phase slot (3rd, then 2nd, then 1st, no overlap):
+## the platform rises in the first RISE_SHARE, then its name tag shows.
+static func place_slot(i: int, p_grand: bool) -> Vector2:
+	var tl := timeline(p_grand)
+	var span := (tl[1] - tl[0]) / 3.0
+	var start := tl[0] + (2 - i) * span
+	return Vector2(start, start + span)
+
+
+static func rise_start(i: int, p_grand: bool) -> float:
+	return place_slot(i, p_grand).x
+
+
+static func rise_end(i: int, p_grand: bool) -> float:
+	var s := place_slot(i, p_grand)
+	return s.x + (s.y - s.x) * RISE_SHARE
+
+
+## When place `i`'s name tag starts fading in (as its platform lands).
+static func name_time(i: int, p_grand: bool) -> float:
+	return rise_end(i, p_grand)
+
+
 ## Height of place `i`'s platform top at time t.
 func platform_top(i: int, t: float) -> float:
-	var tl := timeline(grand)
-	# 3rd rises first, then 2nd, then 1st.
-	var order := 2 - i
-	var span := (tl[1] - tl[0]) / 3.0
-	var start := tl[0] + order * span * 0.85
-	var k := clampf((t - start) / (span * 1.3), 0.0, 1.0)
+	var start := rise_start(i, grand)
+	var k := clampf((t - start) / (rise_end(i, grand) - start), 0.0, 1.0)
 	return lerpf(LOW, HEIGHTS[i], _ease_out_back(k) if k < 1.0 else 1.0)
 
 

@@ -268,7 +268,7 @@ func _test_triple_nitro_inventory() -> void:
 	inv.take_selected()
 	_check(inv.lose_item() == triple and inv.is_empty() and inv.charges[0] == 0, "a stripping hit takes every remaining charge")
 	var tspike := load("res://resources/weapons/triple_spike.tres") as WeaponData
-	_check(tspike.kind == WeaponData.Kind.HAZARD and tspike.charges == 3 and tspike.weight_front > tspike.weight_back,
+	_check(tspike.kind == WeaponData.Kind.HAZARD and tspike.charges == 3 and tspike.chance_for(1, 8) > tspike.chance_for(8, 8),
 			"Triple Spike: a 3-charge hazard, mostly for leaders")
 	inv.add(tspike)
 	inv.take_selected()

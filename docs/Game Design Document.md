@@ -489,7 +489,21 @@ Once armed, they follow the same collision and effect rules for every racer.
 - Trailing racers may receive better opportunities for recovery and overtaking.
 - A landed Hunter Drone or Railgun hit knocks out the victim's selected weapon. Hits blocked by a Firewall or stun protection cost nothing.
 
-Weapon distribution will be tuned during testing.
+Crate odds by race position (each column adds up to 100%; with fewer than 8 racers, positions are spread over the same rows):
+
+| Weapon | 1st–2nd | 3rd–4th | 5th–6th | 7th–8th |
+|---|---:|---:|---:|---:|
+| Railgun | 12% | 12% | 10% | 8% |
+| Hunter Drone | 8% | 12% | 15% | 14% |
+| EMP Pulse | 8% | 9% | 9% | 8% |
+| Road Spike | 24% | 14% | 7% | 3% |
+| Nitro Overload | 12% | 14% | 15% | 15% |
+| Triple Nitro | 3% | 5% | 8% | 12% |
+| Triple Spike | 10% | 6% | 3% | 2% |
+| Firewall | 23% | 18% | 13% | 7% |
+| Hunter-Killer | 0% | 3% | 5% | 5% |
+| Overdrive | 0% | 2% | 6% | 10% |
+| System Override | 0% | 5% | 9% | 16% |
 
 ---
 
@@ -1444,5 +1458,6 @@ Changes after Version 1.0 should be tracked as revisions rather than silently re
 | 4.7 | 2026-11-10 | Split-screen race setup restyled after its reference art, matching the connect and car screens: player car pills, a RACE SETTINGS panel using the single-player setting rows, an info box and a gold Next: Pick a Cup / Pick a Track button (§2.4). |
 | 4.8 | 2026-11-10 | The race ends once all but one car have finished: the last car is placed last automatically (§2.1). |
 | 4.9 | 2026-11-10 | Race HUD rebuilt after *Cyberpunk Slipstream Under the Neon Moon*: POSITION and gold-highlighted standings top left, LAP / time with coins under it top right, a round speed gauge, minimap over the item squares, and a SLIPSTREAM banner (§11.5). Slipstream arches now appear only once the boost fires (§4.5). Rivals renamed to callsigns: Kilo, Razor, Maverick, Zenith, Spike, Void, Hex (§7.3). |
+| 5.0 | 2026-11-10 | Crate odds rebalanced: every weapon, rare items included, now has a set percent chance for each pair of positions (§6.5). |
 
-**End of Game Design Document — Version 4.9**
+**End of Game Design Document — Version 5.0**

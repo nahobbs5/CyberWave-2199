@@ -206,7 +206,7 @@ func _test_crate_odds() -> void:
 			var w := wm.roll_weapon(position)
 			counts[position][w.id] = counts[position].get(w.id, 0) + 1
 	for id in [&"hunter_drone", &"nitro_overload"]:
-		_check(counts[1].get(id, 0) * 2 < counts[8].get(id, 0), "%s much rarer for the leader (%d vs %d)" % [id, counts[1].get(id, 0), counts[8].get(id, 0)])
+		_check(counts[1].get(id, 0) * 1.5 < counts[8].get(id, 0), "%s much rarer for the leader (%d vs %d)" % [id, counts[1].get(id, 0), counts[8].get(id, 0)])
 	_check(counts[1].get(&"firewall", 0) > counts[8].get(&"firewall", 0), "leader gets more defensive Firewalls")
 	_check(counts[1].size() == 6 and counts[8].size() == 6, "every weapon can drop anywhere")
 	wm.free()

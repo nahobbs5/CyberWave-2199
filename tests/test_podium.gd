@@ -26,6 +26,7 @@ func _initialize() -> void:
 func _run_all() -> void:
 	GameSession.scene_changes_enabled = false
 	await _test_when()
+	_test_sequence()
 	await _test_grand_prix_ceremony()
 	await _test_split_screen()
 	await _test_versus_race()
@@ -164,6 +165,17 @@ func _test_grand_prix_ceremony() -> void:
 		await process_frame
 	_check(not stage.crown.visible and not ceremony.is_prompt_shown(), "no crown or prompt early on")
 	_check(not race.race_hud.is_results_visible(), "results wait for the ceremony")
+	# Just after 3rd's name is up: 3rd shown, 2nd's platform not yet moving.
+	ceremony.time = PodiumStage.name_time(2, true) + PodiumStage.NAME_FADE + 0.01
+	ceremony._advance(0.0)
+	_check(ceremony.tags[2].modulate.a > 0.99 and ceremony.tags[1].modulate.a == 0.0 and ceremony.tags[0].modulate.a == 0.0,
+			"3rd's name shows before 2nd's")
+	_check(is_equal_approx(stage.platforms[1].position.y, PodiumStage.LOW) and is_equal_approx(stage.platforms[0].position.y, PodiumStage.LOW),
+			"2nd and 1st haven't started rising yet")
+	ceremony.time = PodiumStage.name_time(1, true) + PodiumStage.NAME_FADE + 0.01
+	ceremony._advance(0.0)
+	_check(ceremony.tags[1].modulate.a > 0.99 and ceremony.tags[0].modulate.a == 0.0 and is_equal_approx(stage.platforms[0].position.y, PodiumStage.LOW),
+			"then 2nd's name, before 1st rises")
 	ceremony.skip()
 	await process_frame
 	_check(ceremony.is_prompt_shown(), "skipping shows the Continue prompt")
@@ -188,6 +200,23 @@ func _test_grand_prix_ceremony() -> void:
 		await process_frame
 	_check(not is_instance_valid(ceremony), "then frees itself")
 	await _end(race)
+
+
+## Drive in, then 3rd rises, 3rd's name, 2nd rises, 2nd's name, 1st rises,
+## 1st's name, then the crown; nothing overlaps.
+func _test_sequence() -> void:
+	_current = "sequence"
+	print("- " + _current)
+	for grand in [true, false]:
+		var tl := PodiumStage.timeline(grand)
+		var label := "GP" if grand else "Versus"
+		var ok := PodiumStage.rise_start(2, grand) >= tl[0]
+		for i in [2, 1, 0]:
+			ok = ok and PodiumStage.rise_end(i, grand) <= PodiumStage.name_time(i, grand)
+			if i > 0:
+				ok = ok and PodiumStage.name_time(i, grand) + PodiumStage.NAME_FADE <= PodiumStage.rise_start(i - 1, grand)
+		ok = ok and PodiumStage.name_time(0, grand) + PodiumStage.NAME_FADE <= tl[1]
+		_check(ok, "%s: drive in, then each place rises and is named in turn" % label)
 
 
 func _test_split_screen() -> void:

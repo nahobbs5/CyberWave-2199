@@ -513,7 +513,7 @@ Avoid long voice announcements or excessively loud effects.
 | Two karts respawn together | Temporarily disable kart-to-kart collision |
 | Kart falls during a boost | Cancel the boost |
 | Kart falls while drifting | Cancel drift and accumulated charge |
-| Kart falls while holding an item | Preserve the item by default, subject to balancing |
+| Kart falls while holding an item | Lose all held items (out of bounds, water, off track); a manual reset also empties them, automatic resets on the road (overturned, stuck) keep them |
 | AI kart falls | Use the same recovery logic as human players |
 
 ---

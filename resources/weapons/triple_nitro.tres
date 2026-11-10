@@ -15,5 +15,4 @@ charges = 3
 effect_duration = 3.0
 boost_extra_speed = 10.0
 boost_kick = 4.0
-weight_front = 0.05
-weight_back = 0.7
+position_chance = PackedFloat32Array(3, 3, 5, 5, 8, 8, 12, 12)

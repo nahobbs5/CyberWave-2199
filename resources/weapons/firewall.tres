@@ -14,5 +14,4 @@ color = Color(1, 0.45, 0.15, 1)
 effect = &"shield"
 effect_duration = 10.0
 lifetime = 10.0
-weight_front = 1.4
-weight_back = 0.6
+position_chance = PackedFloat32Array(23, 23, 18, 18, 13, 13, 7, 7)

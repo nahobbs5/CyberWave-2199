@@ -73,33 +73,25 @@ func can_fight(vehicle: VehicleController) -> bool:
 	return vehicle.status == null or vehicle.status.can_use_weapons()
 
 
-## Weighted crate roll: leaders get fewer powerful offensive weapons (GDD 6.5).
+## Crate roll from each weapon's per-position percent (GDD 6.5): leaders get
+## fewer powerful offensive weapons. If some weapons are missing, the rest
+## scale up to fill 100%.
 func roll_weapon(position: int, racer_count: int = 8) -> WeaponData:
-	if weapons.is_empty():
-		return null
-	# Rare comeback items first, at their per-position odds (Advanced Weapons §4).
-	var special_roll := _rng.randf() * 100.0
-	for w in weapons:
-		if w.is_special():
-			special_roll -= w.chance_for(position, racer_count)
-			if special_roll < 0.0:
-				return w
-	var t := clampf(float(position - 1) / float(maxi(racer_count - 1, 1)), 0.0, 1.0)
 	var total := 0.0
-	var weights: Array[float] = []
 	for w in weapons:
-		var weight := 0.0 if w.is_special() else maxf(0.0, lerpf(w.weight_front, w.weight_back, t))
-		weights.append(weight)
-		total += weight
+		total += maxf(0.0, w.chance_for(position, racer_count))
+	if total <= 0.0:
+		return null
 	var roll := _rng.randf() * total
 	var last: WeaponData = null
-	for i in weapons.size():
-		if weights[i] <= 0.0:
+	for w in weapons:
+		var chance := maxf(0.0, w.chance_for(position, racer_count))
+		if chance <= 0.0:
 			continue
-		last = weapons[i]
-		roll -= weights[i]
-		if roll <= 0.0:
-			return weapons[i]
+		last = w
+		roll -= chance
+		if roll < 0.0:
+			return w
 	return last
 
 

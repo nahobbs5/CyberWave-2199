@@ -46,19 +46,17 @@ enum Kind { PROJECTILE, GUIDED, AREA, HAZARD, SELF_BOOST, SHIELD, LEADER_DRONE, 
 @export var owner_grace: float = 0.0
 
 @export_group("Crate odds (GDD 6.5)")
-## Relative chance from a crate for the race leader...
-@export var weight_front: float = 1.0
-## ...and for the last-placed racer (interpolated in between).
-@export var weight_back: float = 1.0
-## Rare items instead: percent chance from a crate for each position, 1st to
-## 8th (fewer racers are spread over the same rows). Rolled before the
-## weighted pick; weight_front / weight_back are ignored when this is set.
+## Percent chance from a crate for each position, 1st to 8th (fewer racers
+## are spread over the same rows). All weapons add up to 100 per position.
 @export var position_chance: PackedFloat32Array = PackedFloat32Array()
+## Rare comeback item (Advanced Weapons doc): Hunter-Killer, Overdrive,
+## System Override.
+@export var rare: bool = false
 
 
-## True for items rolled from position_chance (see WeaponManager.roll_weapon).
+## True for the rare comeback items.
 func is_special() -> bool:
-	return not position_chance.is_empty()
+	return rare
 
 
 ## Percent chance (0-100) for a racer in `position` of `racer_count`.

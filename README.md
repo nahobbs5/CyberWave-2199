@@ -500,18 +500,22 @@ Drive through a "?" crate to collect a random weapon into your first free slot. 
   - A Firewall blocks the next attack, whatever kind it is.
   - A landed Railgun or Hunter Drone hit knocks out the victim's selected weapon (or the other one if that slot is empty). Hits blocked by a Firewall or stun protection cost nothing.
 - **Self-effects** (GDD §6.4): only the Road Spike can hit its owner, and only after a 1 s grace period. Everything else ignores its owner.
-- **Crate odds** depend on race position (GDD §6.5). Leaders mostly get Road Spikes and Firewalls, while trailing racers get more Hunter Drones and Nitros.
-- **Advanced weapons** (`docs/Cyberwave_2199_Advanced_Weapons.md`): the three rare items are rolled first, at fixed per-position chances (`WeaponData.position_chance`), before the normal weighted pick. 1st and 2nd never get them.
+- **Crate odds** depend on race position (GDD §6.5). Each weapon has a percent chance per position (`WeaponData.position_chance`, 1st to 8th), and a crate makes one pick from those. Leaders mostly get Road Spikes and Firewalls, while trailing racers get more Hunter Drones, Nitros and rare items.
+- **Advanced weapons** (`docs/Cyberwave_2199_Advanced_Weapons.md`): the three rare items (`WeaponData.rare`) never drop for 1st and 2nd.
 
-  | Position | Hunter-Killer | Overdrive | System Override |
-  |---|---:|---:|---:|
-  | 1st–2nd | 0% | 0% | 0% |
-  | 3rd | 3% | 0% | 5% |
-  | 4th | 6% | 0% | 8% |
-  | 5th | 8% | 5% | 10% |
-  | 6th | 10% | 10% | 12% |
-  | 7th | 8% | 15% | 12% |
-  | 8th | 5% | 20% | 10% |
+  | Weapon | 1st–2nd | 3rd–4th | 5th–6th | 7th–8th |
+  |---|---:|---:|---:|---:|
+  | Railgun | 12% | 12% | 10% | 8% |
+  | Hunter Drone | 8% | 12% | 15% | 14% |
+  | EMP Pulse | 8% | 9% | 9% | 8% |
+  | Road Spike | 24% | 14% | 7% | 3% |
+  | Nitro Overload | 12% | 14% | 15% | 15% |
+  | Triple Nitro | 3% | 5% | 8% | 12% |
+  | Triple Spike | 10% | 6% | 3% | 2% |
+  | Firewall | 23% | 18% | 13% | 7% |
+  | Hunter-Killer | 0% | 3% | 5% | 5% |
+  | Overdrive | 0% | 2% | 6% | 10% |
+  | System Override | 0% | 5% | 9% | 16% |
 
   With fewer than 8 racers, positions are spread over the same rows. **Counters:**
   - A Firewall soaks a Hunter-Killer blast or a System Override (and is used up).

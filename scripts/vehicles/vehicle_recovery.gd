@@ -20,6 +20,10 @@ extends Node
 ## A forward move along the track is only accepted if the car actually
 ## travelled that far, so teleports and shortcuts never advance the safe point.
 ## total_progress feeds the free-drive lap timer.
+##
+## Falling off (out of bounds, water, off track) or a manual reset empties
+## the car's weapon slots; automatic resets on the road (overturned, stuck)
+## keep them.
 
 ## A recovery started (emitted at once, before the sequence plays).
 signal recovered(reason: String)
@@ -29,6 +33,10 @@ signal state_changed(state: State)
 signal recovery_finished
 
 enum State { NORMAL, DISINTEGRATING, TELEPORTING, RECONSTRUCTING, PROTECTED }
+
+## Recovery reasons that cost the car its weapons: falling off the track,
+## and a manual reset (so it can't be used to dodge the penalty).
+const ITEM_LOSS_REASONS: Array[String] = ["out of bounds", "water", "off track", "manual"]
 
 @export var auto_recovery_enabled: bool = true
 @export_group("Sequence")
@@ -151,6 +159,8 @@ func request_recovery(reason: String) -> bool:
 	_travelled = 0.0
 	vehicle.drift.cancel("recovery")
 	vehicle.clear_boost()
+	if loses_items(reason) and vehicle.inventory != null:
+		vehicle.inventory.clear()
 	vehicle.slipstream_charge = 0.0
 	vehicle.in_slipstream = false
 	vehicle.recovery_lock = true
@@ -171,6 +181,11 @@ func request_recovery(reason: String) -> bool:
 	_enter(State.DISINTEGRATING)
 	recovered.emit(reason)
 	return true
+
+
+## Does a recovery for `reason` empty the car's weapon slots?
+static func loses_items(reason: String) -> bool:
+	return ITEM_LOSS_REASONS.has(reason)
 
 
 ## Ends a recovery at once, putting the car back to normal where it is

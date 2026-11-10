@@ -8,6 +8,11 @@ var manager: WeaponManager
 var shooter: VehicleController
 var weapon: WeaponData
 
+## Strip width across the road (m).
+const WIDTH := 2.0
+## Spikes on the strip, spread evenly across WIDTH.
+const SPIKES := 3
+
 var _age: float = 0.0
 var _owner_checked: bool = false
 
@@ -18,19 +23,20 @@ func _ready() -> void:
 	monitorable = false
 	var shape := CollisionShape3D.new()
 	var box := BoxShape3D.new()
-	box.size = Vector3(6.0, 1.6, 1.8)
+	box.size = Vector3(WIDTH, 1.6, 1.8)
 	shape.shape = box
 	shape.position = Vector3(0.0, 0.8, 0.0)
 	add_child(shape)
 	var strip := MeshInstance3D.new()
 	var strip_mesh := BoxMesh.new()
-	strip_mesh.size = Vector3(6.0, 0.06, 1.2)
+	strip_mesh.size = Vector3(WIDTH, 0.06, 1.2)
 	strip.mesh = strip_mesh
 	strip.material_override = WeaponManager.glow_material(Color(0.15, 0.15, 0.18), 0.0)
 	strip.position = Vector3(0.0, 0.04, 0.0)
 	add_child(strip)
 	var spike_mat := WeaponManager.glow_material(weapon.color, 4.0)
-	for i in 9:
+	var spacing := (WIDTH - 0.3) / (SPIKES - 1)
+	for i in SPIKES:
 		var spike := MeshInstance3D.new()
 		var cone := CylinderMesh.new()
 		cone.top_radius = 0.0
@@ -39,7 +45,7 @@ func _ready() -> void:
 		cone.radial_segments = 6
 		spike.mesh = cone
 		spike.material_override = spike_mat
-		spike.position = Vector3(-2.7 + i * 0.675, 0.2, 0.0)
+		spike.position = Vector3(-(WIDTH - 0.3) / 2.0 + i * spacing, 0.2, 0.0)
 		add_child(spike)
 	body_entered.connect(_on_body_entered)
 

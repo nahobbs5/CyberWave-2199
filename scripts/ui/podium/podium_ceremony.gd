@@ -227,16 +227,17 @@ func _celebrate() -> void:
 		fanfare.play()
 
 
+## Place `i`'s name tag opacity at time t: it fades in once its platform lands.
+func tag_alpha(i: int, t: float) -> float:
+	return clampf((t - PodiumStage.name_time(i, grand)) / PodiumStage.NAME_FADE, 0.0, 1.0)
+
+
 func _update_overlay() -> void:
 	var tl := PodiumStage.timeline(grand)
 	var t := maxf(time, 0.0)
 	for i in tags.size():
 		var tag := tags[i]
-		var k := 1.0 if stage.is_risen(i, t) else 0.0
-		if k > 0.0 and tag.modulate.a < 1.0:
-			tag.modulate.a = minf(1.0, tag.modulate.a + get_process_delta_time() / 0.25) if t < duration() else 1.0
-		elif k == 0.0:
-			tag.modulate.a = 0.0
+		tag.modulate.a = tag_alpha(i, t)
 		if i < stage.platforms.size():
 			var at := stage.screen_point(stage.tag_anchor(i))
 			tag.position = at - Vector2(tag.size.x * 0.5, 0.0)

@@ -144,8 +144,13 @@ func _test_odds(race: RaceManager) -> void:
 	var wm := race.weapon_manager
 	var specials := {&"hunter_killer": 0, &"overdrive_protocol": 0, &"system_override": 0}
 	var expected := {
-		1: [0, 0, 0], 2: [0, 0, 0], 3: [3, 0, 5], 5: [8, 5, 10], 8: [5, 20, 10],
+		1: [0, 0, 0], 2: [0, 0, 0], 3: [3, 2, 5], 5: [5, 6, 9], 8: [5, 10, 16],
 	}
+	for position in range(1, 9):
+		var sum := 0.0
+		for w in wm.weapons:
+			sum += w.chance_for(position, 8)
+		_check(is_equal_approx(sum, 100.0), "P%d crate odds add up to 100%% (%.1f)" % [position, sum])
 	for position: int in expected:
 		var counts := [0, 0, 0]
 		var rolls := 20000
