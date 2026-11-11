@@ -29,6 +29,8 @@ const TRACKS := [
 			"res://music/theorienvibes-to-the-moon-and-back-232892.mp3"],
 	["Vale da Lua", "res://scenes/tracks/vale_da_lua.tscn", "Chapada dos Veadeiros, Brazil",
 			"res://music/restum-anoush-rise-of-the-phoenix-265090.mp3"],
+	["Choquequirao", "res://scenes/tracks/choquequirao.tscn", "Cusco Region, Peru",
+			"res://music/desifreemusic-epic-victory-march-for-heroes-triumph-amp-celebration-462007.mp3"],
 	["Test Circuit", TEST_CIRCUIT, "Graybox",
 			"res://music/stageechoesmusic-the-garden-wakes-628640.mp3"],
 ]

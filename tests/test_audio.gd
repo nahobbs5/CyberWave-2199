@@ -146,6 +146,7 @@ func _test_track_music() -> void:
 		"Parque Quinta Normal": "res://music/theorienvibes-to-the-moon-and-back-232892.mp3",
 		"Gardens by the Bay": "res://music/elisaveta_stoycheva-garden-fairytale-368607.mp3",
 		"Vale da Lua": "res://music/restum-anoush-rise-of-the-phoenix-265090.mp3",
+		"Choquequirao": "res://music/desifreemusic-epic-victory-march-for-heroes-triumph-amp-celebration-462007.mp3",
 		"Test Circuit": "res://music/stageechoesmusic-the-garden-wakes-628640.mp3",
 	}
 	for track in want:

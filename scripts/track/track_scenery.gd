@@ -346,6 +346,34 @@ func add_panel(key: String, w: float, h: float, xf: Transform3D) -> void:
 	_quad(st, a, b, c, d, xf * Vector3(0, h * 0.5, -1.0))
 
 
+## One quad (track-local corners in order); `inside` is a point behind it,
+## so the normal faces away from it.
+func add_quad(key: String, a: Vector3, b: Vector3, c: Vector3, d: Vector3, inside: Vector3) -> void:
+	_quad(_st(key, (a + c) * 0.5), a, b, c, d, inside)
+
+
+## Convex polygon (local XY, counter-clockwise or not) extruded `depth`
+## along local Z, centred on xf: trapezoid jambs, gable ends, piers.
+func add_prism(key: String, poly: PackedVector2Array, depth: float, xf: Transform3D) -> void:
+	var st := _st(key, xf.origin)
+	var n := poly.size()
+	var front := []
+	var back := []
+	var c2 := Vector2.ZERO
+	for p in poly:
+		front.append(xf * Vector3(p.x, p.y, -depth * 0.5))
+		back.append(xf * Vector3(p.x, p.y, depth * 0.5))
+		c2 += p
+	c2 /= n
+	var inside := xf * Vector3(c2.x, c2.y, 0.0)
+	for i in range(1, n - 1):
+		_tri(st, front[0], front[i], front[i + 1], inside)
+		_tri(st, back[0], back[i], back[i + 1], inside)
+	for i in n:
+		var j := (i + 1) % n
+		_quad(st, front[i], front[j], back[j], back[i], inside)
+
+
 ## Observation / Ferris wheel standing at `base`, turning in the YZ plane:
 ## rim segments, spokes, cabins, a hub and two A-frame legs.
 func add_ferris_wheel(base: Vector3, radius: float, rim_key: String, frame_key: String,

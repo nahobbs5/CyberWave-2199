@@ -172,7 +172,7 @@ func _test_cup() -> void:
 	_check(cup != null and cup.display_name == "South America Cup" and cup.emblem == "south_america", "the South America Cup")
 	_check(GrandPrixData.CUPS.has(CUP), "listed with the other cups")
 	_check(cup.track_names[0] == "Parque Quinta Normal" and cup.is_track_built(0), "race 1 is the Greenhouse")
-	_check(cup.is_track_built(1) and not cup.is_track_built(2), "race 2 (Vale da Lua) is built, race 3 is still to come")
+	_check(cup.is_track_built(1) and cup.is_track_built(2), "races 2 (Vale da Lua) and 3 (Choquequirao) are built")
 	_check(not cup.is_open(true) and cup.is_open(false), "locked for Grand Prix, open in Versus")
 	_check(TrackCatalog.scene_path("Parque Quinta Normal") == TRACK and TrackCatalog.location("Parque Quinta Normal") == "Santiago, Chile",
 			"in the track catalogue")

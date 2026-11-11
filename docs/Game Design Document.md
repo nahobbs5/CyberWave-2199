@@ -1,5 +1,5 @@
 # CYBERWAVE 2199
-## Game Design Document — Version 5.3
+## Game Design Document — Version 5.4
 
 **Status:** Development Baseline  
 **Engine:** Godot 4  
@@ -101,9 +101,9 @@ Three cups, each a championship of its tracks raced back to back (three races ea
 |---|---|---|
 | 1 | Parque Quinta Normal | Santiago, Chile |
 | 2 | Vale da Lua | Chapada dos Veadeiros, Brazil |
-| 3 | Coming soon | |
+| 3 | Choquequirao | Cusco Region, Peru |
 
-The South America Cup is locked for Grand Prix until its third track is built; Parque Quinta Normal and Vale da Lua can already be raced in Versus.
+All three South America Cup tracks are built and can be raced in Versus. The cup itself is still locked for Grand Prix.
 
 The American, Europe and Asia Cups are playable. The Europe Cup was the World Cup; its save id is unchanged, so earlier results still count. The cup-win coin bonus is 100 for a three-race cup, scaled by the number of races (§9.3).
 
@@ -592,7 +592,7 @@ AI must support:
 
 # 8. Tracks and Environments
 
-Eleven tracks are included at launch.
+Twelve tracks are included at launch.
 
 ## 8.1 The Stacks
 
@@ -767,6 +767,28 @@ Built at about 3.1 km with a 13 m road and flowing corners (60–100 m radius) a
 
 The shortcut is Behind the Falls: a ledge under a rock overhang, with a stream pouring off the overhang as a curtain past its outer edge into a pool. It's about 250 m shorter, but driftwood logs (smashable) block the entrance. Race music: *Rise of the Phoenix* (§12).
 
+## 8.6f Choquequirao
+
+**Location:** Cusco Region, Peru
+
+A race through an Inca village in a green Andean valley, on a bright sunny day.
+
+**Identity:** A labyrinth of stone rings. You start outside on the valley floor and wind your way in to the plaza at the heart of the village, then back out.
+
+Built at about 3.3 km with a 12 m road. The village is a **double spiral**: the road spirals in, crosses the central plaza on an S-bend, and spirals back out between the inbound rings. Inbound and outbound lanes alternate ring by ring, about 27 m apart, so the rings look almost concentric and the cars on the next ring are going the other way. Each lane is sunk between grass terraces with stone retaining walls, and the houses stand on the terraces, so you can't see across the rings.
+
+Everything is built of flat, irregular fieldstone set in mortar, like the real site: old but sturdy. Most houses are roofless ruins with tall gable ends, rows of small trapezoidal windows under stone lintels and trapezoidal doorways, some partly collapsed with fallen stones beside them. About one house in six has a steep thatched roof, so it still reads as a village. The road drives through **eight Inca gateways**: trapezoidal openings with leaning jambs, a flat stone lintel and a recessed second frame on each face (the double-jamb of an important doorway). Outside the village, terraces step up the valley sides to cloud forest and jagged peaks.
+
+In driving order:
+- the start straight on the valley floor (boost pad and item boxes);
+- a fast sweep under the terraces, then a hairpin round a hill spur (the shortcut cuts it);
+- a terrace-step jump, then the village gate;
+- the inbound rings, through a gateway on the outer ring;
+- the plaza gateway, the plaza S-bend through two more gateways past the great hall and the stepped usnu platform, and the plaza exit gateway (boost ring);
+- the outbound rings, through a gateway on the outer ring, and the village gate back out to the start.
+
+The shortcut is the **Qolqa storehouses**: a narrower lane along a row of storehouses on the hill spur, with a wooden QOLQAS sign at its mouth. It's about 130 m shorter, but stacked baskets (smashable) block the entrance. No race music yet (§12.1).
+
 ## 8.7 Shared Track Features
 
 Tracks may contain:
@@ -812,6 +834,7 @@ The track concept art suggests one signature dynamic event per track. They are r
 | Vatnajökull Glacier | Ice Cave Collapse: falling icicles and blocks of ice |
 | Crazy House | Moving Staircases: stairs that swing into new routes |
 | Vale da Lua | Flash Flood: the river rises and floods the low bridges |
+| Choquequirao | Terrace Slide: a terrace wall gives way and rubble narrows a ring |
 
 ---
 
@@ -1146,6 +1169,7 @@ One song per screen or track. Moving between menus that share a song doesn't res
 | Gardens by the Bay | Garden Fairytale | elisaveta_stoycheva |
 | Parque Quinta Normal Greenhouse | To the Moon and Back | theorienvibes |
 | Vale da Lua | Rise of the Phoenix | restum-anoush |
+| Choquequirao | None yet | |
 | Test Circuit and Free Drive | The Garden Wakes | stageechoesmusic |
 
 The web build plays smaller 96 kbps .ogg copies (`music/web/`) of every song.
@@ -1518,5 +1542,6 @@ Changes after Version 1.0 should be tracked as revisions rather than silently re
 | 5.1 | 2026-11-10 | System Override revised (§6.5; Advanced Weapons §3): −25% top speed, −30% acceleration, drift charge lost and can't rebuild while hacked; time hacked follows position at activation (1st 12 s down to 7th 3 s, 1.5 s steps); never stacks or extends. Weapons stay usable. |
 | 5.2 | 2026-11-10 | Hunter-Killer goes through a Firewall (the shield is kept). The only escape is a Nitro fired in the last 0.4 s of its warning or during its dive: the drone misses and fizzles ("DODGED"). AI rivals try the same dodge and no longer raise a Firewall against it (§6.5). |
 | 5.3 | 2026-11-10 | Music for every track: Vatnajökull Glacier, Crazy House, Gardens by the Bay, Parque Quinta Normal, Vale da Lua and the Test Circuit / Free Drive (§8.6a–e, §12.1). *Victory* theme on the podium and results; race sound effects muted behind the podium (§11.7, §11.7a). Weapon and track sounds: Firewall up / down, Railgun, EMP, System Override, Road Spike drop, Hunter-Killer launch / warning / hit, barrier smash, with per-clip levels and a master limiter (§12.2). Main theme now plays on first launch. |
+| 5.4 | 2026-11-11 | Choquequirao built at about 3.3 km: an Inca village in a green Andean valley on a sunny day. A double-spiral labyrinth of terraced stone rings in to the plaza and back out, eight trapezoidal Inca gateways, mostly roofless gabled ruins with some thatched houses, terraces up the valley sides, and the Qolqa storehouses shortcut (§8.6f). It is South America Cup race 3 (§2.2). Track count now twelve. |
 
-**End of Game Design Document — Version 5.3**
+**End of Game Design Document — Version 5.4**

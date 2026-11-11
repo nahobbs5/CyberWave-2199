@@ -8,8 +8,9 @@ The authoritative design is [`docs/Game Design Document.md`](docs/Game%20Design%
 
 **Current milestone: Phase 6, content and polish** (GDD §16), in progress. Done so far:
 - **All eight tracks** in three cups: the **American Cup** (Vegas Overdrive, Six Flags New Orleans, The Stacks), the **Europe Cup** (Hoia Baciu Run, Catacombs Descent, Vatnajökull Glacier) and the **Asia Cup** (Arashiyama Circuit, Crazy House),
-- **Parque Quinta Normal Greenhouse** (Santiago, Chile), race 1 of the new **South America Cup** (locked for Grand Prix until its other two tracks exist; raceable in Versus now),
+- **Parque Quinta Normal Greenhouse** (Santiago, Chile), race 1 of the new **South America Cup** (all three tracks raceable in Versus; the cup is still locked for Grand Prix),
 - **Vale da Lua** (Chapada dos Veadeiros, Brazil), race 2 of the **South America Cup**: smooth moon rock cut by moving water, rivers under rock bridges, waterfalls, and open rock shelves you can fall off,
+- **Choquequirao** (Cusco Region, Peru), race 3 of the **South America Cup**: an Inca village in a green Andean valley, a double-spiral labyrinth of terraced stone rings in to the plaza and back out through eight trapezoidal gateways,
 - **Split-screen multiplayer** for 2–4 players (keyboard + gamepads): top/bottom halves for two, corners for three or four, a live spectator view in the spare corner for three, one shared minimap,
 - **Mario Kart style Versus:** pick how many races (1–16), then each track from one screen listing every cup; points add up over the set,
 - **eight vehicle models**, built procedurally after the roster art, with support for swapping in your own `.glb` models,
@@ -398,6 +399,18 @@ South America Cup race 2. A 3.1 km race through **Brazil's Valley of the Moon**:
 - The road is **elevated** (Gardens by the Bay's skyway mode) so the shelves are real drops. One water `RecoveryZone` runs along every river at the water line.
 - **No race music yet** (silent until a track is chosen).
 - Built from code: `ValeDaLuaScenery` (river polylines generated with the layout, slot-canyon meshes with smooth normals, water ribbons, boulder MultiMeshes), `SceneryTerrain` carved by the rivers plus a rock dome, `TreeBuilder` rainforest and palm trees, and two new procedural shaders: `assets/shaders/moon_rock.gdshader` (erosion ripples, potholes, a wet band toward the water) and `assets/shaders/flowing_water.gdshader`.
+#### Choquequirao (GDD §8.6f)
+
+South America Cup race 3. A 3.3 km race through an **Inca village in a green Andean valley** on a bright sunny day (Poly Haven's partly cloudy kloofendal sky, a high sun with shadows lined up with the sun in the sky). You start outside on the valley floor and work your way **in through the village and back out**. The road is 12 m of warm flagstone with faint gold and teal edge lights.
+- **A labyrinth of rings.** The village is a double spiral: the road spirals in, crosses the plaza on an S-bend (29 m radius) and spirals back out between the inbound rings. Inbound and outbound lanes alternate ring by ring, about 27 m apart, so the car on the next ring is coming the other way.
+- **Terraces and houses.** Each village lane runs between 2.6 m stone terrace walls with grass on top, and the houses stand on the terraces, so you can't see across the rings. Outside, the terraces step up the valley sides (six more steps) to cloud forest and jagged peaks.
+- **Old but sturdy stone.** Flat, irregular fieldstone set in mortar (`old_stone_wall`) everywhere, with dressed lintels. About 120 houses: most are roofless ruins with tall gable ends, rows of small trapezoidal windows and a trapezoidal doorway, some partly collapsed with fallen stones; about one in six has a steep thatched roof.
+- **Eight Inca gateways** the road drives through: the village gate in, one on the outer inbound ring, the plaza entrance, a pair on the plaza S-bend, the plaza exit, one on the outer outbound ring and the village gate out. Trapezoidal openings with leaning jambs, a flat lintel and a recessed second frame on each face, wide and tall enough to clear the barriers and Overdrive flight.
+- **The plaza:** the great hall in one half of the S, the stepped usnu platform in the other.
+- **Qolqa storehouses** (shortcut): a 9 m lane over the hill spur past a row of storehouses on a terrace, with a wooden QOLQAS sign. About 130 m shorter; stacked baskets (smashable) block the entrance, boost ring inside.
+- Boost pad with item boxes on the start straight, a terrace-step jump after the shortcut rejoins, a boost ring after the plaza.
+- **No race music yet** (silent until a track is chosen).
+- Built from code: `ChoquequiraoScenery` with three new reusable builders in `scripts/track/scenery/`: `TerraceBuilder` (stepped terraces along any road, each side reaching to the halfway line to the next lane), `IncaBuildingBuilder` (gabled houses, qolqas, great hall, usnu) and `IncaGateway`; plus `TrackScenery.add_prism` / `add_quad`. The valley is `SceneryTerrain` lifted by a distance-to-road field that stays under the terraces and rises to mountains. Checks: `tests/test_choquequirao.gd`.
 #### Six Flags New Orleans (GDD §8.2)
 
 A 3.1 km circuit through a **realistic, eerie, abandoned amusement park**, after the real park left to rot after Hurricane Katrina. It goes for believable decay, not supernatural effects. The only clean light is the illegal racing neon on the barriers, dimmed to fit the scene. The road is 18 m wide.
@@ -752,7 +765,7 @@ The exit code is non-zero if anything fails. These checks do **not** judge how t
 
 The in-game Credits screen (`scripts/menu/credits.gd`) shows the same list.
 
-Environment textures and the track skies are from [Poly Haven](https://polyhaven.com) (CC0, public domain): asphalt_04, road_damaged, rust_coarse_01, rusty_metal_02, rusty_corrugated_iron, concrete_moss, dirty_concrete, peeling_painted_wall, wood_peeling_paint_weathered, distressed_painted_planks, brown_mud_leaves_01, bark_willow, dirty_tiles, painted_worn_brick, withered_grass, sparse_grass, marble_01, herringbone_parquet, velour_velvet, monastery_stone_floor, forest_ground_04, forest_leaves_02, pine_bark, red_sandstone_wall, mossy_rock, old_stone_wall, large_sandstone_blocks, cobblestone_floor_08, pavement_01, reed_roof_04, hinoki_planks, dry_decay_leaves, mossy_stone_wall, and the kloofendal_overcast_puresky, qwantani_sunset_puresky and misty_pines HDRIs. They live in `assets/textures/polyhaven/` (colour, normal and roughness at 1K) and `assets/sky/`.
+Environment textures and the track skies are from [Poly Haven](https://polyhaven.com) (CC0, public domain): asphalt_04, road_damaged, rust_coarse_01, rusty_metal_02, rusty_corrugated_iron, concrete_moss, dirty_concrete, peeling_painted_wall, wood_peeling_paint_weathered, distressed_painted_planks, brown_mud_leaves_01, bark_willow, dirty_tiles, painted_worn_brick, withered_grass, sparse_grass, marble_01, herringbone_parquet, velour_velvet, monastery_stone_floor, forest_ground_04, forest_leaves_02, pine_bark, red_sandstone_wall, mossy_rock, old_stone_wall, large_sandstone_blocks, cobblestone_floor_08, pavement_01, reed_roof_04, hinoki_planks, dry_decay_leaves, mossy_stone_wall, and the kloofendal_overcast_puresky, kloofendal_48d_partly_cloudy_puresky, qwantani_sunset_puresky and misty_pines HDRIs. They live in `assets/textures/polyhaven/` (colour, normal and roughness at 1K) and `assets/sky/`.
 
 ## Status and known issues
 

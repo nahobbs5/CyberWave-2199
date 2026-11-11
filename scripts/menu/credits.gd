@@ -25,7 +25,7 @@ const SECTIONS := [
 	]],
 	["TEXTURES AND SKY", "layers", [
 		"Poly Haven (polyhaven.com), CC0: asphalt, concrete, rust, metal, brick, wood,",
-		"grass, mud, stone, paving, reed and tile textures, and the kloofendal overcast sky",
+		"grass, mud, stone, paving, reed and tile textures, and the kloofendal skies",
 	]],
 	["ART", "palette", ["Weapon icons from the Weapon Arsenal concept art"]],
 	["ENGINE", "gear", ["Made with Godot Engine (godotengine.org), MIT License"]],
@@ -46,6 +46,7 @@ const MUSIC := [
 	["To the Moon and Back", "theorienvibes", "Parque Quinta Normal"],
 	["Garden Fairytale", "elisaveta_stoycheva", "Gardens by the Bay"],
 	["Rise of the Phoenix", "restum-anoush", "Vale da Lua"],
+	["Epic Victory March for Heroes", "DesiFreeMusic", "Choquequirao"],
 	["The Garden Wakes", "stageechoesmusic", "Test Circuit and free drive"],
 	["Victory", "alex-morgan", "podium and results"],
 ]
