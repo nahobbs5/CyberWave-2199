@@ -6,16 +6,21 @@ extends Node3D
 ## distance, so it passes everyone else and never cuts through scenery) at
 ## 1.8x the target's top speed. Close behind, it holds a red reticle over the
 ## target for 1.2 s, then dives and discharges: a 1.5 s spin-out. A Firewall
-## soaks the blast. It waits while the target is mid-recovery or flying an
+## doesn't help: the only escape is firing a Nitro in the last DODGE_WINDOW s
+## of the warning or during the dive, which makes it miss. It waits while the target is mid-recovery or flying an
 ## Overdrive, and burns out after 12 s or when the target finishes.
 
-enum Phase { CRUISE, WARNING, DIVE }
+enum Phase { CRUISE, WARNING, DIVE, MISS }
 
 const CRUISE_HEIGHT := 3.0
 ## Distance along the track at which it closes in and warns the target.
 const HOMING_DISTANCE := 35.0
 const WARNING_TIME := 1.2
 const HIT_RANGE := 2.2
+## A Nitro fired this close to the dive (or during it) dodges the drone.
+const DODGE_WINDOW := 0.4
+## How long a dodged drone flies on before it fizzles.
+const MISS_TIME := 0.5
 ## Where it hovers while the target can't be hit (m behind, m up).
 const WAIT_BEHIND := 12.0
 const BODY_COLOR := Color(0.035, 0.035, 0.045)
@@ -32,6 +37,9 @@ var phase: Phase = Phase.CRUISE
 var warning_left: float = 0.0
 
 var _age: float = 0.0
+## Where a dodged drone slams in, and how long until it does.
+var _miss_point: Vector3
+var _miss_left: float = 0.0
 ## Distance along the main road (not wrapped).
 var _route: float = 0.0
 var _reticle: MeshInstance3D
@@ -49,6 +57,16 @@ func is_warning() -> bool:
 	return phase == Phase.WARNING
 
 
+## Dodged and fizzling out: no longer a threat.
+func is_spent() -> bool:
+	return phase == Phase.MISS
+
+
+## A Nitro fired now dodges it: the last DODGE_WINDOW s of the warning, or the dive.
+func in_dodge_window() -> bool:
+	return phase == Phase.DIVE or (phase == Phase.WARNING and warning_left <= DODGE_WINDOW)
+
+
 func _ready() -> void:
 	add_to_group(&"hunter_drones")
 	_build_body()
@@ -63,6 +81,21 @@ func _ready() -> void:
 	add_child(_audio)
 	_audio.play()
 	CombatSfx.play_on(shooter, CombatSfx.HK_LAUNCH, "HkLaunch")
+	manager.weapon_used.connect(_on_weapon_used)
+
+
+func _on_weapon_used(user: VehicleController, used: WeaponData) -> void:
+	if user == target and used.kind == WeaponData.Kind.SELF_BOOST and in_dodge_window():
+		_dodged()
+
+
+## The target's Nitro outran the dive: overshoot into the road where they were.
+func _dodged() -> void:
+	phase = Phase.MISS
+	_stop_warning_sound()
+	_miss_point = target.global_position
+	_miss_left = MISS_TIME
+	manager.hit_resolved.emit(target, weapon, shooter, &"dodge")
 
 
 ## The leader for a launch by `user`: 1st place, or 2nd if `user` leads.
@@ -75,6 +108,16 @@ static func pick_target(race: RaceManager, user: VehicleController) -> VehicleCo
 
 func _physics_process(delta: float) -> void:
 	_age += delta
+	if phase == Phase.MISS:
+		_move_toward(_miss_point, 60.0, delta)
+		_miss_left -= delta
+		if _miss_left <= 0.0 or global_position.distance_to(_miss_point) < 0.5:
+			manager.spawn_flash(global_position, BLAST_COLOR)
+			manager.spawn_arc_burst(global_position, BLAST_COLOR)
+			queue_free()
+		else:
+			_update_marks(delta)
+		return
 	if _age > weapon.lifetime or not _target_in_race():
 		_burn_out()
 		return

@@ -98,13 +98,17 @@ func _score(weapon: WeaponData, selected: bool, held: float) -> float:
 				return 1.2
 			return 1.0 if held > 20.0 * patience else 0.0
 		WeaponData.Kind.SELF_BOOST:
+			# A Hunter-Killer about to dive: a Nitro now dodges it.
+			if manager.can_dodge_drone(vehicle):
+				return 3.0
 			# One Nitro at a time: a Triple Nitro waits for the last burst to end.
 			if _straight_ahead() and not vehicle.drift.is_drifting() and not vehicle.is_boosting() \
 					and vehicle.forward_speed > 20.0:
 				return 1.1
 			return 0.0
 		WeaponData.Kind.SHIELD:
-			if manager.is_incoming(vehicle):
+			# A Firewall stops locked-on shots, not a Hunter-Killer.
+			if manager.is_locked_on(vehicle):
 				return 2.0
 			return 1.0 if held > 30.0 * patience else 0.0
 		WeaponData.Kind.LEADER_DRONE:

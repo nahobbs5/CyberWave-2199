@@ -11,7 +11,15 @@ extends Control
 const SECTIONS := [
 	["GAME", "car", ["Cyberwave 2199 by Nathan Hobbs"]],
 	["MUSIC", "note", []],
-	["SOUND", "speaker", ["Short beep countdown by freesound_community"]],
+	["SOUND", "speaker", [
+		"Short beep countdown, Shield drop, Electric zap 001, Crowbar drop 1 (rear),",
+		"Planks clattering and Missile lock detected by freesound_community",
+		"Sci-fi energy shield activation by vadim_makes_sound",
+		"Electrical current 2 by 49053354",
+		"Sci-fi weapon shoot firing pulse TM 05 by rescopicsound",
+		"Field: launching a small model rocket by fronbondi_skegs",
+		"Missile explosion by voicebosch",
+	]],
 	["FONTS", "fonts", [
 		"Oxanium and Rajdhani  (SIL Open Font License 1.1)",
 	]],
@@ -33,6 +41,13 @@ const MUSIC := [
 	["Cyberpunk Music", "kulakovka", "Hoia Baciu Run"],
 	["Hard Cyberpunk", "kulakovka", "Catacombs Descent"],
 	["The Cyber Geisha", "Ob-Lix", "Arashiyama Circuit"],
+	["Besieged Castle", "ed-musicproductions", "Vatnajökull Glacier"],
+	["Spooky Halloween Strange House", "sonican", "Crazy House"],
+	["To the Moon and Back", "theorienvibes", "Parque Quinta Normal"],
+	["Garden Fairytale", "elisaveta_stoycheva", "Gardens by the Bay"],
+	["Rise of the Phoenix", "restum-anoush", "Vale da Lua"],
+	["The Garden Wakes", "stageechoesmusic", "Test Circuit and free drive"],
+	["Victory", "alex-morgan", "podium and results"],
 ]
 
 const TAB_WIDTH := 300.0

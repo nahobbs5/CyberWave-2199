@@ -1,5 +1,5 @@
 # CYBERWAVE 2199
-## Game Design Document — Version 4.8
+## Game Design Document — Version 5.3
 
 **Status:** Development Baseline  
 **Engine:** Godot 4  
@@ -514,6 +514,8 @@ Crate odds by race position (each column adds up to 100%; with fewer than 8 race
 
 **System Override** hacks every racer ahead of the user: −25% top speed, −30% acceleration, drift charge lost and no charging while hacked; steering and weapons still work. Time hacked is fixed from position at activation: 1st 12 s, 2nd 10.5 s, 3rd 9 s, 4th 7.5 s, 5th 6 s, 6th 4.5 s, 7th 3 s. A repeat hit does nothing; Firewall blocks it (shield used up); Overdrive is immune.
 
+**Hunter-Killer** goes straight through a Firewall. The only escape is a Nitro fired in the last 0.4 s of its red-reticle warning or during its dive: it misses and fizzles out.
+
 ---
 
 # 7. Artificial Intelligence
@@ -687,7 +689,7 @@ Built at about 3.1 km with a 14 m road and long flowing corners (55–115 m radi
 - the Ash Canyon: a tall gorge striped with black volcanic ash (snow-drift jump);
 - the Frozen Lake: a glassy lake under ice chandeliers (slush EMP puddle), back to the mouth.
 
-The shortcut is the Crystal Tube: a narrow, glowing round tunnel of scalloped ice with white light at its far end. It cuts from the Cathedral to the Icicle Gallery, about 120 m shorter, but an ice wall (smashable) blocks its entrance. The Ice Cave Collapse special (§8.9) is still a proposal. Race music is still to be chosen.
+The shortcut is the Crystal Tube: a narrow, glowing round tunnel of scalloped ice with white light at its far end. It cuts from the Cathedral to the Icicle Gallery, about 120 m shorter, but an ice wall (smashable) blocks its entrance. The Ice Cave Collapse special (§8.9) is still a proposal. Race music: *Besieged Castle* (§12).
 
 ## 8.6b Crazy House
 
@@ -705,7 +707,7 @@ Built at about 2.9 km with a 13 m road and constant linked corners (40–70 m ra
 - the Lava Grotto: orange-red pitted walls and giant mushrooms (sap puddle EMP);
 - the Bone Gallery: bone arches over the road (never lower than 7.5 m), knotted railings and a giant spider web (stair-step jump), back to the Root Hall.
 
-Smaller staircases climb the walls all round the lap (about 29 flights, 1,500 steps). The shortcut is the Rib Tunnel: a narrow passage lined with bone ribs that carries straight on where the road turns into the Gables. It's about 250 m shorter, but a bone barricade (smashable) blocks the entrance. Race music is still to be chosen.
+Smaller staircases climb the walls all round the lap (about 29 flights, 1,500 steps). The shortcut is the Rib Tunnel: a narrow passage lined with bone ribs that carries straight on where the road turns into the Gables. It's about 250 m shorter, but a bone barricade (smashable) blocks the entrance. Race music: *Spooky Halloween Strange House* (§12).
 
 ## 8.6c Gardens by the Bay
 
@@ -725,7 +727,7 @@ Built at about 3.4 km with a 12 m road and winding, linked corners (45–90 m ra
 
 **Open edges:** stretches with no side wall, only a low wooden curb. A car that goes over falls into the jungle (or the bay) and is recovered onto the deck. The open edges are on straights, on the outside of the loop, so racing lines don't need to touch them.
 
-The shortcut is the Cloud Forest walk: through a smashable glass panel into the Cloud Forest dome, round the misty waterfall mountain on a narrow walkway with two open edges of its own, and out to rejoin the Bayfront. It is about 150 m shorter. Race music is still to be chosen.
+The shortcut is the Cloud Forest walk: through a smashable glass panel into the Cloud Forest dome, round the misty waterfall mountain on a narrow walkway with two open edges of its own, and out to rejoin the Bayfront. It is about 150 m shorter. Race music: *Garden Fairytale* (§12).
 
 ## 8.6d Parque Quinta Normal Greenhouse
 
@@ -744,7 +746,7 @@ Built at about 3.1 km with a 13 m road. Landmarks in driving order:
 
 The Andes stand on the eastern horizon and Santiago's skyline (the Gran Torre) to the north-east.
 
-The shortcut is the **Fern Wing**: through a smashable glass panel into a narrow (9 m), mesh-caged glasshouse that cuts across the south-west corner. It is about 110 m shorter. Race music is still to be chosen.
+The shortcut is the **Fern Wing**: through a smashable glass panel into a narrow (9 m), mesh-caged glasshouse that cuts across the south-west corner. It is about 110 m shorter. Race music: *To the Moon and Back* (§12).
 
 ## 8.6e Vale da Lua
 
@@ -763,7 +765,7 @@ Built at about 3.1 km with a 13 m road and flowing corners (60–100 m radius) a
 - a rock hump jump, then the second open shelf;
 - the west stream's bridge and the cerrado (boost ring), back to the start.
 
-The shortcut is Behind the Falls: a ledge under a rock overhang, with a stream pouring off the overhang as a curtain past its outer edge into a pool. It's about 250 m shorter, but driftwood logs (smashable) block the entrance. Race music is still to be chosen.
+The shortcut is Behind the Falls: a ledge under a rock overhang, with a stream pouring off the overhang as a curtain past its outer edge into a pool. It's about 250 m shorter, but driftwood logs (smashable) block the entrance. Race music: *Rise of the Phoenix* (§12).
 
 ## 8.7 Shared Track Features
 
@@ -1049,6 +1051,7 @@ Additional information:
 - Personal best indicators
 - Newly available cosmetics
 - Next race grid preview
+- The *Victory* theme plays (carried on from the podium when there is one)
 
 ## 11.7a Podium Ceremony
 
@@ -1059,6 +1062,7 @@ A victory podium plays before the results screen (laid out after the "Neon Grand
 - A place tag on each platform ("1ST | NAME"). Player names use the split-screen player colours (single player: magenta); rivals are white. The winner's tag carries CUP CHAMPION / SET WINNER / RACE WINNER.
 - The banner reads "CONGRATULATIONS!" when a human made the top three, else "FINAL PODIUM".
 - A gold crown over the winner, sweeping spotlights, confetti and a short fanfare (a placeholder synthesized call; a `sounds/victory_fanfare` .ogg/.mp3/.wav replaces it). Reduced flashing stops the spotlight sweep and halves the confetti.
+- Audio: the *Victory* theme replaces the race music as the podium appears and carries on into the results. The race keeps running behind the podium, so its sound effects (weapons, drones, skids) are muted until the podium closes. The fanfare plays on the Music channel so it is still heard.
 - The camera starts wide and slowly pushes in towards the winner.
 - A / Enter (or a click) skips to the end; once "A Continue" appears, it opens the results.
 
@@ -1121,6 +1125,49 @@ Sound categories include:
 - Race results
 
 Important gameplay information should have both visual and audible feedback.
+
+## 12.1 Music
+
+One song per screen or track. Moving between menus that share a song doesn't restart it; changes crossfade. The main theme starts as soon as the title menu opens after the loading splash.
+
+| Where | Song | Artist |
+|---|---|---|
+| Title, main menu, setup screens, settings, credits | Cyberpunk | ikoliks_aj |
+| Garage | Wings of Hope | ikoliks |
+| Podium ceremony and results | Victory | alex-morgan |
+| The Stacks | Cyber Dreams | Lilex |
+| Six Flags New Orleans | Race Winner | TheBoysBeats |
+| Vegas Overdrive | Heavy Racing | SPmusic |
+| Hoia Baciu Run | Cyberpunk Music | kulakovka |
+| Catacombs Descent | Hard Cyberpunk | kulakovka |
+| Arashiyama Circuit | The Cyber Geisha | Ob-Lix |
+| Vatnajökull Glacier | Besieged Castle | ed-musicproductions |
+| Crazy House | Spooky Halloween Strange House | sonican |
+| Gardens by the Bay | Garden Fairytale | elisaveta_stoycheva |
+| Parque Quinta Normal Greenhouse | To the Moon and Back | theorienvibes |
+| Vale da Lua | Rise of the Phoenix | restum-anoush |
+| Test Circuit and Free Drive | The Garden Wakes | stageechoesmusic |
+
+The web build plays smaller 96 kbps .ogg copies (`music/web/`) of every song.
+
+## 12.2 Weapon and Track Sounds
+
+Weapon sounds come from the car (or object) that makes them, so they are loud close by and fade with distance. Each clip has its own level so it sits just above the race music, and a limiter on the master output stops loud moments distorting.
+
+| Event | Sound | Heard at |
+|---|---|---|
+| Firewall raised (not again while already up) | Sci-fi energy shield activation | User |
+| Firewall gone (ran out or blocked a hit) | Shield drop | Shielded car |
+| Railgun fired | Sci-fi weapon firing pulse | Shooter |
+| EMP Pulse | Electric zap | User |
+| System Override | Electrical current | User and each hacked human player (hacked AI cars add no copy, so it doesn't stack) |
+| Road Spike dropped (each Triple Spike charge too) | Crowbar drop | The strip |
+| Hunter-Killer launched | Small model rocket launch | User |
+| Hunter-Killer warning | Missile lock beeps (stop when it hits, backs off or burns out) | Target |
+| Hunter-Killer hit | Missile explosion | Target |
+| Smashing a breakable barrier (shortcut blockers included) | Planks clattering | The barrier |
+
+Other sounds: the countdown beeps (§11.8), drift tones and the skid loop (§4.3), the Hunter-Killer's flight whine, recovery and Overdrive sounds, and the podium fanfare (§11.7a). Every song and clip used is listed in the credits.
 
 ---
 
@@ -1469,5 +1516,7 @@ Changes after Version 1.0 should be tracked as revisions rather than silently re
 | 4.9 | 2026-11-10 | Race HUD rebuilt after *Cyberpunk Slipstream Under the Neon Moon*: POSITION and gold-highlighted standings top left, LAP / time with coins under it top right, a round speed gauge, minimap over the item squares, and a SLIPSTREAM banner (§11.5). Slipstream arches now appear only once the boost fires (§4.5). Rivals renamed to callsigns: Kilo, Razor, Maverick, Zenith, Spike, Void, Hex (§7.3). |
 | 5.0 | 2026-11-10 | Crate odds rebalanced: every weapon, rare items included, now has a set percent chance for each pair of positions (§6.5). |
 | 5.1 | 2026-11-10 | System Override revised (§6.5; Advanced Weapons §3): −25% top speed, −30% acceleration, drift charge lost and can't rebuild while hacked; time hacked follows position at activation (1st 12 s down to 7th 3 s, 1.5 s steps); never stacks or extends. Weapons stay usable. |
+| 5.2 | 2026-11-10 | Hunter-Killer goes through a Firewall (the shield is kept). The only escape is a Nitro fired in the last 0.4 s of its warning or during its dive: the drone misses and fizzles ("DODGED"). AI rivals try the same dodge and no longer raise a Firewall against it (§6.5). |
+| 5.3 | 2026-11-10 | Music for every track: Vatnajökull Glacier, Crazy House, Gardens by the Bay, Parque Quinta Normal, Vale da Lua and the Test Circuit / Free Drive (§8.6a–e, §12.1). *Victory* theme on the podium and results; race sound effects muted behind the podium (§11.7, §11.7a). Weapon and track sounds: Firewall up / down, Railgun, EMP, System Override, Road Spike drop, Hunter-Killer launch / warning / hit, barrier smash, with per-clip levels and a master limiter (§12.2). Main theme now plays on first launch. |
 
-**End of Game Design Document — Version 5.1**
+**End of Game Design Document — Version 5.3**

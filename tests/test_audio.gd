@@ -57,13 +57,22 @@ func _run_all() -> void:
 	root.add_child(race)
 	race.camera.save_preference = false
 	await process_frame
-	_check(Music.current_path() == "", "a race stops the menu music")
+	_check(Music.current_path() == TrackCatalog.music("Test Circuit") and Music.current_path() != Music.MENU,
+			"a race swaps the menu music for its track's song")
 	var beep := race.countdown_sound
 	_check(beep != null and beep.bus == &"SFX", "countdown sound on the SFX bus")
 	_check(race.state == RaceManager.State.COUNTDOWN and beep.playing, "it plays during the countdown")
 	await _seconds(1.2)
-	_check(not player.playing, "the music has faded out")
+	_check(player.playing and player.stream.resource_path == TrackCatalog.music("Test Circuit"), "the track's song is playing")
 	race.queue_free()
+	await process_frame
+
+	print("- free drive")
+	var drive := (load("res://scenes/free_drive.tscn") as PackedScene).instantiate()
+	root.add_child(drive)
+	await _seconds(1.0)
+	_check(Music.current_path() == TrackCatalog.music("Test Circuit") and player.playing, "free drive plays the Test Circuit song")
+	drive.queue_free()
 	await process_frame
 
 	await _test_final_lap_music()
@@ -135,6 +144,9 @@ func _test_track_music() -> void:
 		"Crazy House": "res://music/sonican-spooky-halloween-strange-house-420678.mp3",
 		"Vatnajökull Glacier": "res://music/ed-musicproductions-besieged-castle-397025.mp3",
 		"Parque Quinta Normal": "res://music/theorienvibes-to-the-moon-and-back-232892.mp3",
+		"Gardens by the Bay": "res://music/elisaveta_stoycheva-garden-fairytale-368607.mp3",
+		"Vale da Lua": "res://music/restum-anoush-rise-of-the-phoenix-265090.mp3",
+		"Test Circuit": "res://music/stageechoesmusic-the-garden-wakes-628640.mp3",
 	}
 	for track in want:
 		_check(TrackCatalog.music(track) == want[track] and ResourceLoader.exists(want[track]), "%s has its music" % track)

@@ -57,8 +57,8 @@ func _ready() -> void:
 
 
 ## Applies a harmful effect. Returns false if a shield or stun protection
-## blocked it.
-func apply_attack(effect: StringName, duration: float) -> bool:
+## blocked it. `pierce_shield` attacks ignore (and keep) a Firewall.
+func apply_attack(effect: StringName, duration: float, pierce_shield: bool = false) -> bool:
 	# An Overdrive flight is untouchable (Advanced Weapons §5).
 	if has(&"overdrive"):
 		attack_blocked.emit(effect, &"overdrive")
@@ -67,7 +67,7 @@ func apply_attack(effect: StringName, duration: float) -> bool:
 	# doesn't waste a Firewall).
 	if effect == &"override" and has(&"override"):
 		return false
-	if has(&"shield"):
+	if has(&"shield") and not pierce_shield:
 		_end(&"shield")
 		_shield_flash = 1.0
 		attack_blocked.emit(effect, &"shield")

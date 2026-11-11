@@ -23,13 +23,14 @@ const TRACKS := [
 			"res://music/ed-musicproductions-besieged-castle-397025.mp3"],
 	["Crazy House", "res://scenes/tracks/crazy_house.tscn", "Hang Nga Villa, Da Lat, Vietnam",
 			"res://music/sonican-spooky-halloween-strange-house-420678.mp3"],
-	# Music to come (the user is choosing); silent until then.
-	["Gardens by the Bay", "res://scenes/tracks/gardens_by_the_bay.tscn", "Marina Bay, Singapore", ""],
+	["Gardens by the Bay", "res://scenes/tracks/gardens_by_the_bay.tscn", "Marina Bay, Singapore",
+			"res://music/elisaveta_stoycheva-garden-fairytale-368607.mp3"],
 	["Parque Quinta Normal", "res://scenes/tracks/quinta_normal.tscn", "Santiago, Chile",
 			"res://music/theorienvibes-to-the-moon-and-back-232892.mp3"],
-	# Music to come (the user is choosing); silent until then.
-	["Vale da Lua", "res://scenes/tracks/vale_da_lua.tscn", "Chapada dos Veadeiros, Brazil", ""],
-	["Test Circuit", TEST_CIRCUIT, "Graybox", ""],
+	["Vale da Lua", "res://scenes/tracks/vale_da_lua.tscn", "Chapada dos Veadeiros, Brazil",
+			"res://music/restum-anoush-rise-of-the-phoenix-265090.mp3"],
+	["Test Circuit", TEST_CIRCUIT, "Graybox",
+			"res://music/stageechoesmusic-the-garden-wakes-628640.mp3"],
 ]
 
 

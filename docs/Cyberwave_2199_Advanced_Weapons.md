@@ -40,7 +40,7 @@ All values below are **initial playtesting targets**, not final balance values.
 | Main target disruption | 1.5 seconds |
 | Splash radius | 4 meters (optional nearby racers) |
 | Lifetime | 12 seconds |
-| Counterplay | Timed Sonic Burst; invulnerability |
+| Counterplay | A Nitro (Nitro Overload / Triple Nitro) fired in the last 0.4 s of the warning or during the dive makes it miss. A Firewall does **not** block it (shield kept). Active Overdrive: it waits. |
 
 **Targeting and fairness:** Lock a racer ID, not a position number. If that racer drops to second after launch, the drone still pursues them. Prevent back-to-back unavoidable hits with brief post-hit immunity or diminishing effects. For the first implementation, consider disabling splash damage to make behavior predictable.
 

@@ -12,6 +12,7 @@ const W := {
 	"override": "res://resources/weapons/system_override.tres",
 	"firewall": "res://resources/weapons/firewall.tres",
 	"railgun": "res://resources/weapons/railgun.tres",
+	"nitro": "res://resources/weapons/nitro_overload.tres",
 }
 const DT := 1.0 / 60.0
 
@@ -292,7 +293,7 @@ func _test_hunter_killer_counters(race: RaceManager) -> void:
 	var leader := _rival(race, 0)
 	await _line_up(race, [leader, _rival(race, 1), me])
 	var wm := race.weapon_manager
-	# Firewall soaks the blast.
+	# A Firewall doesn't stop it: the blast goes straight through (shield kept).
 	leader.status.apply_buff(&"shield", 10.0)
 	me.inventory.add(_weapon("hunter_killer"))
 	wm.use_weapon(me)
@@ -300,12 +301,40 @@ func _test_hunter_killer_counters(race: RaceManager) -> void:
 		await physics_frame
 		if _hunter(race) == null:
 			break
-	_check(not leader.status.has(&"stun") and not leader.status.has(&"shield"), "a Firewall blocks the blast (and is used up)")
+	_check(leader.status.has(&"stun") and leader.status.has(&"shield"), "a Firewall doesn't block the blast (and isn't used up)")
+	leader.status.remove(&"shield")
+	await _frames(150)
+	# A Nitro fired too early doesn't help: the drone keeps hunting.
+	var dodges := [0]
+	var count_dodge := func(t: VehicleController, _w: WeaponData, _s: VehicleController, by: StringName) -> void:
+		if t == leader and by == &"dodge":
+			dodges[0] += 1
+	wm.hit_resolved.connect(count_dodge)
+	leader.inventory.clear()
+	me.inventory.add(_weapon("hunter_killer"))
+	wm.use_weapon(me)
+	var drone := _hunter(race)
+	leader.inventory.add(_weapon("nitro"))
+	wm.use_weapon(leader)
+	_check(dodges[0] == 0 and is_instance_valid(drone) and not drone.in_dodge_window(), "an early Nitro doesn't dodge")
+	# Fired in the last moment of the warning: the drone misses.
+	var t := 0
+	while is_instance_valid(drone) and not drone.in_dodge_window() and t < 600:
+		await physics_frame
+		t += 1
+	_check(is_instance_valid(drone) and drone.is_warning() and wm.can_dodge_drone(leader), "the dodge window opens late in the warning")
+	leader.inventory.add(_weapon("nitro"))
+	wm.use_weapon(leader)
+	_check(dodges[0] == 1 and not wm.is_incoming(leader), "a well-timed Nitro dodges the drone")
+	await _frames(60)
+	_check(_hunter(race) == null and not leader.status.has(&"stun"), "the dodged drone fizzles without a hit")
+	wm.hit_resolved.disconnect(count_dodge)
+	await _frames(100)
 	# The target is mid-recovery: the drone hovers and waits instead of striking.
 	await _frames(120)
 	me.inventory.add(_weapon("hunter_killer"))
 	wm.use_weapon(me)
-	var drone := _hunter(race)
+	drone = _hunter(race)
 	leader.recovery.request_recovery("test")
 	var struck_while_hidden := false
 	for i in 60:

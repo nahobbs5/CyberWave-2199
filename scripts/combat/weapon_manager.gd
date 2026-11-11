@@ -130,7 +130,8 @@ func apply_hit(target: VehicleController, weapon: WeaponData, shooter: VehicleCo
 	if progress == null or progress.finished:
 		return false
 	_last_block = &""
-	var landed := target.status.apply_attack(weapon.effect, duration if duration >= 0.0 else weapon.effect_duration)
+	var landed := target.status.apply_attack(weapon.effect, duration if duration >= 0.0 else weapon.effect_duration,
+			weapon.pierces_shield)
 	hit_resolved.emit(target, weapon, shooter, &"" if landed else _last_block)
 	if not landed:
 		return false
@@ -146,12 +147,27 @@ func apply_hit(target: VehicleController, weapon: WeaponData, shooter: VehicleCo
 
 ## True if an opponent has locked on to, or a drone is chasing, this racer.
 func is_incoming(vehicle: VehicleController) -> bool:
+	if is_locked_on(vehicle):
+		return true
+	for drone in get_tree().get_nodes_in_group(&"hunter_drones"):
+		if drone is HunterKillerDrone and drone.target == vehicle and not drone.is_spent():
+			return true
+	return false
+
+
+## True if an opponent has a weapon lock on this racer (a Firewall helps).
+func is_locked_on(vehicle: VehicleController) -> bool:
 	for racer in race.racers:
 		var other := racer.vehicle
 		if other != vehicle and other.targeting != null and other.targeting.get_target() == vehicle:
 			return true
+	return false
+
+
+## True if a Hunter-Killer diving on this racer can be dodged with a Nitro right now.
+func can_dodge_drone(vehicle: VehicleController) -> bool:
 	for drone in get_tree().get_nodes_in_group(&"hunter_drones"):
-		if drone.get(&"target") == vehicle:
+		if drone is HunterKillerDrone and drone.target == vehicle and drone.in_dodge_window():
 			return true
 	return false
 

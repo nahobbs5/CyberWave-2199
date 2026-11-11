@@ -358,6 +358,9 @@ func _on_hit_resolved(target: VehicleController, weapon: WeaponData, shooter: Ve
 			_play("blocked")
 		elif blocked_by == &"overdrive":
 			items.show_notice("OVERDRIVE IGNORED %s" % weapon.display_name.to_upper(), UIStyle.CYAN)
+		elif blocked_by == &"dodge":
+			items.show_notice("DODGED %s" % weapon.display_name.to_upper(), UIStyle.CYAN)
+			_play("blocked")
 		elif blocked_by == &"":
 			items.show_notice("%s!" % weapon.display_name.to_upper(), UIStyle.DANGER)
 			_play("hurt")
@@ -367,6 +370,8 @@ func _on_hit_resolved(target: VehicleController, weapon: WeaponData, shooter: Ve
 		if blocked_by == &"":
 			items.show_notice("HIT  %s" % target_name, weapon.color)
 			_play("hit")
+		elif blocked_by == &"dodge":
+			items.show_notice("DODGED by %s" % target_name, Color(1, 1, 1, 0.8))
 		else:
 			items.show_notice("BLOCKED by %s" % target_name, Color(1, 1, 1, 0.8))
 

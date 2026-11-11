@@ -212,6 +212,29 @@ func _test_credits() -> void:
 	var text := credits.get_text()
 	for wanted in ["Nathan Hobbs", "ikoliks_aj", "Wings of Hope", "freesound_community", "Oxanium", "Rajdhani", "Poly Haven", "Godot"]:
 		_check(text.contains(wanted), "credits mention %s" % wanted)
+	# Every song and sound clip the game plays credits its author (file names
+	# start with the author's handle).
+	var used: Array[String] = [Music.MENU, Music.GARAGE, Music.VICTORY, RaceManager.COUNTDOWN_SOUND.resource_path]
+	for track in TrackCatalog.names():
+		if TrackCatalog.music(track) != "":
+			used.append(TrackCatalog.music(track))
+	for value in CombatSfx.new().get_script().get_script_constant_map().values():
+		if value is AudioStream:
+			used.append((value as AudioStream).resource_path)
+	var uncredited: Array[String] = []
+	for path in used:
+		var file := path.get_file().to_lower()
+		var credited := false
+		for song in Credits.MUSIC:
+			credited = credited or file.begins_with(str(song[1]).to_lower())
+		for line in text.split("\n"):
+			var by := line.rfind(" by ")
+			if by >= 0:
+				var author := line.substr(by + 4).get_slice(" ", 0).to_lower()
+				credited = credited or (author != "" and file.begins_with(author))
+		if not credited:
+			uncredited.append(path.get_file())
+	_check(uncredited.is_empty(), "every song and sound used is credited (missing: %s)" % [uncredited])
 	_check(credits.back_button != null and credits.back_button.has_focus(), "Back is focused")
 	var labels := credits.find_children("*", "Label", true, false).filter(func(n: Node) -> bool: return (n as Label).text.contains("Poly Haven"))
 	_check(not labels.is_empty(), "the credits are on screen")

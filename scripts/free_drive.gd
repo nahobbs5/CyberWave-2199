@@ -12,7 +12,7 @@ var minimap: Minimap
 
 func _ready() -> void:
 	InputSetup.ensure_actions()
-	Music.stop(get_tree())
+	Music.play(get_tree(), TrackCatalog.music("Test Circuit"))
 	var profile := PlayerProfile.get_profile()
 	var vehicle := VehicleCatalog.by_id(profile.selected_vehicle)
 	car.set_stats(vehicle.stats)

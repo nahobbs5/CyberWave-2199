@@ -27,6 +27,8 @@ enum Kind { PROJECTILE, GUIDED, AREA, HAZARD, SELF_BOOST, SHIELD, LEADER_DRONE, 
 ## Per-position durations (1st, 2nd, ...) for the victim's place at the
 ## moment of the hit (System Override). Empty = effect_duration for everyone.
 @export var duration_by_position: PackedFloat32Array = PackedFloat32Array()
+## Goes straight through a Firewall (Hunter-Killer: only a well-timed Nitro dodges it).
+@export var pierces_shield: bool = false
 ## A landed hit knocks out the victim's selected weapon.
 @export var strips_item: bool = false
 ## A landed hit takes the victim's weapons offline this long ("jammed").
