@@ -32,7 +32,15 @@ var speeds: PackedFloat32Array = PackedFloat32Array()
 ## (-1 left, +1 right).
 var drift_zones: Array[Vector3] = []
 
+## Room the line leaves round a road column (car half width plus slack).
+const COLUMN_MARGIN := 2.6
+
 var _centers: PackedVector3Array = PackedVector3Array()
+## Per sample beside a road column: the side kept (+1 right, -1 left, 0 none)
+## and the lateral the line must stay right of / left of.
+var _col_side := PackedFloat32Array()
+var _col_min := PackedFloat32Array()
+var _col_max := PackedFloat32Array()
 var _rights: PackedVector3Array = PackedVector3Array()
 
 
@@ -55,6 +63,11 @@ func _init(p_track: TrackCircuit, stats: VehicleStats, edge_margin: float = 2.4,
 		spacing = track.length / float(count)
 		limit = track.road_width * 0.5 - edge_margin
 		_sample_track()
+		if not track.column_spots.is_empty():
+			# Road columns: relax freely first, then pass each column on
+			# the side that free line takes and relax again round them.
+			_relax(iterations / 2)
+			_find_column_gaps()
 		_relax(iterations)
 		_compute_curvature()
 	_compute_speeds(stats)
@@ -121,6 +134,42 @@ func _sample_track() -> void:
 		lateral[i] = 0.0
 
 
+## For each sample level with a road column, the gap the line keeps to.
+func _find_column_gaps() -> void:
+	_col_side = PackedFloat32Array()
+	_col_min = PackedFloat32Array()
+	_col_max = PackedFloat32Array()
+	if track.column_spots.is_empty():
+		return
+	_col_side.resize(count)
+	_col_min.resize(count)
+	_col_max.resize(count)
+	_col_min.fill(INF)
+	_col_max.fill(INF)
+	for c in track.column_spots:
+		var reach := c.z + COLUMN_MARGIN
+		var free := lateral_at(c.x)
+		var side := 1.0 if free >= c.y else -1.0
+		if absf(free - c.y) < 0.3:
+			side = 1.0 if track.column_route_lateral(c.x) >= c.y else -1.0
+		var i0 := int(floorf((c.x - reach) / spacing))
+		var i1 := int(ceilf((c.x + reach) / spacing))
+		for j in range(i0, i1 + 1):
+			var i := posmod(j, count)
+			_col_side[i] = side
+			if side > 0.0:
+				_col_min[i] = c.y + reach if _col_min[i] == INF else maxf(_col_min[i], c.y + reach)
+				_col_max[i] = INF
+			else:
+				_col_max[i] = c.y - reach if _col_max[i] == INF else minf(_col_max[i], c.y - reach)
+				_col_min[i] = -INF
+	for i in count:
+		if _col_side[i] > 0.0:
+			lateral[i] = clampf(maxf(lateral[i], _col_min[i]), -limit, limit)
+		elif _col_side[i] < 0.0:
+			lateral[i] = clampf(minf(lateral[i], _col_max[i]), -limit, limit)
+
+
 func _relax(iterations: int) -> void:
 	# Pass 1, shortest path: pull each point toward its neighbours' midpoint.
 	# This cuts corners (outside-inside-outside) but leaves sharp apex kinks.
@@ -140,7 +189,14 @@ func _relax(iterations: int) -> void:
 
 func _move_toward(i: int, target: Vector3, weight: float) -> void:
 	var want := (target - _centers[i]).dot(_rights[i])
-	lateral[i] = clampf(lerpf(lateral[i], want, weight), -limit, limit)
+	var lat := clampf(lerpf(lateral[i], want, weight), -limit, limit)
+	if not _col_side.is_empty() and _col_side[i] != 0.0:
+		# Never through a road column: stay in the gap the line started in.
+		if _col_side[i] > 0.0:
+			lat = maxf(lat, _col_min[i])
+		else:
+			lat = minf(lat, _col_max[i])
+	lateral[i] = lat
 
 
 func _point(i: int) -> Vector3:

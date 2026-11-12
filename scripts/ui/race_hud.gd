@@ -11,7 +11,7 @@ extends CanvasLayer
 ##   (bottom left   speed gauge + drift charge, in PrototypeHUD underneath)
 ## Split screen views keep the lap block under the position and the items
 ## top right, so the bottom-right corner stays free (see SplitScreen).
-## plus the ResultsScreen when you finish, and placeholder audio cues.
+## plus the results screen (NeonResultsScreen) when you finish, and placeholder audio cues.
 
 const CYAN := UIStyle.CYAN
 const MAGENTA := UIStyle.MAGENTA
@@ -466,7 +466,9 @@ func _build() -> void:
 		items.size_flags_horizontal = Control.SIZE_SHRINK_END
 		right_column.add_child(items)
 
-	results = ResultsScreen.new()
+	# Single player gets the neon results (split-view HUDs hide theirs; the
+	# shared SplitScreen overlay has its own plain ResultsScreen).
+	results = ResultsScreen.new() if split_view else NeonResultsScreen.new()
 	add_child(results)
 
 	_coin_label = info.coin_label

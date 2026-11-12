@@ -3,7 +3,7 @@ extends Button
 ## Start-menu button after "reference files/Cyberwave 2199 Racing Menu.png":
 ## a slanted bar with a cyan-to-magenta neon edge, an icon and upper-case
 ## italic lettering. The focused button turns gold with dark lettering and a
-## ">>" chevron. Hovering with the mouse moves focus, so only one is lit.
+## ">>" chevron (not while disabled). Hovering with the mouse moves focus, so only one is lit.
 ## `text` keeps its normal casing (tests read it); the drawn label is
 ## upper case.
 
@@ -116,16 +116,21 @@ func _draw() -> void:
 		var tex2 := UIStyle.cached_icon(extra_icon_kind, icon_size)
 		draw_texture_rect(tex2, Rect2(Vector2(ix + icon_size + 6.0, (h - icon_size) * 0.5), Vector2(icon_size, icon_size)), false, ink)
 		tx += icon_size + 6.0
-	var asc := _font.get_ascent(font_size)
-	var desc := _font.get_descent(font_size)
+	var show_chevrons := lit and chevrons and not disabled
+	# ">>" on the right end; the label shrinks so it never runs into them.
+	var cx := x1 - slant * 0.5 - 40.0
+	var fs := font_size
+	var room := (cx - 22.0 if show_chevrons else x1 - slant - 8.0) - tx
+	while fs > 14 and _font.get_string_size(text.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > room:
+		fs -= 1
+	var asc := _font.get_ascent(fs)
+	var desc := _font.get_descent(fs)
 	var baseline := (h + asc - desc) * 0.5
 	if not lit:
-		draw_string(_font, Vector2(tx + 2, baseline + 2), text.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, font_size,
+		draw_string(_font, Vector2(tx + 2, baseline + 2), text.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, fs,
 				Color(0, 0, 0, 0.6))
-	draw_string(_font, Vector2(tx, baseline), text.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, ink)
-	if lit and chevrons:
-		# ">>" on the right end.
-		var cx := x1 - slant * 0.5 - 40.0
+	draw_string(_font, Vector2(tx, baseline), text.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, ink)
+	if show_chevrons:
 		var cy := h * 0.5
 		for k in 2:
 			var bx := cx + k * 15.0

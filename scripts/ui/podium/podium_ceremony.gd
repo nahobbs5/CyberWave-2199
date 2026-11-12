@@ -53,6 +53,8 @@ var fanfare: AudioStreamPlayer
 var time: float = 0.0
 var _done: bool = false
 var _played_fanfare: bool = false
+## The ceremony has started showing (victory music asked for).
+var _started: bool = false
 ## True while this ceremony has the race's sound effects muted.
 var _race_sfx_muted: bool = false
 var _since_shown: float = 0.0
@@ -228,10 +230,14 @@ func _advance(delta: float) -> void:
 	time += delta
 	if time < 0.0:
 		return
+	if not _started:
+		# First frame on show: the victory music plays for every podium
+		# (won or not, single player or split screen).
+		_started = true
+		Music.play(get_tree(), Music.VICTORY)
 	if not root.visible:
 		root.visible = true
 		root.modulate.a = 0.0
-		Music.play(get_tree(), Music.VICTORY)
 	mute_race_sounds(true)
 	_since_shown += delta
 	root.modulate.a = minf(1.0, root.modulate.a + delta / FADE) if delta > 0.0 else root.modulate.a

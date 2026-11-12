@@ -1,5 +1,5 @@
 # CYBERWAVE 2199
-## Game Design Document — Version 5.4
+## Game Design Document — Version 5.9
 
 **Status:** Development Baseline  
 **Engine:** Godot 4  
@@ -69,7 +69,7 @@ The race ends for everyone once all but one car have crossed the finish line on 
 
 ## 2.2 Grand Prix
 
-Three cups, each a championship of its tracks raced back to back (three races each). As in Mario Kart, Grand Prix and Versus both pick from the same cup screen: a row of cup cards between gold arrows (each a rounded card in the cup's colours with its white map between gold laurels and its name; the selected one is larger, edged in gold and points down at the panel; a cup locked for Grand Prix is grey with a padlock) above a neon panel that previews the focused cup's races (trophy, name, race count and best finish, then a card per race with a screenshot of the track, its race number, name and location, and in Versus your best time). Opening a cup (click, Enter or A) moves into the panel. In Grand Prix you confirm the cup with START GRAND PRIX (a cup locked for Grand Prix shows "coming soon" and can't be confirmed). In Versus you pick one of its races (§2.1). Back from the panel returns to the badges.
+Five cups, each a championship of its tracks raced back to back (three races each; the Africa Cup has one so far). As in Mario Kart, Grand Prix and Versus both pick from the same cup screen: a row of cup cards between gold arrows (each a rounded card in the cup's colours with its white map between gold laurels and its name; the selected one is larger, edged in gold and points down at the panel; a cup locked for Grand Prix is grey with a padlock) above a neon panel that previews the focused cup's races (trophy, name, race count and best finish, then a card per race with a screenshot of the track, its race number, name and location, and in Versus your best time). Opening a cup (click, Enter or A) moves into the panel. In Grand Prix you confirm the cup with START GRAND PRIX (a cup locked for Grand Prix shows "coming soon" and can't be confirmed). In Versus you pick one of its races (§2.1). Back from the panel returns to the badges.
 
 ### American Cup (trophy: a map of the USA)
 
@@ -103,7 +103,15 @@ Three cups, each a championship of its tracks raced back to back (three races ea
 | 2 | Vale da Lua | Chapada dos Veadeiros, Brazil |
 | 3 | Choquequirao | Cusco Region, Peru |
 
-All three South America Cup tracks are built and can be raced in Versus. The cup itself is still locked for Grand Prix.
+All three South America Cup tracks are built, and the cup is open for Grand Prix and Versus.
+
+### Africa Cup (trophy: a map of Africa with Madagascar)
+
+| Race | Track | Location |
+|---|---|---|
+| 1 | Kilwa Kisiwani Ruins | Kilwa Kisiwani, Tanzania |
+
+Only race 1 is built so far; more races will be added. Kilwa can be raced in Versus, and the cup stays locked for Grand Prix until its tracks are built.
 
 The American, Europe and Asia Cups are playable. The Europe Cup was the World Cup; its save id is unchanged, so earlier results still count. The cup-win coin bonus is 100 for a three-race cup, scaled by the number of races (§9.3).
 
@@ -193,7 +201,7 @@ Two to four players on one PC, Mario Kart style. The title menu offers **Single 
 2. **Choose your cars.** One neon card per player in their colour: a header with the player tag, their device and READY, the car turning on a turntable that glows in the player's colour, its name and type, and its stats (top speed, acceleration, handling, drift as 1–10 bars). Two players get tall side-by-side cards with a strip of car pictures (click one to pick it); three or four get a 2×2 grid of wide cards with a car counter, and with three the fourth cell lists the controls and who is still choosing. Left / right changes car on that player's device; Enter / A readies up; Back / B un-readies, or returns to step 1. When everyone is ready, an **ALL READY** banner asks for one more Enter / A / Start before step 3 opens.
    - Player 1 drives their Garage loadout. Players 2–4 drive the stock car painted in their player colour (P1 cyan, P2 magenta, P3 gold, P4 green).
    - Everyone can set a license plate (§9.5) with Y (gamepad) or Tab (keyboard). The keyboard player types; gamepad players use a letter picker (up / down changes the letter, left / right moves, X deletes, A done). Player 1's plate is saved to their profile; players 2–4 default to "P2"–"P4".
-3. **Race setup.** Mode (Grand Prix or Versus); in Versus, race type (Standard or Elimination) and number of races; NPCs on or off (the computer-driven cars: on fills the grid to eight, off races the humans only; Elimination needs NPCs); NPC difficulty (shown only with NPCs on); laps; items. The rows are the single-player race setup's (‹ value › steppers and ON / OFF switches) in a RACE SETTINGS panel with two columns, under a pill per player showing their car. A box underneath explains the chosen mode and race type, including how Elimination knocks cars out and that it needs NPCs. A gold Next button says where it goes: Pick a Cup (Grand Prix) or Pick a Track (Versus).
+3. **Race setup.** Mode (Grand Prix or Versus); in Versus, race type (Standard or Elimination) and number of races; NPCs on or off (the computer-driven cars: on fills the grid to eight, off races the humans only; Elimination needs NPCs); NPC difficulty (shown only with NPCs on); laps; items. The rows are the single-player race setup's (‹ value › steppers and ON / OFF switches) in a RACE SETTINGS panel with two columns, under a pill per player showing their car. A box underneath explains the chosen mode and race type, including how Elimination knocks cars out and that it needs NPCs. A gold Next button names the next screen: Cup Selection (Grand Prix) or Track Selection (Versus).
    - Grand Prix goes to the cup screen. Versus goes to the cup screen to pick a race (§2.1), before every race of the set.
 
 Leaving a race, or finishing a set, returns to step 2 with the same players joined.
@@ -264,6 +272,8 @@ The physics model should prioritize enjoyable racing over realistic tire simulat
 | D-pad Down | Cycle camera |
 | Right stick click (hold) | Look back |
 | Start / Options | Pause |
+
+In menus (single player, pause, podium and results): the D-pad or left stick moves, A selects or continues, and B goes back.
 
 Gamepad support is part of the initial scope.
 
@@ -592,7 +602,7 @@ AI must support:
 
 # 8. Tracks and Environments
 
-Twelve tracks are included at launch.
+Thirteen tracks are included at launch.
 
 ## 8.1 The Stacks
 
@@ -789,6 +799,44 @@ In driving order:
 
 The shortcut is the **Qolqa storehouses**: a narrower lane along a row of storehouses on the hill spur, with a wooden QOLQAS sign at its mouth. It's about 130 m shorter, but stacked baskets (smashable) block the entrance. No race music yet (§12.1).
 
+## 8.6g Kilwa Kisiwani Ruins
+
+**Location:** Kilwa Kisiwani, Tanzania
+
+The ruins of the medieval Swahili trading city on its island off the Tanzanian coast, late on a mildly overcast afternoon: a low, warm sun behind thin grey cloud.
+
+**Identity:** A maze. Almost every corner is a right angle, the road is lined with walls, and in the Great Mosque you thread between columns standing in the road.
+
+Built at about 3 km with a wide 22 m road and about twenty near-90° corners. A little of the lap (about a fifth, including the start) runs through the village. The rest is inside the ruins, about a fifth of it under the mosque's vaults and the palace gallery.
+
+The stone is coral rag: rough, rounded fieldstone with patchy lime plaster, and dressed coral blocks for piers, arch rings and door frames. Arches are pointed (two-centred), with domes, niches and stepped crenellations, so it has an almost Persian feel.
+
+In driving order:
+- The start straight on the edge of the **village**: one-storey coral-rag houses, most with steep makuti palm-thatch roofs (some flat-roofed, some ruined), carved wooden doors, palms, baobabs and red flame trees. Boost pad with item boxes.
+- The streets jog round to the mosque's walled **forecourt** with an ablution tank (boost pad), then through a tall pointed portal into the **Great Mosque**.
+- The hypostyle hall: a 12 m grid of square stone piers with pointed arcades running both ways. The road snakes through it three times on three parallel aisles, joined by U-turns.
+  - Down the middle of each straight aisle runs a row of **columns standing in the road** (solid, about 1.5 m square), leaving gaps of about 10 m either side.
+  - The piers along the road edges carry the barriers, and the aisles beyond recede in rows of arches.
+  - Overhead are flat vaults with saucer domes, some full domed bays, and a few bays collapsed open to the sky, letting in shafts of light.
+  - Between the second and third aisles a dome has fallen in, and a tree grows up through it.
+- Out of the north portal onto the **coast path**: low ruined walls, baobabs and flame trees.
+- Through a portal into the **Husuni Kubwa palace**:
+  - walled lanes lined with pointed niches;
+  - a **vaulted gallery** (arcades on both sides, stone ceiling);
+  - the **octagonal bathing pool**, whose spill floods one side of the road (standing water);
+  - a **terrace jump**.
+- The **shore straight** west: a sea wall and beach to the north with dhows on the channel, the crenellated Makutani walls to the south, and a great gateway arch over the road (boost ring).
+- Round the walls of the **Gereza fort** (crenellated, with a round tower and square towers with small upper windows) and back into the village.
+
+**Shortcuts:**
+- **Gereza fort yard** (11 m):
+  - it goes in through a pointed gate in the fort's east wall, across the grass yard past rusty cannons and a fallen beam, and out through a breach;
+  - a smashable barricade blocks the gate;
+  - it saves about 130 m.
+- **Small Domed Mosque aisle** (10 m): a tight U-turn under a row of small domes, cutting off the bottom of the second aisle and saving about 80 m. Coins line it.
+
+Overdrive flights stay low under the hall's ceiling and the gallery and swing round the columns. Recovery spots, item crates and coins are never placed on a column. No race music yet (§12.1).
+
 ## 8.7 Shared Track Features
 
 Tracks may contain:
@@ -804,6 +852,7 @@ Tracks may contain:
 - Traction-altering surfaces (standing water: about 12% lower top speed and 25% less grip while in it)
 - Starting gantries
 - Open edges on elevated tracks (no wall; falling off means a recovery)
+- Columns standing in the road (Kilwa Kisiwani's hall): solid, with gaps of at least 9 m; the AI's racing line, recovery spots and Overdrive flights all steer round them
 - Lap and elimination checkpoints
 - Vehicle recovery points
 
@@ -835,6 +884,7 @@ The track concept art suggests one signature dynamic event per track. They are r
 | Crazy House | Moving Staircases: stairs that swing into new routes |
 | Vale da Lua | Flash Flood: the river rises and floods the low bridges |
 | Choquequirao | Terrace Slide: a terrace wall gives way and rubble narrows a ring |
+| Kilwa Kisiwani Ruins | Falling Masonry: a weakened dome drops rubble between the columns, closing one gap |
 
 ---
 
@@ -1012,7 +1062,7 @@ Previously selected settings should be remembered.
 
 The setup, cup and track screens share the Settings look (§11.2): the dimmed street behind them, the screen name along the top, coins at the top right and Back at the bottom left.
 
-- **Race setup.** On the left is a panel under a gold banner ("VERSUS · 1 RACE", or the cup's name and trophy in Grand Prix). The panel has one rounded row per setting, each with an icon and a ‹ value › stepper (left / right changes it): Race Type, Races, NPC Difficulty, Laps, and an ON / OFF switch for Items. Grand Prix shows only NPC Difficulty and Items. A note explains the race type. Below the panel is a big gold button: Next: Pick a Track, or Start Grand Prix. On the right is the car on its platform with gold arrows (LB / RB also change it), its name on a magenta banner, a cyan type tag, segmented stat bars with icons, a top-speed card and the plate. Hints along the bottom: B Back, A Next, Y Garage. The garage's Back returns to the setup.
+- **Race setup.** On the left is a panel under a gold banner ("VERSUS · 1 RACE", or the cup's name and trophy in Grand Prix). The panel has one rounded row per setting, each with an icon and a ‹ value › stepper (left / right changes it): Race Type, Races, NPC Difficulty, Laps, and an ON / OFF switch for Items. Grand Prix shows only NPC Difficulty and Items. A note explains the race type. Below the panel is a big gold button: Track Selection, or Start Grand Prix. On the right is the car on its platform with gold arrows (LB / RB also change it), its name on a magenta banner, a cyan type tag, segmented stat bars with icons, a top-speed card and the plate. Hints along the bottom: B Back, A Next, Y Garage. The garage's Back returns to the setup.
 - **Cup screen (Grand Prix) and track screen (Versus).** These use the cup cards and race panel described in §2.2. Grand Prix confirms with a gold START GRAND PRIX button at the bottom right. A track without a screenshot shows its outline instead.
 
 ## 11.4 Garage
@@ -1067,14 +1117,24 @@ Additional information:
 
 ## 11.7 Results Screen
 
-- Final finishing order
-- Race times
-- Grand Prix points and standings
-- Coins earned
-- Personal best indicators
-- Newly available cosmetics
-- Next race grid preview
-- The *Victory* theme plays (carried on from the podium when there is one)
+The single-player results are laid out after the "Cyberwave 2199 Race Results" reference art, over the dimmed race:
+- **Header:** the logo top left, and a slanted RACE RESULTS title with checker flags top right.
+- **Left card:**
+  - your placement in big letters between gold laurels ("P3"; gold for 1st, silver for 2nd, bronze for 3rd; "OUT" when eliminated);
+  - "3RD PLACE" (or ELIMINATED), with VICTORY! / PODIUM! / CHAMPION! under it;
+  - your car in its garage look;
+  - the track's picture, name and mode (Versus Race, Elimination, or the cup and race number);
+  - rows for YOUR TIME, BEST LAP, LAPS and COINS (counting up). A gold NEW BEST tag marks a personal best time or lap.
+  - Under the card: your new coin balance and any newly affordable cosmetics.
+- **Table:** every racer, with a slanted place badge (gold / silver / bronze for the top three), a picture of their car in their own paint, their name, total time and best lap. Your row is filled magenta.
+- **Buttons:** RACE AGAIN (or the next step) and MAIN MENU.
+- **Hint bar:** A / Enter Confirm, Start / Esc Pause.
+- **Grand Prix and Versus sets** work as in Mario Kart:
+  - first the race, with a +PTS column for points earned;
+  - Continue then shows the STANDINGS (FINAL STANDINGS after the last race): the rows slide into championship order and the totals count up from the old ones;
+  - Continue again goes to the next race (or back to the main menu).
+- Split screen keeps its simpler shared results (a line per player, the finishing order, championship standings).
+- The *Victory* theme plays (carried on from the podium when there is one).
 
 ## 11.7a Podium Ceremony
 
@@ -1084,7 +1144,7 @@ A victory podium plays before the results screen (laid out after the "Neon Grand
 - The top three's cars, dressed as they raced (player 1's garage cosmetics, players 2–4 in their player colour, rivals in their colours, everyone's own plate).
 - A place tag on each platform ("1ST | NAME"). Player names use the split-screen player colours (single player: magenta); rivals are white. The winner's tag carries CUP CHAMPION / SET WINNER / RACE WINNER.
 - The banner reads "CONGRATULATIONS!" when a human made the top three, else "FINAL PODIUM".
-- A gold crown over the winner, sweeping spotlights, confetti and a short fanfare (a placeholder synthesized call; a `sounds/victory_fanfare` .ogg/.mp3/.wav replaces it). Reduced flashing stops the spotlight sweep and halves the confetti.
+- A gold crown over the winner when the winner is a human player (no crown for an AI rival), sweeping spotlights, confetti and a short fanfare (a placeholder synthesized call; a `sounds/victory_fanfare` .ogg/.mp3/.wav replaces it). Reduced flashing stops the spotlight sweep and halves the confetti.
 - Audio: the *Victory* theme replaces the race music as the podium appears and carries on into the results. The race keeps running behind the podium, so its sound effects (weapons, drones, skids) are muted until the podium closes. The fanfare plays on the Music channel so it is still heard.
 - The camera starts wide and slowly pushes in towards the winner.
 - A / Enter (or a click) skips to the end; once "A Continue" appears, it opens the results.
@@ -1169,7 +1229,8 @@ One song per screen or track. Moving between menus that share a song doesn't res
 | Gardens by the Bay | Garden Fairytale | elisaveta_stoycheva |
 | Parque Quinta Normal Greenhouse | To the Moon and Back | theorienvibes |
 | Vale da Lua | Rise of the Phoenix | restum-anoush |
-| Choquequirao | None yet | |
+| Choquequirao | Epic Victory March for Heroes | DesiFreeMusic |
+| Kilwa Kisiwani Ruins | None yet | |
 | Test Circuit and Free Drive | The Garden Wakes | stageechoesmusic |
 
 The web build plays smaller 96 kbps .ogg copies (`music/web/`) of every song.
@@ -1543,5 +1604,14 @@ Changes after Version 1.0 should be tracked as revisions rather than silently re
 | 5.2 | 2026-11-10 | Hunter-Killer goes through a Firewall (the shield is kept). The only escape is a Nitro fired in the last 0.4 s of its warning or during its dive: the drone misses and fizzles ("DODGED"). AI rivals try the same dodge and no longer raise a Firewall against it (§6.5). |
 | 5.3 | 2026-11-10 | Music for every track: Vatnajökull Glacier, Crazy House, Gardens by the Bay, Parque Quinta Normal, Vale da Lua and the Test Circuit / Free Drive (§8.6a–e, §12.1). *Victory* theme on the podium and results; race sound effects muted behind the podium (§11.7, §11.7a). Weapon and track sounds: Firewall up / down, Railgun, EMP, System Override, Road Spike drop, Hunter-Killer launch / warning / hit, barrier smash, with per-clip levels and a master limiter (§12.2). Main theme now plays on first launch. |
 | 5.4 | 2026-11-11 | Choquequirao built at about 3.3 km: an Inca village in a green Andean valley on a sunny day. A double-spiral labyrinth of terraced stone rings in to the plaza and back out, eight trapezoidal Inca gateways, mostly roofless gabled ruins with some thatched houses, terraces up the valley sides, and the Qolqa storehouses shortcut (§8.6f). It is South America Cup race 3 (§2.2). Track count now twelve. |
+| 5.5 | 2026-11-11 | New Africa Cup (trophy: a map of Africa), locked for Grand Prix until its tracks are built. Race 1 is Kilwa Kisiwani Ruins, about 3 km on a wide 22 m road, late on a mildly overcast afternoon (§2.2, §8.6g):
+<br>• a maze of right-angle corners through a coral-rag village, the Great Mosque's hypostyle hall (columns standing in the road, pointed arcades, domed and collapsed bays), the Husuni Kubwa palace (niched lanes, vaulted gallery, octagonal pool), the shore and the Gereza fort;
+<br>• two shortcuts: the Gereza fort yard and the Small Domed Mosque aisle;
+<br>• road columns added as a shared track feature (§8.7).
+<br>Choquequirao's music listed (§12.1). Track count now thirteen. |
+| 5.6 | 2026-11-12 | The podium crown only drops when a human player wins (§11.7a). Gamepads work in the single-player menus, pause, podium and results: A selects / continues and B goes back, alongside the D-pad and left stick (§3.3). |
+| 5.7 | 2026-11-12 | Race setup info box shortened: Standard and Elimination get one-line descriptions and the "next" line is gone; the Versus button now reads Track Selection (§2.4). |
+| 5.8 | 2026-11-12 | The South America Cup is complete and now open for Grand Prix (§2.2). The gold forward buttons just name the next screen (Player Setup, Race Setup, Track Selection, Cup Selection) and all show the same ">>" while active; the label shrinks to fit rather than run into it. The Versus cup screen drops its "Pick one to race" line. |
+| 5.9 | 2026-11-12 | Single-player results restyled after the "Cyberwave 2199 Race Results" reference art: a placement card (laurels, your car, the track's picture, time / best lap / laps / coins with NEW BEST tags) beside a neon results table with car pictures in each racer's paint. A Grand Prix or Versus set shows the race first, then the standings, as in Mario Kart (§11.7). |
 
-**End of Game Design Document — Version 5.4**
+**End of Game Design Document — Version 5.9**

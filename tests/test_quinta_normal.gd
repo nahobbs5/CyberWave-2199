@@ -1,7 +1,7 @@
 extends SceneTree
 ## Parque Quinta Normal Greenhouse checks (GDD 8.10): layout and shortcut,
 ## the Rotunda roundabout (about 310 degrees round the plinth), the glass
-## roofs, scenery off the roads, the South America Cup (locked for Grand
+## roofs, scenery off the roads, the South America Cup (open for Grand
 ## Prix, Greenhouse raceable in Versus), a lap with everyone on the Fern
 ## Wing shortcut and a full 8-car race.
 ##   godot --headless --import
@@ -173,7 +173,7 @@ func _test_cup() -> void:
 	_check(GrandPrixData.CUPS.has(CUP), "listed with the other cups")
 	_check(cup.track_names[0] == "Parque Quinta Normal" and cup.is_track_built(0), "race 1 is the Greenhouse")
 	_check(cup.is_track_built(1) and cup.is_track_built(2), "races 2 (Vale da Lua) and 3 (Choquequirao) are built")
-	_check(not cup.is_open(true) and cup.is_open(false), "locked for Grand Prix, open in Versus")
+	_check(cup.is_open(true) and cup.is_open(false), "open for Grand Prix and Versus")
 	_check(TrackCatalog.scene_path("Parque Quinta Normal") == TRACK and TrackCatalog.location("Parque Quinta Normal") == "Santiago, Chile",
 			"in the track catalogue")
 	var poly := TrophyIcon.south_america_polygon(Rect2(0, 0, 100, 60))

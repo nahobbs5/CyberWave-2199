@@ -469,8 +469,8 @@ func _test_menus_and_gp() -> void:
 	var europe := load("res://resources/grand_prix/world_circuit.tres") as GrandPrixData
 	var asia := load("res://resources/grand_prix/asia_circuit.tres") as GrandPrixData
 	_check(not europe.locked and not asia.locked and not gp.locked, "all three cups are playable")
-	_check(GrandPrixData.CUPS.size() == 3 and europe.display_name == "Europe Cup" and asia.display_name == "Asia Cup",
-			"American, Europe and Asia cups")
+	_check(GrandPrixData.CUPS.size() == 5 and europe.display_name == "Europe Cup" and asia.display_name == "Asia Cup",
+			"American, Europe, Asia, South America and Africa cups")
 
 
 ## Each track's scenery builds quickly (headless, no rendering).

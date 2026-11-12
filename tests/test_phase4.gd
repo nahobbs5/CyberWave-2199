@@ -328,7 +328,7 @@ func _test_mode_select() -> void:
 	var open_cups := 0
 	for cup in cups.cups:
 		open_cups += 1 if cup.is_open(true) else 0
-	_check(cups.cards.size() == GrandPrixData.CUPS.size() and open_cups == 3, "a badge per cup, three open for Grand Prix (%d)" % open_cups)
+	_check(cups.cards.size() == GrandPrixData.CUPS.size() and open_cups == 4, "a badge per cup, four open for Grand Prix (%d)" % open_cups)
 	cups.pick(1)
 	_check(GameSession.cup_path == GrandPrixData.CUPS[1], "picking the Europe Cup")
 	GameSession.cup_path = ""
@@ -484,6 +484,24 @@ func _test_grand_prix() -> void:
 				order_ok = order_ok and order[racer.finish_position - 1] == racer.racer_id
 			_check(order_ok, "recorded order matches the classification")
 			var hud := race.race_hud
+			# Mario Kart style: the race first (+points), then Continue shows the totals.
+			var neon := hud.results as NeonResultsScreen
+			_check(neon != null and not neon.standings_page and hud.get_continue_text() == "Standings",
+					"race results first, Continue reads Standings (%s)" % hud.get_continue_text())
+			var emitted := [0]
+			hud.results.continue_pressed.connect(func() -> void: emitted[0] += 1, CONNECT_ONE_SHOT)
+			hud.results.skip_animation()
+			neon._on_continue()
+			_check(neon.standings_page and emitted[0] == 0, "first Continue shows the standings, doesn't leave")
+			neon.skip_animation()
+			var rows_ok := true
+			var ranking := c.standings()
+			for i in ranking.size():
+				rows_ok = rows_ok and (neon._rows[i] as NeonResultsScreen.ResultRow).racer_id == ranking[i] \
+						and (neon._cells[i][2] as Label).text == str(c.points[ranking[i]])
+			_check(rows_ok, "standings rows in points order with their totals")
+			if race_number == 2:
+				_check(neon._title_bar.label.text == "FINAL STANDINGS", "final standings page")
 			if race_number < 2:
 				_check(Championship.load_saved() != null and Championship.load_saved().race_index == race_number + 1,
 						"saved after the race")

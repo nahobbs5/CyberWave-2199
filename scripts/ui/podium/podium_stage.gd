@@ -5,9 +5,9 @@ extends MenuStreetScene
 ## highway) with three neon platforms on the road: gold 1st in the middle,
 ## silver 2nd on the left, magenta 3rd on the right. The top three's cars
 ## drive in, then one at a time (3rd, 2nd, 1st) a platform rises and its
-## name tag shows (PodiumCeremony), a crown drops over the winner and
-## spotlights sweep. Everything is posed from one number (set_progress), so
-## skipping to the end is exact. Display only.
+## name tag shows (PodiumCeremony), a crown drops over the winner (only a
+## human player) and spotlights sweep. Everything is posed from one number
+## (set_progress), so skipping to the end is exact. Display only.
 
 ## Platform centres by place (index 0 = 1st).
 const SPOTS: Array[Vector3] = [Vector3(0.0, 0.0, -7.0), Vector3(-5.0, 0.0, -6.0), Vector3(5.0, 0.0, -6.0)]
@@ -135,7 +135,7 @@ func set_progress(t: float) -> void:
 		car.rotation.y = lerp_angle(PI, YAWS[i], smoothstep(0.6, 1.0, k))
 	if crown != null:
 		var drop := clampf((t - tl[1]) / 0.8, 0.0, 1.0)
-		crown.visible = t >= tl[1] and not cars.is_empty()
+		crown.visible = t >= tl[1] and not cars.is_empty() and winner_is_human()
 		var rest := crown_rest()
 		crown.position = rest + Vector3(0.0, 7.0 * (1.0 - _ease_out_bounce(drop)), 0.0)
 	var lit := t >= tl[1]
@@ -145,6 +145,11 @@ func set_progress(t: float) -> void:
 		b.visible = lit
 	_aim_spotlights()
 	_place_camera()
+
+
+## The crown is only for a human winner (not an AI rival).
+func winner_is_human() -> bool:
+	return not entries.is_empty() and bool((entries[0] as Dictionary).get("is_human", false))
 
 
 ## Where the crown floats over the winner's car.

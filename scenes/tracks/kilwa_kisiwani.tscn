@@ -1,0 +1,145 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/track/track_circuit.gd" id="1_track"]
+[ext_resource type="Script" path="res://scripts/track/track_shortcut.gd" id="2_shortcut"]
+[ext_resource type="Script" path="res://scripts/track/track_feature.gd" id="3_feature"]
+[ext_resource type="Script" path="res://scripts/track/kilwa_scenery.gd" id="4_scenery"]
+[ext_resource type="Texture2D" path="res://assets/sky/kloofendal_overcast_puresky_2k.hdr" id="5_sky"]
+
+[sub_resource type="PanoramaSkyMaterial" id="Sky_overcast"]
+panorama = ExtResource("5_sky")
+energy_multiplier = 0.8
+
+[sub_resource type="Sky" id="Sky_res"]
+sky_material = SubResource("Sky_overcast")
+
+[sub_resource type="Environment" id="Environment_kilwa"]
+background_mode = 2
+sky = SubResource("Sky_res")
+ambient_light_source = 3
+ambient_light_color = Color(0.86, 0.8, 0.72, 1)
+ambient_light_sky_contribution = 0.55
+ambient_light_energy = 0.75
+reflected_light_source = 2
+tonemap_mode = 2
+tonemap_exposure = 0.95
+glow_enabled = true
+glow_intensity = 0.3
+glow_bloom = 0.03
+fog_enabled = true
+fog_light_color = Color(0.84, 0.76, 0.66, 1)
+fog_light_energy = 0.9
+fog_density = 0.0011
+fog_sky_affect = 0.25
+adjustment_enabled = true
+adjustment_saturation = 1.05
+
+[node name="Track" type="Node3D"]
+script = ExtResource("1_track")
+control_points = PackedVector3Array(-318, 0, -132, -322.66, 0, -131.39, -327, 0, -129.59, -330.73, 0, -126.73, -333.59, 0, -123, -335.39, 0, -118.66, -336, 0, -114, -336, 0, -90, -336, 0, -66, -336, 0, -42, -336, 0, -18, -336, 0, 6, -336, 0, 30, -336, 0, 54, -336, 0, 78, -336, 0, 102, -336, 0, 126, -336, 0, 150, -335.39, 0, 154.66, -333.59, 0, 159, -330.73, 0, 162.73, -327, 0, 165.59, -322.66, 0, 167.39, -318, 0, 168, -294, 0, 168, -270, 0, 168, -246, 0, 168, -222, 0, 168, -198, 0, 168, -193.34, 0, 168.61, -189, 0, 170.41, -185.27, 0, 173.27, -182.41, 0, 177, -180.61, 0, 181.34, -180, 0, 186, -180, 0, 198, -179.39, 0, 202.66, -177.59, 0, 207, -174.73, 0, 210.73, -171, 0, 213.59, -166.66, 0, 215.39, -162, 0, 216, -138, 0, 216, -114, 0, 216, -90, 0, 216, -66, 0, 216, -42, 0, 216, -37.34, 0, 215.39, -33, 0, 213.59, -29.27, 0, 210.73, -26.41, 0, 207, -24.61, 0, 202.66, -24, 0, 198, -24, 0, 172.91, -24, 0, 147.82, -24, 0, 122.73, -24, 0, 97.64, -24, 0, 72.55, -24, 0, 47.45, -24, 0, 22.36, -24, 0, -2.73, -24, 0, -27.82, -24, 0, -52.91, -24, 0, -78, -23.39, 0, -82.66, -21.59, 0, -87, -18.73, 0, -90.73, -15, 0, -93.59, -10.66, 0, -95.39, -6, 0, -96, 6, 0, -96, 10.66, 0, -95.39, 15, 0, -93.59, 18.73, 0, -90.73, 21.59, 0, -87, 23.39, 0, -82.66, 24, 0, -78, 24, 0, -51, 24, 0, -24, 24, 0, 3, 24, 0, 30, 24.61, 0, 34.66, 26.41, 0, 39, 29.27, 0, 42.73, 33, 0, 45.59, 37.34, 0, 47.39, 42, 0, 48, 54, 0, 48, 58.66, 0, 47.39, 63, 0, 45.59, 66.73, 0, 42.73, 69.59, 0, 39, 71.39, 0, 34.66, 72, 0, 30, 72, 0, 6, 72, 0, -18, 72, 0, -42, 72, 0, -66, 72, 0, -90, 72, 0, -114, 72, 0, -138, 72.61, 0, -142.66, 74.41, 0, -147, 77.27, 0, -150.73, 81, 0, -153.59, 85.34, 0, -155.39, 90, 0, -156, 114, 0, -156, 138, 0, -156, 162, 0, -156, 186, 0, -156, 210, 0, -156, 234, 0, -156, 238.66, 0, -155.39, 243, 0, -153.59, 246.73, 0, -150.73, 249.59, 0, -147, 251.39, 0, -142.66, 252, 0, -138, 252, 0, -102, 252.61, 0, -97.34, 254.41, 0, -93, 257.27, 0, -89.27, 261, 0, -86.41, 265.34, 0, -84.61, 270, 0, -84, 282, 0, -84, 286.66, 0, -83.39, 291, 0, -81.59, 294.73, 0, -78.73, 297.59, 0, -75, 299.39, 0, -70.66, 300, 0, -66, 300, 0, -38, 300, 0, -10, 300, 0, 18, 300.61, 0, 22.66, 302.41, 0, 27, 305.27, 0, 30.73, 309, 0, 33.59, 313.34, 0, 35.39, 318, 0, 36, 342, 0, 36, 366, 0, 36, 370.66, 0, 35.39, 375, 0, 33.59, 378.73, 0, 30.73, 381.59, 0, 27, 383.39, 0, 22.66, 384, 0, 18, 384, 0, -7.2, 384, 0, -32.4, 384, 0, -57.6, 384, 0, -82.8, 384, 0, -108, 384, 0, -133.2, 384, 0, -158.4, 384, 0, -183.6, 384, 0, -208.8, 384, 0, -234, 383.39, 0, -238.66, 381.59, 0, -243, 378.73, 0, -246.73, 375, 0, -249.59, 370.66, 0, -251.39, 366, 0, -252, 342, 0, -252, 318, 0, -252, 294, 0, -252, 270, 0, -252, 246, 0, -252, 222, 0, -252, 198, 0, -252, 174, 0, -252, 150, 0, -252, 126, 0, -252, 102, 0, -252, 78, 0, -252, 54, 0, -252, 30, 0, -252, 6, 0, -252, -18, 0, -252, -42, 0, -252, -66, 0, -252, -70.66, 0, -252.61, -75, 0, -254.41, -78.73, 0, -257.27, -81.59, 0, -261, -83.39, 0, -265.34, -84, 0, -270, -84, 0, -294, -84.61, 0, -298.66, -86.41, 0, -303, -89.27, 0, -306.73, -93, 0, -309.59, -97.34, 0, -311.39, -102, 0, -312, -128, 0, -312, -154, 0, -312, -180, 0, -312, -206, 0, -312, -232, 0, -312, -258, 0, -312, -262.66, 0, -311.39, -267, 0, -309.59, -270.73, 0, -306.73, -273.59, 0, -303, -275.39, 0, -298.66, -276, 0, -294, -276, 0, -270, -276, 0, -246, -276, 0, -222, -276, 0, -198, -276, 0, -174, -276, 0, -150, -276.61, 0, -145.34, -278.41, 0, -141, -281.27, 0, -137.27, -285, 0, -134.41, -289.34, 0, -132.61, -294, 0, -132)
+road_width = 22.0
+barrier_height = 1.2
+start_line_offset = 222.0
+checkpoint_count = 10
+crate_row_offsets = PackedFloat32Array(389, 736, 1445, 1699, 2387)
+crate_lateral_positions = PackedFloat32Array(-6, -2, 2, 6)
+coin_offsets = PackedFloat32Array(102, 112, 561, 571, 896, 908, 1719, 1729, 2238, 2248, 2712, 2722)
+coin_laterals = PackedFloat32Array(3.0, 3.0, -4.0, -4.0, 5.0, 5.0, -3.0, -3.0, 4.0, 4.0, -4.0, -4.0)
+grid_lateral = 5.0
+road_color = Color(1, 0.9, 0.76, 1)
+edge_line_color = Color(1, 0.8, 0.45, 1)
+ground_color = Color(0.6, 0.62, 0.38, 1)
+barrier_color = Color(0.86, 0.74, 0.6, 1)
+neon_energy = 0.35
+edge_line_energy = 0.25
+faded_markings = true
+centre_markings = false
+road_texture = "monastery_stone_floor"
+barrier_texture = "old_stone_wall"
+ground_texture = "sparse_grass"
+neon_left_color = Color(1, 0.62, 0.25, 1)
+neon_right_color = Color(0.25, 0.85, 0.8, 1)
+light_energy = 0.0
+corner_sign_radius = 40.0
+corner_sign_color = Color(1, 0.7, 0.3, 1)
+corner_sign_width = 3.0
+corner_sign_gap = 0.3
+road_columns = PackedVector3Array(-24, -60, 0.75, -24, -48, 0.75, -24, -36, 0.75, -24, -24, 0.75, -24, -12, 0.75, -24, 0, 0.75, -24, 12, 0.75, -24, 24, 0.75, -24, 36, 0.75, -24, 48, 0.75, 24, -60, 0.75, 24, -48, 0.75, 24, 12, 0.75, 72, -96, 0.75, 72, -84, 0.75, 72, -72, 0.75, 72, -60, 0.75, 72, -48, 0.75, 72, 12, 0.75)
+light_spacing = 5000.0
+curb_color = Color(0.7, 0.6, 0.48, 1)
+ground_margin = 400.0
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_kilwa")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.258819, 0.361842, -0.895591, -0.000000, 0.927184, 0.374607, 0.965926, -0.096955, 0.239973, 0, 120, 0)
+light_color = Color(1, 0.8, 0.6, 1)
+light_energy = 1.25
+shadow_enabled = true
+shadow_opacity = 0.6
+shadow_blur = 2.0
+directional_shadow_max_distance = 90.0
+
+[node name="GerezaFortYard" type="Node3D" parent="."]
+script = ExtResource("2_shortcut")
+control_points = PackedVector3Array(-50, 0, -252, -110, 0, -252, -170, 0, -252, -215, 0, -248, -248, 0, -232, -268, 0, -208, -276, 0, -180)
+road_width = 11.0
+speed_limit = 30.0
+ai_chance = 0.4
+coin_distances = PackedFloat32Array(90, 150, 210)
+display_name = "Gereza fort yard"
+
+[node name="DomedMosqueAisle" type="Node3D" parent="."]
+script = ExtResource("2_shortcut")
+control_points = PackedVector3Array(24, 0, -24, 26, 0, -6, 34, 0, 6, 48, 0, 11, 62, 0, 6, 70, 0, -6, 72, 0, -24)
+road_width = 10.0
+speed_limit = 24.0
+ai_chance = 0.5
+coin_distances = PackedFloat32Array(30, 48, 66)
+display_name = "Small Domed Mosque aisle"
+
+[node name="BoostPadStart" type="Node3D" parent="."]
+script = ExtResource("3_feature")
+kind = 0
+anchor_point = Vector3(-336, 0, 128)
+item_boxes = true
+
+[node name="BoostPadMosqueGate" type="Node3D" parent="."]
+script = ExtResource("3_feature")
+kind = 0
+anchor_point = Vector3(-24, 0, 110)
+
+[node name="PoolWater" type="Node3D" parent="."]
+script = ExtResource("3_feature")
+kind = 5
+anchor_point = Vector3(342, 0, 36)
+lateral = 6.5
+width = 9.0
+length = 26.0
+
+[node name="JumpPalaceTerrace" type="Node3D" parent="."]
+script = ExtResource("3_feature")
+kind = 4
+anchor_point = Vector3(384, 0, -70)
+width = 22.0
+length = 14.0
+ramp_height = 1.1
+
+[node name="BoostRingShore" type="Node3D" parent="."]
+script = ExtResource("3_feature")
+kind = 1
+anchor_point = Vector3(120, 0, -252)
+boost_extra = 8.0
+boost_duration = 1.2
+boost_kick = 5.0
+
+[node name="FortBarricade" type="Node3D" parent="."]
+script = ExtResource("3_feature")
+kind = 3
+offset = 36
+on_shortcut = "GerezaFortYard"
+width = 11.0
+
+[node name="Scenery" type="Node3D" parent="."]
+script = ExtResource("4_scenery")

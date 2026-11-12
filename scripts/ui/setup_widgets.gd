@@ -159,6 +159,7 @@ class GoldAction extends NeonMenuButton:
 		var tint := Color(0.55, 0.55, 0.6, 0.8) if disabled else Color.WHITE
 		if modulate != tint:
 			modulate = tint
+			queue_redraw() # the ">>" shows only while enabled
 		if has_focus():
 			_time += delta
 			queue_redraw()

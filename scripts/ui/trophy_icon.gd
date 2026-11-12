@@ -3,7 +3,7 @@ extends Control
 ## A cup's trophy, drawn in code: gold bowl, two handles, stem and a
 ## two-step base, with the cup's emblem on the bowl. "usa" is a silhouette
 ## of the lower 48 states; "europe" a map of Europe (with Britain, Ireland
-## and Iceland); "south_america" the continent; "asia" a map of Asia; "japan" a rising sun; "globe" a little globe. Locked cups
+## and Iceland); "south_america" the continent; "africa" Africa with Madagascar; "asia" a map of Asia; "japan" a rising sun; "globe" a little globe. Locked cups
 ## are grey with a padlock.
 
 const GOLD := Color(1.0, 0.8, 0.22)
@@ -80,6 +80,26 @@ const SOUTH_AMERICA_LON_LAT := [
 	Vector2(-77.5, 4), Vector2(-77.4, 7),
 ]
 
+## Africa (longitude, latitude), clockwise from Tangier, then Madagascar.
+## Simplified; for an icon.
+const AFRICA_LON_LAT: Array = [
+	[Vector2(-5.8, 35.8), Vector2(-1.0, 35.3), Vector2(3.0, 36.8), Vector2(10.0, 37.3), Vector2(11.0, 35.2),
+	Vector2(10.2, 33.8), Vector2(15.3, 32.3), Vector2(19.9, 30.9), Vector2(20.1, 32.4), Vector2(23.0, 32.6),
+	Vector2(25.2, 31.6), Vector2(29.9, 31.2), Vector2(32.3, 31.3), Vector2(34.2, 27.8), Vector2(35.5, 23.8),
+	Vector2(37.3, 19.0), Vector2(39.5, 15.6), Vector2(43.2, 12.6), Vector2(44.5, 10.4), Vector2(51.2, 11.8),
+	Vector2(51.0, 10.4), Vector2(49.0, 6.0), Vector2(46.0, 2.0), Vector2(42.0, -1.0), Vector2(40.0, -3.5),
+	Vector2(39.3, -6.8), Vector2(39.7, -10.0), Vector2(40.6, -14.5), Vector2(36.8, -18.0), Vector2(34.8, -20.0),
+	Vector2(35.5, -23.8), Vector2(32.9, -25.9), Vector2(32.6, -28.6), Vector2(30.9, -30.5), Vector2(27.5, -33.4),
+	Vector2(22.0, -34.2), Vector2(18.5, -34.4), Vector2(17.9, -32.0), Vector2(16.5, -28.6), Vector2(14.5, -23.0),
+	Vector2(12.0, -17.5), Vector2(13.8, -11.0), Vector2(12.3, -6.0), Vector2(9.0, -1.0), Vector2(9.8, 3.0),
+	Vector2(8.5, 4.5), Vector2(6.0, 4.3), Vector2(4.0, 6.4), Vector2(0.0, 5.6), Vector2(-4.0, 5.2),
+	Vector2(-7.5, 4.4), Vector2(-11.5, 6.9), Vector2(-13.2, 8.9), Vector2(-15.0, 11.0), Vector2(-17.5, 14.7),
+	Vector2(-16.5, 19.5), Vector2(-17.1, 21.0), Vector2(-14.8, 25.5), Vector2(-12.0, 28.0), Vector2(-9.8, 30.0),
+	Vector2(-9.5, 32.5), Vector2(-6.8, 34.0)],
+	[Vector2(49.3, -12.0), Vector2(50.5, -15.4), Vector2(49.6, -17.0), Vector2(47.0, -25.0), Vector2(45.0, -25.5),
+	Vector2(43.6, -23.5), Vector2(43.9, -21.0), Vector2(44.4, -16.5), Vector2(46.5, -15.6), Vector2(48.0, -13.5)],
+]
+
 const SUN_RED := Color(0.85, 0.12, 0.15)
 
 ## Asia as (longitude, latitude): the mainland from the Bosporus and Arabia
@@ -148,6 +168,11 @@ static func south_america_polygon(rect: Rect2) -> PackedVector2Array:
 ## Europe's outlines (mainland, Britain, Ireland, Iceland) fitted into `rect`.
 static func europe_polygons(rect: Rect2) -> Array[PackedVector2Array]:
 	return outline_polygons(EUROPE_LON_LAT, rect, 52.0)
+
+
+## Africa (mainland and Madagascar) fitted into `rect`.
+static func africa_polygons(rect: Rect2) -> Array[PackedVector2Array]:
+	return outline_polygons(AFRICA_LON_LAT, rect, 0.0)
 
 
 ## Asia's outlines (mainland, Japan, Sri Lanka, Sumatra, Borneo) fitted into `rect`.
@@ -242,6 +267,8 @@ static func draw_emblem(ci: CanvasItem, emblem: String, rect: Rect2, fill: Color
 			shapes = europe_polygons(inner)
 		"asia":
 			shapes = asia_polygons(inner)
+		"africa":
+			shapes = africa_polygons(inner)
 		"japan":
 			# Rising sun: red rays around a red disc on white.
 			var c := rect.get_center() + Vector2(0, rect.size.y * 0.08)

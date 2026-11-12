@@ -118,7 +118,8 @@ func preview(index: int) -> void:
 		elif cup.locked:
 			_cup_info.text = "%d Races   |   [color=#%s]More tracks coming soon[/color]" % [cup.race_count(), cyan]
 		else:
-			_cup_info.text = "%d Races   |   [color=#%s]Pick one to race[/color]" % [cup.race_count(), cyan]
+			# Versus, open cup: the race cards say it all.
+			_cup_info.text = ""
 	_link_focus()
 
 

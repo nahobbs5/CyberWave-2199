@@ -143,7 +143,7 @@ func _update() -> void:
 		else:
 			lines.append(line)
 	_note.text = "\n".join(lines)
-	next_button.text = "Next: Pick a Cup" if gp else "Next: Pick a Track"
+	next_button.text = "Cup Selection" if gp else "Track Selection"
 	next_button.queue_redraw()
 	_link_focus()
 
@@ -181,7 +181,7 @@ func _build() -> void:
 	layout = MultiplayerWidgets.frame(self, "RACE SETUP", 3)
 	layout.back_button.focus_mode = Control.FOCUS_ALL
 	layout.back_button.pressed.connect(back)
-	next_button = MultiplayerWidgets.next_button("Next: Pick a Track", next)
+	next_button = MultiplayerWidgets.next_button("Track Selection", next)
 	next_button.focus_mode = Control.FOCUS_ALL
 	add_child(next_button)
 

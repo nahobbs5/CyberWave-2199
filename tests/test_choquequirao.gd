@@ -250,7 +250,7 @@ func _test_cup() -> void:
 	print("- South America Cup")
 	var cup := load(CUP) as GrandPrixData
 	_check(cup.race_count() == 3 and cup.track_names[2] == "Choquequirao" and cup.is_track_built(2), "race 3 is Choquequirao")
-	_check(not cup.is_open(true) and cup.is_open(false), "locked for Grand Prix, open in Versus")
+	_check(cup.is_open(true) and cup.is_open(false), "open for Grand Prix and Versus")
 	_check(TrackCatalog.scene_path("Choquequirao") == TRACK and TrackCatalog.location("Choquequirao").contains("Peru"),
 			"in the track catalogue (Peru)")
 

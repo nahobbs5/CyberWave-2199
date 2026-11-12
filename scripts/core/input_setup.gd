@@ -74,6 +74,7 @@ static func ensure_actions() -> void:
 		if not InputMap.has_action(action):
 			_add_defaults(action)
 	_remove_space_from_ui_accept()
+	_add_pad_to_ui_actions()
 	apply_bindings(GameSettings.bindings)
 
 
@@ -236,6 +237,23 @@ static func _remove_space_from_ui_accept() -> void:
 		if event is InputEventKey and ((event as InputEventKey).keycode == KEY_SPACE \
 				or (event as InputEventKey).physical_keycode == KEY_SPACE):
 			InputMap.action_erase_event(&"ui_accept", event)
+
+
+## Godot's built-in ui_accept / ui_cancel have no gamepad buttons (the
+## direction actions already have the D-pad and left stick), so a pad could
+## move through menus but not pick or go back. Adds A and B, once.
+static func _add_pad_to_ui_actions() -> void:
+	for pair in [[&"ui_accept", JOY_BUTTON_A], [&"ui_cancel", JOY_BUTTON_B]]:
+		if not InputMap.has_action(pair[0]):
+			continue
+		var present := false
+		for event in InputMap.action_get_events(pair[0]):
+			if event is InputEventJoypadButton and (event as InputEventJoypadButton).button_index == pair[1]:
+				present = true
+		if not present:
+			var button := InputEventJoypadButton.new()
+			button.button_index = pair[1]
+			InputMap.action_add_event(pair[0], button)
 
 
 static func _add_defaults(action: StringName) -> void:

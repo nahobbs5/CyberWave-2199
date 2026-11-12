@@ -24,7 +24,7 @@ var ready_flags: Array[bool] = []
 
 var layout: NeonScreenLayout
 var cards: Array[SlotCard] = []
-## The gold "Next: Player Setup" button (enabled when everyone is ready).
+## The gold "Player Setup" button (enabled when everyone is ready).
 var next_button: NeonMenuButton
 ## The ALL READY banner (shown while everyone is ready).
 var confirm_banner: PanelContainer
@@ -259,7 +259,7 @@ func _build() -> void:
 	confirm_banner = MultiplayerConnect.ready_banner("Press Enter / A / Start to choose cars")
 	banner_center.add_child(confirm_banner)
 
-	next_button = MultiplayerWidgets.next_button("Next: Player Setup", continue_to_cars)
+	next_button = MultiplayerWidgets.next_button("Player Setup", continue_to_cars)
 	add_child(next_button)
 
 

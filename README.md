@@ -8,9 +8,10 @@ The authoritative design is [`docs/Game Design Document.md`](docs/Game%20Design%
 
 **Current milestone: Phase 6, content and polish** (GDD §16), in progress. Done so far:
 - **All eight tracks** in three cups: the **American Cup** (Vegas Overdrive, Six Flags New Orleans, The Stacks), the **Europe Cup** (Hoia Baciu Run, Catacombs Descent, Vatnajökull Glacier) and the **Asia Cup** (Arashiyama Circuit, Crazy House),
-- **Parque Quinta Normal Greenhouse** (Santiago, Chile), race 1 of the new **South America Cup** (all three tracks raceable in Versus; the cup is still locked for Grand Prix),
+- **Parque Quinta Normal Greenhouse** (Santiago, Chile), race 1 of the new **South America Cup** (all three tracks built; open for Grand Prix and Versus),
 - **Vale da Lua** (Chapada dos Veadeiros, Brazil), race 2 of the **South America Cup**: smooth moon rock cut by moving water, rivers under rock bridges, waterfalls, and open rock shelves you can fall off,
 - **Choquequirao** (Cusco Region, Peru), race 3 of the **South America Cup**: an Inca village in a green Andean valley, a double-spiral labyrinth of terraced stone rings in to the plaza and back out through eight trapezoidal gateways,
+- **Kilwa Kisiwani Ruins** (Tanzania), race 1 of the new **Africa Cup** (raceable in Versus; the cup is locked for Grand Prix): a maze of right-angle corners on a wide 22 m road through a Swahili village, the Great Mosque's hypostyle hall (columns standing in the road), the Husuni Kubwa palace, the shore and the Gereza fort, late on an overcast afternoon,
 - **Split-screen multiplayer** for 2–4 players (keyboard + gamepads): top/bottom halves for two, corners for three or four, a live spectator view in the spare corner for three, one shared minimap,
 - **Mario Kart style Versus:** pick how many races (1–16), then each track from one screen listing every cup; points add up over the set,
 - **eight vehicle models**, built procedurally after the roster art, with support for swapping in your own `.glb` models,
@@ -37,10 +38,13 @@ Running `scenes/race/race.tscn` directly (**F6**) still starts a Versus race usi
 | Use selected weapon | Space | LB / L1 |
 | Trick (in the air off a ramp) | E | Y / Triangle |
 | Pause menu | Esc | Start / Options |
-| Menu buttons | Enter, mouse, arrow keys | A / Cross, D-pad |
+| Menu buttons (incl. pause, podium, results) | Enter, mouse, arrow keys | A / Cross, D-pad or left stick |
+| Menu back | Esc | B / Circle |
 
 Arrow keys are an extra convenience on top of the GDD's bindings. Space doesn't press menu buttons, so firing
 weapons as you cross the line can't skip the results screen. The results buttons also wait 1.5 s before they respond.
+Godot's built-in `ui_accept` / `ui_cancel` have no gamepad buttons, so `InputSetup` adds A and B to them.
+The podium ceremony's crown only drops over a human winner.
 
 Every gameplay action can be rebound in **Settings → Controls** (keyboard and gamepad separately; see below).
 Actions are registered at startup by `scripts/core/input_setup.gd`. Any action you define in
@@ -118,7 +122,7 @@ The layout is the `control_points` list on `scenes/tracks/test_circuit.tscn`, sa
 
 ### Game modes
 
-**Cups and tracks (Mario Kart style).** Grand Prix and Versus share one **cup screen** (`CupBoard`, used by `CupSelect` and `TrackSelect`): a row of round **cup badges** (`CupBadge`, drawn in code: a gold-rimmed medallion in the cup's colours with its map: the USA, Europe, Asia, South America) above a panel that previews the focused cup's races (the cup's trophy, then a card per race with its outline, location and your best time). Moving across the badges previews each cup; opening one (click, Enter or A) moves into the panel, and Back returns to the badges. **Grand Prix** confirms the cup with **START GRAND PRIX**, then goes to the setup screen and races the whole cup (a cup locked for Grand Prix is greyed with a padlock and can't be confirmed). **Versus** starts on the setup screen (car, race type, **number of races**, laps, NPC difficulty, weapons), then the cup screen: open a cup and pick a race, or open the **"?" Random badge** for a RANDOM card. All three cups are fully playable: the **American Cup** (Vegas Overdrive, Six Flags New Orleans, The Stacks), the **Europe Cup** (Hoia Baciu Run, Catacombs Descent, Vatnajökull Glacier) and the **Asia Cup** (Arashiyama Circuit, Crazy House). The Europe Cup was the World Cup; its resource keeps the old file name and id (`world_circuit`) so saved results carry over. A cup can be greyed out as "coming soon" with `locked = true` on its resource. Each cup is data (`resources/grand_prix/*.tres`, listed in `GrandPrixData.CUPS`); its `emblem` picks the trophy picture. The Test Circuit isn't in a cup: it's the Practice track.
+**Cups and tracks (Mario Kart style).** Grand Prix and Versus share one **cup screen** (`CupBoard`, used by `CupSelect` and `TrackSelect`): a row of round **cup badges** (`CupBadge`, drawn in code: a gold-rimmed medallion in the cup's colours with its map: the USA, Europe, Asia, South America, Africa) above a panel that previews the focused cup's races (the cup's trophy, then a card per race with its outline, location and your best time). Moving across the badges previews each cup; opening one (click, Enter or A) moves into the panel, and Back returns to the badges. **Grand Prix** confirms the cup with **START GRAND PRIX**, then goes to the setup screen and races the whole cup (a cup locked for Grand Prix is greyed with a padlock and can't be confirmed). **Versus** starts on the setup screen (car, race type, **number of races**, laps, NPC difficulty, weapons), then the cup screen: open a cup and pick a race, or open the **"?" Random badge** for a RANDOM card. All three cups are fully playable: the **American Cup** (Vegas Overdrive, Six Flags New Orleans, The Stacks), the **Europe Cup** (Hoia Baciu Run, Catacombs Descent, Vatnajökull Glacier) and the **Asia Cup** (Arashiyama Circuit, Crazy House). The Europe Cup was the World Cup; its resource keeps the old file name and id (`world_circuit`) so saved results carry over. A cup can be greyed out as "coming soon" with `locked = true` on its resource. Each cup is data (`resources/grand_prix/*.tres`, listed in `GrandPrixData.CUPS`); its `emblem` picks the trophy picture. The Test Circuit isn't in a cup: it's the Practice track.
 
 - **Versus** (GDD §2.1): you start eighth. Pick **1, 2, 3, 4, 6, 8, 12 or 16 races**. With one race, the results offer **Race again** or the menu. With more, the track screen comes back before each race ("RACE 2 OF 4", with the points so far), points and grids work like a Grand Prix, and the last results name the series winner. A series isn't saved; each race pays its normal coins.
 - **Grand Prix** (GDD §2.2): the *American Cup*, the *Europe Cup* (three races each) or the *Asia Cup* (two races), three laps per race. The cup-win bonus is 100 coins for three races, scaled by the cup's race count.
@@ -262,7 +266,14 @@ The race HUD is built from small parts in `scripts/ui/hud/`, coordinated by `Rac
 
 There are no control instructions on the HUD; the controls (from your current bindings) are in the pause menu.
 
-**Results screen:** the mode and track, a big placement (1ST PLACE / VICTORY!, PODIUM!, RACE COMPLETE, ELIMINATED, CHAMPION!), tiles for race time, best lap and coins earned, NEW PERSONAL BEST!, the final standings with your row highlighted (points, championship standings and the next grid in a Grand Prix), the coin breakdown and new balance, then **Race again / Next race** (filled) and **Main menu** (outlined). It animates in over about 1.5 s; Enter / A or a click skips to the end.
+**Results screen** (single player, `NeonResultsScreen`, after `reference files/Cyberwave 2199 Race Results.png`), over the dimmed race:
+- **Left card:** your placement in big letters between gold laurels ("P3", then "3RD PLACE" and VICTORY! / PODIUM! / ...), your car, the track's picture with its name and mode, and YOUR TIME / BEST LAP / LAPS / COINS rows with gold NEW BEST tags. Your new coin balance and anything newly affordable sit under the card.
+- **Table:** every racer, with a gold / silver / bronze place badge, their car in its own paint (rendered when the screen opens, by `CarThumbnails.request_looks`), name, total time and best lap. Your row is magenta.
+- **Buttons:** **Race again / Next race** and **Main menu**.
+- **Grand Prix and Versus sets** are two pages, as in Mario Kart: the race with +points, then Continue shows the standings (rows slide into points order, totals count up), then Continue goes on.
+- It animates in over about 1.5 s; Enter / A or a click skips to the end.
+
+Split screen keeps the simpler shared results screen (`ResultsScreen`).
 
 **Style:** `UIStyle` (`scripts/ui/ui_style.gd`) holds the colour system (magenta = you / selection / drifting, cyan = boost / speed / navigation, gold = coins and rewards, orange-red = warnings), translucent purple panels with thin neon borders, and the fonts: **Oxanium** for headings and big numbers, **Rajdhani** for everything else (the project theme, `resources/ui/cyberwave_theme.tres`). Both fonts are under the SIL Open Font License (`assets/fonts/*-OFL.txt`). Menus fade in and buttons have a focus glow and a small pop.
 
@@ -411,6 +422,26 @@ South America Cup race 3. A 3.3 km race through an **Inca village in a green And
 - Boost pad with item boxes on the start straight, a terrace-step jump after the shortcut rejoins, a boost ring after the plaza.
 - **No race music yet** (silent until a track is chosen).
 - Built from code: `ChoquequiraoScenery` with three new reusable builders in `scripts/track/scenery/`: `TerraceBuilder` (stepped terraces along any road, each side reaching to the halfway line to the next lane), `IncaBuildingBuilder` (gabled houses, qolqas, great hall, usnu) and `IncaGateway`; plus `TrackScenery.add_prism` / `add_quad`. The valley is `SceneryTerrain` lifted by a distance-to-road field that stays under the terraces and rises to mountains. Checks: `tests/test_choquequirao.gd`.
+#### Kilwa Kisiwani Ruins (GDD §8.6g)
+
+Africa Cup race 1. A 3 km race through the ruins of the medieval Swahili city on its island off Tanzania, **late on a mildly overcast afternoon**: Poly Haven's kloofendal overcast sky, a low warm sun from the west-south-west (22° up) with soft shadows, and warm haze. The layout is a **maze**: about twenty right-angle corners, a **22 m road** and walls along it. A little of the lap is in the village; the rest is inside the ruins.
+- **Old stone with a Persian feel.** Coral rag (rough fieldstone with peeling lime plaster) for the walls; dressed coral blocks for the piers, arch rings and frames. Pointed two-centred arches, domes, pointed niches and stepped Omani crenellations.
+- **Village:** about 500 one-storey houses, most with steep makuti palm-thatch roofs and some flat or ruined, with carved doors, palms, baobabs and red flame trees. The start straight and a jog through the streets.
+- **Great Mosque:** a walled forecourt with an ablution tank, a tall pointed portal, then the **hypostyle hall**. This is a 12 m grid of square piers with pointed arcades both ways, threaded by the road three times.
+  - **Columns stand in the middle of the road** on the straight aisles (19 of them, about 10 m gaps either side). They are solid (`TrackCircuit.road_columns`), and the AI's racing line, recovery spots and Overdrive flights steer round them.
+  - Flat vaults with saucer domes overhead, domed bays, and a few collapsed bays open to the sky. One fallen dome has a tree growing up through it.
+- **Husuni Kubwa palace:** a portal, walled lanes lined with niches, a vaulted gallery, the octagonal bathing pool (its spill floods the road edge) and a terrace jump.
+- **Shore straight:** a sea wall, beach and dhows on the channel, the crenellated Makutani walls, and a great gateway arch over the boost ring.
+- **Shortcuts:**
+  - the **Gereza fort yard** (11 m): in at a pointed gate, past the round tower, rusty cannons and a fallen beam, saving about 130 m, with a smashable barricade;
+  - the **Small Domed Mosque aisle** (10 m): a U-turn under small domes with a line of coins, saving about 80 m.
+- **No race music yet.**
+- Built from code: `KilwaScenery` with new reusable builders in `scripts/track/scenery/`:
+  - `PointedArch` (pointed arcade walls, niches, domes, stepped merlons);
+  - `HypostyleHallBuilder` (pier grid, arcades, domed / collapsed bays, `is_roofed`);
+  - `SwahiliHouseBuilder`.
+  The layout comes from a generator script (orthogonal route with filleted corners, columns on the grid). Checks: `tests/test_kilwa_kisiwani.gd`.
+
 #### Six Flags New Orleans (GDD §8.2)
 
 A 3.1 km circuit through a **realistic, eerie, abandoned amusement park**, after the real park left to rot after Hurricane Katrina. It goes for believable decay, not supernatural effects. The only clean light is the illegal racing neon on the barriers, dimmed to fit the scene. The road is 18 m wide.

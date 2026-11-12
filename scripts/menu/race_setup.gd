@@ -27,11 +27,10 @@ static func describe(p_mode: RaceConfig.Mode, races: int = 1, npcs: bool = true)
 			lines.append("GRAND PRIX: every race in a cup. Points after every race (15, 12, 10, 8, 6, 4, 2, 1). "
 					+ "Each race starts in the order the last one finished. Most points wins the cup.")
 		RaceConfig.Mode.ELIMINATION:
-			lines.append("ELIMINATION: always 3 laps. At the halfway gate of every lap, the last two cars "
-					+ "across it are knocked out (8, then 6, then 4, then 2 left). The final two race to the "
-					+ "line for the win. Needs NPCs to fill the grid.")
+			lines.append("ELIMINATION: 3 laps total. At each checkpoint, slower players are knocked out of the "
+					+ "race until there is only one victor. Requires NPCs to fill the grid.")
 		_:
-			lines.append("STANDARD: pick any track, race the laps you chose, first across the line wins.")
+			lines.append("STANDARD: Compete for the fastest time.")
 	if p_mode != RaceConfig.Mode.GRAND_PRIX and races > 1:
 		lines.append("%d RACES: pick a track before each one. Points add up like a Grand Prix and the most points wins the set." % races)
 	if not npcs:
@@ -190,8 +189,6 @@ func _update_note() -> void:
 				lines.append("Your best result: P%d" % best)
 			if Championship.load_saved() != null:
 				lines.append("Starting a new Grand Prix replaces the saved one.")
-		_:
-			lines.append("Next: you'll pick the track from every cup.")
 	_note.text = "\n".join(lines)
 
 
@@ -264,7 +261,7 @@ func _build() -> void:
 	weapons_row.add_theme_constant_override("margin_right", 14)
 	rows.add_child(weapons_row)
 	rows.add_child(_note_box())
-	_start = SetupWidgets.gold_action("Start Grand Prix" if is_grand_prix() else "Next: Pick a Track", start)
+	_start = SetupWidgets.gold_action("Start Grand Prix" if is_grand_prix() else "Track Selection", start)
 	left.add_child(_start)
 
 	# Right: the car.

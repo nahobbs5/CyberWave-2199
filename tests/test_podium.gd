@@ -28,6 +28,7 @@ func _run_all() -> void:
 	await _test_when()
 	_test_sequence()
 	await _test_grand_prix_ceremony()
+	await _test_ai_winner_and_pad()
 	await _test_split_screen()
 	await _test_versus_race()
 	Championship.clear_save()
@@ -93,6 +94,17 @@ func _press_accept() -> void:
 		var event := InputEventKey.new()
 		event.physical_keycode = KEY_ENTER
 		event.keycode = KEY_ENTER
+		event.pressed = pressed
+		Input.parse_input_event(event)
+		await process_frame
+		await process_frame
+
+
+## Gamepad A (pressed then released), as an Xbox pad sends it.
+func _press_pad_a() -> void:
+	for pressed in [true, false]:
+		var event := InputEventJoypadButton.new()
+		event.button_index = JOY_BUTTON_A
 		event.pressed = pressed
 		Input.parse_input_event(event)
 		await process_frame
@@ -206,6 +218,29 @@ func _test_grand_prix_ceremony() -> void:
 	await _end(race)
 
 
+## An AI rival wins the cup: no crown. Gamepad A skips the ceremony, then
+## continues to the results.
+func _test_ai_winner_and_pad() -> void:
+	_current = "AI winner, gamepad"
+	print("- " + _current)
+	var race := await _start(_config(RaceConfig.Mode.GRAND_PRIX))
+	race.championship = _finished_cup([4, RaceConfig.PLAYER_ID, 2, 0, 1, 3, 5, 6] as Array[int])
+	var ceremony := PodiumCeremony.open_then(race, race.race_hud.results, 0.0)
+	var frames := 0
+	while (not ceremony.root.visible or ceremony._since_shown < PodiumCeremony.INPUT_GRACE) and frames < 600:
+		await process_frame
+		frames += 1
+	var stage := ceremony.stage
+	_check(not stage.winner_is_human(), "the winner is an AI rival")
+	_check(Music.current_path() == Music.VICTORY, "victory music plays even when an AI wins")
+	await _press_pad_a()
+	_check(ceremony.is_prompt_shown(), "gamepad A skips to the Continue prompt")
+	_check(not stage.crown.visible, "no crown for an AI winner")
+	await _press_pad_a()
+	_check(race.race_hud.is_results_visible() and ceremony.is_finished(), "gamepad A again opens the results")
+	await _end(race)
+
+
 ## Drive in, then 3rd rises, 3rd's name, 2nd rises, 2nd's name, 1st rises,
 ## 1st's name, then the crown; nothing overlaps.
 func _test_sequence() -> void:
@@ -248,6 +283,7 @@ func _test_split_screen() -> void:
 	_check(ceremony != null and not ceremony.grand and ceremony.mode_text.begins_with("VERSUS SET"),
 			"a set gets the shorter Versus ceremony (%s)" % ceremony.mode_text)
 	await process_frame
+	_check(Music.current_path() == Music.VICTORY, "split screen plays the victory music (%s)" % Music.current_path())
 	ceremony.skip()
 	await process_frame
 	_check((ceremony.tags[0].find_child("Ribbon", true, false) as Label).text == "SET WINNER", "SET WINNER ribbon")

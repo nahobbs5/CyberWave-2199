@@ -11,6 +11,7 @@ const CUPS: Array[String] = [
 	"res://resources/grand_prix/world_circuit.tres",
 	"res://resources/grand_prix/asia_circuit.tres",
 	"res://resources/grand_prix/south_america_circuit.tres",
+	"res://resources/grand_prix/africa_circuit.tres",
 ]
 
 @export var id: String = "grand_prix"
@@ -22,8 +23,8 @@ const CUPS: Array[String] = [
 @export_range(1, 9) var laps: int = 3
 ## Not playable yet (tracks still to be built).
 @export var locked: bool = false
-## Picture on the cup's trophy: "usa", "europe" (maps), "japan" (rising
-## sun) or "globe".
+## Picture on the cup's trophy: "usa", "europe", "asia", "south_america",
+## "africa" (maps), "japan" (rising sun) or "globe".
 @export var emblem: String = ""
 
 

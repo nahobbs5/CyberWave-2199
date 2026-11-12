@@ -120,6 +120,8 @@ func _physics_process(delta: float) -> void:
 	_choose_shortcut(offset)
 	var sc_distance := _shortcut_distance(pos, offset)
 	var target := line.point_at(offset + lookahead, profile.line_bias + wander + _avoid)
+	if not track.column_spots.is_empty() and _shortcut == null:
+		target = _dodge_columns(pos, offset, my_lateral, offset + lookahead, target)
 	if _shortcut != null:
 		target = _shortcut_target(sc_distance + lookahead, wander * 0.3 + _avoid * 0.5, target)
 	var to_target := target - pos
@@ -299,3 +301,37 @@ func _clear_inputs() -> void:
 
 func _on_boost_started(_level: int) -> void:
 	drift_boosts += 1
+
+
+## Road columns (a hypostyle hall): keeps the steering target on the racing
+## line's side of every column between the car and the target, so traffic
+## dodges and wander never aim the car at one.
+func _dodge_columns(pos: Vector3, offset: float, my_lateral: float, target_offset: float, target: Vector3) -> Vector3:
+	var span := track.wrapped_delta(offset, target_offset)
+	for c in track.column_spots:
+		var ahead := track.wrapped_delta(offset, c.x)
+		if ahead < -c.z or ahead > span:
+			continue
+		var line_lat := line.lateral_at(c.x)
+		var side := 1.0 if line_lat >= c.y else -1.0
+		# Lateral of the straight path car -> target where it passes the column.
+		var target_lat := (target - track.get_center_at(target_offset)).dot(
+				track.get_tangent_at(target_offset).cross(Vector3.UP).normalized())
+		var t := clampf(ahead / maxf(span, 0.1), 0.0, 1.0)
+		var pass_lat := lerpf(my_lateral, target_lat, t)
+		var reach := c.z + RacingLine.COLUMN_MARGIN
+		if (pass_lat - c.y) * side >= reach:
+			continue
+		# Aim at the gap beside the column instead.
+		var safe := track.dodge_columns(c.x, c.y + side * (reach + 0.4), RacingLine.COLUMN_MARGIN, side)
+		var r := track.get_tangent_at(c.x).cross(Vector3.UP).normalized()
+		var aim := track.get_center_at(c.x) + r * safe
+		aim.y = target.y
+		if ahead > 2.0:
+			return aim
+		# Already level with it: aim past it on that side.
+		var past := c.x + c.z + 6.0
+		var r2 := track.get_tangent_at(past).cross(Vector3.UP).normalized()
+		return track.get_center_at(past) + r2 * safe
+	return target
+

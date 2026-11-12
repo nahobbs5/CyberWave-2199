@@ -1,10 +1,12 @@
 class_name CarThumbnails
 extends RefCounted
-## Small pictures of every car in its stock colours, for the split-screen
-## car strip. There are no car image files, so the first request renders
-## them once in a hidden SubViewport (front three-quarter view, transparent
-## background) and keeps them for the rest of the run. Headless runs have
-## no renderer, so nothing is cached there and the strip draws empty frames.
+## Small pictures of cars: every car in its stock colours (the split-screen
+## car strip), or each racer's car in its own look (the results table, see
+## request_looks). There are no car image files, so they're rendered in a
+## hidden SubViewport (front three-quarter view, transparent background).
+## Stock pictures are kept for the rest of the run; look pictures only until
+## the next request_looks. Headless runs have no renderer, so nothing is
+## rendered there and callers draw empty frames.
 
 const SIZE := Vector2i(240, 128)
 
@@ -12,6 +14,10 @@ const SIZE := Vector2i(240, 128)
 static var _cache: Dictionary = {}
 static var _busy: bool = false
 static var _waiters: Array[Callable] = []
+## Racer id -> Texture2D, from the last request_looks.
+static var _look_cache: Dictionary = {}
+## Bumped by each request_looks, so an older render that finishes late is dropped.
+static var _look_job: int = 0
 
 
 ## The car's picture, or null while it isn't rendered (yet).
@@ -37,9 +43,77 @@ static func request(tree: SceneTree, on_ready: Callable) -> void:
 		_render(tree)
 
 
+## A racer's picture from the last request_looks, or null (not yet / headless).
+static func get_look_texture(id: int) -> Texture2D:
+	return _look_cache.get(id)
+
+
+## Renders a picture per racer: `looks` is racer id -> RaceManager.racer_look()
+## dictionary. `sizes` (optional) gives some ids a bigger picture (Vector2i).
+## Calls `on_ready` once they're all done (never when there's no renderer).
+static func request_looks(tree: SceneTree, looks: Dictionary, on_ready: Callable, sizes: Dictionary = {}) -> void:
+	_look_cache.clear()
+	_look_job += 1
+	if DisplayServer.get_name() == "headless" or looks.is_empty():
+		return
+	_render_looks(tree, looks, on_ready, sizes, _look_job)
+
+
+static func _render_looks(tree: SceneTree, looks: Dictionary, on_ready: Callable, sizes: Dictionary, job: int) -> void:
+	var stage := _make_stage(tree, SIZE)
+	var vp: SubViewport = stage[0]
+	var car: VehicleController = stage[1]
+	for id in looks:
+		vp.size = sizes.get(id, SIZE)
+		RaceManager.apply_look(car, looks[id])
+		_lower_wheels(car)
+		await tree.process_frame
+		await RenderingServer.frame_post_draw
+		await RenderingServer.frame_post_draw
+		if job != _look_job:
+			vp.queue_free()
+			return
+		var img := vp.get_texture().get_image()
+		if img != null and not img.is_empty():
+			_look_cache[id] = ImageTexture.create_from_image(img)
+	vp.queue_free()
+	if job == _look_job and on_ready.is_valid():
+		on_ready.call()
+
+
+static func _lower_wheels(car: VehicleController) -> void:
+	for child in car.get_children():
+		if child.name.begins_with("Wheel"):
+			var wheel_pivot := child.get_node_or_null("Pivot") as Node3D
+			if wheel_pivot != null:
+				wheel_pivot.position.y = -0.38
+
+
 static func _render(tree: SceneTree) -> void:
+	var stage := _make_stage(tree, SIZE)
+	var vp: SubViewport = stage[0]
+	var car: VehicleController = stage[1]
+	for v in VehicleCatalog.all():
+		VehicleCosmetics.apply(car, v, {}, "")
+		await tree.process_frame
+		await RenderingServer.frame_post_draw
+		await RenderingServer.frame_post_draw
+		var img := vp.get_texture().get_image()
+		if img != null and not img.is_empty():
+			_cache[v.id] = ImageTexture.create_from_image(img)
+	vp.queue_free()
+	_busy = false
+	var waiting := _waiters.duplicate()
+	_waiters.clear()
+	for w: Callable in waiting:
+		if w.is_valid():
+			w.call()
+
+
+## The hidden picture stage: [SubViewport, car].
+static func _make_stage(tree: SceneTree, px: Vector2i) -> Array:
 	var vp := SubViewport.new()
-	vp.size = SIZE
+	vp.size = px
 	vp.own_world_3d = true
 	vp.transparent_bg = true
 	vp.msaa_3d = Viewport.MSAA_4X
@@ -75,23 +149,5 @@ static func _render(tree: SceneTree) -> void:
 	car.player_controlled = false
 	car.is_player = false
 	pivot.add_child(car)
-	for child in car.get_children():
-		if child.name.begins_with("Wheel"):
-			var wheel_pivot := child.get_node_or_null("Pivot") as Node3D
-			if wheel_pivot != null:
-				wheel_pivot.position.y = -0.38
-	for v in VehicleCatalog.all():
-		VehicleCosmetics.apply(car, v, {}, "")
-		await tree.process_frame
-		await RenderingServer.frame_post_draw
-		await RenderingServer.frame_post_draw
-		var img := vp.get_texture().get_image()
-		if img != null and not img.is_empty():
-			_cache[v.id] = ImageTexture.create_from_image(img)
-	vp.queue_free()
-	_busy = false
-	var waiting := _waiters.duplicate()
-	_waiters.clear()
-	for w: Callable in waiting:
-		if w.is_valid():
-			w.call()
+	_lower_wheels(car)
+	return [vp, car]

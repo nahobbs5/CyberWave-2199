@@ -342,6 +342,11 @@ func _test_cups() -> void:
 	for shape in TrophyIcon.europe_polygons(Rect2(0, 0, 100, 60)):
 		europe_ok = europe_ok and shape.size() >= 5 and not Geometry2D.triangulate_polygon(shape).is_empty()
 	_check(europe_ok and TrophyIcon.europe_polygons(Rect2(0, 0, 100, 60)).size() == 4, "Europe map: mainland, Britain, Ireland, Iceland")
+	var africa := GrandPrixData.cup_by_path(GrandPrixData.CUPS[4])
+	var africa_ok := africa.display_name == "Africa Cup" and africa.emblem == "africa"
+	for shape in TrophyIcon.africa_polygons(Rect2(0, 0, 100, 60)):
+		africa_ok = africa_ok and shape.size() >= 5 and not Geometry2D.triangulate_polygon(shape).is_empty()
+	_check(africa_ok and TrophyIcon.africa_polygons(Rect2(0, 0, 100, 60)).size() == 2, "Africa Cup with a map of Africa and Madagascar")
 	# Grand Prix: the cup screen shows the trophies.
 	GameSession.setup_mode = RaceConfig.Mode.GRAND_PRIX
 	GameSession.cup_path = ""
@@ -362,7 +367,7 @@ func _test_cups() -> void:
 	cups.open(2)
 	await _frames(1)
 	_check(cups.board.confirm_button.has_focus(), "opening a cup focuses START GRAND PRIX")
-	var sa := GrandPrixData.CUPS.find("res://resources/grand_prix/south_america_circuit.tres")
+	var sa := GrandPrixData.CUPS.find("res://resources/grand_prix/africa_circuit.tres")
 	if sa >= 0:
 		cups.board.preview(sa)
 		_check(cups.board.confirm_button.disabled and (cups.cards[sa].find_child("Badge", true, false) as CupBadge).locked,
@@ -486,10 +491,10 @@ func _test_neon_setup() -> void:
 		var thumb := card.find_child("Thumbnail", true, false) as TrackThumbnail
 		photos_ok = photos_ok and thumb != null and thumb.outline.size() >= 3 and card.number > 0
 	_check(photos_ok, "every built card has its number and outline (mini map or fallback)")
-	var shut := GrandPrixData.CUPS.find("res://resources/grand_prix/south_america_circuit.tres")
+	var shut := GrandPrixData.CUPS.find("res://resources/grand_prix/africa_circuit.tres")
 	if shut >= 0:
 		var art := cups.cards[shut].find_child("Badge", true, false) as CupBadge
-		_check(art.locked and art.title == "SOUTH AMERICA CUP", "the locked cup's card is titled and padlocked")
+		_check(art.locked and art.title == "AFRICA CUP", "the locked cup's card is titled and padlocked")
 	cups.queue_free()
 	await process_frame
 
@@ -823,11 +828,29 @@ func _test_results(race: RaceManager) -> void:
 	_check(results.best_banner.visible, "first race is a personal best")
 	var player_rows := 0
 	for i in results._rows.size():
-		var style := results._rows[i].get_theme_stylebox("panel") as StyleBoxFlat
-		if style.border_color == UIStyle.MAGENTA:
+		var row := results._rows[i] as NeonResultsScreen.ResultRow
+		if row != null and row.visible and row.mine:
 			player_rows += 1
 			_check((results._cells[i][1] as Label).text == "You", "your row is highlighted")
 	_check(player_rows == 1, "exactly one highlighted row")
+	var neon := results as NeonResultsScreen
+	_check(neon != null, "single player uses the neon results")
+	if neon != null:
+		_check(neon.big_place.text == "P%d" % p.finish_position, "big placement (%s)" % neon.big_place.text)
+		_check(neon.track_label.text == "TEST CIRCUIT" and neon.mode_label.text == "VERSUS RACE",
+				"track and mode in the card (%s / %s)" % [neon.track_label.text, neon.mode_label.text])
+		_check(neon.laps_value.text == "%d / %d" % [race.total_laps, race.total_laps], "laps row (%s)" % neon.laps_value.text)
+		_check(neon.balance_label.text.begins_with("Balance %s" % NeonResultsScreen._thousands(int(r.coins_after))),
+				"new balance under the card (%s)" % neon.balance_label.text)
+		_check(neon.time_best_tag.visible, "NEW BEST tag on your time")
+		_check(neon._header_cells[3].text == "TOTAL TIME" and neon._header_cells[5].text == "", "race columns, no points outside a cup")
+		var badges_ok := true
+		for i in neon._rows.size():
+			var row := neon._rows[i] as NeonResultsScreen.ResultRow
+			if row.visible:
+				badges_ok = badges_ok and row.place == i + 1
+		_check(badges_ok and NeonResultsScreen.place_color(1) == UIStyle.GOLD and NeonResultsScreen.place_color(3) == NeonResultsScreen.BRONZE,
+				"gold / silver / bronze place badges")
 	# Other placements' wording.
 	p.finish_position = 5
 	_check(results.placement_subtitle() == "RACE COMPLETE", "P5: race complete")

@@ -134,7 +134,8 @@ func _physics_process(delta: float) -> void:
 			# Fly the road; when the target can't be hit, hover behind it.
 			var limit := gap - (WAIT_BEHIND if not available else 0.0)
 			_route += clampf(speed * delta, 0.0, maxf(limit, 0.0)) if limit > 0.0 else 0.0
-			var goal := track.get_safe_transform(track.wrap_offset(_route), 0.0, CRUISE_HEIGHT).origin
+			var route := track.wrap_offset(_route)
+			var goal := track.get_safe_transform(route, track.column_route_lateral(route), CRUISE_HEIGHT).origin
 			_move_toward(goal, speed * 1.2, delta)
 			if available and gap < HOMING_DISTANCE:
 				phase = Phase.WARNING

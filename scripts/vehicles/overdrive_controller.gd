@@ -171,7 +171,8 @@ func _step(delta: float) -> void:
 			height = cruise
 		State.DESCENDING:
 			height = lerpf(_land_height, GROUND_HEIGHT, smoothstep(0.0, 1.0, state_time / maxf(descend_time, 0.01)))
-	var xf := track.get_safe_transform(track.wrap_offset(route_offset), 0.0, height)
+	var route := track.wrap_offset(route_offset)
+	var xf := track.get_safe_transform(route, track.column_route_lateral(route), height)
 	if state == State.ACTIVATING:
 		# Ease off the spot the car was on (another lane, a shortcut) onto the route.
 		var t := smoothstep(0.0, 1.0, state_time / maxf(activate_time, 0.01))
@@ -185,7 +186,8 @@ func _step(delta: float) -> void:
 ## Picks the touchdown point a little ahead; true if it's safe.
 func _find_landing() -> bool:
 	var touch_offset := route_offset + speed * descend_time
-	var xf := track.get_safe_transform(track.wrap_offset(touch_offset), 0.0, GROUND_HEIGHT)
+	var touch := track.wrap_offset(touch_offset)
+	var xf := track.get_safe_transform(touch, track.column_route_lateral(touch), GROUND_HEIGHT)
 	if not track.is_on_road(xf.origin) or _near_ramp(touch_offset):
 		return false
 	for node in vehicle.get_tree().get_nodes_in_group(VehicleController.GROUP):

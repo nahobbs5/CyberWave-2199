@@ -339,9 +339,9 @@ func _test_lobby() -> void:
 	_check(setup.player_pills.size() == GameSession.mp_devices.size(), "a pill per player with their car")
 	_check(setup._mode is NeonStepper and setup._ai is NeonToggle and setup._weapons is NeonToggle,
 			"rows use the single-player steppers and toggles")
-	_check(setup.next_button.text == "Next: Pick a Track" and setup._laps_row.visible, "Versus: Next picks a track; laps shown")
+	_check(setup.next_button.text == "Track Selection" and setup._laps_row.visible, "Versus: Next picks a track; laps shown")
 	setup.set_mode(true)
-	_check(setup.next_button.text == "Next: Pick a Cup" and not setup._laps_row.visible and not setup._races_row.visible,
+	_check(setup.next_button.text == "Cup Selection" and not setup._laps_row.visible and not setup._races_row.visible,
 			"Grand Prix: Next picks a cup; no laps or races rows")
 	setup.set_mode(false)
 	_check(not labels.any(func(t: String) -> bool: return t.begins_with("No coins")), "no 'No coins or records' line")
@@ -574,6 +574,9 @@ func _test_series() -> void:
 	_check(PlayerProfile.get_profile().coins > coins_before, "single player still earns the race's coins")
 	await process_frame
 	await process_frame
+	# Single player: the race page first, then the standings page (Mario Kart style).
+	_check(race.race_hud.get_continue_text() == "Standings", "results show the race first (%s)" % race.race_hud.get_continue_text())
+	(race.race_hud.results as NeonResultsScreen).show_standings()
 	_check(race.race_hud.get_continue_text() == "Next race: pick a track", "results offer the next track (%s)" % race.race_hud.get_continue_text())
 	GameSession.series = null
 	race.continue_after_results()

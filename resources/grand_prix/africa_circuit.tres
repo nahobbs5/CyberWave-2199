@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="GrandPrixData" format=3]
+
+[ext_resource type="Script" path="res://scripts/race/grand_prix_data.gd" id="1_gp"]
+
+[resource]
+script = ExtResource("1_gp")
+id = "africa_circuit"
+display_name = "Africa Cup"
+emblem = "africa"
+track_names = PackedStringArray("Kilwa Kisiwani Ruins")
+locations = PackedStringArray("Kilwa Kisiwani, Tanzania")
+track_scenes = PackedStringArray("res://scenes/tracks/kilwa_kisiwani.tscn")
+locked = true

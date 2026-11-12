@@ -319,10 +319,11 @@ func _find_clear_transform(offset: float) -> Transform3D:
 		Vector2(-16.0, 0.0),
 	]
 	for candidate in candidates:
-		var xf := track.get_safe_transform(offset + candidate.x, candidate.y, spawn_height)
+		var lat := track.dodge_columns(offset + candidate.x, candidate.y, 2.5)
+		var xf := track.get_safe_transform(offset + candidate.x, lat, spawn_height)
 		if _is_clear(xf):
 			return xf
-	return track.get_safe_transform(offset, 0.0, spawn_height + 2.0)
+	return track.get_safe_transform(offset, track.column_route_lateral(offset), spawn_height + 2.0)
 
 
 func _is_clear(xf: Transform3D) -> bool:

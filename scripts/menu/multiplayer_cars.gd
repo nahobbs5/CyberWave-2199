@@ -30,7 +30,7 @@ var plate_labels: Array[Label] = []
 var previews: Array[VehiclePreview] = []
 var cards: Array[CarCard] = []
 var layout: NeonScreenLayout
-## The gold "Next: Race Setup" button (enabled when everyone is ready).
+## The gold "Race Setup" button (enabled when everyone is ready).
 var next_button: NeonMenuButton
 ## The ALL READY banner (shown while everyone is ready).
 var confirm_banner: PanelContainer
@@ -393,7 +393,7 @@ func _build() -> void:
 		for i in slots.size():
 			row.add_child(_make_card(i, true))
 
-	next_button = MultiplayerWidgets.next_button("Next: Race Setup", func() -> void:
+	next_button = MultiplayerWidgets.next_button("Race Setup", func() -> void:
 		if all_ready():
 			continue_to_setup())
 	next_button.font_size = 26

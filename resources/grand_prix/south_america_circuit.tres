@@ -10,4 +10,4 @@ emblem = "south_america"
 track_names = PackedStringArray("Parque Quinta Normal", "Vale da Lua", "Choquequirao")
 locations = PackedStringArray("Santiago, Chile", "Chapada dos Veadeiros, Brazil", "Cusco Region, Peru")
 track_scenes = PackedStringArray("res://scenes/tracks/quinta_normal.tscn", "res://scenes/tracks/vale_da_lua.tscn", "res://scenes/tracks/choquequirao.tscn")
-locked = true
+locked = false

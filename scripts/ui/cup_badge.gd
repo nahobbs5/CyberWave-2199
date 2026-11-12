@@ -22,6 +22,7 @@ const COLORS := {
 	"europe": [Color(0.22, 0.45, 0.95), Color(0.05, 0.1, 0.42)],
 	"asia": [Color(1.0, 0.45, 0.2), Color(0.6, 0.06, 0.1)],
 	"south_america": [Color(0.3, 0.8, 0.3), Color(0.05, 0.38, 0.2)],
+	"africa": [Color(0.98, 0.68, 0.22), Color(0.5, 0.2, 0.06)],
 	"random": [Color(0.75, 0.4, 1.0), Color(0.28, 0.06, 0.48)],
 }
 

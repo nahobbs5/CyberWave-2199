@@ -39,7 +39,11 @@ static func next_button(text: String, on_pressed: Callable) -> NeonMenuButton:
 	b.font_size = 30
 	b.focus_mode = Control.FOCUS_NONE
 	b.pressed.connect(on_pressed)
+	# The offsets set the size; NeonMenuButton's 500 px minimum would push
+	# the right end (and its ">>") off the screen.
+	b.custom_minimum_size = Vector2(240, 58)
 	b.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
+	b.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	b.offset_left = -34 - 470
 	b.offset_right = -34
 	b.offset_top = -86

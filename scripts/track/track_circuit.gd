@@ -129,6 +129,12 @@ signal checkpoint_crossed(index: int, body: Node3D)
 @export var open_edges: PackedVector3Array = PackedVector3Array()
 @export var curb_height: float = 0.25
 @export var curb_color: Color = Color(0.55, 0.36, 0.2)
+@export_group("Road columns")
+## Solid columns standing on the road (a hypostyle hall), each
+## Vector3(x, z, half): track-local centre x and z, then half the square's
+## side. The track builds their colliders and the AI, racing line, recovery
+## and Overdrive steer round them; the scenery draws them.
+@export var road_columns: PackedVector3Array = PackedVector3Array()
 @export_group("")
 ## Ground extends this far beyond the layout's bounds on every side.
 @export var ground_margin: float = 300.0
@@ -139,6 +145,13 @@ var length: float = 0.0
 var shortcuts: Array[TrackShortcut] = []
 
 var _rebuild_queued: bool = false
+## road_columns in road terms: x = main-loop offset, y = lateral (right +),
+## z = half size. Sorted by offset.
+var column_spots: PackedVector3Array = PackedVector3Array()
+## Lateral the road-centre routes (Overdrive, drones) take round the columns,
+## every COLUMN_ROUTE_STEP metres.
+var _column_route := PackedFloat32Array()
+const COLUMN_ROUTE_STEP := 2.0
 
 
 ## Set while the loading screen adds a track: _ready then leaves the build to
@@ -191,6 +204,7 @@ func build_base() -> bool:
 	_build_lights()
 	_build_corner_signs()
 	_build_checkpoints()
+	_build_columns()
 	return true
 
 
@@ -293,6 +307,112 @@ func get_safe_transform(offset: float, lateral: float = 0.0, height: float = 0.9
 	var right := tangent.cross(Vector3.UP).normalized()
 	var pos := get_center_at(offset) + right * lateral + Vector3.UP * height
 	return Transform3D(Basis.looking_at(tangent, Vector3.UP), pos)
+
+
+# --- Road columns ----------------------------------------------------------
+
+func _index_columns() -> void:
+	var spots: Array[Vector3] = []
+	for c in road_columns:
+		var p := Vector3(c.x, 0.0, c.y)
+		var o := curve.get_closest_offset(p)
+		var centre := curve.sample_baked(o)
+		var a := curve.sample_baked(wrap_offset(o - 1.0))
+		var b := curve.sample_baked(wrap_offset(o + 1.0))
+		var right := Vector3(b.x - a.x, 0.0, b.z - a.z).normalized().cross(Vector3.UP)
+		spots.append(Vector3(o, (p - centre).dot(right), c.z))
+	spots.sort_custom(func(x: Vector3, y: Vector3) -> bool: return x.x < y.x)
+	column_spots = PackedVector3Array(spots)
+	_build_column_route()
+
+
+## Lateral pushed clear of any column at this offset: a car `margin` metres
+## wide-ish (half width plus room) is moved to the nearer side of the column
+## (or `prefer_side` when given), staying on the road.
+func dodge_columns(offset: float, lateral: float, margin: float, prefer_side: float = 0.0) -> float:
+	if column_spots.is_empty():
+		return lateral
+	var o := wrap_offset(offset)
+	var limit := road_width * 0.5 - 1.0
+	for c in column_spots:
+		var reach := c.z + margin
+		if absf(wrapped_delta(c.x, o)) > reach:
+			continue
+		if absf(lateral - c.y) >= reach:
+			continue
+		var side := prefer_side if prefer_side != 0.0 else (1.0 if lateral >= c.y else -1.0)
+		var pushed := c.y + side * reach
+		if absf(pushed) > limit:
+			pushed = c.y - side * reach
+		lateral = clampf(pushed, -limit, limit)
+	return lateral
+
+
+## Index of a column within `margin` of a track-local point, or -1.
+func column_near(local: Vector3, margin: float) -> int:
+	for i in road_columns.size():
+		var c := road_columns[i]
+		if absf(local.x - c.x) < c.z + margin and absf(local.z - c.y) < c.z + margin:
+			return i
+	return -1
+
+
+## Lateral for routes that follow the centre line (Overdrive, drones): 0,
+## except it swings smoothly into the middle of the gap beside each column.
+func column_route_lateral(offset: float) -> float:
+	if _column_route.is_empty():
+		return 0.0
+	var f := wrap_offset(offset) / COLUMN_ROUTE_STEP
+	var n := _column_route.size()
+	var i0 := int(f) % n
+	return lerpf(_column_route[i0], _column_route[(i0 + 1) % n], f - floorf(f))
+
+
+func _build_column_route() -> void:
+	_column_route = PackedFloat32Array()
+	if column_spots.is_empty():
+		return
+	var n := maxi(1, int(length / COLUMN_ROUTE_STEP))
+	_column_route.resize(n)
+	var half := road_width * 0.5
+	for i in n:
+		var o := float(i) * COLUMN_ROUTE_STEP
+		var best := 0.0
+		var weight := 0.0
+		for c in column_spots:
+			var d := absf(wrapped_delta(c.x, o))
+			if d > 14.0:
+				continue
+			# Middle of the wider gap beside the column.
+			var left_gap := (c.y - c.z) - (-half)
+			var right_gap := half - (c.y + c.z)
+			var mid := (c.y + c.z + half) * 0.5 if right_gap >= left_gap else (c.y - c.z - half) * 0.5
+			var w := 1.0 - smoothstep(4.0, 14.0, d)
+			if w > weight:
+				weight = w
+				best = mid
+		_column_route[i] = best * weight
+
+
+func _build_columns() -> void:
+	_index_columns()
+	if road_columns.is_empty():
+		return
+	var body := StaticBody3D.new()
+	body.collision_layer = 1
+	body.collision_mask = 0
+	var physics_material := PhysicsMaterial.new()
+	physics_material.friction = 0.1
+	body.physics_material_override = physics_material
+	for c in road_columns:
+		var shape := CollisionShape3D.new()
+		var box := BoxShape3D.new()
+		box.size = Vector3(c.z * 2.0, barrier_collision_height, c.z * 2.0)
+		shape.shape = box
+		var y := curve.sample_baked(curve.get_closest_offset(Vector3(c.x, 0.0, c.y))).y
+		shape.position = Vector3(c.x, y + barrier_collision_height * 0.5, c.y)
+		body.add_child(shape)
+	_add_generated(body, "Columns")
 
 
 func get_spawn_offset() -> float:
