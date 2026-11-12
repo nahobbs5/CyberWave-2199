@@ -223,21 +223,12 @@ func _setup_materials() -> void:
 	material("lantern_glow", Color(1.0, 0.72, 0.38), 2.5)
 	material("paper", Color(1.0, 0.88, 0.66), 1.4)
 	material("shoji", Color(0.96, 0.93, 0.84), 0.25)
-	var river := StandardMaterial3D.new()
-	river.albedo_color = Color(0.06, 0.1, 0.09)
-	river.metallic = 0.5
-	river.roughness = 0.05
-	register_material("river", river)
-	var wet := StandardMaterial3D.new()
-	wet.albedo_color = Color(0.1, 0.11, 0.1, 0.42)
-	wet.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	wet.metallic = 0.35
-	wet.roughness = 0.06
+	register_material("river", water_material(Color(0.03, 0.06, 0.05), Color(0.1, 0.18, 0.15), 0.92, 0.0, 0.3))
+	# Rain-soaked road: a thin film that only shows the drops and the sheen.
+	var wet := water_material(Color(0.06, 0.07, 0.07), Color(0.14, 0.16, 0.16), 0.28, 1.0, 0.0, 0.4)
+	wet.set_shader_parameter("ripple_strength", 0.2)
 	register_material("wet", wet)
-	var puddle := wet.duplicate() as StandardMaterial3D
-	puddle.albedo_color = Color(0.06, 0.08, 0.08, 0.7)
-	puddle.roughness = 0.02
-	register_material("puddle", puddle)
+	register_material("puddle", water_material(Color(0.03, 0.045, 0.045), Color(0.12, 0.15, 0.15), 0.72, 1.0, 0.25))
 	var beam := StandardMaterial3D.new()
 	beam.albedo_color = Color(1.0, 0.92, 0.7, 0.07)
 	beam.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
@@ -344,9 +335,9 @@ func _grove(from: float = 0.0, to: float = 1.0) -> void:
 	clump.seed = random_seed + 11
 	clump.frequency = 0.05
 	var step := 2.5
-	var deep := Color(0.32, 0.52, 0.24)
-	var blue := Color(0.45, 0.58, 0.5)
-	var young := Color(0.6, 0.72, 0.3)
+	var deep := Color(0.38, 0.62, 0.26)
+	var blue := Color(0.42, 0.58, 0.46)
+	var young := Color(0.55, 0.74, 0.3)
 	var olive := Color(0.55, 0.55, 0.35)
 	var straw := Color(0.72, 0.64, 0.42)
 	var done := 0
@@ -382,9 +373,9 @@ func _grove(from: float = 0.0, to: float = 1.0) -> void:
 					toward = to_road.rotated(Vector3.UP, rng.randf_range(-1.2, 1.2))
 				var r := rng.randf()
 				var tint: Color
-				if r < 0.45:
-					tint = deep.lerp(blue, rng.randf() * 0.6)
-				elif r < 0.7:
+				if r < 0.55:
+					tint = deep.lerp(blue, rng.randf() * 0.35)
+				elif r < 0.78:
 					tint = blue.lerp(deep, rng.randf() * 0.4)
 				elif r < 0.88:
 					tint = young.lerp(deep, rng.randf() * 0.5)
@@ -393,9 +384,9 @@ func _grove(from: float = 0.0, to: float = 1.0) -> void:
 				if rng.randf() < 0.03:
 					kind = "dead"
 					tint = straw.lerp(olive, rng.randf() * 0.6)
-				tint = tint.darkened(clampf(e / 42.0, 0.0, 1.0) * 0.5)
+				tint = tint.darkened(clampf(e / 42.0, 0.0, 1.0) * 0.4)
 				p.y = ground_y(p) - 0.15
-				bamboo.place_culm(kind, p, toward, rng.randf_range(0.85, 1.15), tint, rng.randf() < 0.22, e < 15.0)
+				bamboo.place_culm(kind, p, toward, rng.randf_range(0.85, 1.15), tint, rng.randf() < 0.22, e < 12.0)
 
 
 ## Leaf sprays hung high over the covered roads, where the leaning crowns

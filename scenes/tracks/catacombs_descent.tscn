@@ -95,6 +95,7 @@ lateral = -2.5
 anchor_point = Vector3(186, 0, 555)
 width = 7.0
 length = 34.0
+water_tint = Color(0.12, 0.13, 0.15, 1)
 
 [node name="EmpFallenCable" type="Node3D" parent="."]
 script = ExtResource("3_feature")
@@ -111,6 +112,7 @@ lateral = 0
 on_shortcut = "FloodedCrypt"
 width = 10.0
 length = 120.0
+water_tint = Color(0.12, 0.13, 0.15, 1)
 
 [node name="CollapsedRubble" type="Node3D" parent="."]
 script = ExtResource("3_feature")

@@ -12,6 +12,8 @@ extends Node
 ##   override        lower top speed and acceleration, no drift charging;
 ##                   never stacks or extends (System Override)
 ##   shield          blocks the next incoming attack (Firewall)
+##   burnout         jumped the start: no control, smoke and a lazy spin;
+##                   not a hard stun (no protection after)
 ##   wet             standing water: a little slower and less grip (track
 ##                   surface, refreshed while driving through it)
 ## After any hard stun ends, the racer is protected from hard stuns for
@@ -103,6 +105,13 @@ func apply_jam(duration: float) -> void:
 	_start(&"jammed", duration)
 
 
+## Too-early start (rocket start): never blocked.
+func apply_burnout(duration: float) -> void:
+	_start(&"burnout", duration)
+	if _vehicle != null:
+		_vehicle.drift.cancel("burnout")
+
+
 ## Track surface effects (water). Never blocked: a Firewall doesn't keep
 ## you dry. Refreshing an active surface effect just extends it.
 func apply_surface(effect: StringName, duration: float) -> void:
@@ -132,7 +141,7 @@ func active_effects() -> Array:
 ## A stun is spinning (or settling) the bodywork, so other visual body
 ## effects (drift yaw) should leave it alone.
 func body_spin_active() -> bool:
-	return is_stunned() or _spin != 0.0
+	return is_stunned() or has(&"burnout") or _spin != 0.0
 
 
 func is_stunned() -> bool:
@@ -144,7 +153,7 @@ func is_protected() -> bool:
 
 
 func can_drive() -> bool:
-	return not is_stunned()
+	return not is_stunned() and not has(&"burnout")
 
 
 func can_use_weapons() -> bool:
@@ -152,7 +161,7 @@ func can_use_weapons() -> bool:
 
 
 func can_charge_drift() -> bool:
-	return not is_stunned() and not has(&"emp") and not has(&"override")
+	return not is_stunned() and not has(&"burnout") and not has(&"emp") and not has(&"override")
 
 
 func speed_multiplier() -> float:
@@ -272,6 +281,10 @@ func _process(delta: float) -> void:
 		# turns (ramp tricks) aren't overwritten.
 		if is_stunned():
 			_spin += delta * TAU * 2.0
+			body.rotation.y = _spin
+		elif has(&"burnout"):
+			# Jumped the start: one lazy turn, fishtailing.
+			_spin += delta * TAU * 1.0
 			body.rotation.y = _spin
 		elif _spin != 0.0:
 			_spin = move_toward(_spin, roundf(_spin / TAU) * TAU, delta * 12.0)

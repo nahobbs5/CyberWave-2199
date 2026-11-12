@@ -688,7 +688,8 @@ func _test_hud(race: RaceManager) -> void:
 	if pause == null:
 		pause = race.find_children("*", "PauseMenu", true, false).front() if not race.find_children("*", "PauseMenu", true, false).is_empty() else null
 	_check(pause != null and not pause.find_children("*", "ControlsCard", true, false).is_empty(), "controls are in the pause menu")
-	_check(hud.info.coin_label.text == "0" and hud.info.coin_icon.is_visible_in_tree()
+	# Coins are laid out at random, so one may already have been picked up.
+	_check(hud.info.coin_label.text == str(race.coins.collected) and hud.info.coin_icon.is_visible_in_tree()
 			and hud.info.coin_icon.get_global_rect().position.x > hud.info.coin_label.get_global_rect().end.x,
 			"coins: the count with the coin symbol on its right (%s)" % hud.info.coin_label.text)
 	var time_rect := hud.info.time_value.get_global_rect()
@@ -843,7 +844,10 @@ func _test_results(race: RaceManager) -> void:
 		_check(neon.balance_label.text.begins_with("Balance %s" % NeonResultsScreen._thousands(int(r.coins_after))),
 				"new balance under the card (%s)" % neon.balance_label.text)
 		_check(neon.time_best_tag.visible, "NEW BEST tag on your time")
-		_check(neon._header_cells[3].text == "TOTAL TIME" and neon._header_cells[5].text == "", "race columns, no points outside a cup")
+		_check(neon._header_cells[3].text == "PTS" and neon._header_cells[4].text == "TOTAL TIME", "race columns: PTS before the times")
+		var mine := neon._row_ids.find(p.racer_id)
+		_check(mine >= 0 and (neon._cells[mine][2] as Label).text == "+%d" % Championship.points_for(p.finish_position),
+				"your points in a single race (%s)" % ((neon._cells[mine][2] as Label).text if mine >= 0 else "?"))
 		var badges_ok := true
 		for i in neon._rows.size():
 			var row := neon._rows[i] as NeonResultsScreen.ResultRow

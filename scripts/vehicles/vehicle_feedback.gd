@@ -8,6 +8,9 @@ extends Node3D
 ## when a drift starts, the body angled further into the slide (eased in and
 ## out), tyre smoke from the rear wheels while sliding, and a looping skid
 ## hiss for human players.
+## Rocket start: while the engine revs before START (VehicleController
+## start_rev), the exhausts pop with short flames, the rear squats and the
+## body shudders; a burnout (jumped start) pours tyre smoke and hisses.
 ## Replace with real particles and sounds in Phase 6.
 
 @export var spark_flicker_speed: float = 30.0
@@ -35,6 +38,8 @@ var body_hop: float = 0.0
 ## Tyre smoke emitters (rear wheels) and the skid loop.
 var smoke: Array[CPUParticles3D] = []
 var skid_player: AudioStreamPlayer
+## Rev squat currently applied to the body (rad, nose up).
+var rev_pitch: float = 0.0
 ## Neon arches shown while drafting (see SlipstreamRing).
 var ring: SlipstreamRing
 
@@ -104,9 +109,11 @@ func _process(delta: float) -> void:
 
 	_update_drift_body(delta, drifting)
 	var sliding := drifting and _vehicle.grounded_wheels >= 2 and absf(_vehicle.lateral_speed) > 1.0
+	var burnout := _vehicle.status != null and _vehicle.status.has(&"burnout")
+	var rev := _vehicle.start_rev
 	for puff in smoke:
-		puff.emitting = sliding
-	_update_skid(delta, sliding)
+		puff.emitting = sliding or burnout or rev > 0.85
+	_update_skid(delta, sliding or burnout)
 
 	var wet := _vehicle.status != null and _vehicle.status.has(&"wet") and absf(_vehicle.forward_speed) > 6.0
 	for spray in _spray:
@@ -119,11 +126,21 @@ func _process(delta: float) -> void:
 	if boosting:
 		_flame_material.albedo_color = _vehicle.boost_color
 		_flame_material.emission = _vehicle.boost_color
+	# Revving on the grid: short exhaust pops, more and longer as it builds.
+	var pop := 0.0
+	if not boosting and rev > 0.0:
+		var wave := 0.5 + 0.5 * sin(_time * (14.0 + 16.0 * rev)) * sin(_time * 7.3 + 1.1)
+		if wave > 0.85 - 0.45 * rev:
+			pop = (0.25 + 0.45 * rev) * (0.8 + 0.4 * wave)
+		_flame_material.albedo_color = Color(1.0, 0.55, 0.15)
+		_flame_material.emission = Color(1.0, 0.55, 0.15)
 	for flame in _flames:
-		flame.visible = boosting
+		flame.visible = boosting or pop > 0.0
 		if boosting:
 			var length := 0.8 + 0.4 * float(_vehicle.boost_level) + 0.2 * sin(_time * 40.0)
 			flame.scale = Vector3(1.0, length, 1.0)
+		elif pop > 0.0:
+			flame.scale = Vector3(0.8, pop, 0.8)
 
 
 ## Hop on drift entry and the body angled into the slide. Only writes the
@@ -145,7 +162,16 @@ func _update_drift_body(delta: float, drifting: bool) -> void:
 		_vehicle.visual_yaw = 0.0
 		_vehicle.visual_hop = 0.0
 		return
-	body.position.y = _vehicle.body_base_y() + body_hop
+	# Revving: the rear squats and the body shudders with the engine.
+	var rev := _vehicle.start_rev
+	var shudder := 0.0
+	if rev > 0.0:
+		shudder = 0.012 * rev * sin(_time * 55.0) * _vehicle.visual_scale
+	var target_pitch := 0.045 * rev
+	if rev_pitch != 0.0 or target_pitch != 0.0:
+		rev_pitch = move_toward(rev_pitch, target_pitch, delta * 0.4)
+		body.rotation.x = rev_pitch + 0.006 * rev * sin(_time * 47.0)
+	body.position.y = _vehicle.body_base_y() + body_hop + shudder
 	body.rotation.y = body_yaw
 	_vehicle.visual_yaw = body_yaw
 	_vehicle.visual_hop = body_hop

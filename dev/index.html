@@ -1,0 +1,545 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cyberwave 2199 Dev Tracker</title>
+<meta name="description" content="Milestones, backlog, decisions and playtest checklist for Cyberwave 2199, a Godot kart racer.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@500;700;800&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  color-scheme: dark;
+  --bg: #0b0716;
+  --bg-2: #120b24;
+  --panel: rgba(30, 18, 58, 0.78);
+  --panel-solid: #1c1236;
+  --line: rgba(190, 120, 255, 0.28);
+  --line-strong: rgba(230, 120, 255, 0.6);
+  --text: #ece6ff;
+  --muted: #a99cc9;
+  --magenta: #ff3fd2;
+  --cyan: #2ee9ff;
+  --gold: #ffc940;
+  --orange: #ff6a3d;
+  --green: #4dffa0;
+  --radius: 10px;
+  --font-head: "Oxanium", system-ui, sans-serif;
+  --font-body: "Rajdhani", system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 72px; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font: 500 17px/1.45 var(--font-body);
+  background-image:
+    radial-gradient(1200px 500px at 85% -10%, rgba(255, 63, 210, 0.16), transparent 60%),
+    radial-gradient(900px 500px at -10% 10%, rgba(46, 233, 255, 0.10), transparent 60%),
+    linear-gradient(180deg, var(--bg-2), var(--bg) 600px);
+  background-attachment: fixed;
+}
+a { color: var(--cyan); }
+code, pre, .mono { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; font-size: 14px; }
+h1, h2, h3 { font-family: var(--font-head); letter-spacing: 0.02em; margin: 0; }
+h2 { font-size: 26px; text-transform: uppercase; display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+h2::before { content: ""; width: 6px; height: 26px; background: linear-gradient(var(--magenta), var(--cyan)); transform: skewX(-14deg); }
+h3 { font-size: 19px; }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 0 16px; }
+header.top {
+  position: sticky; top: 0; z-index: 10;
+  background: rgba(11, 7, 22, 0.88); backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+}
+.top .wrap { display: flex; align-items: center; gap: 16px; height: 60px; }
+.brand { font: 800 20px var(--font-head); white-space: nowrap; font-style: italic; }
+.brand b { color: var(--magenta); }
+.brand span { color: var(--cyan); }
+nav.links { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; flex: 1; }
+nav.links::-webkit-scrollbar { display: none; }
+nav.links a {
+  color: var(--muted); text-decoration: none; font-weight: 700; text-transform: uppercase;
+  font-size: 14px; padding: 6px 10px; border-radius: 6px; white-space: nowrap;
+}
+nav.links a:hover, nav.links a:focus-visible { color: var(--text); background: rgba(255, 255, 255, 0.06); }
+.btn {
+  font: 700 14px var(--font-body); text-transform: uppercase; letter-spacing: 0.04em;
+  color: var(--text); background: transparent; border: 1px solid var(--line-strong);
+  padding: 7px 12px; border-radius: 6px; cursor: pointer; white-space: nowrap;
+}
+.btn:hover { background: rgba(255, 63, 210, 0.14); }
+.btn.gold { border-color: var(--gold); color: var(--gold); }
+.btn.gold:hover { background: rgba(255, 201, 64, 0.12); }
+.btn.small { padding: 4px 8px; font-size: 12px; }
+.btn:focus-visible, select:focus-visible, textarea:focus-visible, input:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.banner {
+  display: none; border: 1px solid var(--gold); background: rgba(255, 201, 64, 0.10);
+  color: var(--gold); border-radius: var(--radius); padding: 10px 14px; margin: 16px 0 0;
+  align-items: center; gap: 12px; flex-wrap: wrap;
+}
+.banner.show { display: flex; }
+.banner p { margin: 0; flex: 1; min-width: 220px; }
+.banner.error { border-color: var(--orange); color: var(--orange); background: rgba(255, 106, 61, 0.1); }
+section { padding: 36px 0 8px; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; }
+.grid2 { display: grid; grid-template-columns: 1.3fr 1fr; gap: 16px; }
+.hero { padding-top: 28px; }
+.hero h1 { font-size: clamp(30px, 6vw, 52px); font-weight: 800; font-style: italic; line-height: 1.05; }
+.hero h1 b { color: var(--magenta); text-shadow: 0 0 22px rgba(255, 63, 210, 0.55); }
+.hero h1 span { color: var(--cyan); text-shadow: 0 0 22px rgba(46, 233, 255, 0.45); }
+.hero p.lead { color: var(--muted); font-size: 19px; max-width: 760px; margin: 10px 0 14px; }
+.facts { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 4px; }
+.fact { border: 1px solid var(--line); border-radius: 999px; padding: 3px 12px; font-size: 14px; color: var(--muted); }
+.fact strong { color: var(--text); }
+ul.clean { list-style: none; margin: 0; padding: 0; }
+ul.clean li { padding: 5px 0; border-bottom: 1px dashed rgba(190, 120, 255, 0.15); }
+ul.clean li:last-child { border-bottom: 0; }
+ol.flow { margin: 0; padding-left: 20px; }
+ol.flow li { margin: 4px 0; }
+.folder { display: grid; grid-template-columns: 160px 1fr; gap: 10px; }
+.folder code { color: var(--cyan); }
+.chip {
+  display: inline-flex; align-items: center; gap: 6px; font: 700 12px var(--font-body);
+  text-transform: uppercase; letter-spacing: 0.06em; padding: 3px 9px; border-radius: 4px;
+  border: 1px solid currentColor; white-space: nowrap;
+}
+.chip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.s-not-started { color: var(--muted); }
+.s-in-progress { color: var(--cyan); }
+.s-blocked { color: var(--orange); }
+.s-playtesting { color: var(--magenta); }
+.s-done { color: var(--green); }
+.chip.current { color: var(--gold); }
+.bar { height: 10px; border-radius: 6px; background: rgba(255, 255, 255, 0.07); overflow: hidden; }
+.bar > i { display: block; height: 100%; background: linear-gradient(90deg, var(--magenta), var(--cyan)); border-radius: 6px; transition: width 0.3s; }
+.bar.gold > i { background: linear-gradient(90deg, #ff9d2e, var(--gold)); }
+.progress-row { display: grid; grid-template-columns: minmax(150px, 260px) 1fr 52px 112px; gap: 12px; align-items: center; padding: 9px 0; border-bottom: 1px dashed rgba(190, 120, 255, 0.15); }
+.progress-row:last-child { border-bottom: 0; }
+.progress-row a { color: var(--text); text-decoration: none; font-weight: 700; }
+.progress-row a:hover { color: var(--cyan); }
+.pct { font: 700 15px var(--font-head); text-align: right; color: var(--muted); }
+.totals { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+.stat { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; }
+.stat .n { font: 800 30px var(--font-head); }
+.stat .l { color: var(--muted); font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; }
+.stat.c .n { color: var(--cyan); } .stat.m .n { color: var(--magenta); } .stat.g .n { color: var(--gold); } .stat.o .n { color: var(--orange); }
+details.ms { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); margin-bottom: 12px; }
+details.ms[open] { border-color: var(--line-strong); }
+details.ms.is-current { border-color: var(--gold); box-shadow: 0 0 0 1px rgba(255, 201, 64, 0.25), 0 0 28px rgba(255, 201, 64, 0.08); }
+details.ms > summary {
+  list-style: none; cursor: pointer; padding: 14px 18px; display: grid;
+  grid-template-columns: 1fr auto; gap: 8px 14px; align-items: center;
+}
+details.ms > summary::-webkit-details-marker { display: none; }
+.ms-title { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.ms-title h3::before { content: "▸ "; color: var(--magenta); }
+details.ms[open] .ms-title h3::before { content: "▾ "; }
+.ms-meta { display: flex; gap: 8px; align-items: center; }
+.ms-sum .bar { grid-column: 1 / -1; height: 6px; }
+.ms-body { padding: 0 18px 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.ms-body .full { grid-column: 1 / -1; }
+.ms-body p.summary { margin: 0; color: var(--muted); }
+.label { font: 700 13px var(--font-body); text-transform: uppercase; letter-spacing: 0.08em; color: var(--magenta); margin: 0 0 6px; display: block; }
+.steps label { display: flex; gap: 10px; align-items: flex-start; padding: 5px 0; cursor: pointer; }
+.steps input[type=checkbox], .check input { accent-color: var(--magenta); width: 17px; height: 17px; margin-top: 3px; flex: none; }
+.steps label.done span { color: var(--muted); text-decoration: line-through; text-decoration-color: rgba(169, 156, 201, 0.5); }
+.files { display: flex; flex-wrap: wrap; gap: 6px; }
+.files code { background: rgba(46, 233, 255, 0.08); color: var(--cyan); padding: 2px 7px; border-radius: 4px; font-size: 13px; }
+.testbox { background: #07040f; border: 1px solid rgba(46, 233, 255, 0.35); border-radius: 8px; padding: 12px; }
+.cmd { display: flex; gap: 8px; align-items: flex-start; }
+.cmd code { flex: 1; color: var(--cyan); word-break: break-all; }
+.testbox .also { color: var(--muted); font-size: 15px; margin: 8px 0 0; }
+.testbox .manual { margin: 10px 0 0; padding-top: 10px; border-top: 1px dashed rgba(46, 233, 255, 0.25); }
+.fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.field label { display: block; }
+textarea, select, input[type=text], input[type=date] {
+  width: 100%; background: rgba(5, 3, 12, 0.6); color: var(--text); border: 1px solid var(--line);
+  border-radius: 6px; padding: 8px 10px; font: 500 16px/1.4 var(--font-body); resize: vertical;
+}
+textarea { min-height: 76px; }
+select { width: auto; min-width: 150px; }
+.field.blockers label .label { color: var(--orange); }
+.field.decisions label .label { color: var(--gold); }
+.field.next label .label { color: var(--cyan); }
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid rgba(190, 120, 255, 0.15); vertical-align: top; }
+th { font: 700 13px var(--font-body); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+td.date { white-space: nowrap; color: var(--muted); }
+td .gdd { color: var(--gold); font-weight: 700; }
+.table-wrap { overflow-x: auto; }
+.prio { font: 800 13px var(--font-head); padding: 1px 7px; border-radius: 4px; }
+.prio.P1 { background: rgba(255, 106, 61, 0.18); color: var(--orange); }
+.prio.P2 { background: rgba(46, 233, 255, 0.14); color: var(--cyan); }
+.prio.P3 { background: rgba(169, 156, 201, 0.15); color: var(--muted); }
+tr.done td { color: var(--muted); }
+tr.done td.t { text-decoration: line-through; }
+.addrow { display: grid; gap: 8px; margin-top: 12px; }
+.addrow.backlog { grid-template-columns: 2fr 1fr 90px auto; }
+.addrow.decision { grid-template-columns: 150px 2fr 2fr 80px auto; }
+.addrow select { min-width: 0; width: 100%; }
+.pt-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+.check { display: flex; gap: 10px; align-items: flex-start; padding: 5px 0; cursor: pointer; }
+.check.done span { color: var(--muted); }
+.pt-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 8px; }
+.pt-head h3 { font-size: 17px; }
+.pt-head .pct { font-size: 14px; }
+.rowtools { display: flex; gap: 8px; align-items: center; justify-content: flex-end; flex-wrap: wrap; margin-bottom: 12px; }
+.muted { color: var(--muted); }
+footer { padding: 40px 0 60px; color: var(--muted); font-size: 15px; }
+.icon-x { background: none; border: 0; color: var(--muted); cursor: pointer; font-size: 18px; line-height: 1; padding: 2px 6px; }
+.icon-x:hover { color: var(--orange); }
+.toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--panel-solid); border: 1px solid var(--cyan); color: var(--text); padding: 8px 16px; border-radius: 8px; transition: transform 0.25s; z-index: 20; }
+.toast.show { transform: translateX(-50%) translateY(0); }
+@media (max-width: 860px) {
+  .grid2, .ms-body, .fields { grid-template-columns: 1fr; }
+  .totals { grid-template-columns: repeat(2, 1fr); }
+  .progress-row { grid-template-columns: 1fr 52px; }
+  .progress-row .bar { grid-column: 1 / -1; grid-row: 2; }
+  .progress-row .chip { justify-self: start; }
+  .addrow.backlog, .addrow.decision { grid-template-columns: 1fr; }
+  .folder { grid-template-columns: 1fr; gap: 0; }
+  .top .actions .btn:not(.gold) { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .bar > i, .toast { transition: none; } }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="brand"><b>CYBERWAVE</b> <span>2199</span></div>
+    <nav class="links" aria-label="Sections">
+      <a href="#overview">Overview</a>
+      <a href="#current">Current</a>
+      <a href="#progress">Progress</a>
+      <a href="#milestones">Milestones</a>
+      <a href="#backlog">Backlog</a>
+      <a href="#decisions">Decisions</a>
+      <a href="#playtest">Playtest</a>
+    </nav>
+    <div class="actions" style="display:flex;gap:8px">
+      <button class="btn" id="discardBtn" type="button" title="Throw away local edits and reload dev/tracker.json">Discard draft</button>
+      <button class="btn gold" id="exportBtn" type="button" title="Download tracker.json to commit">Export JSON</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap" id="app">
+  <div class="banner" id="draftBanner" role="status">
+    <p><strong>Unsaved local edits.</strong> Changes are kept in this browser only. Use <em>Export JSON</em>, replace <code>dev/tracker.json</code>, and commit to publish them.</p>
+    <button class="btn small gold" type="button" data-act="export">Export JSON</button>
+    <button class="btn small" type="button" data-act="discard">Discard</button>
+  </div>
+  <div class="banner error" id="loadBanner" role="alert">
+    <p><strong>Couldn't load tracker.json.</strong> Pages opened straight from disk can't fetch files. Serve the folder (e.g. <code>python -m http.server</code>) or pick the file:</p>
+    <input type="file" id="fileInput" accept="application/json,.json">
+  </div>
+  <div id="content"><p class="muted" style="padding:40px 0">Loading tracker…</p></div>
+</main>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  "use strict";
+  var DRAFT_KEY = "cw2199-tracker-draft-v1";
+  var state = null;       // working copy (draft or committed)
+  var committed = null;   // JSON text as loaded from the repo
+
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+  function slug(s) { return String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""); }
+  function store(get, val) {
+    try {
+      if (get) return localStorage.getItem(DRAFT_KEY);
+      if (val === null) localStorage.removeItem(DRAFT_KEY); else localStorage.setItem(DRAFT_KEY, val);
+    } catch (e) { return null; }
+  }
+  function toast(msg) {
+    var t = document.getElementById("toast");
+    t.textContent = msg; t.classList.add("show");
+    clearTimeout(toast._t); toast._t = setTimeout(function () { t.classList.remove("show"); }, 1800);
+  }
+  function serialize() { return JSON.stringify(state, null, 2) + "\n"; }
+  function isDirty() {
+    if (!committed) return !!state;
+    try { return JSON.stringify(JSON.parse(committed)) !== JSON.stringify(state); } catch (e) { return true; }
+  }
+  function save() {
+    if (isDirty()) store(false, JSON.stringify(state)); else store(false, null);
+    document.getElementById("draftBanner").classList.toggle("show", isDirty());
+  }
+
+  function stepCounts(m) {
+    var d = 0; (m.steps || []).forEach(function (s) { if (s.done) d++; });
+    return { done: d, total: (m.steps || []).length };
+  }
+  function pct(a, b) { return b ? Math.round(100 * a / b) : 0; }
+  function chip(status) { return '<span class="chip s-' + slug(status) + '">' + esc(status) + "</span>"; }
+
+  // ---------- render ----------
+  function render() {
+    var p = state.project || {};
+    var ms = state.milestones || [];
+    var cur = ms.filter(function (m) { return m.current; })[0];
+    var html = "";
+
+    // Overview
+    html += '<section class="hero" id="overview">';
+    html += '<h1><b>CYBERWAVE</b> <span>2199</span> // DEV TRACKER</h1>';
+    html += '<p class="lead">' + esc(p.pitch) + "</p>";
+    html += '<div class="facts">' +
+      '<span class="fact"><strong>' + esc(p.engine) + "</strong></span>" +
+      '<span class="fact">GDD <strong>' + esc(p.gdd) + "</strong></span>" +
+      '<span class="fact"><strong>' + esc(p.phase) + "</strong></span>" +
+      '<span class="fact">Tracker updated <strong>' + esc(state.updated) + "</strong></span>" +
+      '<span class="fact"><a href="' + esc(p.repo) + '">Repo</a> · <a href="' + esc(p.demo) + '">Web demo</a></span>' +
+      "</div></section>";
+
+    html += '<section style="padding-top:20px"><div class="grid2">';
+    html += '<div class="panel"><span class="label">Git workflow</span><ol class="flow">' +
+      (p.workflow || []).map(function (w) { return "<li>" + esc(w) + "</li>"; }).join("") + "</ol>" +
+      '<p style="margin:12px 0 0"><span class="label" style="display:inline">Quick test pattern</span><br><code class="mono" style="color:var(--cyan)">' + esc(p.godot_cmd) + "</code></p></div>";
+    html += '<div class="panel"><span class="label">Where the systems live</span><ul class="clean">' +
+      (p.folders || []).map(function (f) {
+        return '<li class="folder"><code>' + esc(f.path) + '</code><span class="muted">' + esc(f.what) + "</span></li>";
+      }).join("") + "</ul></div>";
+    html += "</div></section>";
+
+    // Current milestone
+    html += '<section id="current"><h2>Current milestone</h2>';
+    if (cur) html += milestoneCard(cur, true);
+    else html += '<p class="muted">No milestone is marked current. Tick “Current” on one below.</p>';
+    html += "</section>";
+
+    // Progress
+    var tDone = 0, tAll = 0, blocked = 0, ptDone = 0, ptAll = 0;
+    ms.forEach(function (m) { var c = stepCounts(m); tDone += c.done; tAll += c.total; if (m.status === "Blocked" || (m.blockers || "").trim()) blocked++; });
+    (state.playtest || []).forEach(function (a) { a.items.forEach(function (i) { ptAll++; if (i.done) ptDone++; }); });
+    var openBacklog = (state.backlog || []).filter(function (b) { return !b.done; }).length;
+    html += '<section id="progress"><h2>Progress</h2><div class="totals">' +
+      '<div class="stat c"><div class="n">' + pct(tDone, tAll) + '%</div><div class="l">Steps done (' + tDone + "/" + tAll + ")</div></div>" +
+      '<div class="stat o"><div class="n">' + blocked + '</div><div class="l">Milestones with blockers</div></div>' +
+      '<div class="stat m"><div class="n">' + openBacklog + '</div><div class="l">Open backlog items</div></div>' +
+      '<div class="stat g"><div class="n">' + ptDone + "/" + ptAll + '</div><div class="l">Playtest checks</div></div>' +
+      '</div><div class="panel">';
+    ms.forEach(function (m) {
+      var c = stepCounts(m), v = pct(c.done, c.total);
+      html += '<div class="progress-row"><a href="#ms-' + esc(m.id) + '">' + esc(m.title) + (m.current ? ' <span class="chip current">current</span>' : "") + "</a>" +
+        '<div class="bar" role="progressbar" aria-valuenow="' + v + '" aria-valuemin="0" aria-valuemax="100" aria-label="' + esc(m.title) + '"><i style="width:' + v + '%"></i></div>' +
+        '<span class="pct">' + v + "%</span>" + chip(m.status) + "</div>";
+    });
+    html += "</div></section>";
+
+    // Milestones
+    html += '<section id="milestones"><h2>Milestones</h2>';
+    html += '<div class="rowtools"><button class="btn small" type="button" data-act="expand">Expand all</button><button class="btn small" type="button" data-act="collapse">Collapse all</button></div>';
+    ms.forEach(function (m) { html += milestoneCard(m, false); });
+    html += "</section>";
+
+    // Backlog
+    var systems = [];
+    ms.forEach(function (m) { if (systems.indexOf(m.system) < 0) systems.push(m.system); });
+    (state.backlog || []).forEach(function (b) { if (systems.indexOf(b.system) < 0) systems.push(b.system); });
+    html += '<section id="backlog"><h2>Backlog</h2><div class="panel"><div class="table-wrap"><table><thead><tr><th style="width:36px"></th><th>Item</th><th>System</th><th>Priority</th><th style="width:36px"></th></tr></thead><tbody>';
+    var bl = (state.backlog || []).slice().sort(function (a, b) {
+      return (a.done - b.done) || systems.indexOf(a.system) - systems.indexOf(b.system) || String(a.priority).localeCompare(b.priority);
+    });
+    bl.forEach(function (b) {
+      html += '<tr class="' + (b.done ? "done" : "") + '"><td><input type="checkbox" data-bl="' + esc(b.id) + '" aria-label="Done: ' + esc(b.title) + '"' + (b.done ? " checked" : "") + "></td>" +
+        '<td class="t">' + esc(b.title) + "</td><td>" + esc(b.system) + '</td><td><span class="prio ' + esc(b.priority) + '">' + esc(b.priority) + "</span></td>" +
+        '<td><button class="icon-x" type="button" data-bl-del="' + esc(b.id) + '" aria-label="Remove ' + esc(b.title) + '">×</button></td></tr>';
+    });
+    html += "</tbody></table></div>";
+    html += '<form class="addrow backlog" id="addBacklog"><input type="text" name="title" placeholder="New backlog item" required aria-label="Backlog item">' +
+      '<select name="system" aria-label="System">' + systems.concat(["Tests", "Other"]).filter(function (s, i, a) { return a.indexOf(s) === i; }).map(function (s) { return "<option>" + esc(s) + "</option>"; }).join("") + "</select>" +
+      '<select name="priority" aria-label="Priority"><option>P1</option><option selected>P2</option><option>P3</option></select><button class="btn" type="submit">Add</button></form></div></section>';
+
+    // Decisions
+    html += '<section id="decisions"><h2>Decision log</h2><div class="panel"><div class="table-wrap"><table><thead><tr><th>Date</th><th>Decision</th><th>Why</th><th>GDD</th><th style="width:36px"></th></tr></thead><tbody>';
+    (state.decisions || []).slice().reverse().forEach(function (d) {
+      var i = state.decisions.indexOf(d);
+      html += '<tr><td class="date">' + esc(d.date) + "</td><td>" + esc(d.decision) + '</td><td class="muted">' + esc(d.why) + '</td><td><span class="gdd">' + esc(d.gdd) + "</span></td>" +
+        '<td><button class="icon-x" type="button" data-dec-del="' + i + '" aria-label="Remove decision">×</button></td></tr>';
+    });
+    html += "</tbody></table></div>";
+    html += '<form class="addrow decision" id="addDecision"><input type="date" name="date" required aria-label="Date" value="' + new Date().toISOString().slice(0, 10) + '">' +
+      '<input type="text" name="decision" placeholder="Decision" required aria-label="Decision"><input type="text" name="why" placeholder="Why" aria-label="Why">' +
+      '<input type="text" name="gdd" placeholder="GDD v" aria-label="GDD version"><button class="btn" type="submit">Log</button></form></div></section>';
+
+    // Playtest
+    html += '<section id="playtest"><h2>Playtest checklist</h2><div class="rowtools"><span class="muted">Tick as you play; reset before the next session.</span><button class="btn small" type="button" data-act="pt-reset">Reset checks</button></div><div class="pt-grid">';
+    (state.playtest || []).forEach(function (a, ai) {
+      var d = a.items.filter(function (i) { return i.done; }).length;
+      html += '<div class="panel"><div class="pt-head"><h3>' + esc(a.area) + '</h3><span class="pct">' + d + "/" + a.items.length + "</span></div>" +
+        '<div class="bar gold" style="height:6px;margin-bottom:8px"><i style="width:' + pct(d, a.items.length) + '%"></i></div>';
+      a.items.forEach(function (it, ii) {
+        html += '<label class="check' + (it.done ? " done" : "") + '"><input type="checkbox" data-pt="' + ai + ":" + ii + '"' + (it.done ? " checked" : "") + "><span>" + esc(it.text) + "</span></label>";
+      });
+      html += "</div>";
+    });
+    html += "</div></section>";
+
+    html += '<footer>Data: <code>dev/tracker.json</code> in the repo. Edits are saved in this browser until you export and commit them. Design authority: <a href="https://github.com/nahobbs5/CyberWave-2199/blob/main/docs/Game%20Design%20Document.md">Game Design Document</a> · <a href="https://github.com/nahobbs5/CyberWave-2199/blob/main/docs/Reference.md">Reference</a></footer>';
+
+    var openIds = {};
+    document.querySelectorAll("details.ms[open]").forEach(function (d) { openIds[d.id] = true; });
+    document.getElementById("content").innerHTML = html;
+    Object.keys(openIds).forEach(function (id) { var d = document.getElementById(id); if (d) d.open = true; });
+    document.getElementById("draftBanner").classList.toggle("show", isDirty());
+  }
+
+  function milestoneCard(m, isCurrentSection) {
+    var c = stepCounts(m), v = pct(c.done, c.total);
+    var id = (isCurrentSection ? "cur-" : "ms-") + m.id;
+    var statuses = state.statuses || ["Not started", "In progress", "Blocked", "Playtesting", "Done"];
+    var h = '<details class="ms' + (m.current ? " is-current" : "") + '" id="' + esc(id) + '"' + (isCurrentSection ? " open" : "") + ">";
+    h += '<summary class="ms-sum"><div class="ms-title"><h3>' + esc(m.title) + "</h3>" + (m.current ? '<span class="chip current">current</span>' : "") + "</div>" +
+      '<div class="ms-meta"><span class="pct">' + c.done + "/" + c.total + "</span>" + chip(m.status) + "</div>" +
+      '<div class="bar"><i style="width:' + v + '%"></i></div></summary>';
+    h += '<div class="ms-body" data-ms="' + esc(m.id) + '">';
+    h += '<div class="full"><p class="summary">' + esc(m.summary) + "</p></div>";
+    h += '<div class="full files">' + (m.files || []).map(function (f) { return "<code>" + esc(f) + "</code>"; }).join("") + "</div>";
+
+    h += '<div><span class="label">Implementation steps</span><div class="steps">' +
+      (m.steps || []).map(function (s, i) {
+        return '<label class="' + (s.done ? "done" : "") + '"><input type="checkbox" data-step="' + i + '"' + (s.done ? " checked" : "") + "><span>" + esc(s.text) + "</span></label>";
+      }).join("") + "</div></div>";
+
+    h += "<div>";
+    h += '<span class="label">Prerequisites</span><ul class="clean" style="margin-bottom:16px">' +
+      (m.prerequisites || []).map(function (p) { return "<li>" + esc(p) + "</li>"; }).join("") + "</ul>";
+    var t = m.test || {};
+    h += '<span class="label" style="color:var(--cyan)">Quick Godot test</span><div class="testbox">' +
+      '<div class="cmd"><code>' + esc(t.headless) + '</code><button class="btn small" type="button" data-copy="' + esc(t.headless) + '">Copy</button></div>' +
+      (t.also ? '<p class="also">Also: ' + esc(t.also) + "</p>" : "") +
+      (t.manual ? '<p class="manual"><strong>In the editor:</strong> ' + esc(t.manual) + "</p>" : "") + "</div>";
+    h += "</div>";
+
+    h += '<div class="full fields">';
+    h += '<div class="field"><label><span class="label">Status</span><select data-f="status">' +
+      statuses.map(function (s) { return "<option" + (s === m.status ? " selected" : "") + ">" + esc(s) + "</option>"; }).join("") +
+      '</select></label> <label class="check" style="display:inline-flex;margin-left:12px"><input type="checkbox" data-f="current"' + (m.current ? " checked" : "") + "><span>Current milestone</span></label></div>";
+    h += '<div class="field blockers"><label><span class="label">Blockers</span><textarea data-f="blockers" placeholder="Nothing blocking">' + esc(m.blockers) + "</textarea></label></div>";
+    h += '<div class="field"><label><span class="label">Notes</span><textarea data-f="notes">' + esc(m.notes) + "</textarea></label></div>";
+    h += '<div class="field decisions"><label><span class="label">Open decisions</span><textarea data-f="open_decisions" placeholder="One per line">' + esc(m.open_decisions) + "</textarea></label></div>";
+    h += '<div class="field next full"><label><span class="label">Next steps</span><textarea data-f="next_steps">' + esc(m.next_steps) + "</textarea></label></div>";
+    h += "</div></div></details>";
+    return h;
+  }
+
+  function msById(id) { return (state.milestones || []).filter(function (m) { return m.id === id; })[0]; }
+
+  // ---------- events ----------
+  var content = document.getElementById("content");
+  content.addEventListener("change", function (e) {
+    var el = e.target, body = el.closest("[data-ms]");
+    if (body && el.hasAttribute("data-step")) {
+      msById(body.dataset.ms).steps[+el.dataset.step].done = el.checked;
+      save(); render(); return;
+    }
+    if (body && el.dataset.f === "status") { msById(body.dataset.ms).status = el.value; save(); render(); return; }
+    if (body && el.dataset.f === "current") {
+      state.milestones.forEach(function (m) { m.current = false; });
+      msById(body.dataset.ms).current = el.checked;
+      save(); render(); return;
+    }
+    if (el.hasAttribute("data-bl")) {
+      state.backlog.forEach(function (b) { if (b.id === el.dataset.bl) b.done = el.checked; });
+      save(); render(); return;
+    }
+    if (el.hasAttribute("data-pt")) {
+      var ix = el.dataset.pt.split(":");
+      state.playtest[+ix[0]].items[+ix[1]].done = el.checked;
+      save(); render();
+    }
+  });
+  content.addEventListener("input", function (e) {
+    var el = e.target, body = el.closest("[data-ms]");
+    if (body && el.tagName === "TEXTAREA") {
+      msById(body.dataset.ms)[el.dataset.f] = el.value;
+      // mirror into the other copy of this card (current section vs list) without re-rendering
+      document.querySelectorAll('[data-ms="' + body.dataset.ms + '"] textarea[data-f="' + el.dataset.f + '"]').forEach(function (t) { if (t !== el) t.value = el.value; });
+      save();
+    }
+  });
+  content.addEventListener("click", function (e) {
+    var el = e.target.closest("button");
+    if (!el) return;
+    if (el.dataset.copy != null) {
+      var txt = el.dataset.copy;
+      (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(function () { toast("Copied"); }, function () { toast("Copy failed"); });
+    } else if (el.dataset.blDel) {
+      state.backlog = state.backlog.filter(function (b) { return b.id !== el.dataset.blDel; }); save(); render();
+    } else if (el.dataset.decDel != null) {
+      if (confirm("Remove this decision from the log?")) { state.decisions.splice(+el.dataset.decDel, 1); save(); render(); }
+    } else if (el.dataset.act === "expand" || el.dataset.act === "collapse") {
+      document.querySelectorAll("#milestones details.ms").forEach(function (d) { d.open = el.dataset.act === "expand"; });
+    } else if (el.dataset.act === "pt-reset") {
+      if (confirm("Untick every playtest check?")) { state.playtest.forEach(function (a) { a.items.forEach(function (i) { i.done = false; }); }); save(); render(); }
+    }
+  });
+  content.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var f = e.target, fd = new FormData(f);
+    if (f.id === "addBacklog") {
+      state.backlog.push({ id: "b" + Date.now().toString(36), system: fd.get("system"), title: String(fd.get("title")).trim(), priority: fd.get("priority"), done: false });
+    } else if (f.id === "addDecision") {
+      state.decisions.push({ date: fd.get("date"), decision: String(fd.get("decision")).trim(), why: String(fd.get("why")).trim(), gdd: String(fd.get("gdd")).trim() });
+    }
+    save(); render();
+  });
+
+  function exportJson() {
+    state.updated = new Date().toISOString().slice(0, 10);
+    var blob = new Blob([serialize()], { type: "application/json" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = "tracker.json";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+    save(); render();
+    toast("tracker.json downloaded: replace dev/tracker.json and commit");
+  }
+  function discard() {
+    if (!committed) return;
+    if (!isDirty() || confirm("Discard your local edits and go back to the committed tracker.json?")) {
+      state = JSON.parse(committed); store(false, null); render(); toast("Draft discarded");
+    }
+  }
+  document.getElementById("exportBtn").addEventListener("click", exportJson);
+  document.getElementById("discardBtn").addEventListener("click", discard);
+  document.getElementById("draftBanner").addEventListener("click", function (e) {
+    var b = e.target.closest("button"); if (!b) return;
+    if (b.dataset.act === "export") exportJson(); else discard();
+  });
+
+  function start(text) {
+    committed = text;
+    var draft = store(true);
+    state = JSON.parse(text);
+    if (draft) {
+      try { state = JSON.parse(draft); } catch (e) { store(false, null); }
+    }
+    document.getElementById("loadBanner").classList.remove("show");
+    render();
+    if (location.hash) { var t = document.querySelector(location.hash); if (t) t.scrollIntoView(); }
+  }
+  document.getElementById("fileInput").addEventListener("change", function (e) {
+    var file = e.target.files[0]; if (!file) return;
+    file.text().then(function (t) { try { start(t); } catch (err) { alert("That file isn't valid tracker JSON."); } });
+  });
+
+  fetch("tracker.json", { cache: "no-store" })
+    .then(function (r) { if (!r.ok) throw new Error(r.status); return r.text(); })
+    .then(start)
+    .catch(function () {
+      var draft = store(true);
+      if (draft) { try { committed = null; state = JSON.parse(draft); render(); } catch (e) { /* fall through */ } }
+      document.getElementById("loadBanner").classList.add("show");
+      if (!state) document.getElementById("content").innerHTML = "";
+    });
+})();
+</script>
+</body>
+</html>

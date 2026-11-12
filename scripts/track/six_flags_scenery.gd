@@ -68,17 +68,10 @@ func build() -> void:
 	material("container_red", Color(0.32, 0.12, 0.08), 0.0, 0.3, 0.8)
 	material("container_blue", Color(0.12, 0.18, 0.24), 0.0, 0.3, 0.8)
 	# Water: standing flood water off the road, and thin puddles on it.
-	var flood := StandardMaterial3D.new()
-	flood.albedo_color = Color(0.05, 0.07, 0.07)
-	flood.metallic = 0.4
-	flood.roughness = 0.08
+	var flood := water_material(Color(0.03, 0.045, 0.035), Color(0.1, 0.13, 0.09), 0.92, 0.0, 0.55)
 	register_material("terrain_water", flood)
 	register_material("flood", flood)
-	var puddle := StandardMaterial3D.new()
-	puddle.albedo_color = Color(0.04, 0.045, 0.05)
-	puddle.metallic = 0.85
-	puddle.roughness = 0.04
-	register_material("puddle", puddle)
+	register_material("puddle", water_material(Color(0.03, 0.035, 0.04), Color(0.1, 0.11, 0.12), 0.75, 0.6, 0.3))
 	register_material("chain_link", ChainLinkFence.material())
 
 	SceneryTerrain.build(self, TERRAIN_BOUNDS, 7.0, 2.2, -0.12)

@@ -129,10 +129,10 @@ func _setup_materials() -> void:
 	material("grate_glow", Color(0.7, 0.8, 1.0), 2.5)
 	material("statue", Color(0.82, 0.8, 0.75), 0.0, 0.0, 0.6)
 	material("cloth", Color(0.32, 0.04, 0.04), 0.0, 0.0, 0.9)
-	var water := StandardMaterial3D.new()
-	water.albedo_color = Color(0.02, 0.025, 0.03)
-	water.metallic = 0.7
-	water.roughness = 0.04
+	# Black, still crypt water: faint ripples, silt, torch-coloured glints.
+	var water := water_material(Color(0.01, 0.012, 0.015), Color(0.05, 0.055, 0.06), 0.95, 0.0, 0.6, 0.8)
+	water.set_shader_parameter("glint_color", Color(1.0, 0.7, 0.4))
+	water.set_shader_parameter("ripple_speed", 0.4)
 	register_material("water", water)
 	var beam := StandardMaterial3D.new()
 	beam.albedo_color = Color(0.3, 0.36, 0.48, 0.16)

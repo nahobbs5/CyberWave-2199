@@ -96,6 +96,10 @@ func _freeze_field(race: RaceManager) -> void:
 		var ai := race.get_ai(racer)
 		if ai != null:
 			ai.enabled = false
+		# No rocket starts or burnouts carried into a frozen field.
+		racer.vehicle.clear_boost()
+		if racer.vehicle.status != null:
+			racer.vehicle.status.remove(&"burnout")
 		var combat := racer.vehicle.get_node_or_null("AICombat")
 		if combat != null:
 			combat.set_physics_process(false)

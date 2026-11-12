@@ -505,7 +505,7 @@ func _test_grand_prix() -> void:
 			if race_number < 2:
 				_check(Championship.load_saved() != null and Championship.load_saved().race_index == race_number + 1,
 						"saved after the race")
-				_check(hud.get_continue_text().begins_with("Next race: "), "results offer the next race (%s)" % hud.get_continue_text())
+				_check(hud.get_continue_text() == "Next Race", "results offer the next race (%s)" % hud.get_continue_text())
 			else:
 				_check(c.is_complete() and Championship.load_saved() == null, "championship complete, save cleared")
 				_check(hud.get_results_title().begins_with("CHAMPIONSHIP FINAL"), "final standings shown")

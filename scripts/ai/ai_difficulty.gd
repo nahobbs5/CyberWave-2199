@@ -23,6 +23,11 @@ extends Resource
 ## Target-speed adjustment per 200 m gap to the player (0 = no rubber-banding).
 @export_range(0.0, 0.3) var rubber_band: float = 0.03
 
+## Rocket start (StartLaunch): chance of nailing the window, and of jumping
+## the start into a burnout. Otherwise a normal start.
+@export_range(0.0, 1.0) var rocket_start_chance: float = 0.4
+@export_range(0.0, 1.0) var burnout_chance: float = 0.08
+
 @export_group("Weapons")
 ## Seconds between weapon decisions.
 @export var weapon_reaction: float = 0.4

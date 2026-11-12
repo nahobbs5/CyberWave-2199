@@ -1,5 +1,5 @@
 # CYBERWAVE 2199
-## Game Design Document — Version 6.0
+## Game Design Document — Version 6.5
 
 **Status:** Development Baseline  
 **Engine:** Godot 4  
@@ -545,6 +545,7 @@ Every race contains:
 - Occasional drifting
 - Less effective weapon use
 - Mild rubber-banding
+- Rarely lands a rocket start; often jumps the start into a burnout
 
 ### Normal
 - Competent racing lines
@@ -552,6 +553,7 @@ Every race contains:
 - Regular drifting
 - Reasonable weapon decisions
 - Minimal rubber-banding
+- Rocket starts sometimes; the odd burnout
 
 ### Hard
 - Precise racing lines
@@ -559,6 +561,7 @@ Every race contains:
 - Tactical shortcuts
 - Strong weapon decisions
 - No rubber-banding
+- Rocket starts most races; almost never burns out
 
 Difficulty should not rely primarily on hidden vehicle stat advantages.
 
@@ -848,8 +851,8 @@ Tracks may contain:
 - Directional signs
 - Destructible barriers
 - Explosive environmental objects
-- Electrified hazards
-- Traction-altering surfaces (standing water: about 12% lower top speed and 25% less grip while in it)
+- Electrified hazards (EMP puddles): dark, oily water with crackling white-violet arcs and sparks, a raised yellow/black hazard lip and a lightning-bolt warning sign on each side, so they never read as a boost pad (with reduced flashing on, the arcs are slow and steady and there are no sparks)
+- Traction-altering surfaces (standing water: about 12% lower top speed and 25% less grip while in it). It looks like real water, with drifting ripples, a few rain-drop rings, silt patches, glints and a soft, uneven shoreline, and each track can tint it. Scenery puddles, pools and ponds use the same water.
 - Starting gantries
 - Open edges on elevated tracks (no wall; falling off means a recovery)
 - Columns standing in the road (Kilwa Kisiwani's hall): solid, with gaps of at least 9 m; the AI's racing line, recovery spots and Overdrive flights all steer round them
@@ -1127,11 +1130,11 @@ The single-player results are laid out after the "Cyberwave 2199 Race Results" r
   - the track's picture, name and mode (Versus Race, Elimination, or the cup and race number);
   - rows for YOUR TIME, BEST LAP, LAPS and COINS (counting up). A gold NEW BEST tag marks a personal best time or lap.
   - Under the card: your new coin balance and any newly affordable cosmetics.
-- **Table:** every racer, with a slanted place badge (gold / silver / bronze for the top three), a picture of their car in their own paint, their name, total time and best lap. Your row is filled magenta.
+- **Table:** every racer, with a slanted place badge (gold / silver / bronze for the top three), a picture of their car in their own paint, their name, the points the place earns (PTS, in every race, on the Grand Prix scale), total time and best lap. A racer placed without crossing the line shows DNF for the time. Your row is filled magenta.
 - **Buttons:** RACE AGAIN (or the next step) and MAIN MENU.
 - **Hint bar:** A / Enter Confirm, Start / Esc Pause.
 - **Grand Prix and Versus sets** work as in Mario Kart:
-  - first the race, with a +PTS column for points earned;
+  - first the race, with the +PTS column counting toward the cup;
   - Continue then shows the STANDINGS (FINAL STANDINGS after the last race): the rows slide into championship order and the totals count up from the old ones;
   - Continue again goes to the next race (or back to the main menu).
 - Split screen keeps its simpler shared results (a line per player, the finishing order, championship standings).
@@ -1165,7 +1168,7 @@ Timeline (Grand Prix / Versus): cars drive onto the lowered platforms (0–3.5 s
 - Pause menu (after the "Cyberwave 2199 Neon Pause Menu" reference art): the race dims behind the logo and a slanted PAUSED title. On the left are Resume / Restart Race / Quit to Main Menu (neon buttons, focused one gold with ">>"), a VOLUME panel with Master / Music / Sound Effects sliders (saved straight away, shared with Settings), and a picture of your car. On the right a Controls panel lists every action with its icon, keyboard keys as magenta keycaps and gamepad inputs as cyan ones, read from your current bindings. The mockup's Race Info tab is left out. Hints along the bottom: A / Enter Select, B / Esc Resume.
 - Brief pre-race camera sweep
 - 3 / 2 / 1 / START countdown, with a four-lamp start-light board on the start gantry (three reds, then green), one lamp per beep
-- No false-start penalties
+- Rocket start (Mario Kart style): hold accelerate from the moment the "2" fades (until just after it's gone) through START for a boost off the line, the size of a level-2 drift boost. Holding from earlier is a burnout: tyre smoke, a lazy spin and no control for 1 s. Pressing later is a normal start. While you hold before START, the engine revs: exhaust pops, a rear squat and a body shudder. AI rivals try it too, with odds set by difficulty: rocket start / burnout about 15% / 20% on Easy, 40% / 8% on Normal, 80% / 2% on Hard.
 - Position-change feedback
 - Distinct drift boost effects
 - Clear finish-line presentation
@@ -1617,5 +1620,8 @@ Changes after Version 1.0 should be tracked as revisions rather than silently re
 | 6.0 | 2026-11-12 | Pause menu restyled after the "Cyberwave 2199 Neon Pause Menu" reference art: neon buttons, a VOLUME panel, your car, and a keycap controls table (no Race Info tab) (§11.8). |
 | 6.1 | 2026-11-12 | Arashiyama's bamboo reworked after the new Bamboo Forest reference photos: straight, jointed culms with leaves only up high, leaning in so the crowns meet overhead; clumped stands in greens and blue-greys; ferns, sasa and fallen culms underfoot; bristly brushwood fence crests with thick bamboo rails; a darker, greener light grade (§8.6). |
 | 6.2 | 2026-11-12 | Track coins get a new random layout every lap, in small clusters of 1–3 (§9.2). |
+| 6.3 | 2026-11-12 | Textured standing water and scenery puddles; EMP puddles redesigned to read clearly as a hazard (§8.7). |
+| 6.4 | 2026-11-12 | Rocket start replaces "no false-start penalties": a boost for pressing as the 2 fades, a burnout for pressing too early (§11.8). AI rivals rocket-start and burn out too, better at harder difficulties (§7.2). |
+| 6.5 | 2026-11-12 | Results table: PTS column moved before the times and shown in every race; racers placed without crossing the line show DNF instead of "classified" (§11.7). |
 
-**End of Game Design Document — Version 6.0**
+**End of Game Design Document — Version 6.5**

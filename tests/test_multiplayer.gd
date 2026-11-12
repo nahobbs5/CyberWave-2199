@@ -577,7 +577,7 @@ func _test_series() -> void:
 	# Single player: the race page first, then the standings page (Mario Kart style).
 	_check(race.race_hud.get_continue_text() == "Standings", "results show the race first (%s)" % race.race_hud.get_continue_text())
 	(race.race_hud.results as NeonResultsScreen).show_standings()
-	_check(race.race_hud.get_continue_text() == "Next race: pick a track", "results offer the next track (%s)" % race.race_hud.get_continue_text())
+	_check(race.race_hud.get_continue_text() == "Next Race", "results offer the next track (%s)" % race.race_hud.get_continue_text())
 	GameSession.series = null
 	race.continue_after_results()
 	_check(GameSession.series == s, "continue goes back to the track screen for the series")

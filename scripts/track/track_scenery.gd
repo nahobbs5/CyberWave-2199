@@ -155,6 +155,21 @@ func material(key: String, color: Color, emission: float = 0.0, metallic: float 
 	_materials[key] = m
 
 
+## Rippling still water (assets/shaders/standing_water.gdshader) for puddles,
+## pools and ponds. Patterns are in world space, so any mesh works.
+static func water_material(deep: Color, shallow: Color, opacity: float = 0.75, rain_rings: float = 0.0,
+		murk: float = 0.35, glint: float = 0.6) -> ShaderMaterial:
+	var m := ShaderMaterial.new()
+	m.shader = preload("res://assets/shaders/standing_water.gdshader")
+	m.set_shader_parameter("deep_color", deep)
+	m.set_shader_parameter("shallow_color", shallow)
+	m.set_shader_parameter("opacity", opacity)
+	m.set_shader_parameter("rain_rings", rain_rings)
+	m.set_shader_parameter("murk", murk)
+	m.set_shader_parameter("glint", glint)
+	return m
+
+
 ## Registers a material using a Poly Haven texture set (CC0, see README),
 ## mapped triplanar in world space so generated geometry needs no UVs.
 ## tint multiplies the texture; metres_per_tile sets its scale.

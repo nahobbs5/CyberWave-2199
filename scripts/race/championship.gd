@@ -131,11 +131,6 @@ func is_complete() -> bool:
 	return race_index >= race_count()
 
 
-func current_track_name() -> String:
-	var index := mini(race_index, race_count() - 1)
-	return gp.track_names[index] if index < gp.track_names.size() else ""
-
-
 ## Records a finished race (ids in finishing order) and sets the next grid to
 ## that order: grids follow the previous race, not the points (GDD 2.2).
 func record_race(order: Array[int]) -> void:

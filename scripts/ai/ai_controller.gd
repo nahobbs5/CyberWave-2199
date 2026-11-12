@@ -73,6 +73,19 @@ func setup(p_vehicle: VehicleController, p_track: TrackCircuit, p_line: RacingLi
 		vehicle.recovery.recovery_finished.connect(_on_recovered)
 
 
+## Rocket start: when (in countdown steps) this driver will press the
+## throttle, rolled from the difficulty's chances: inside the window, too
+## early (burnout) or after it (normal start).
+func start_press_time() -> float:
+	var roll := _rng.randf()
+	var rocket := difficulty.rocket_start_chance
+	if roll < rocket:
+		return _rng.randf_range(StartLaunch.WINDOW_START + 0.03, StartLaunch.WINDOW_END - 0.03)
+	if roll < rocket + difficulty.burnout_chance:
+		return _rng.randf_range(0.4, StartLaunch.WINDOW_START - 0.1)
+	return _rng.randf_range(StartLaunch.WINDOW_END + 0.05, 2.9)
+
+
 ## Back on the road after a recovery: forget any unsticking or shortcut plan.
 func _on_recovered() -> void:
 	_reverse_time = 0.0

@@ -30,6 +30,9 @@ signal racer_eliminated(racer: RaceProgress)
 signal racer_qualified(racer: RaceProgress, spots_left: int)
 ## Grand Prix: this race's result was recorded (and saved).
 signal championship_updated(championship: Championship)
+## A human's start off the line: StartLaunch.ROCKET, StartLaunch.BURNOUT or
+## &"" (normal).
+signal start_launched(racer: RaceProgress, result: StringName)
 ## The player's coins and records for this race were granted and saved.
 signal rewards_granted(summary: Dictionary)
 
@@ -39,6 +42,10 @@ enum State { GRID, COUNTDOWN, RACING, FINISHED }
 const COUNTDOWN_WORDS: Array[String] = ["3", "2", "1", "START"]
 const COUNTDOWN_SOUND := preload("res://sounds/freesound_community-short-beep-countdown-81121.mp3")
 const COUNTDOWN_SOUND_OFFSET := 0.0
+const ROCKET_START_LABEL := "ROCKET START"
+const ROCKET_START_COLOR := Color(0.2, 0.9, 1.0)
+## Seconds a too-early start leaves the car smoking and spinning.
+const BURNOUT_TIME := 1.0
 ## The start lights go out this long after START.
 const START_LIGHTS_HOLD := 4.0
 
@@ -92,6 +99,10 @@ var _by_vehicle: Dictionary = {}
 var _countdown_time: float = 0.0
 var countdown_sound: AudioStreamPlayer
 var _countdown_index: int = -1
+## Rocket start: one StartLaunch per racer (humans and AI), by RaceProgress.
+var _launches: Dictionary = {}
+## AI drivers' planned throttle press (countdown steps), by RaceProgress.
+var _ai_press: Dictionary = {}
 var _finish_count: int = 0
 var _wrong_way_time: float = 0.0
 ## The neon sign hung over the road while the player drives the wrong way.
@@ -186,6 +197,16 @@ func _ready() -> void:
 func start_countdown() -> void:
 	_countdown_time = 0.0
 	_countdown_index = -1
+	_launches.clear()
+	_ai_press.clear()
+	for p in players:
+		_launches[p] = StartLaunch.new()
+	# AI try it too, better at harder difficulties (AIDifficulty).
+	for r in racers:
+		var ai := get_ai(r)
+		if not r.is_player and ai != null:
+			_launches[r] = StartLaunch.new()
+			_ai_press[r] = ai.start_press_time()
 	track.set_start_lights(0)
 	# The clip beeps every second, four times: one beep per word and light.
 	countdown_sound.play(COUNTDOWN_SOUND_OFFSET)
@@ -531,6 +552,12 @@ func _set_state(new_state: State) -> void:
 func _update_countdown(delta: float) -> void:
 	var index := int(_countdown_time / countdown_step)
 	_countdown_time += delta
+	for p in _launches:
+		var launch := _launches[p] as StartLaunch
+		var t := _countdown_time / countdown_step
+		var held: bool = t >= float(_ai_press[p]) if _ai_press.has(p) else (p as RaceProgress).vehicle.accelerate_held()
+		launch.update(t, held)
+		(p as RaceProgress).vehicle.start_rev = launch.rev()
 	if index == _countdown_index:
 		return
 	_countdown_index = index
@@ -545,7 +572,26 @@ func _start_race() -> void:
 	race_time = 0.0
 	for racer in racers:
 		racer.vehicle.input_enabled = true
+		racer.vehicle.start_rev = 0.0
 	_set_state(State.RACING)
+	for p in _launches:
+		_apply_launch(p, (_launches[p] as StartLaunch).result())
+	_launches.clear()
+	_ai_press.clear()
+
+
+## Rocket start: a level-2 drift boost off the line. Burnout: smoke and a
+## lazy spin with no control for a moment.
+func _apply_launch(racer: RaceProgress, result: StringName) -> void:
+	var car := racer.vehicle
+	if result == StartLaunch.ROCKET:
+		var st := car.stats
+		var i := clampi(1, 0, st.boost_duration.size() - 1)
+		car.start_external_boost(st.boost_extra_speed[i], st.boost_duration[i], st.boost_kick[i],
+				ROCKET_START_LABEL, ROCKET_START_COLOR)
+	elif result == StartLaunch.BURNOUT and car.status != null:
+		car.status.apply_burnout(BURNOUT_TIME)
+	start_launched.emit(racer, result)
 
 
 func _on_checkpoint_crossed(index: int, body: Node3D) -> void:

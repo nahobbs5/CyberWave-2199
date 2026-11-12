@@ -111,7 +111,7 @@ func _test_last_player() -> void:
 	race.race_hud.results.open(race)
 	await process_frame
 	var time_text := race.race_hud.results.time_value.text
-	_check(time_text == "CLASSIFIED", "results show CLASSIFIED for the time (%s)" % time_text)
+	_check(time_text == "DNF", "results show DNF for the time (%s)" % time_text)
 	await _end(race)
 
 

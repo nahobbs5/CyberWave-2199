@@ -92,7 +92,7 @@ func open(manager: RaceManager) -> void:
 		placement.text = "%s  %s" % [player.display_name, "WINS!" if place == 1 else ordinal(place)]
 		placement.add_theme_color_override("font_color", SplitScreen.PLAYER_COLORS[race.player_slot(player)])
 	time_value.text = ("OUT  LAP %d" % player.eliminated_lap) if player.eliminated \
-			else (RaceProgress.format_time(player.finish_time) if player.finish_time >= 0.0 else "CLASSIFIED")
+			else (RaceProgress.format_time(player.finish_time) if player.finish_time >= 0.0 else "DNF")
 	best_value.text = RaceProgress.format_time(player.best_lap)
 	_fill_rewards()
 	if mp:
@@ -102,10 +102,8 @@ func open(manager: RaceManager) -> void:
 		continue_button.text = "Race again"
 	elif c.is_complete():
 		continue_button.text = "Back to main menu"
-	elif c.is_series():
-		continue_button.text = "Next race: pick a track"
 	else:
-		continue_button.text = "Next race: %s" % c.current_track_name()
+		continue_button.text = "Next Race"
 	menu_button.visible = c == null or not c.is_complete()
 	menu_button.text = "Car select" if mp else "Main menu"
 	if mp and c != null and c.is_complete():
@@ -231,7 +229,7 @@ func refresh() -> void:
 			time_text = "OUT  LAP %d" % racer.eliminated_lap
 		elif racer.finished:
 			# Classified without crossing the line (GP at your finish, Elimination runner-up).
-			time_text = RaceProgress.format_time(racer.finish_time) if racer.finish_time >= 0.0 else "classified"
+			time_text = RaceProgress.format_time(racer.finish_time) if racer.finish_time >= 0.0 else "DNF"
 		var last := RaceProgress.format_time(racer.best_lap)
 		if c != null and not c.results.is_empty():
 			last = "+%d" % c.points_in_race(c.results.size() - 1, racer.racer_id)
@@ -344,7 +342,7 @@ func _fill_players() -> void:
 		place.custom_minimum_size = Vector2(64, 0)
 		row.add_child(place)
 		var time := ("lap %d" % p.eliminated_lap) if p.eliminated \
-				else (RaceProgress.format_time(p.finish_time) if p.finish_time >= 0.0 else "classified")
+				else (RaceProgress.format_time(p.finish_time) if p.finish_time >= 0.0 else "DNF")
 		row.add_child(UIStyle.stat("%s    best %s" % [time, RaceProgress.format_time(p.best_lap)], 16, UIStyle.MUTED))
 		players_box.add_child(row)
 

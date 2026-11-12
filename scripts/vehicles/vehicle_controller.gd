@@ -63,6 +63,8 @@ var steer_input: float = 0.0
 var drift_left_held: bool = false
 var drift_right_held: bool = false
 var input_enabled: bool = true
+## 0..1 engine rev before START (rocket start; VehicleFeedback shows it).
+var start_rev: float = 0.0
 ## Set by VehicleRecovery while a recovery sequence has the controls. Kept
 ## apart from input_enabled, which the race (countdown, elimination) owns.
 var recovery_lock: bool = false
@@ -234,6 +236,12 @@ func _read_player_input() -> void:
 			drift_left_held = true
 		elif steer_input >= SHIFT_DRIFT_STEER_THRESHOLD:
 			drift_right_held = true
+
+
+## Accelerate is down right now, even while the controls are locked (the
+## countdown's rocket start reads it).
+func accelerate_held() -> bool:
+	return Input.is_action_pressed(action(&"accelerate"))
 
 
 ## This car's version of an input action (see input_prefix).

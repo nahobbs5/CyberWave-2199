@@ -35,7 +35,7 @@ func _run_all() -> void:
 	await _run("wrong-way warning", _test_wrong_way, {})
 	await _run("full 3-lap race, 8 AI drivers", _test_full_race, {"player_uses_autopilot": true})
 	await _run("AI drifts where corners allow", _test_ai_drifting,
-			{"player_uses_autopilot": true, "total_laps": 1, "oval": true})
+			{"player_uses_autopilot": true, "total_laps": 1, "oval": true, "no_launches": true})
 	print("\n%d checks passed, %d failed" % [_passed, _failed])
 	quit(1 if _failed > 0 else 0)
 
@@ -59,6 +59,12 @@ func _run(test_name: String, test: Callable, options: Dictionary) -> void:
 	race.total_laps = options.get("total_laps", 3)
 	# Phase 2 tests cover pure racing; Phase 3 tests cover weapons.
 	race.weapons_enabled = false
+	if options.get("no_launches", false):
+		# Measures AI driving on its own: no rocket starts or burnouts shuffling the pack.
+		var d := (race.difficulty if race.difficulty != null else AIDifficulty.new()).duplicate() as AIDifficulty
+		d.rocket_start_chance = 0.0
+		d.burnout_chance = 0.0
+		race.difficulty = d
 	if options.get("oval", false):
 		(race.get_node("TestCircuit") as TrackCircuit).control_points = PackedVector3Array(OVAL)
 	root.add_child(race)
@@ -163,13 +169,15 @@ func _test_countdown(race: RaceManager) -> void:
 	race.countdown_tick.connect(func(word: String) -> void: words.append(word))
 	race.start_countdown()
 	var start := race.player.vehicle.global_position
-	Input.action_press(&"accelerate")
 	await _frames(10)
 	_check(race.track.start_lights() == 1, "first beep: first red light (%d)" % race.track.start_lights())
 	await _frames(80)
 	_check(race.state == RaceManager.State.COUNTDOWN, "still counting down at 1.5 s")
 	await _frames(60)
 	_check(race.state == RaceManager.State.COUNTDOWN and race.track.start_lights() == 3, "2.5 s: three reds, still waiting")
+	# Pressed after the rocket-start window: a plain start (test_start_boost.gd).
+	Input.action_press(&"accelerate")
+	await _frames(10)
 	_check(race.player.vehicle.global_position.distance_to(start) < 0.5, "throttle does nothing before START")
 	await _wait_for_state(race, RaceManager.State.RACING, 120)
 	_check(words == ["3", "2", "1", "START"], "3, 2, 1, START in order (%s)" % [words])

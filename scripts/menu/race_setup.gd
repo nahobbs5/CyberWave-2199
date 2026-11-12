@@ -20,7 +20,7 @@ const RACE_COUNTS: Array[int] = [1, 2, 3, 4, 6, 8, 12, 16]
 
 ## What a mode / race type means, for the setup screens ("NPCs" are the
 ## computer-driven rivals).
-static func describe(p_mode: RaceConfig.Mode, races: int = 1, npcs: bool = true) -> String:
+static func describe(p_mode: RaceConfig.Mode, _races: int = 1, npcs: bool = true) -> String:
 	var lines: PackedStringArray = []
 	match p_mode:
 		RaceConfig.Mode.GRAND_PRIX:
@@ -31,8 +31,6 @@ static func describe(p_mode: RaceConfig.Mode, races: int = 1, npcs: bool = true)
 					+ "race until there is only one victor. Requires NPCs to fill the grid.")
 		_:
 			lines.append("STANDARD: Compete for the fastest time.")
-	if p_mode != RaceConfig.Mode.GRAND_PRIX and races > 1:
-		lines.append("%d RACES: pick a track before each one. Points add up like a Grand Prix and the most points wins the set." % races)
 	if not npcs:
 		lines.append("NPCs OFF: just the players, no computer cars.")
 	return "\n".join(lines)

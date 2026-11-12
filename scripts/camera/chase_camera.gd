@@ -119,7 +119,7 @@ func _on_boost_shake(level: int) -> void:
 func _on_effect_shake(effect: StringName, _duration: float) -> void:
 	if effect == &"stun" or effect == &"stagger":
 		add_shake(0.6)
-	elif effect == &"emp" or effect == &"traction":
+	elif effect == &"emp" or effect == &"traction" or effect == &"burnout":
 		add_shake(0.3)
 
 

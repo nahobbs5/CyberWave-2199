@@ -19,10 +19,14 @@ enum Kind { BOOST_PAD, BOOST_RING, EMP_PUDDLE, BREAKABLE, JUMP_RAMP, WATER }
 
 const PAD_COLOR := Color(0.0, 0.95, 1.0)
 const RING_COLOR := Color(1.0, 0.2, 0.85)
-const EMP_COLOR := Color(0.3, 0.55, 1.0)
+## Harsh violet-white: deliberately unlike the cyan boost pads.
+const EMP_COLOR := Color(0.75, 0.5, 1.0)
 const BARRIER_COLOR := Color(1.0, 0.75, 0.1)
 const RAMP_COLOR := Color(1.0, 0.55, 0.1)
 const WATER_COLOR := Color(0.2, 0.55, 0.75)
+const WATER_SHADER := preload("res://assets/shaders/standing_water.gdshader")
+const EMP_SHADER := preload("res://assets/shaders/emp_puddle.gdshader")
+const SIGN_SHADER := preload("res://assets/shaders/hazard_sign.gdshader")
 ## How long a car stays wet after leaving the water.
 const WET_LINGER := 0.3
 
@@ -43,6 +47,11 @@ const WET_LINGER := 0.3
 @export var width: float = 5.0
 ## Along the road (ramps and water).
 @export var length: float = 14.0
+## Water only: tint of the water (deep colour derived from it).
+@export var water_tint: Color = WATER_COLOR:
+	set(value):
+		water_tint = value
+		_rebuild_visuals()
 ## Height of a jump ramp's lip.
 @export var ramp_height: float = 1.6
 ## Boost strength (pads and rings): extra top speed, duration, instant kick.
@@ -66,7 +75,11 @@ var _visual: Node3D
 var _light: OmniLight3D
 var _time: float = 0.0
 var _area: Area3D
-var _water_mat: StandardMaterial3D
+var _emp_mat: ShaderMaterial
+var _sparks: CPUParticles3D
+var _flash: float = 0.0
+## Own RNG for the flicker so visuals never shift the global random sequence.
+var _fx_rng := RandomNumberGenerator.new()
 
 
 func _ready() -> void:
@@ -123,6 +136,8 @@ func _rebuild_visuals() -> void:
 		return
 	for child in get_children():
 		child.queue_free()
+	_emp_mat = null
+	_sparks = null
 	_visual = Node3D.new()
 	add_child(_visual)
 	var area := Area3D.new()
@@ -213,21 +228,84 @@ func _ring_visual() -> void:
 
 
 func _puddle_visual() -> void:
+	var r := width * 0.5
+	_emp_mat = ShaderMaterial.new()
+	_emp_mat.shader = EMP_SHADER
+	_emp_mat.set_shader_parameter("radius", r)
+	_emp_mat.set_shader_parameter("flicker", 0.0 if GameSettings.reduced_flashing else 1.0)
 	var disc := MeshInstance3D.new()
 	var cyl := CylinderMesh.new()
-	cyl.top_radius = width * 0.5
-	cyl.bottom_radius = width * 0.5
+	cyl.top_radius = r
+	cyl.bottom_radius = r
 	cyl.height = 0.03
-	cyl.radial_segments = 24
+	cyl.radial_segments = 32
 	disc.mesh = cyl
 	disc.scale = Vector3(1, 1, 0.8)
 	disc.position.y = 0.05
-	disc.material_override = _mat(EMP_COLOR, 2.5)
+	disc.material_override = _emp_mat
 	_visual.add_child(disc)
-	# Warning posts so the hazard is visible before you reach it.
+	# Raised yellow/black lip around the edge.
+	var lip_mat := ShaderMaterial.new()
+	lip_mat.shader = EMP_SHADER
+	lip_mat.set_shader_parameter("mode", 1)
+	var lip := MeshInstance3D.new()
+	var torus := TorusMesh.new()
+	torus.inner_radius = r - 0.12
+	torus.outer_radius = r + 0.18
+	torus.rings = 48
+	torus.ring_segments = 8
+	lip.mesh = torus
+	lip.scale = Vector3(1, 0.35, 0.8)
+	lip.position.y = 0.06
+	lip.material_override = lip_mat
+	_visual.add_child(lip)
+	# Warning signs either side, facing oncoming cars (+Z is behind).
+	var post_mat := _mat(Color(0.08, 0.08, 0.09), 0.0)
+	var sign_mat := ShaderMaterial.new()
+	sign_mat.shader = SIGN_SHADER
 	for side in [-1.0, 1.0]:
-		_box(Vector3(0.15, 1.2, 0.15), Vector3(side * (width * 0.5 + 0.4), 0.6, 0), _mat(EMP_COLOR, 3.0))
+		var x: float = side * (r + 0.6)
+		_box(Vector3(0.12, 1.4, 0.12), Vector3(x, 0.7, 0), post_mat)
+		var sign_quad := MeshInstance3D.new()
+		var quad := QuadMesh.new()
+		quad.size = Vector2(1.1, 1.0)
+		sign_quad.mesh = quad
+		sign_quad.position = Vector3(x, 1.75, 0.08)
+		sign_quad.material_override = sign_mat
+		_visual.add_child(sign_quad)
+	_sparks = _make_sparks(r)
 	_light = _add_light(EMP_COLOR, 3.0, 8.0, Vector3(0, 0.8, 0))
+
+
+## Short bright sparks popping off the puddle (off with reduced flashing).
+func _make_sparks(r: float) -> CPUParticles3D:
+	var p := CPUParticles3D.new()
+	p.amount = 24
+	p.lifetime = 0.35
+	p.explosiveness = 0.6
+	p.randomness = 1.0
+	p.emission_shape = CPUParticles3D.EMISSION_SHAPE_BOX
+	p.emission_box_extents = Vector3(r * 0.7, 0.02, r * 0.55)
+	p.direction = Vector3.UP
+	p.spread = 70.0
+	p.initial_velocity_min = 1.5
+	p.initial_velocity_max = 4.0
+	p.gravity = Vector3(0, -9.8, 0)
+	p.scale_amount_min = 0.5
+	p.scale_amount_max = 1.0
+	var mesh := SphereMesh.new()
+	mesh.radius = 0.035
+	mesh.height = 0.07
+	mesh.radial_segments = 4
+	mesh.rings = 2
+	var m := _mat(Color(0.95, 0.85, 1.0), 6.0)
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mesh.material = m
+	p.mesh = mesh
+	p.position.y = 0.08
+	p.emitting = not GameSettings.reduced_flashing
+	_visual.add_child(p)
+	return p
 
 
 func _barrier_visual() -> void:
@@ -292,17 +370,20 @@ func _water_visual() -> void:
 	plane.size = Vector2(width, length)
 	water.mesh = plane
 	water.position.y = 0.06
-	_water_mat = StandardMaterial3D.new()
-	_water_mat.albedo_color = Color(WATER_COLOR.r, WATER_COLOR.g, WATER_COLOR.b, 0.55)
-	_water_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	_water_mat.metallic = 0.6
-	_water_mat.roughness = 0.05
-	_water_mat.emission_enabled = true
-	_water_mat.emission = WATER_COLOR
-	_water_mat.emission_energy_multiplier = 0.4
-	water.material_override = _water_mat
+	var m := ShaderMaterial.new()
+	m.shader = WATER_SHADER
+	m.set_shader_parameter("deep_color", water_tint.darkened(0.82))
+	m.set_shader_parameter("shallow_color", water_tint.darkened(0.4))
+	m.set_shader_parameter("opacity", 0.62)
+	m.set_shader_parameter("rain_rings", 0.25)
+	m.set_shader_parameter("murk", 0.4)
+	m.set_shader_parameter("emission_strength", 0.06)
+	# Feather about a metre in from the edges.
+	m.set_shader_parameter("edge_fade", 1.0)
+	m.set_shader_parameter("plane_size", Vector2(width, length))
+	water.material_override = m
 	_visual.add_child(water)
-	_light = _add_light(Color(0.5, 0.8, 1.0), 1.2, maxf(width, length) * 0.6, Vector3(0, 1.0, 0))
+	_light = _add_light(water_tint.lightened(0.4), 1.2, maxf(width, length) * 0.6, Vector3(0, 1.0, 0))
 
 
 func _add_light(color: Color, energy: float, light_range: float, pos: Vector3) -> OmniLight3D:
@@ -377,7 +458,18 @@ func _process(delta: float) -> void:
 	if _light == null or Engine.is_editor_hint():
 		return
 	_time += delta
-	if kind == Kind.EMP_PUDDLE and not GameSettings.reduced_flashing:
-		_light.light_energy = 2.0 + 1.5 * absf(sin(_time * 9.0))
-	elif kind == Kind.WATER and _water_mat != null:
-		_water_mat.emission_energy_multiplier = 0.35 + 0.12 * sin(_time * 1.7)
+	if kind != Kind.EMP_PUDDLE:
+		return
+	var calm := GameSettings.reduced_flashing
+	if _emp_mat != null:
+		_emp_mat.set_shader_parameter("flicker", 0.0 if calm else 1.0)
+	if _sparks != null and _sparks.emitting == calm:
+		_sparks.emitting = not calm
+	if calm:
+		_light.light_energy = 2.5
+		return
+	# Irregular stutter: random spikes that die off quickly, not a smooth pulse.
+	_flash = maxf(_flash - delta * 9.0, 0.0)
+	if _fx_rng.randf() < delta * 7.0:
+		_flash = _fx_rng.randf_range(0.6, 1.0)
+	_light.light_energy = 1.2 + 4.0 * _flash

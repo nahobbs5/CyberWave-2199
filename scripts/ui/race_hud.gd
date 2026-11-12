@@ -78,6 +78,7 @@ func setup(manager: RaceManager) -> void:
 	standings.me_racer = racer if race.is_multiplayer() else null
 	items.racer = racer
 	race.countdown_tick.connect(_on_countdown_tick)
+	race.start_launched.connect(_on_start_launched)
 	race.lap_completed.connect(_on_lap_completed)
 	race.player_finished.connect(_on_player_finished)
 	race.racer_eliminated.connect(_on_racer_eliminated)
@@ -264,6 +265,17 @@ func _track_position(delta: float) -> void:
 
 func _on_countdown_tick(text: String) -> void:
 	announcer.announce(text, 1.0 if text != "START" else 0.8, CYAN if text != "START" else MAGENTA)
+
+
+## Rocket start / burnout callout for this view's racer.
+func _on_start_launched(who: RaceProgress, result: StringName) -> void:
+	if who != racer:
+		return
+	# Arrives on the same frame as START: keep START, add the callout under it.
+	if result == StartLaunch.ROCKET:
+		announcer.announce("START", 1.2, MAGENTA, "ROCKET START!")
+	elif result == StartLaunch.BURNOUT:
+		announcer.announce("START", 1.2, MAGENTA, "BURNOUT!  too early")
 
 
 func _on_lap_completed(who: RaceProgress) -> void:

@@ -97,7 +97,7 @@ func _materials_setup() -> void:
 	material("mist", Color(0.85, 0.92, 1.0, 0.12), 0.3, 0.0, 1.0, true)
 	textured("dragon_wood", "pine_bark", Color(0.95, 0.82, 0.6), 1.5)
 	material("garden_floor", Color(0.12, 0.22, 0.1))
-	material("water", Color(0.02, 0.05, 0.1), 0.0, 0.7, 0.08)
+	register_material("water", water_material(Color(0.01, 0.03, 0.07), Color(0.05, 0.14, 0.24), 0.9, 0.0, 0.2))
 	material("mbs_tower", Color(0.75, 0.78, 0.85), 0.0, 0.3, 0.5)
 	material("window_warm", Color(1.0, 0.82, 0.5), 1.6)
 	material("window_cool", Color(0.55, 0.78, 1.0), 1.5)

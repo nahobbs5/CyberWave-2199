@@ -14,9 +14,10 @@ extends ResultsScreen
 
 const DESIGN := Vector2(1280, 720)
 const ROW_H := 44.0
-## Table columns: badge, car, name, time, best lap, points (x start, width).
-const COLS: Array[Vector2] = [Vector2(0, 74), Vector2(80, 96), Vector2(186, 250), Vector2(436, 130),
-		Vector2(566, 120), Vector2(686, 70)]
+## Table columns: badge, car, name, points, time, best lap (x start, width).
+## Standings page: points column = total, time column = this race's gain.
+const COLS: Array[Vector2] = [Vector2(0, 74), Vector2(80, 96), Vector2(186, 190), Vector2(376, 100),
+		Vector2(476, 140), Vector2(616, 130)]
 const SILVER := Color(0.78, 0.82, 0.9)
 const BRONZE := Color(0.86, 0.5, 0.28)
 const SLATE := Color(0.16, 0.18, 0.26)
@@ -72,7 +73,7 @@ func open(manager: RaceManager) -> void:
 	_laurels.color = place_color(place) if place <= 3 and not player.eliminated else UIStyle.GOLD
 	_laurels.queue_redraw()
 	time_value.text = ("OUT  LAP %d" % player.eliminated_lap) if player.eliminated \
-			else (RaceProgress.format_time(player.finish_time) if player.finish_time >= 0.0 else "CLASSIFIED")
+			else (RaceProgress.format_time(player.finish_time) if player.finish_time >= 0.0 else "DNF")
 	best_value.text = RaceProgress.format_time(player.best_lap)
 	laps_value.text = "%d / %d" % [mini(player.lap, race.total_laps) if player.eliminated else race.total_laps, race.total_laps]
 	track_label.text = race.config.track_name.to_upper()
@@ -113,10 +114,8 @@ func _set_continue_text() -> void:
 		continue_button.text = "Race again"
 	elif c.is_complete():
 		continue_button.text = "Back to main menu"
-	elif c.is_series():
-		continue_button.text = "Next race: pick a track"
 	else:
-		continue_button.text = "Next race: %s" % c.current_track_name()
+		continue_button.text = "Next Race"
 	(continue_button as NeonMenuButton).icon_kind = "reset" if c == null else "play"
 	continue_button.queue_redraw()
 
@@ -237,11 +236,15 @@ func refresh() -> void:
 			if racer.eliminated:
 				time_text = "OUT  LAP %d" % racer.eliminated_lap
 			elif racer.finished:
-				time_text = RaceProgress.format_time(racer.finish_time) if racer.finish_time >= 0.0 else "classified"
+				time_text = RaceProgress.format_time(racer.finish_time) if racer.finish_time >= 0.0 else "DNF"
+			# Points in every race: the cup's record, else what the place is worth
+			# (shown once the racer is placed).
 			var pts := ""
 			if c != null and not c.results.is_empty():
 				pts = "+%d" % c.points_in_race(c.results.size() - 1, racer.racer_id)
-			var texts := [str(racer.position), racer.display_name, time_text, RaceProgress.format_time(racer.best_lap), pts]
+			elif c == null and (racer.finished or racer.eliminated) and racer.finish_position > 0:
+				pts = "+%d" % Championship.points_for(racer.finish_position)
+			var texts := [str(racer.position), racer.display_name, pts, time_text, RaceProgress.format_time(racer.best_lap)]
 			for k in 5:
 				(cells[k] as Label).text = texts[k]
 		for k in 5:
@@ -313,7 +316,7 @@ static func _thousands(n: int) -> String:
 func _set_columns(totals: bool) -> void:
 	var c := race.championship if race != null else null
 	var names := ["POS", "", "RACER", "TOTAL PTS", "THIS RACE", ""] if totals \
-			else ["POS", "", "RACER", "TOTAL TIME", "BEST LAP", "PTS" if c != null else ""]
+			else ["POS", "", "RACER", "PTS", "TOTAL TIME", "BEST LAP"]
 	for k in _header_cells.size():
 		_header_cells[k].text = names[k]
 	for row in _rows:

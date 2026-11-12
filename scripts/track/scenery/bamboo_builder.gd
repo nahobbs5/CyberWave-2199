@@ -25,7 +25,7 @@ const VISIBLE_RANGE := 230.0
 ## Culms are grouped per kind and variant into square chunks this size (m).
 const CHUNK := 120.0
 ## A culm texture tile covers one internode (m).
-const INTERNODE := 0.5
+const INTERNODE := 0.9
 
 ## Shared generated textures and materials (built once per run).
 static var _cache: Dictionary = {}
@@ -128,7 +128,7 @@ func add_pole(a: Vector3, b: Vector3, radius: float, tint: Color) -> void:
 ## Where the tip of a culm placed with place_culm() ends up, measured
 ## horizontally toward the lean (track-local metres).
 static func tip_offset(kind: String, scale: float) -> float:
-	return (4.0 if kind == "arch" else 0.6) * scale
+	return (18.5 * sin(deg_to_rad(12.0)) + 0.8 if kind == "arch" else 0.6) * scale
 
 
 func culm_count() -> int:
@@ -219,72 +219,112 @@ func _add(kind_variant: String, xf: Transform3D, tint: Color) -> void:
 
 # --- meshes --------------------------------------------------------------------------
 
-## One culm: a slowly tapering tube along a path that is upright at the base
-## and leans over its top 40% (UV v counts internodes, so the texture draws
-## the nodes). The detailed mesh has short twigs carrying leaf sprays over
-## the top third and a drooping crown; the far mesh hangs fewer, larger
-## sprays straight off the stem.
+## One culm: a rigid, nearly straight tube tilted from its base (toward
+## local -Z: 9-15 degrees for "arch", 0-3 for the others), drooping a
+## little only in its top 15% under the weight of the crown. The radius
+## holds to 70% of the height, then tapers. UV v counts internodes from the
+## ground, so the texture's node bands line up with the geometry: the
+## detailed mesh swells a ridge at every node up to about 6 m (where the
+## camera sees them close). Leaves grow only in the top 30%: at each node
+## two branches stick out almost level, each holding a flat fan of leaf
+## cards, so the foliage forms stacked, feathery layers, plus a crown of
+## fans at the tip. The far mesh is plainer (fewer sides, no ridges, fewer
+## and larger fans).
 func _build_culm(kind: String, detail: bool, variant: int) -> ArrayMesh:
 	var dead := kind == "dead"
 	var snapped := dead and variant == 1
-	var h := _rng.randf_range(16.0, 23.0)
+	var h := _rng.randf_range(15.0, 22.0)
 	if snapped:
 		h = _rng.randf_range(4.0, 8.0)
-	var lean := _rng.randf_range(0.2, 1.0)
+	var tilt := deg_to_rad(_rng.randf_range(0.0, 3.0))
 	if kind == "arch":
-		lean = _rng.randf_range(3.0, 5.0)
-	var drift := _rng.randf_range(-0.4, 0.4)
-	var count := 14 if detail else 8
-	var path := PackedVector3Array()
-	for i in count:
-		var t := float(i) / (count - 1)
-		var bow := pow(t, 2.6)
-		# Leaning shortens the culm's height a little.
-		path.append(Vector3(drift * bow, h * t * (1.0 - 0.06 * bow * lean / 5.0), -lean * bow))
-	var r0 := _rng.randf_range(0.075, 0.105)
+		tilt = deg_to_rad(_rng.randf_range(9.0, 15.0))
+	elif dead:
+		tilt = deg_to_rad(_rng.randf_range(0.0, 5.0))
+	var axis := Vector3(0, cos(tilt), -sin(tilt))
+	var droop := 0.0 if dead else _rng.randf_range(0.3, 0.7) * (1.6 if kind == "arch" else 1.0)
+	var r0 := _rng.randf_range(0.13, 0.18)
+	var r_tip := r0 * (0.8 if snapped else 0.45)
+	var radius_at := func(s: float) -> float:
+		var t := s / h
+		return r0 if t < 0.7 else lerpf(r0, r_tip, (t - 0.7) / 0.3)
+	var point_at := func(s: float) -> Vector3:
+		var t := s / h
+		var p := axis * s
+		if t > 0.85:
+			var f := (t - 0.85) / 0.15
+			p += Vector3(0, -droop * 0.3 * f * f, -droop * f * f)
+		return p
+	# Stem rings: plain rings every couple of metres, and a swelling ridge at
+	# each node low down.
+	var stations: Array[Vector2] = [] # (s, radius factor)
+	var ridge_top := 6.0 if detail else -1.0
+	var s := 0.0
+	var node := 1
+	while s < h:
+		var next := node * INTERNODE
+		if next >= h:
+			break
+		if next < ridge_top:
+			stations.append(Vector2(next - 0.035, 1.0))
+			stations.append(Vector2(next, 1.08))
+			stations.append(Vector2(next + 0.035, 1.0))
+		elif node % (2 if detail else 4) == 0 or next > h * 0.84:
+			stations.append(Vector2(next, 1.0))
+		s = next
+		node += 1
+	var path := PackedVector3Array([point_at.call(0.0)])
+	var radii := PackedFloat32Array([r0])
+	var vs := PackedFloat32Array([0.0])
+	for st_: Vector2 in stations:
+		path.append(point_at.call(st_.x))
+		radii.append(float(radius_at.call(st_.x)) * st_.y)
+		vs.append(st_.x / INTERNODE)
+	path.append(point_at.call(h))
+	radii.append(r_tip)
+	vs.append(h / INTERNODE)
 	var stem := SurfaceTool.new()
 	stem.begin(Mesh.PRIMITIVE_TRIANGLES)
-	_tube(stem, path, r0, r0 * (0.75 if snapped else 0.4), 8 if detail else 5, _rng.randf())
+	_tube_r(stem, path, radii, vs, 8 if detail else 5)
 	var leaves := SurfaceTool.new()
 	leaves.begin(Mesh.PRIMITIVE_TRIANGLES)
-	var has_leaves := not dead
-	if has_leaves:
-		var along := 0.64 if detail else 0.7
-		var side := 1.0
-		while along < 0.97:
-			var p := _path_point(path, along)
-			var tangent := (_path_point(path, minf(along + 0.02, 1.0)) - _path_point(path, maxf(along - 0.02, 0.0))).normalized()
-			var out := tangent.cross(Vector3.RIGHT if kind == "arch" else Vector3.FORWARD).normalized() * side
-			if out.length_squared() < 0.1:
-				out = Vector3.RIGHT * side
-			out = out.rotated(tangent, _rng.randf_range(-0.9, 0.9))
-			# Branches rise a little, then the leaves droop from them.
-			var reach := _rng.randf_range(0.7, 1.4) * (1.3 - along * 0.6)
-			var twig_dir := (out + tangent * 0.45).normalized()
-			if detail:
-				var end := p + twig_dir * reach
-				_tube(stem, PackedVector3Array([p, end]), 0.014, 0.006, 3, 0.0)
-				for k in 3:
-					var at := p.lerp(end, 0.45 + 0.28 * k)
-					var o := (out.rotated(tangent, _rng.randf_range(-0.7, 0.7)) + Vector3(0, -0.15, 0)).normalized()
-					_card(leaves, at, o, tangent, _rng.randf_range(0.9, 1.35))
-			else:
-				_card(leaves, p + out * 0.3, out, tangent, _rng.randf_range(1.7, 2.3))
-			along += _rng.randf_range(0.035, 0.05) if detail else _rng.randf_range(0.06, 0.09)
-			side = -side
-		# A drooping crown of sprays at the tip.
-		var tip := path[count - 1]
-		var crown := 6 if detail else 3
+	if not dead:
+		# Branches at the nodes over the top 30%, turning round the stem.
+		var turn := _rng.randf() * TAU
+		var n := int(ceil(h * 0.7 / INTERNODE))
+		var step := 1 if detail else 2
+		while n * INTERNODE < h - 0.3:
+			var at_s := n * INTERNODE
+			var t := at_s / h
+			var p: Vector3 = point_at.call(at_s)
+			for pair in 2:
+				var a := turn + pair * PI + _rng.randf_range(-0.4, 0.4)
+				var level := Vector3(cos(a), 0, sin(a))
+				var rise := deg_to_rad(_rng.randf_range(10.0, 25.0))
+				var dir := (level * cos(rise) + Vector3.UP * sin(rise)).normalized()
+				var reach := _rng.randf_range(1.0, 2.0) * (1.25 - (t - 0.7) * 1.5)
+				var end := p + dir * reach
+				if detail:
+					_tube(stem, PackedVector3Array([p, end]), 0.02, 0.008, 3, 0.0)
+					for k in 3:
+						var fan := level.rotated(Vector3.UP, _rng.randf_range(-0.6, 0.6))
+						_card(leaves, p.lerp(end, 0.35 + 0.32 * k), fan, Vector3.UP, _rng.randf_range(1.0, 1.4), 0.18)
+				else:
+					_card(leaves, p.lerp(end, 0.5), level, Vector3.UP, _rng.randf_range(1.9, 2.4), 0.2)
+			turn += 2.4 # successive nodes branch in new directions
+			n += step
+		# A crown of fans at the tip, angled out and a little down.
+		var tip: Vector3 = point_at.call(h)
+		var crown := 5 if detail else 3
 		for k in crown:
 			var a := TAU * k / crown + _rng.randf_range(-0.3, 0.3)
-			var o := Vector3(cos(a), -0.45, sin(a)).normalized()
-			_card(leaves, tip + o * 0.25, o, Vector3(0, 1, -lean * 0.08).normalized(),
-					_rng.randf_range(1.2, 1.7) if detail else _rng.randf_range(2.0, 2.5))
+			var o := Vector3(cos(a), -0.2, sin(a)).normalized()
+			_card(leaves, tip, o, Vector3.UP, _rng.randf_range(1.2, 1.6) if detail else _rng.randf_range(2.0, 2.4), 0.35)
 	var mesh := ArrayMesh.new()
 	stem.generate_tangents()
 	stem.commit(mesh)
 	mesh.surface_set_material(0, culm_material)
-	if has_leaves:
+	if not dead:
 		leaves.commit(mesh)
 		mesh.surface_set_material(1, leaf_material)
 	return mesh
@@ -399,13 +439,13 @@ func _path_point(path: PackedVector3Array, t: float) -> Vector3:
 
 ## A leaf card: a quad hanging out from `at` along `out`, its top edge
 ## toward `up`, `size` metres long. The texture's twig is at the top-left.
-func _card(st: SurfaceTool, at: Vector3, out: Vector3, up: Vector3, size: float) -> void:
+func _card(st: SurfaceTool, at: Vector3, out: Vector3, up: Vector3, size: float, droop: float = 0.55) -> void:
 	var across := out.cross(up).normalized()
 	if across.length_squared() < 0.1:
 		across = Vector3.RIGHT
 	var down := across.cross(out).normalized()
 	# The card droops: it runs out and down from the twig.
-	var dir := (out + down * 0.55).normalized()
+	var dir := (out + down * droop).normalized()
 	var width := size * 0.6
 	var a := at - across * width * 0.5
 	var b := at + across * width * 0.5
@@ -424,27 +464,35 @@ func _card(st: SurfaceTool, at: Vector3, out: Vector3, up: Vector3, size: float)
 ## internodes along the length (starting at v0).
 func _tube(st: SurfaceTool, path: PackedVector3Array, r0: float, r1: float, sides: int, v0: float) -> void:
 	var n := path.size()
-	var rings: Array[PackedVector3Array] = []
-	var normals: Array[PackedVector3Array] = []
+	var radii := PackedFloat32Array()
 	var vs := PackedFloat32Array()
 	var length := 0.0
-	var tangent := (path[1] - path[0]).normalized()
-	var side := tangent.cross(Vector3.FORWARD if absf(tangent.dot(Vector3.FORWARD)) < 0.9 else Vector3.UP).normalized()
 	for i in n:
 		if i > 0:
 			length += path[i].distance_to(path[i - 1])
 		vs.append(v0 + length / INTERNODE)
+		radii.append(lerpf(r0, r1, pow(float(i) / (n - 1), 1.3)))
+	_tube_r(st, path, radii, vs, sides)
+
+
+## Tube through `path` with a radius and a texture v per point.
+func _tube_r(st: SurfaceTool, path: PackedVector3Array, radii: PackedFloat32Array, vs: PackedFloat32Array, sides: int) -> void:
+	var n := path.size()
+	var rings: Array[PackedVector3Array] = []
+	var normals: Array[PackedVector3Array] = []
+	var tangent := (path[1] - path[0]).normalized()
+	var side := tangent.cross(Vector3.FORWARD if absf(tangent.dot(Vector3.FORWARD)) < 0.9 else Vector3.UP).normalized()
+	for i in n:
 		var t_next := (path[mini(i + 1, n - 1)] - path[maxi(i - 1, 0)]).normalized()
 		side = (side - t_next * side.dot(t_next)).normalized()
 		tangent = t_next
 		var up := tangent.cross(side).normalized()
-		var r := lerpf(r0, r1, pow(float(i) / (n - 1), 1.3))
 		var ring := PackedVector3Array()
 		var nr := PackedVector3Array()
 		for k in sides + 1:
 			var a := TAU * k / sides
 			var dir := side * cos(a) + up * sin(a)
-			ring.append(path[i] + dir * r)
+			ring.append(path[i] + dir * radii[i])
 			nr.append(dir)
 		rings.append(ring)
 		normals.append(nr)
@@ -458,11 +506,13 @@ func _tube(st: SurfaceTool, path: PackedVector3Array, r0: float, r1: float, side
 
 # --- materials and generated textures ----------------------------------------------------
 
-## Culm skin, one internode per tile (v = 0 just above a node). Near-white
-## so the instance tint gives the hue: fine lengthwise striations, a soft
-## mottle and the odd lichen fleck, a dark node line with a raised pale ring
-## above it, and a white powdery band just below the next node. A matching
-## normal map raises the node ridge.
+## Culm skin, one internode per tile (row 0 sits just above a node, the
+## last row just below the next). Near-white so the instance tint gives the
+## hue, with a faint lengthwise grain. At the node: a dark band split over
+## both ends of the tile, a bright raised ring just above it, and a white
+## powdery band about 10 cm tall just below it. Strong contrast, so the
+## nodes still read when mipmapped far away. A matching normal map raises
+## the ring.
 static func _culm_image() -> Array[Image]:
 	var w := 64
 	var h := 256
@@ -471,45 +521,42 @@ static func _culm_image() -> Array[Image]:
 	bump.resize(h)
 	var noise := FastNoiseLite.new()
 	noise.seed = 31
-	noise.frequency = 0.08
-	var lichen := FastNoiseLite.new()
-	lichen.seed = 77
-	lichen.frequency = 0.25
+	noise.frequency = 0.05
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 5
-	var streaks := PackedFloat32Array()
+	var grain := PackedFloat32Array()
 	for x in w:
-		streaks.append(rng.randf_range(0.93, 1.0))
+		grain.append(rng.randf_range(0.96, 1.0))
 	for y in h:
 		var hb := 0.0
-		if y < 2:
-			hb = -0.6
-		elif y < 9:
-			hb = 1.0 - absf(y - 5.0) / 4.0
+		if y < 5:
+			hb = -0.5
+		elif y < 14:
+			hb = 1.0 - absf(y - 9.5) / 4.5
+		elif y >= h - 4:
+			hb = -0.5
 		bump[y] = hb
 	for x in w:
 		var a := TAU * x / w
 		for y in h:
-			# Periodic around the culm: sample the noise on a cylinder.
-			var m := noise.get_noise_3d(cos(a) * 8.0, sin(a) * 8.0, y * 0.5)
-			var c := Color(0.92, 0.96, 0.86) * (streaks[x] * (0.95 + 0.05 * sin(x * 2.3)))
-			c = c.darkened(0.07 * (m * 0.5 + 0.5))
-			var l := lichen.get_noise_3d(cos(a) * 20.0, sin(a) * 20.0, y * 1.2)
-			if l > 0.55:
-				c = c.lerp(Color(0.86, 0.87, 0.8), 0.6)
-			if y < 2:
-				c = Color(0.36, 0.38, 0.27) # the node line
-			elif y < 9:
-				c = c.lerp(Color(0.98, 1.0, 0.9), 0.35 * bump[y]) # the raised ring
-			elif y > h - 26:
-				# Waxy white bloom just below the next node.
-				var f := float(y - (h - 26)) / 26.0
-				c = c.lerp(Color(1.0, 1.0, 0.98), 0.75 * smoothstep(0.0, 0.6, f))
+			var m := noise.get_noise_3d(cos(a) * 6.0, sin(a) * 6.0, y * 0.3)
+			var c := Color(0.94, 0.97, 0.9) * grain[x]
+			c = c.darkened(0.05 * (m * 0.5 + 0.5))
+			# A soft sheen band down the middle of each internode.
+			c = c.lightened(0.05 * sin(PI * float(y) / h))
+			if y < 5 or y >= h - 4:
+				c = Color(0.22, 0.25, 0.15) # the node band
+			elif y < 14:
+				c = c.lerp(Color(1.0, 1.0, 0.92), 0.6 * bump[y]) # the raised ring
+			elif y > h - 40:
+				# Waxy white powder just below the next node.
+				var f := float(y - (h - 40)) / 36.0
+				c = c.lerp(Color(1.0, 1.0, 1.0), 0.85 * smoothstep(0.0, 0.35, f))
 			img.set_pixel(x, y, c)
 	var normal := Image.create(w, h, false, Image.FORMAT_RGB8)
 	for y in h:
 		var dh := (bump[(y + 1) % h] - bump[(y - 1 + h) % h]) * 0.5
-		var n := Vector3(0, -dh * 2.5, 1).normalized()
+		var n := Vector3(0, -dh * 3.0, 1).normalized()
 		var col := Color(n.x * 0.5 + 0.5, n.y * 0.5 + 0.5, n.z * 0.5 + 0.5)
 		for x in w:
 			normal.set_pixel(x, y, col)
@@ -526,8 +573,8 @@ static func _make_culm_material() -> StandardMaterial3D:
 	m.normal_texture = ImageTexture.create_from_image(imgs[1])
 	m.normal_scale = 1.0
 	m.vertex_color_use_as_albedo = true
-	m.roughness = 0.38
-	m.metallic_specular = 0.55
+	m.roughness = 0.3
+	m.metallic_specular = 0.6
 	m.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
 	return m
 
@@ -539,37 +586,36 @@ static func _make_rail_material() -> StandardMaterial3D:
 	return m
 
 
-## Leaf spray texture: three sub-twigs from the top-left corner with narrow,
-## pointed bamboo leaves fanning out and down. Two-tone leaves (dark
-## topsides, lighter undersides), some with yellowed tips. Alpha-tested,
-## lit from behind so the sun glows through the canopy.
+## Leaf fan texture. The card hangs from its top edge (v = 0), so a twig
+## runs down from the top centre, and at three or four points along it a
+## group of three to six long, slender, sharply pointed leaves (about 8:1)
+## splay out like fingers. Lit-side yellow-greens with darker leaves
+## overlapping. Alpha-tested, lit from behind so the sun glows through.
 static func _make_leaf_material() -> StandardMaterial3D:
 	var size := 512
 	var img := Image.create(size, size, false, Image.FORMAT_RGBA8)
 	# Transparent pixels carry leaf colour so mipmaps don't darken the edges.
-	img.fill(Color(0.3, 0.45, 0.18, 0.0))
+	img.fill(Color(0.4, 0.58, 0.2, 0.0))
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 2199
-	for twig in 4:
-		var start := Vector2(rng.randf_range(10.0, 60.0), rng.randf_range(10.0, 60.0))
-		var ang := deg_to_rad(rng.randf_range(25.0, 70.0))
-		var dir := Vector2(cos(ang), sin(ang))
-		var reach := rng.randf_range(300.0, 440.0)
-		_line(img, start, start + dir * reach, 2.2, Color(0.32, 0.36, 0.16, 1.0))
-		var n := 14
-		for k in n:
-			var t := rng.randf_range(0.12, 1.0)
-			var base := start + dir * reach * t
-			var la := ang + deg_to_rad(rng.randf_range(-15.0, 75.0)) * (1.0 if k % 2 == 0 else -0.6)
-			la = clampf(la, deg_to_rad(15.0), deg_to_rad(150.0))
-			var length := rng.randf_range(70.0, 115.0) * (1.1 - t * 0.3)
-			var width := rng.randf_range(11.0, 16.0)
-			var under := rng.randf() < 0.3
-			var shade := Color(0.2, 0.38, 0.12).lerp(Color(0.36, 0.56, 0.2), rng.randf())
-			if under:
-				shade = Color(0.5, 0.66, 0.32).lerp(Color(0.6, 0.74, 0.38), rng.randf())
-			var yellow := rng.randf() < 0.18
-			_leaf(img, base, Vector2(cos(la), sin(la)), length, width, shade, yellow)
+	var top := Vector2(size * 0.5, 0)
+	var bottom := Vector2(size * 0.5 + rng.randf_range(-40.0, 40.0), size * 0.62)
+	_line(img, top, bottom, 3.0, Color(0.42, 0.45, 0.2, 1.0))
+	var groups := 4
+	for g in groups:
+		var base := top.lerp(bottom, 0.18 + 0.82 * g / (groups - 1.0))
+		var count := rng.randi_range(3, 6)
+		# Lower groups splay wider; the last is the tip of the fan.
+		var spread := deg_to_rad(lerpf(110.0, 55.0, float(g) / (groups - 1)))
+		for k in count:
+			var f := (float(k) / maxf(count - 1, 1)) - 0.5
+			var ang := PI * 0.5 + f * spread + deg_to_rad(rng.randf_range(-8.0, 8.0))
+			var length := rng.randf_range(170.0, 240.0)
+			var width := length / rng.randf_range(7.0, 9.0)
+			var shade := Color(0.46, 0.66, 0.2).lerp(Color(0.62, 0.76, 0.28), rng.randf())
+			if rng.randf() < 0.35:
+				shade = Color(0.24, 0.42, 0.13).lerp(Color(0.32, 0.5, 0.16), rng.randf())
+			_leaf(img, base, Vector2(cos(ang), sin(ang)), length, width, shade, rng.randf() < 0.12)
 	img.generate_mipmaps()
 	var m := StandardMaterial3D.new()
 	m.albedo_texture = ImageTexture.create_from_image(img)
@@ -578,27 +624,28 @@ static func _make_leaf_material() -> StandardMaterial3D:
 	m.alpha_scissor_threshold = 0.35
 	m.alpha_antialiasing_mode = BaseMaterial3D.ALPHA_ANTIALIASING_ALPHA_TO_COVERAGE
 	m.cull_mode = BaseMaterial3D.CULL_DISABLED
-	m.roughness = 0.65
+	m.roughness = 0.6
 	m.backlight_enabled = true
 	m.backlight = Color(0.5, 0.6, 0.18)
 	m.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
 	return m
 
 
-## A narrow pointed leaf from `base` along `dir`, with a lighter midrib.
+## A slender lanceolate leaf from `base` along `dir`: a short stalk, widest
+## about a fifth of the way, then a long straight taper to a sharp point,
+## with a lighter midrib.
 static func _leaf(img: Image, base: Vector2, dir: Vector2, length: float, width: float, shade: Color, yellow: bool) -> void:
 	var size := img.get_width()
 	var across := Vector2(-dir.y, dir.x)
 	var steps := int(length * 1.5)
 	for s in steps:
 		var t := float(s) / steps
-		# Widest a third of the way along, tapering to a long point.
-		var half := width * 0.5 * sin(PI * pow(t, 0.7)) * (1.0 - t * 0.3)
+		var half := width * 0.5 * (smoothstep(0.0, 0.2, t) * (1.0 - smoothstep(0.2, 1.0, t) * 0.97))
 		var centre := base + dir * (t * length)
 		var hw := int(ceil(half))
 		var col := shade
-		if yellow and t > 0.7:
-			col = shade.lerp(Color(0.72, 0.66, 0.3), (t - 0.7) / 0.3)
+		if yellow and t > 0.75:
+			col = shade.lerp(Color(0.78, 0.72, 0.32), (t - 0.75) / 0.25)
 		for o in range(-hw * 2, hw * 2 + 1):
 			var off := o * 0.5
 			if absf(off) > half:
@@ -609,7 +656,7 @@ static func _leaf(img: Image, base: Vector2, dir: Vector2, length: float, width:
 			if px < 0 or py < 0 or px >= size or py >= size:
 				continue
 			var edge := absf(off) / maxf(half, 0.5)
-			var c := col.lightened(0.15) if absf(off) < 0.6 else col.darkened(0.12 * edge)
+			var c := col.lightened(0.2) if absf(off) < 0.75 else col.darkened(0.12 * edge)
 			img.set_pixel(px, py, Color(c.r, c.g, c.b, 1.0))
 
 
