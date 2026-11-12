@@ -978,6 +978,21 @@ func _test_pause_volume(race: RaceManager) -> void:
 	pause.open()
 	var music := pause.volume_sliders["music"] as HSlider
 	_check(is_equal_approx(music.value, 80.0), "slider shows the saved volume (%s)" % music.value)
+	await process_frame
+	_check(pause._resume.has_focus() and pause._restart.text == "Restart Race" and pause._quit.text == "Quit to Main Menu",
+			"neon pause menu: Resume focused, then Restart Race and Quit to Main Menu")
+	var table := pause.controls
+	_check(table.rows.size() == ControlsCard.ROWS.size(), "a controls row per action (%d)" % table.rows.size())
+	var accel: Dictionary = table.rows[0]
+	_check(accel.label == "Accelerate" and ", ".join(accel.keyboard) == InputSetup.describe(&"accelerate", true)
+			and ", ".join(accel.gamepad) == InputSetup.describe(&"accelerate", false),
+			"keycaps match the bindings (%s / %s)" % [accel.keyboard, accel.gamepad])
+	var steer: Dictionary = table.rows[2]
+	_check(steer.keyboard.size() == 2 and steer.gamepad.size() == 1, "Steer: a keycap per direction, one stick cap (%s / %s)" % [steer.keyboard, steer.gamepad])
+	var race_info := false
+	for n in pause.find_children("*", "Control", true, false):
+		race_info = race_info or ((n is Label or n is Button) and str(n.get("text")).to_lower().contains("race info"))
+	_check(not race_info, "no Race Info tab")
 	music.value = 30.0
 	_check(is_equal_approx(GameSettings.music_volume, 0.3), "moving it sets the music volume")
 	var bus := AudioServer.get_bus_index("Music")

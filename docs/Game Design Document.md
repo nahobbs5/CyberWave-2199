@@ -1,5 +1,5 @@
 # CYBERWAVE 2199
-## Game Design Document — Version 5.9
+## Game Design Document — Version 6.0
 
 **Status:** Development Baseline  
 **Engine:** Godot 4  
@@ -1161,7 +1161,7 @@ Timeline (Grand Prix / Versus): cars drive onto the lowered platforms (0–3.5 s
 ## 11.8 Race Presentation
 
 - Loading card while a track builds (races and free drive): logo, track name, location, mode (and "Race N of M" in a set), track outline, LOADING. The countdown starts only after it fades out.
-- Pause menu: Resume / Restart race / Quit, Master / Music / Sound effects volume sliders (saved straight away, shared with Settings), and the controls card
+- Pause menu (after the "Cyberwave 2199 Neon Pause Menu" reference art): the race dims behind the logo and a slanted PAUSED title. On the left are Resume / Restart Race / Quit to Main Menu (neon buttons, focused one gold with ">>"), a VOLUME panel with Master / Music / Sound Effects sliders (saved straight away, shared with Settings), and a picture of your car. On the right a Controls panel lists every action with its icon, keyboard keys as magenta keycaps and gamepad inputs as cyan ones, read from your current bindings. The mockup's Race Info tab is left out. Hints along the bottom: A / Enter Select, B / Esc Resume.
 - Brief pre-race camera sweep
 - 3 / 2 / 1 / START countdown, with a four-lamp start-light board on the start gantry (three reds, then green), one lamp per beep
 - No false-start penalties
@@ -1613,5 +1613,6 @@ Changes after Version 1.0 should be tracked as revisions rather than silently re
 | 5.7 | 2026-11-12 | Race setup info box shortened: Standard and Elimination get one-line descriptions and the "next" line is gone; the Versus button now reads Track Selection (§2.4). |
 | 5.8 | 2026-11-12 | The South America Cup is complete and now open for Grand Prix (§2.2). The gold forward buttons just name the next screen (Player Setup, Race Setup, Track Selection, Cup Selection) and all show the same ">>" while active; the label shrinks to fit rather than run into it. The Versus cup screen drops its "Pick one to race" line. |
 | 5.9 | 2026-11-12 | Single-player results restyled after the "Cyberwave 2199 Race Results" reference art: a placement card (laurels, your car, the track's picture, time / best lap / laps / coins with NEW BEST tags) beside a neon results table with car pictures in each racer's paint. A Grand Prix or Versus set shows the race first, then the standings, as in Mario Kart (§11.7). |
+| 6.0 | 2026-11-12 | Pause menu restyled after the "Cyberwave 2199 Neon Pause Menu" reference art: neon buttons, a VOLUME panel, your car, and a keycap controls table (no Race Info tab) (§11.8). |
 
-**End of Game Design Document — Version 5.9**
+**End of Game Design Document — Version 6.0**

@@ -211,6 +211,33 @@ static func binding_button(on_pressed: Callable) -> Button:
 	return b
 
 
+## A small outlined keycap / pad-button label for read-only control lists
+## (the pause menu): magenta for keys, cyan for gamepad inputs.
+static func key_cap(text: String, color: Color, font_size: int = 17) -> PanelContainer:
+	var cap := PanelContainer.new()
+	cap.name = "KeyCap"
+	cap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	cap.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(color.darkened(0.75), 0.55)
+	style.border_color = color
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(6)
+	style.content_margin_left = 8
+	style.content_margin_right = 8
+	style.content_margin_top = 0
+	style.content_margin_bottom = 0
+	style.shadow_color = Color(color, 0.25)
+	style.shadow_size = 3
+	cap.add_theme_stylebox_override("panel", style)
+	var l := UIStyle.stat(text, font_size, color.lightened(0.35))
+	l.name = "Text"
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	l.custom_minimum_size = Vector2(16, 0)
+	cap.add_child(l)
+	return cap
+
+
 ## Rounded outline button with an icon and slanted text ("Reset to Defaults").
 static func outline_button(text: String, icon_kind: String, on_pressed: Callable) -> Button:
 	var b := Button.new()

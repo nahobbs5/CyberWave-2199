@@ -47,6 +47,7 @@ const MUSIC := [
 	["Garden Fairytale", "elisaveta_stoycheva", "Gardens by the Bay"],
 	["Rise of the Phoenix", "restum-anoush", "Vale da Lua"],
 	["Epic Victory March for Heroes", "DesiFreeMusic", "Choquequirao"],
+	["The Dragon's Lair", "vishiv", "Kilwa Kisiwani Ruins"],
 	["The Garden Wakes", "stageechoesmusic", "Test Circuit and free drive"],
 	["Victory", "alex-morgan", "podium and results"],
 ]

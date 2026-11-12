@@ -9,7 +9,8 @@ extends RefCounted
 ## Kinds: monitor, speaker, gamepad, hud, blur, camera, bolt, note, wave,
 ## accelerate, brake, arrow_left, arrow_right, drift, crosshair, ramp, slot1,
 ## slot2, look_back, reset, pause, clapper, layers, palette, fonts, and the
-## garage's brush, stripes, rim, plate, burst (underglow), exhaust.
+## garage's brush, stripes, rim, plate, burst (underglow), exhaust; the pause
+## menu's home and keyboard (and info).
 
 const FILL := -1.0
 const HOLE := 1.0
@@ -182,6 +183,28 @@ static func distance(kind: String, q: Vector2) -> float:
 				d = minf(d, _rect_outline(q, Vector2(0.3, y - 0.08), Vector2(0.92, y + 0.08)))
 				d = minf(d, absf(Vector2((q.x - 0.3) * 2.0, q.y - y).length() - 0.08) * 0.5)
 			return minf(d, absf(q.distance_to(Vector2(0.14, 0.32)) - 0.1))
+		"home":
+			# Filled house with a door cut out.
+			if q.x > 0.4 and q.x < 0.6 and q.y > 0.6 and q.y < 0.88:
+				return HOLE
+			if _in(q, [0.5, 0.1, 0.92, 0.5, 0.8, 0.5, 0.8, 0.88, 0.2, 0.88, 0.2, 0.5, 0.08, 0.5]):
+				return FILL
+			return INF
+		"keyboard":
+			var d := _rect_outline(q, Vector2(0.06, 0.24), Vector2(0.94, 0.76))
+			for row in 2:
+				for col in 5:
+					var c := Vector2(0.19 + col * 0.155, 0.38 + row * 0.13)
+					if absf(q.x - c.x) < 0.045 and absf(q.y - c.y) < 0.035:
+						return FILL
+			if q.x > 0.3 and q.x < 0.7 and absf(q.y - 0.65) < 0.035:
+				return FILL
+			return d
+		"info":
+			var d := absf(q.distance_to(Vector2(0.5, 0.5)) - 0.4)
+			if q.distance_to(Vector2(0.5, 0.3)) < 0.06 or (absf(q.x - 0.5) < 0.045 and q.y > 0.42 and q.y < 0.74):
+				return FILL
+			return d
 	return INF
 
 
