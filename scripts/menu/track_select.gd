@@ -5,7 +5,7 @@ extends Control
 ## moves into its race cards (outline, location and your best time) and
 ## picking a card races it. The "?" badge opens a RANDOM card that picks a
 ## built track for you (in a series, one not raced yet while there are any).
-## In a series it says which race is next and shows the points so far; the
+## In a series it says which race is next; the
 ## screen comes back after each race until the series is done. See CupBoard.
 ## Same neon frame as the Grand Prix cup screen (NeonScreenLayout).
 
@@ -127,20 +127,6 @@ func _build() -> void:
 
 	board = CupBoard.new()
 	board.name = "CupBoard"
-	# Points so far, part-way through a series, beside the races.
-	if s != null and s.race_index > 0:
-		var box := VBoxContainer.new()
-		box.add_theme_constant_override("separation", 0)
-		box.custom_minimum_size = Vector2(190, 0)
-		box.add_child(UIStyle.stat("POINTS", 17, UIStyle.CYAN))
-		var ranking := s.standings()
-		for i in ranking.size():
-			var id := ranking[i]
-			var color := UIStyle.MUTED
-			if RaceConfig.is_human_id(id):
-				color = SplitScreen.PLAYER_COLORS[RaceConfig.human_slot(id)] if s.is_multiplayer() else UIStyle.MAGENTA
-			box.add_child(UIStyle.stat("%d   %s   %d" % [i + 1, _racer_name(s, id), int(s.points.get(id, 0))], 15, color))
-		board.side_panel = box
 	var cups := GrandPrixData.all_cups()
 	var any_built := false
 	for cup in cups:
@@ -163,8 +149,3 @@ func _build() -> void:
 	hints.offset_bottom = -22
 	add_child(hints)
 
-
-static func _racer_name(s: Championship, id: int) -> String:
-	if RaceConfig.is_human_id(id):
-		return "P%d" % (RaceConfig.human_slot(id) + 1) if s.is_multiplayer() else "You"
-	return s.rival_names[id] if id < s.rival_names.size() else "Rival %d" % (id + 1)

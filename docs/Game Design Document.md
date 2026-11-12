@@ -59,7 +59,7 @@ A race, or a set of races, against seven AI opponents. Set up Mario Kart style:
 1. Race setup: vehicle, race type (Standard or Elimination), **number of races** (1, 2, 3, 4, 6, 8, 12 or 16), lap count (three by default), Easy / Normal / Hard AI, weapons on or off.
 2. Cup screen (Versus): a row of cup badges plus a "?" Random badge. Moving across the badges previews each cup's races; opening a cup moves into its race cards, and picking one races it. The Random badge opens a **RANDOM** card for a random built track from any cup (in a series, one not raced yet while any are left). Built tracks of a cup that's locked for Grand Prix can be raced here.
 
-With more than one race, the track screen comes back before each race (showing "RACE 2 OF 4" and the points so far). Points and the next grid work like a Grand Prix (§2.2). The final results name the series winner. A series isn't saved: quitting part-way ends it. Each race pays its normal coins, with no cup bonus.
+With more than one race, the track screen comes back before each race (showing "RACE 2 OF 4"; the standings stay on the results screen). Points and the next grid work like a Grand Prix (§2.2). The final results name the series winner. A series isn't saved: quitting part-way ends it. Each race pays its normal coins, with no cup bonus.
 
 The player starts in eighth position.
 
@@ -672,7 +672,7 @@ A racing circuit through dense bamboo forests, mountain roads, bridges, and rain
 
 **Identity:** Technical cornering, drifting, natural scenery.
 
-Built at about 3.1 km on a soft, sunny day. It should feel like an indoor garden out of doors: tall bamboo bows in from both sides until the leaves close over the road like a green ceiling, with the sun coming through in shafts and dapples. The canopy covers about three quarters of the lap and opens only at the start plaza, the bridge and the temple garden. The 13 m road is paved stone between brushwood (shibagaki) fences with bamboo rails, with medium-radius drift corners (35–60 m), one hairpin and short straights. Landmarks in driving order:
+Built at about 3.1 km on a soft, sunny day. It should feel like an indoor garden out of doors, after the Sagano grove photos in the reference files. Tall, nearly straight culms (16–23 m) in deep green, blue-grey and olive, with white-ringed nodes, stand in dense clumps. Their trunks are bare; leaves grow only in the top third. Beside the road the culms lean in so their crowns meet high overhead like a green ceiling, with the sun coming through in shafts and dapples, and the grove goes dark green into the distance. The canopy covers about three quarters of the lap and opens only at the start plaza, the bridge and the temple garden. Ferns and sasa grow underfoot, among a few fallen culms. The 13 m road is paved stone between golden brushwood (shibagaki) fences, about 2 m tall with a bristly crest above two thick bamboo rails. It has medium-radius drift corners (35–60 m), one hairpin and short straights. Landmarks in driving order:
 - an open start plaza with stone lanterns and banners;
 - a timber gate marked ARASHIYAMA into the grove's S-bends;
 - a long wooden bridge over the Katsura river, with the mountains behind;
@@ -908,6 +908,7 @@ Coins are collected automatically on contact.
 - Coins are not dropped when hit.
 - Only the player collects track coins; AI racers pass through them.
 - Coin placement should encourage exploration without requiring excessive deviation from racing lines.
+- Every lap the coins move to a new random layout: small clusters of 1–3 coins in one lane, spread round the lap, clear of the start, the crate rows and any road columns. Shortcut bonus coins stay where they are.
 
 ## 9.3 Race Rewards
 
@@ -1614,5 +1615,7 @@ Changes after Version 1.0 should be tracked as revisions rather than silently re
 | 5.8 | 2026-11-12 | The South America Cup is complete and now open for Grand Prix (§2.2). The gold forward buttons just name the next screen (Player Setup, Race Setup, Track Selection, Cup Selection) and all show the same ">>" while active; the label shrinks to fit rather than run into it. The Versus cup screen drops its "Pick one to race" line. |
 | 5.9 | 2026-11-12 | Single-player results restyled after the "Cyberwave 2199 Race Results" reference art: a placement card (laurels, your car, the track's picture, time / best lap / laps / coins with NEW BEST tags) beside a neon results table with car pictures in each racer's paint. A Grand Prix or Versus set shows the race first, then the standings, as in Mario Kart (§11.7). |
 | 6.0 | 2026-11-12 | Pause menu restyled after the "Cyberwave 2199 Neon Pause Menu" reference art: neon buttons, a VOLUME panel, your car, and a keycap controls table (no Race Info tab) (§11.8). |
+| 6.1 | 2026-11-12 | Arashiyama's bamboo reworked after the new Bamboo Forest reference photos: straight, jointed culms with leaves only up high, leaning in so the crowns meet overhead; clumped stands in greens and blue-greys; ferns, sasa and fallen culms underfoot; bristly brushwood fence crests with thick bamboo rails; a darker, greener light grade (§8.6). |
+| 6.2 | 2026-11-12 | Track coins get a new random layout every lap, in small clusters of 1–3 (§9.2). |
 
 **End of Game Design Document — Version 6.0**

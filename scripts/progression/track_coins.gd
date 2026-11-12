@@ -2,9 +2,11 @@ class_name TrackCoins
 extends Node3D
 ## Track coins (GDD 9.2): collected automatically on contact by the player,
 ## worth one coin each, respawn every lap, at most 30 per race, never lost
-## when hit. Placed near the racing line (track.coin_offsets, with a small
-## sideways offset each) so collecting them is a small detour, not a big one,
-## plus any bonus coins along shortcuts.
+## when hit. Single player only. The track sets how many there are
+## (track.coin_offsets.size()); every lap they move to a new random layout:
+## small clusters of 1-3 coins in one lane, spread round the lap, clear of the
+## start, the crate rows and any road columns (scatter_spots()). Bonus coins
+## along shortcuts stay put.
 ## AI cars don't take them.
 
 signal coin_collected(total: int)
@@ -12,6 +14,19 @@ signal coin_collected(total: int)
 signal coin_collected_by(vehicle: VehicleController, total: int)
 
 const MAX_PER_RACE := 30
+## Random layout: no coins this far past the start line (they'd pop in right
+## in front of you as a lap starts) or this far before it (the grid).
+const CLEAR_AFTER_START := 80.0
+const CLEAR_BEFORE_START := 30.0
+## Spacing of the coins in a cluster, and how far they keep from crate rows
+## and the road edge.
+const CLUSTER_GAP := 10.0
+const CRATE_CLEARANCE := 12.0
+const EDGE_MARGIN := 2.5
+const COLUMN_MARGIN := 2.5
+
+## >= 0: seed the layouts (tests).
+static var seed_override: int = -1
 
 ## Coins collected this race.
 var collected: int = 0
@@ -27,6 +42,10 @@ var _stopped: Dictionary = {}
 var _coins: Array[Area3D] = []
 var _spin: float = 0.0
 var _material: StandardMaterial3D
+var _track: TrackCircuit
+## The main-loop coins (moved every lap); shortcut coins aren't in here.
+var _loop_coins: Array[Area3D] = []
+var _rng := RandomNumberGenerator.new()
 
 
 ## `spawn` false (split screen): no coins on the track at all.
@@ -38,15 +57,18 @@ func setup(track: TrackCircuit, line: RacingLine, player: VehicleController, spa
 	_material = WeaponManager.glow_material(Color(1.0, 0.8, 0.2), 1.6)
 	_material.metallic = 1.0
 	_material.roughness = 0.2
+	_track = track
+	if seed_override >= 0:
+		_rng.seed = seed_override
+	else:
+		_rng.randomize()
 	for i in track.coin_offsets.size():
-		var offset := track.coin_offsets[i]
-		var side := track.coin_laterals[i] if i < track.coin_laterals.size() else 0.0
-		var lateral := clampf(line.lateral_at(offset) + side, -track.road_width * 0.5 + 1.5, track.road_width * 0.5 - 1.5)
 		var coin := _make_coin()
-		coin.transform = track.get_safe_transform(offset, lateral, 1.0)
 		add_child(coin)
 		coin.body_entered.connect(_on_body_entered.bind(coin))
 		_coins.append(coin)
+		_loop_coins.append(coin)
+	_scatter()
 	# Bonus coins along shortcuts (GDD 8.8 "additional coins").
 	for sc in track.shortcuts:
 		for d in sc.coin_distances:
@@ -80,8 +102,57 @@ func available_count() -> int:
 func respawn() -> void:
 	if _counts.is_empty() and collected >= MAX_PER_RACE:
 		return
+	_scatter()
 	for coin in _coins:
 		_set_active(coin, true)
+
+
+## Moves the main-loop coins to a fresh random layout.
+func _scatter() -> void:
+	if _track == null or _loop_coins.is_empty():
+		return
+	var spots := scatter_spots(_track, _loop_coins.size(), _rng)
+	for i in _loop_coins.size():
+		_loop_coins[i].transform = _track.get_safe_transform(spots[i].x, spots[i].y, 1.0)
+
+
+## `count` random coin spots (x = track offset, y = lateral): clusters of 1-3
+## coins CLUSTER_GAP apart in one lane, one cluster per equal slice of the lap
+## (so they spread out and never overlap), kept off the start, the crate rows,
+## the road edges and any road columns.
+static func scatter_spots(track: TrackCircuit, count: int, rng: RandomNumberGenerator) -> PackedVector2Array:
+	var spots := PackedVector2Array()
+	if count <= 0 or track.length <= 0.0:
+		return spots
+	var sizes: Array[int] = []
+	var left := count
+	while left > 0:
+		var n := mini(left, rng.randi_range(1, 3))
+		sizes.append(n)
+		left -= n
+	var span := maxf(track.length - CLEAR_AFTER_START - CLEAR_BEFORE_START, 1.0)
+	var slice := span / sizes.size()
+	var half := track.road_width * 0.5 - EDGE_MARGIN
+	for k in sizes.size():
+		var run := (sizes[k] - 1) * CLUSTER_GAP
+		var start := k * slice + rng.randf_range(0.0, maxf(slice - run, 0.0))
+		var lateral := rng.randf_range(-half, half)
+		for j in sizes[k]:
+			var along := clampf(start + j * CLUSTER_GAP, 0.0, span)
+			var offset := track.wrap_offset(track.start_line_offset + CLEAR_AFTER_START + along)
+			offset = _clear_of_crates(track, offset)
+			var lat := clampf(track.dodge_columns(offset, lateral, COLUMN_MARGIN), -half, half)
+			spots.append(Vector2(offset, lat))
+	return spots
+
+
+## Slides an offset forward past any crate row it's too close to.
+static func _clear_of_crates(track: TrackCircuit, offset: float) -> float:
+	for row in track.crate_row_offsets:
+		var d := track.wrapped_delta(row, offset)
+		if absf(d) < CRATE_CLEARANCE:
+			offset = track.wrap_offset(row + CRATE_CLEARANCE)
+	return offset
 
 
 func coins() -> Array[Area3D]:

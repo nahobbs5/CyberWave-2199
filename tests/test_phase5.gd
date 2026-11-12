@@ -478,6 +478,15 @@ func _test_race_coins(race: RaceManager) -> void:
 			"AI show the series' random plates (%s)" % tech_plate)
 	var coins := race.coins
 	_check(coins.coins().size() == 10 and coins.available_count() == 10, "10 coins per lap")
+	var track := race.track
+	var placed_ok := func() -> bool:
+		for c in coins.coins():
+			var p := track.to_local(c.global_position)
+			if not track.is_on_road(c.global_position) or track.column_near(p, 0.5) >= 0:
+				return false
+		return true
+	_check(placed_ok.call(), "coins sit on the road, clear of columns")
+	var layout := coins.coins().map(func(c: Area3D) -> Vector3: return c.global_position)
 	var rival := race.racers.filter(func(r: RaceProgress) -> bool: return not r.is_player)[0].vehicle as VehicleController
 	rival.teleport(Transform3D(rival.global_transform.basis, coins.coins()[0].global_position + Vector3.UP * 0.3))
 	await _frames(10)
@@ -494,6 +503,11 @@ func _test_race_coins(race: RaceManager) -> void:
 	coins.respawn()
 	await _frames(2)
 	_check(coins.available_count() == 10, "coins come back each lap")
+	var moved := 0
+	for i in layout.size():
+		if (layout[i] as Vector3).distance_to(coins.coins()[i].global_position) > 1.0:
+			moved += 1
+	_check(moved >= 5 and placed_ok.call(), "a new random layout each lap (%d of 10 moved)" % moved)
 	coins.collected = TrackCoins.MAX_PER_RACE - 1
 	me.teleport(Transform3D(me.global_transform.basis, coins.coins()[5].global_position + Vector3.UP * 0.3))
 	await _frames(10)

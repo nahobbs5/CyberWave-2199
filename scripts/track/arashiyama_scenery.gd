@@ -98,12 +98,13 @@ func build() -> void:
 	await step(0.15)
 
 	bamboo = BambooBuilder.new(self, random_seed)
-	# The grove is most of the build: it steps the bar on its own, up to 0.85.
-	await _grove(0.15, 0.85)
+	# The grove is most of the build: it steps the bar on its own, up to 0.8.
+	await _grove(0.15, 0.8)
 	_canopy()
+	_undergrowth()
+	_fence_rails()
 	bamboo.commit()
 	await step(0.9)
-	_fence_rails()
 	_light_shafts()
 
 
@@ -319,9 +320,11 @@ func _hills() -> void:
 # --- bamboo --------------------------------------------------------------------------
 
 ## Culms in a band up to 42 m either side of every road: dense against the
-## fences, thinning into the haze. Near the road they bow in to form the
-## canopy (not by the open sections).
-## Bamboo along every road; reports its progress as `from`-`to` of the build.
+## fences, thinning into the haze, in clumps with small gaps between them
+## (bamboo spreads by rhizome). Near the road they lean in so their crowns
+## meet high over it (not by the open sections). Culms the camera only sees
+## from afar use the cheap mesh.
+## Reports its progress as `from`-`to` of the build.
 func _grove(from: float = 0.0, to: float = 1.0) -> void:
 	var tiles := {}
 	var curves: Array[Curve3D] = [track.curve]
@@ -337,10 +340,15 @@ func _grove(from: float = 0.0, to: float = 1.0) -> void:
 				for dx in range(-5, 6):
 					tiles[c + Vector2i(dx, dz)] = true
 			d += 8.0
+	var clump := FastNoiseLite.new()
+	clump.seed = random_seed + 11
+	clump.frequency = 0.05
 	var step := 2.5
-	var young := Color(0.78, 0.92, 0.42)
-	var mid := Color(0.5, 0.72, 0.3)
-	var old := Color(0.58, 0.64, 0.44)
+	var deep := Color(0.32, 0.52, 0.24)
+	var blue := Color(0.45, 0.58, 0.5)
+	var young := Color(0.6, 0.72, 0.3)
+	var olive := Color(0.55, 0.55, 0.35)
+	var straw := Color(0.72, 0.64, 0.42)
 	var done := 0
 	for tile: Vector2i in tiles:
 		done += 1
@@ -353,7 +361,10 @@ func _grove(from: float = 0.0, to: float = 1.0) -> void:
 				var e := edge_distance(p)
 				if e < track.barrier_thickness + 1.3 or e > 42.0:
 					continue
-				var keep := 0.92 if e < 7.0 else (0.68 if e < 16.0 else (0.45 if e < 28.0 else 0.25))
+				var keep := 0.95 if e < 7.0 else (0.82 if e < 16.0 else (0.66 if e < 28.0 else 0.5))
+				# Clumps: full stands and thin patches (less so against the fences).
+				var patch := clampf(0.92 + clump.get_noise_2d(p.x, p.z) * 1.4, 0.25, 1.3)
+				keep *= lerpf(1.0, patch, 0.45 if e < 7.0 else 1.0)
 				if rng.randf() > keep:
 					continue
 				if _in_garden(p, 2.0) or _river(p.x, p.z) < -0.3 or _bowl(p.x, p.z, POND, POND_RADIUS + 4.0, 1.0) < 0.0 \
@@ -365,34 +376,47 @@ func _grove(from: float = 0.0, to: float = 1.0) -> void:
 				var toward := to_road.rotated(Vector3.UP, rng.randf_range(-PI, PI))
 				if e < 9.5 and not _is_open_ground(p):
 					kind = "arch"
-					toward = to_road.rotated(Vector3.UP, rng.randf_range(-0.35, 0.35))
+					toward = to_road.rotated(Vector3.UP, rng.randf_range(-0.3, 0.3))
 				elif e < 20.0:
 					# Leaning a little toward the light over the road.
 					toward = to_road.rotated(Vector3.UP, rng.randf_range(-1.2, 1.2))
-				var tint := young.lerp(mid, rng.randf()) if rng.randf() < 0.7 else mid.lerp(old, rng.randf())
-				tint = tint.darkened(clampf(e / 42.0, 0.0, 1.0) * 0.3)
+				var r := rng.randf()
+				var tint: Color
+				if r < 0.45:
+					tint = deep.lerp(blue, rng.randf() * 0.6)
+				elif r < 0.7:
+					tint = blue.lerp(deep, rng.randf() * 0.4)
+				elif r < 0.88:
+					tint = young.lerp(deep, rng.randf() * 0.5)
+				else:
+					tint = olive.lerp(blue, rng.randf() * 0.4)
+				if rng.randf() < 0.03:
+					kind = "dead"
+					tint = straw.lerp(olive, rng.randf() * 0.6)
+				tint = tint.darkened(clampf(e / 42.0, 0.0, 1.0) * 0.5)
 				p.y = ground_y(p) - 0.15
-				bamboo.place_culm(kind, p, toward, rng.randf_range(0.85, 1.15), tint)
+				bamboo.place_culm(kind, p, toward, rng.randf_range(0.85, 1.15), tint, rng.randf() < 0.22, e < 15.0)
 
 
-## Leaf sprays hung over the covered roads, closing the gaps between the
-## arching culms. Each one is mapped for is_covered().
+## Leaf sprays hung high over the covered roads, where the leaning crowns
+## meet, closing the gaps between them. Each one is mapped for is_covered().
 func _canopy() -> void:
-	var leaf := Color(0.62, 0.82, 0.38)
+	var leaf := Color(0.5, 0.72, 0.3)
+	var dark := Color(0.32, 0.5, 0.2)
 	var h := track.road_width * 0.5
 	var d := 0.0
 	while d < track.length:
 		if not is_open_offset(d):
 			for lat: float in [-h - 4.0, -h + 0.5, -2.2, 2.2, h - 0.5, h + 4.0]:
 				var outer := absf(lat) > h
-				if rng.randf() > (0.5 if outer else 0.78):
+				if rng.randf() > (0.75 if outer else 0.95):
 					continue
-				var s := rng.randf_range(1.2, 1.8)
-				var xf := at(d + rng.randf_range(-1.2, 1.2), lat + rng.randf_range(-1.2, 1.2), rng.randf_range(14.5, 19.0))
+				var s := rng.randf_range(1.6, 2.3)
+				var xf := at(d + rng.randf_range(-1.2, 1.2), lat + rng.randf_range(-1.2, 1.2), rng.randf_range(16.5, 21.0))
 				bamboo.place_spray(Transform3D(Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3(s, s * 0.7, s)), xf.origin),
-						leaf.lerp(Color(0.42, 0.62, 0.26), rng.randf()))
-				_mark_cover(xf.origin, 2.3 * s)
-		d += 3.4
+						leaf.lerp(dark, rng.randf()))
+				_mark_cover(xf.origin, 1.9 * s)
+		d += 2.8
 	for sc in track.shortcuts:
 		var sh := sc.road_width * 0.5
 		d = 0.0
@@ -400,23 +424,75 @@ func _canopy() -> void:
 			for lat: float in [-sh - 2.5, -1.5, 1.5, sh + 2.5]:
 				if rng.randf() > 0.7:
 					continue
-				var s := rng.randf_range(1.1, 1.6)
+				var s := rng.randf_range(1.4, 1.9)
 				var f := _sc_frame(sc, d)
-				var pos := f * Vector3(lat, rng.randf_range(12.0, 16.0), 0)
+				var pos := f * Vector3(lat, rng.randf_range(14.0, 18.0), 0)
 				bamboo.place_spray(Transform3D(Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3(s, s * 0.7, s)), pos),
-						leaf.lerp(Color(0.42, 0.62, 0.26), rng.randf()))
-				_mark_cover(pos, 2.3 * s)
+						leaf.lerp(dark, rng.randf()))
+				_mark_cover(pos, 1.9 * s)
 			d += 3.6
-	# Low sasa (dwarf bamboo) along the fences.
-	var sasa := Color(0.35, 0.55, 0.22)
+
+
+## The grove floor: sasa (dwarf bamboo) clumps along the outside of the
+## fences, ferns in patches between the culms, and old culms that have
+## come down and lie in the litter.
+func _undergrowth() -> void:
+	var patches := FastNoiseLite.new()
+	patches.seed = random_seed + 23
+	patches.frequency = 0.06
+	var h := track.road_width * 0.5
+	var outside := h + track.barrier_thickness
+	var sasa := Color(0.34, 0.52, 0.22)
+	var fern := Color(0.62, 0.8, 0.48)
+	var frames: Array = []
+	var d := 0.0
+	while d < track.length:
+		frames.append(at(d))
+		d += 2.0
+	for sc in track.shortcuts:
+		d = 0.0
+		while d < sc.length:
+			frames.append(_sc_frame(sc, d))
+			d += 2.0
+	for f: Transform3D in frames:
+		for side: float in [-1.0, 1.0]:
+			# Sasa right outside the fence.
+			if rng.randf() < 0.45:
+				var p := f * Vector3(side * (outside + rng.randf_range(0.8, 3.0)), 0, rng.randf_range(-1.0, 1.0))
+				if _ground_ok(p, 0.6):
+					var s := rng.randf_range(0.8, 1.3)
+					p.y = ground_y(p) - 0.05
+					bamboo.place_item("sasa", Transform3D(Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3(s, s, s)), p),
+							sasa.lerp(Color(0.46, 0.6, 0.26), rng.randf()).darkened(rng.randf() * 0.2))
+			# Ferns in patches deeper in.
+			var q := f * Vector3(side * (outside + rng.randf_range(3.0, 30.0)), 0, rng.randf_range(-1.0, 1.0))
+			if patches.get_noise_2d(q.x, q.z) > 0.05 and rng.randf() < 0.7 and _ground_ok(q, 1.0):
+				var s := rng.randf_range(0.7, 1.2)
+				q.y = ground_y(q) - 0.05
+				var e := edge_distance(q)
+				bamboo.place_item("fern", Transform3D(Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3(s, s, s)), q),
+						fern.lerp(Color(0.48, 0.66, 0.3), rng.randf()).darkened(clampf(e / 30.0, 0.0, 1.0) * 0.35))
+	# Fallen culms in the litter.
 	d = 0.0
 	while d < track.length:
 		var side := -1.0 if rng.randf() < 0.5 else 1.0
-		var p := at(d, side * (h + rng.randf_range(2.6, 5.0)), 0.7)
-		if clear(p.origin, 0.5) and not _in_garden(p.origin, 1.0) and _river(p.origin.x, p.origin.z) > -0.3:
-			var s := rng.randf_range(0.3, 0.45)
-			bamboo.place_spray(Transform3D(Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3(s, s * 0.6, s)), p.origin), sasa)
-		d += rng.randf_range(4.0, 9.0)
+		var p := at(d, side * (outside + rng.randf_range(4.0, 22.0))).origin
+		var len := rng.randf_range(6.0, 13.0)
+		var dir := Vector3.FORWARD.rotated(Vector3.UP, rng.randf() * TAU)
+		var a := p - dir * len * 0.5
+		var b := p + dir * len * 0.5
+		if _ground_ok(p, 1.0) and _ground_ok(a, 0.5) and _ground_ok(b, 0.5):
+			a.y = ground_y(a) + 0.08
+			b.y = ground_y(b) + 0.08 + rng.randf_range(0.0, 0.5)
+			_rail(a, b, rng.randf_range(0.06, 0.09), "dead_culm")
+		d += rng.randf_range(18.0, 34.0)
+
+
+## True where undergrowth may go: off every road and fence, not in the
+## temple garden, river or pond, nor on reserved ground.
+func _ground_ok(p: Vector3, radius: float) -> bool:
+	return clear(p, radius) and not _in_garden(p, 1.0) and _river(p.x, p.z) > -0.3 \
+			and _bowl(p.x, p.z, POND, POND_RADIUS + 2.0, 1.0) >= 0.0 and not _is_reserved(p)
 
 
 func _sc_frame(sc: TrackShortcut, d: float) -> Transform3D:
@@ -426,33 +502,48 @@ func _sc_frame(sc: TrackShortcut, d: float) -> Transform3D:
 
 # --- fences --------------------------------------------------------------------------
 
-## The barriers are brushwood (shibagaki) fences; each gets two bamboo rails
-## on its road face. The bridge has wooden railings instead.
+## The barriers are brushwood (shibagaki) fences: each gets two thick
+## bamboo rails on its road face and a bristly crest of brushwood standing
+## above the wall (about 2 m tall in all; the collider is unchanged). The
+## bridge has wooden railings instead.
 func _fence_rails() -> void:
 	var h := track.road_width * 0.5
 	var d := 0.0
 	while d < track.length:
 		if not _in_span(d, "bridge_from", "bridge_to"):
 			for side: float in [-1.0, 1.0]:
-				var a := at(d, side * (h - 0.06), 0.0).origin
-				var b := at(d + 3.0, side * (h - 0.06), 0.0).origin
-				if _on_shortcut(a, 1.5) or _on_shortcut(b, 1.5):
+				var fa := at(d, side * (h - 0.06), 0.0)
+				var fb := at(d + 3.0, side * (h - 0.06), 0.0)
+				if _on_shortcut(fa.origin, 1.5) or _on_shortcut(fb.origin, 1.5):
 					continue
-				for y: float in [0.45, 1.2]:
-					_rail(a + Vector3(0, y, 0), b + Vector3(0, y, 0), 0.05)
+				_fence_bay(fa.origin, fb.origin, fa.basis.x * side, track.barrier_thickness)
 		d += 3.0
 	for sc in track.shortcuts:
 		var sh := sc.road_width * 0.5
 		d = 0.0
 		while d < sc.length - 3.0:
 			for side: float in [-1.0, 1.0]:
-				var a := _sc_frame(sc, d) * Vector3(side * (sh - 0.06), 0, 0)
+				var fa := _sc_frame(sc, d)
+				var a := fa * Vector3(side * (sh - 0.06), 0, 0)
 				var b := _sc_frame(sc, d + 3.0) * Vector3(side * (sh - 0.06), 0, 0)
 				if _on_main(a, 1.5) or _on_main(b, 1.5):
 					continue
-				for y: float in [0.45, 1.2]:
-					_rail(a + Vector3(0, y, 0), b + Vector3(0, y, 0), 0.05)
+				_fence_bay(a, b, fa.basis.x * side, track.barrier_thickness)
 			d += 3.0
+
+
+## One 3 m bay of fence from a to b (on the wall's road face); out points
+## away from the road.
+func _fence_bay(a: Vector3, b: Vector3, out: Vector3, thickness: float) -> void:
+	var straw := Color(0.8, 0.72, 0.46).darkened(rng.randf() * 0.12)
+	for y: float in [0.5, 1.25]:
+		bamboo.add_pole(a + Vector3(0, y, 0), b + Vector3(0, y, 0), 0.055, straw)
+	var along := b - a
+	var o := Vector3(out.x, 0, out.z).normalized()
+	var x := Vector3.UP.cross(o)
+	var mid := (a + b) * 0.5 + o * (thickness * 0.72) + Vector3(0, track.barrier_height - 0.14, 0)
+	var basis := Basis(x * (along.length() / 3.0 * 1.06), Vector3.UP * rng.randf_range(0.9, 1.15), o)
+	bamboo.place_item("brush", Transform3D(basis, mid), Color(1.0, 0.95, 0.88).darkened(rng.randf() * 0.15))
 
 
 func _on_shortcut(p: Vector3, margin: float) -> bool:
@@ -874,10 +965,10 @@ func _light_shafts() -> void:
 	var d := 40.0
 	while d < track.length:
 		if not is_open_offset(d):
-			for k in 2:
+			for k in 3:
 				var foot := at(d + k * 7.0, rng.randf_range(-5.0, 5.0)).origin
 				var length := 17.0 / maxf(up.y, 0.2)
 				var basis := Basis.looking_at(up, Vector3.FORWARD if absf(up.dot(Vector3.FORWARD)) < 0.9 else Vector3.RIGHT)
 				var xf := Transform3D(basis, foot).rotated_local(Vector3.RIGHT, -PI * 0.5)
 				add_cyl("beam", rng.randf_range(0.8, 1.6), length, xf, 10, rng.randf_range(1.6, 2.6))
-		d += rng.randf_range(110.0, 170.0)
+		d += rng.randf_range(60.0, 100.0)

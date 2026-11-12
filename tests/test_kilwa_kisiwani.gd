@@ -143,9 +143,13 @@ func _test_layout() -> void:
 	for row in track.crate_row_offsets:
 		for lat in track.crate_lateral_positions:
 			items_ok = items_ok and track.column_near(track.to_local(track.get_safe_transform(row, lat).origin), 2.0) < 0
-	for i in track.coin_offsets.size():
-		var p := track.to_local(track.get_safe_transform(track.coin_offsets[i], track.coin_laterals[i]).origin)
-		items_ok = items_ok and track.column_near(p, 2.0) < 0
+	# Coins get a random layout every lap: try plenty of them.
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 2199
+	for n in 200:
+		for spot in TrackCoins.scatter_spots(track, track.coin_offsets.size(), rng):
+			var p := track.to_local(track.get_safe_transform(spot.x, spot.y).origin)
+			items_ok = items_ok and track.column_near(p, 2.0) < 0
 	_check(items_ok, "no crate or coin sits on a column")
 
 	# Two shortcuts.

@@ -1,87 +1,162 @@
 class_name BambooBuilder
 extends RefCounted
 ## Procedural bamboo grove for a TrackScenery (Arashiyama). A few culm
-## meshes are built once (tall, thin, jointed stems with leaf sprays on
-## their upper half), then scattered as MultiMesh instances in square
-## chunks, so tens of thousands of culms cost a few draw calls and
-## off-screen chunks are culled. Separate leaf-spray clusters are hung
-## overhead to close the canopy over the road. Visual only.
+## meshes are built once (tall, jointed stems, bare below and leafy only in
+## their top third), then scattered as MultiMesh instances in square chunks,
+## so tens of thousands of culms cost a few draw calls and off-screen chunks
+## are culled. The same builder makes the grove floor (ferns, sasa), the
+## bristly crest on the brushwood (shibagaki) fences, and thick bamboo rails.
+## Visual only.
 ##
 ## Culm kinds:
-## - "straight": stands nearly upright with a slight bow.
-## - "arch": bows hard toward local -Z, so a row of them along a road edge
-##   meets over the middle of the road.
-## Every instance gets its own tint (young yellow-green to old grey-green).
+## - "straight": stands nearly upright, crown leaning a little.
+## - "arch": leans in toward local -Z over its top 40%, so a row of them
+##   along a road edge brings its crowns together high over the road.
+## - "dead": a straw-coloured culm with no leaves (one variant snapped short).
+## Each culm kind also has a cheaper "<kind>_lo" mesh (fewer sides, no
+## twigs, fewer and larger leaf cards) for culms deep in the grove, which
+## the camera on the road only sees from afar.
+## Every instance gets its own tint (the textures are near-white).
 
-const KINDS: Array[String] = ["straight", "arch"]
+const CULM_KINDS: Array[String] = ["straight", "arch", "dead"]
 const VARIANTS := 3
 ## Instances further than this from the camera are hidden.
 const VISIBLE_RANGE := 230.0
 ## Culms are grouped per kind and variant into square chunks this size (m).
 const CHUNK := 120.0
 ## A culm texture tile covers one internode (m).
-const INTERNODE := 0.8
+const INTERNODE := 0.5
+
+## Shared generated textures and materials (built once per run).
+static var _cache: Dictionary = {}
 
 var scenery: TrackScenery
 var culm_material: StandardMaterial3D
 var leaf_material: StandardMaterial3D
+var fern_material: StandardMaterial3D
+var brush_material: StandardMaterial3D
+var rail_material: StandardMaterial3D
 ## Shadows from the culms and canopy (the sun's dappled light on the road).
 var cast_shadows: bool = true
 ## kind -> Array[ArrayMesh] (variants)
 var _meshes: Dictionary = {}
-var _spray_mesh: ArrayMesh
 ## "kind:variant@cx,cz" -> Array of [Transform3D, Color]
 var _placed: Dictionary = {}
-var _culms: int = 0
-var _sprays: int = 0
+## "cx,cz" -> SurfaceTool for the fence rails.
+var _rails: Dictionary = {}
+var _counts: Dictionary = {}
+## kind ("culm", "spray", "fern", "sasa", "brush") -> PackedVector3Array of
+## the track-local positions placed (MultiMesh transforms can't be read back
+## under the headless renderer, so tests check these).
+var _positions: Dictionary = {}
 var _rng := RandomNumberGenerator.new()
 
 
 func _init(p_scenery: TrackScenery, seed_value: int = 7) -> void:
 	scenery = p_scenery
 	_rng.seed = seed_value
-	culm_material = _make_culm_material()
-	leaf_material = _make_leaf_material()
-	for kind in KINDS:
-		var list: Array[ArrayMesh] = []
-		for v in VARIANTS:
-			list.append(_build_culm(kind))
-		_meshes[kind] = list
-	_spray_mesh = _build_spray()
+	if _cache.is_empty():
+		_cache["culm"] = _make_culm_material()
+		_cache["leaf"] = _make_leaf_material()
+		_cache["fern"] = _make_fern_material()
+		_cache["brush"] = _make_brush_material()
+		_cache["rail"] = _make_rail_material()
+	culm_material = _cache["culm"]
+	leaf_material = _cache["leaf"]
+	fern_material = _cache["fern"]
+	brush_material = _cache["brush"]
+	rail_material = _cache["rail"]
+	for kind in CULM_KINDS:
+		var near: Array[ArrayMesh] = []
+		var far: Array[ArrayMesh] = []
+		for v in (2 if kind == "dead" else VARIANTS):
+			near.append(_build_culm(kind, true, v))
+			# Far culms are seen small: two variants are plenty.
+			if v < 2:
+				far.append(_build_culm(kind, false, v))
+		_meshes[kind] = near
+		_meshes[kind + "_lo"] = far
+	_meshes["spray"] = [_build_spray()]
+	_meshes["fern"] = [_build_fern()]
+	_meshes["sasa"] = [_build_sasa()]
+	_meshes["brush"] = [_build_brush()]
 
 
 ## Places one culm. pos is track-local on the ground; toward is the
-## horizontal direction it bows (for "arch", the road). scale sizes the
-## whole culm; tint multiplies its colour.
-func place_culm(kind: String, pos: Vector3, toward: Vector3, scale: float, tint: Color) -> void:
+## horizontal direction it leans (for "arch", the road). scale sizes the
+## whole culm; thin makes a slimmer, shorter young culm; detail false uses
+## the cheap far mesh. tint multiplies its colour.
+func place_culm(kind: String, pos: Vector3, toward: Vector3, scale: float, tint: Color,
+		thin: bool = false, detail: bool = true) -> void:
 	var dir := Vector3(toward.x, 0, toward.z)
 	if dir.length_squared() < 0.0001:
 		dir = Vector3.FORWARD
-	var basis := Basis.looking_at(dir.normalized(), Vector3.UP).scaled(Vector3(scale, scale, scale))
-	_add("%s:%d" % [kind, _rng.randi_range(0, VARIANTS - 1)], Transform3D(basis, pos), tint)
-	_culms += 1
+	var s := Vector3(scale, scale, scale) * (Vector3(0.6, 0.78, 0.6) if thin else Vector3.ONE)
+	var basis := Basis.looking_at(dir.normalized(), Vector3.UP).scaled(s)
+	var key := kind if detail or kind == "dead" else kind + "_lo"
+	_add("%s:%d" % [key, _rng.randi_range(0, (_meshes[key] as Array).size() - 1)], Transform3D(basis, pos), tint)
+	_record("culm", pos)
 
 
-## Hangs one leaf-spray cluster (about 4 m across at scale 1) at xf.
+## Hangs one leaf-spray cluster (about 3 m across at scale 1) at xf.
 func place_spray(xf: Transform3D, tint: Color) -> void:
-	_add("spray:0", xf, tint)
-	_sprays += 1
+	place_item("spray", xf, tint)
 
 
-## Where the tip of a culm placed with place_culm() ends up (track-local).
+## Places a "spray", "fern" (rosette ~2 m across), "sasa" (dwarf bamboo
+## clump ~1.4 m across) or "brush" (3 m of fence crest: local +X along the
+## fence, +Z away from the road, standing on its origin).
+func place_item(kind: String, xf: Transform3D, tint: Color) -> void:
+	_add(kind + ":0", xf, tint)
+	_record(kind, xf.origin)
+
+
+## A thick bamboo pole from a to b (fence rails), jointed like the culms.
+func add_pole(a: Vector3, b: Vector3, radius: float, tint: Color) -> void:
+	var mid := (a + b) * 0.5
+	var key := "%d,%d" % [int(floor(mid.x / CHUNK)), int(floor(mid.z / CHUNK))]
+	if not _rails.has(key):
+		var st := SurfaceTool.new()
+		st.begin(Mesh.PRIMITIVE_TRIANGLES)
+		_rails[key] = st
+	var st: SurfaceTool = _rails[key]
+	st.set_color(tint)
+	_tube(st, PackedVector3Array([a, b]), radius, radius, 6, fposmod(a.x + a.z, 1.0))
+	_record("pole", mid)
+
+
+## Where the tip of a culm placed with place_culm() ends up, measured
+## horizontally toward the lean (track-local metres).
 static func tip_offset(kind: String, scale: float) -> float:
-	return (6.5 if kind == "arch" else 0.8) * scale
+	return (4.0 if kind == "arch" else 0.6) * scale
 
 
 func culm_count() -> int:
-	return _culms
+	return item_count("culm")
 
 
 func spray_count() -> int:
-	return _sprays
+	return item_count("spray")
 
 
-## Builds the MultiMeshInstance3D chunks.
+func item_count(kind: String) -> int:
+	return int(_counts.get(kind, 0))
+
+
+## Track-local positions of everything placed of a kind ("culm", "spray",
+## "fern", "sasa", "brush", "pole": rail midpoints).
+func positions(kind: String) -> PackedVector3Array:
+	return _positions.get(kind, PackedVector3Array())
+
+
+func _record(kind: String, pos: Vector3) -> void:
+	_counts[kind] = int(_counts.get(kind, 0)) + 1
+	if not _positions.has(kind):
+		_positions[kind] = PackedVector3Array()
+	(_positions[kind] as PackedVector3Array).append(pos)
+
+
+## Builds the MultiMeshInstance3D chunks (and the rail meshes).
 func commit() -> void:
 	for key in _placed:
 		var kind := (key as String).get_slice(":", 0)
@@ -94,21 +169,45 @@ func commit() -> void:
 		var mm := MultiMesh.new()
 		mm.transform_format = MultiMesh.TRANSFORM_3D
 		mm.use_colors = true
-		mm.mesh = _spray_mesh if kind == "spray" else (_meshes[kind] as Array)[v]
+		mm.mesh = (_meshes[kind] as Array)[v]
 		mm.instance_count = list.size()
 		for i in list.size():
 			var entry: Array = list[i]
 			mm.set_instance_transform(i, (entry[0] as Transform3D).translated(-centre))
 			mm.set_instance_color(i, entry[1])
 		var mmi := MultiMeshInstance3D.new()
-		mmi.name = ("Canopy_" if kind == "spray" else "Bamboo_") + (key as String).replace(":", "_").replace("@", "_").replace(",", "_")
+		mmi.name = _prefix(kind) + (key as String).replace(":", "_").replace("@", "_").replace(",", "_")
 		mmi.multimesh = mm
+		var ground_cover := kind in ["fern", "sasa", "brush"]
+		var shadows := cast_shadows and not ground_cover
+		mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if shadows else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		mmi.position = centre
-		mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if cast_shadows else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		# Measured to the chunk centre: add half the chunk's diagonal.
-		mmi.visibility_range_end = VISIBLE_RANGE + CHUNK * 0.71
+		mmi.visibility_range_end = (110.0 if kind in ["fern", "sasa"] else VISIBLE_RANGE) + CHUNK * 0.71
 		scenery.add_node(mmi)
 	_placed.clear()
+	for key in _rails:
+		var st: SurfaceTool = _rails[key]
+		st.generate_tangents()
+		var mi := MeshInstance3D.new()
+		mi.name = "FenceRails_" + (key as String).replace(",", "_")
+		mi.mesh = st.commit()
+		mi.material_override = rail_material
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		mi.position = Vector3.ZERO
+		scenery.add_node(mi)
+	_rails.clear()
+
+
+static func _prefix(kind: String) -> String:
+	match kind:
+		"spray":
+			return "Canopy_"
+		"fern", "sasa":
+			return "Undergrowth_"
+		"brush":
+			return "FenceBrush_"
+	return "Bamboo_"
 
 
 func _add(kind_variant: String, xf: Transform3D, tint: Color) -> void:
@@ -120,68 +219,175 @@ func _add(kind_variant: String, xf: Transform3D, tint: Color) -> void:
 
 # --- meshes --------------------------------------------------------------------------
 
-## One culm: a tapered six-sided tube along a bowed path (UV v counts
-## internodes, so the texture draws the joints), with leaf sprays on short
-## side twigs over its upper half.
-func _build_culm(kind: String) -> ArrayMesh:
-	var h := _rng.randf_range(17.0, 22.0)
-	var bend := _rng.randf_range(5.0, 7.5) if kind == "arch" else _rng.randf_range(0.2, 1.4)
-	var drift := _rng.randf_range(-0.6, 0.6)
+## One culm: a slowly tapering tube along a path that is upright at the base
+## and leans over its top 40% (UV v counts internodes, so the texture draws
+## the nodes). The detailed mesh has short twigs carrying leaf sprays over
+## the top third and a drooping crown; the far mesh hangs fewer, larger
+## sprays straight off the stem.
+func _build_culm(kind: String, detail: bool, variant: int) -> ArrayMesh:
+	var dead := kind == "dead"
+	var snapped := dead and variant == 1
+	var h := _rng.randf_range(16.0, 23.0)
+	if snapped:
+		h = _rng.randf_range(4.0, 8.0)
+	var lean := _rng.randf_range(0.2, 1.0)
+	if kind == "arch":
+		lean = _rng.randf_range(3.0, 5.0)
+	var drift := _rng.randf_range(-0.4, 0.4)
+	var count := 14 if detail else 8
 	var path := PackedVector3Array()
-	var count := 11
 	for i in count:
 		var t := float(i) / (count - 1)
-		# Upright at the base, bowing more and more toward the top.
-		path.append(Vector3(drift * t * t, h * t * (1.0 - 0.12 * t * t * (bend / 7.0)), -bend * pow(t, 2.2)))
+		var bow := pow(t, 2.6)
+		# Leaning shortens the culm's height a little.
+		path.append(Vector3(drift * bow, h * t * (1.0 - 0.06 * bow * lean / 5.0), -lean * bow))
+	var r0 := _rng.randf_range(0.075, 0.105)
 	var stem := SurfaceTool.new()
 	stem.begin(Mesh.PRIMITIVE_TRIANGLES)
-	_tube(stem, path, _rng.randf_range(0.1, 0.13), 0.035, 6)
+	_tube(stem, path, r0, r0 * (0.75 if snapped else 0.4), 8 if detail else 5, _rng.randf())
 	var leaves := SurfaceTool.new()
 	leaves.begin(Mesh.PRIMITIVE_TRIANGLES)
-	# Sprays from 45% of the height up, alternating sides, denser at the top.
-	var along := 0.45
-	var side := 1.0
-	while along < 1.0:
-		var p := _path_point(path, along)
-		var tangent := (_path_point(path, minf(along + 0.02, 1.0)) - _path_point(path, maxf(along - 0.02, 0.0))).normalized()
-		var out := tangent.cross(Vector3.FORWARD if kind != "arch" else Vector3.RIGHT).normalized() * side
-		if out.length_squared() < 0.1:
-			out = Vector3.RIGHT * side
-		var yaw := _rng.randf_range(-0.9, 0.9)
-		out = out.rotated(tangent, yaw)
-		var size := _rng.randf_range(1.6, 2.4) * (0.8 + along * 0.4)
-		_card(leaves, p + out * 0.3, out, tangent, size)
-		along += _rng.randf_range(0.045, 0.07) * (1.3 - along * 0.5)
-		side = -side
-	# A crown of sprays at the tip, drooping.
-	var tip := path[count - 1]
-	for k in 4:
-		var a := TAU * k / 4.0 + _rng.randf_range(-0.3, 0.3)
-		var out := Vector3(cos(a), -0.35, sin(a)).normalized()
-		_card(leaves, tip + out * 0.4, out, Vector3(0, 1, -bend * 0.08).normalized(), _rng.randf_range(2.0, 2.6))
+	var has_leaves := not dead
+	if has_leaves:
+		var along := 0.64 if detail else 0.7
+		var side := 1.0
+		while along < 0.97:
+			var p := _path_point(path, along)
+			var tangent := (_path_point(path, minf(along + 0.02, 1.0)) - _path_point(path, maxf(along - 0.02, 0.0))).normalized()
+			var out := tangent.cross(Vector3.RIGHT if kind == "arch" else Vector3.FORWARD).normalized() * side
+			if out.length_squared() < 0.1:
+				out = Vector3.RIGHT * side
+			out = out.rotated(tangent, _rng.randf_range(-0.9, 0.9))
+			# Branches rise a little, then the leaves droop from them.
+			var reach := _rng.randf_range(0.7, 1.4) * (1.3 - along * 0.6)
+			var twig_dir := (out + tangent * 0.45).normalized()
+			if detail:
+				var end := p + twig_dir * reach
+				_tube(stem, PackedVector3Array([p, end]), 0.014, 0.006, 3, 0.0)
+				for k in 3:
+					var at := p.lerp(end, 0.45 + 0.28 * k)
+					var o := (out.rotated(tangent, _rng.randf_range(-0.7, 0.7)) + Vector3(0, -0.15, 0)).normalized()
+					_card(leaves, at, o, tangent, _rng.randf_range(0.9, 1.35))
+			else:
+				_card(leaves, p + out * 0.3, out, tangent, _rng.randf_range(1.7, 2.3))
+			along += _rng.randf_range(0.035, 0.05) if detail else _rng.randf_range(0.06, 0.09)
+			side = -side
+		# A drooping crown of sprays at the tip.
+		var tip := path[count - 1]
+		var crown := 6 if detail else 3
+		for k in crown:
+			var a := TAU * k / crown + _rng.randf_range(-0.3, 0.3)
+			var o := Vector3(cos(a), -0.45, sin(a)).normalized()
+			_card(leaves, tip + o * 0.25, o, Vector3(0, 1, -lean * 0.08).normalized(),
+					_rng.randf_range(1.2, 1.7) if detail else _rng.randf_range(2.0, 2.5))
 	var mesh := ArrayMesh.new()
 	stem.generate_tangents()
 	stem.commit(mesh)
 	mesh.surface_set_material(0, culm_material)
-	leaves.commit(mesh)
-	mesh.surface_set_material(1, leaf_material)
+	if has_leaves:
+		leaves.commit(mesh)
+		mesh.surface_set_material(1, leaf_material)
 	return mesh
 
 
-## Canopy cluster: a dozen leaf cards in a flattened ball about 4 m across.
+## Canopy cluster: leaf cards in a flattened ball about 3 m across.
 func _build_spray() -> ArrayMesh:
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	for k in 12:
+	for k in 16:
 		var a := _rng.randf() * TAU
-		var r := _rng.randf_range(0.0, 1.6)
-		var c := Vector3(cos(a) * r, _rng.randf_range(-0.5, 0.5), sin(a) * r)
+		var r := _rng.randf_range(0.0, 1.3)
+		var c := Vector3(cos(a) * r, _rng.randf_range(-0.4, 0.4), sin(a) * r)
 		var out := Vector3(cos(a + _rng.randf_range(-0.6, 0.6)), _rng.randf_range(-0.6, -0.1), sin(a + _rng.randf_range(-0.6, 0.6))).normalized()
 		var up := Vector3(_rng.randf_range(-0.3, 0.3), 1.0, _rng.randf_range(-0.3, 0.3)).normalized()
-		_card(st, c, out, up, _rng.randf_range(2.0, 2.8))
+		_card(st, c, out, up, _rng.randf_range(1.3, 1.9))
 	var mesh := ArrayMesh.new()
 	st.commit(mesh)
 	mesh.surface_set_material(0, leaf_material)
+	return mesh
+
+
+## Fern rosette: nine fronds arching out and down from the centre, about
+## 2 m across and 0.6 m tall.
+func _build_fern() -> ArrayMesh:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var fronds := 9
+	for k in fronds:
+		var a := TAU * k / fronds + _rng.randf_range(-0.25, 0.25)
+		var out := Vector3(cos(a), 0, sin(a))
+		var across := Vector3(-out.z, 0, out.x)
+		var length := _rng.randf_range(0.8, 1.1)
+		var rise := _rng.randf_range(0.5, 0.75)
+		var half_w := 0.2
+		var segs := 5
+		var prev_l := Vector3.ZERO
+		var prev_r := Vector3.ZERO
+		for i in segs + 1:
+			var t := float(i) / segs
+			# Up and out, then curling down at the tip.
+			var p := out * length * t + Vector3(0, rise * sin(PI * 0.85 * t), 0)
+			var w := half_w * (0.35 + 0.65 * sin(PI * minf(t * 1.2, 1.0)))
+			var l := p - across * w + Vector3(0, w * 0.25, 0)
+			var r := p + across * w + Vector3(0, w * 0.25, 0)
+			if i > 0:
+				var t0 := float(i - 1) / segs
+				var n := (r - prev_l).cross(prev_r - prev_l).normalized()
+				if n.y < 0.0:
+					n = -n
+				for v: Array in [[prev_l, Vector2(0, t0)], [prev_r, Vector2(1, t0)], [r, Vector2(1, t)],
+						[prev_l, Vector2(0, t0)], [r, Vector2(1, t)], [l, Vector2(0, t)]]:
+					st.set_normal(n)
+					st.set_uv(v[1])
+					st.add_vertex(v[0])
+			prev_l = l
+			prev_r = r
+	var mesh := ArrayMesh.new()
+	st.commit(mesh)
+	mesh.surface_set_material(0, fern_material)
+	return mesh
+
+
+## Sasa: a knee-high clump of dwarf bamboo, upright leaf cards in a dome.
+func _build_sasa() -> ArrayMesh:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for k in 14:
+		var a := _rng.randf() * TAU
+		var r := _rng.randf_range(0.0, 0.5)
+		var c := Vector3(cos(a) * r, _rng.randf_range(0.5, 1.0), sin(a) * r)
+		var out := Vector3(cos(a), _rng.randf_range(-0.2, 0.3), sin(a)).normalized()
+		_card(st, c, out, Vector3.UP, _rng.randf_range(0.6, 0.9))
+	var mesh := ArrayMesh.new()
+	st.commit(mesh)
+	mesh.surface_set_material(0, leaf_material)
+	return mesh
+
+
+## Fence crest: 3 m of bristly brushwood above the fence wall. Three
+## alpha-tested sheets (one upright, one leaning out, one leaning in) give
+## it depth; the texture tiles every metre.
+func _build_brush() -> ArrayMesh:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for sheet: Array in [[0.0, 0.0, 0.95], [0.12, 0.32, 0.8], [-0.1, -0.12, 0.7]]:
+		var z0: float = sheet[0]
+		var z1: float = z0 + float(sheet[1])
+		var top: float = sheet[2]
+		var a := Vector3(-1.55, 0, z0)
+		var b := Vector3(1.55, 0, z0)
+		var c := Vector3(1.55, top, z1)
+		var d := Vector3(-1.55, top, z1)
+		var n := Vector3(0, float(sheet[1]), -top).normalized()
+		n = Vector3(0, 0.35, -1).normalized() if n.length_squared() < 0.1 else n
+		for v: Array in [[a, Vector2(0, 1)], [b, Vector2(3.1, 1)], [c, Vector2(3.1, 0)],
+				[a, Vector2(0, 1)], [c, Vector2(3.1, 0)], [d, Vector2(0, 0)]]:
+			st.set_normal(n)
+			st.set_uv(v[1])
+			st.add_vertex(v[0])
+	var mesh := ArrayMesh.new()
+	st.commit(mesh)
+	mesh.surface_set_material(0, brush_material)
 	return mesh
 
 
@@ -200,7 +406,7 @@ func _card(st: SurfaceTool, at: Vector3, out: Vector3, up: Vector3, size: float)
 	var down := across.cross(out).normalized()
 	# The card droops: it runs out and down from the twig.
 	var dir := (out + down * 0.55).normalized()
-	var width := size * 0.55
+	var width := size * 0.6
 	var a := at - across * width * 0.5
 	var b := at + across * width * 0.5
 	var c := b + dir * size
@@ -208,31 +414,31 @@ func _card(st: SurfaceTool, at: Vector3, out: Vector3, up: Vector3, size: float)
 	var n := across.cross(dir).normalized()
 	if n.y < 0.0:
 		n = -n
-	for v in [[a, Vector2(0, 0)], [b, Vector2(1, 0)], [c, Vector2(1, 1)], [a, Vector2(0, 0)], [c, Vector2(1, 1)], [d, Vector2(0, 1)]]:
+	for v: Array in [[a, Vector2(0, 0)], [b, Vector2(1, 0)], [c, Vector2(1, 1)], [a, Vector2(0, 0)], [c, Vector2(1, 1)], [d, Vector2(0, 1)]]:
 		st.set_normal(n)
 		st.set_uv(v[1])
 		st.add_vertex(v[0])
 
 
 ## Tapered tube with parallel-transported rings; u wraps around, v counts
-## internodes along the length.
-func _tube(st: SurfaceTool, path: PackedVector3Array, r0: float, r1: float, sides: int) -> void:
+## internodes along the length (starting at v0).
+func _tube(st: SurfaceTool, path: PackedVector3Array, r0: float, r1: float, sides: int, v0: float) -> void:
 	var n := path.size()
 	var rings: Array[PackedVector3Array] = []
 	var normals: Array[PackedVector3Array] = []
 	var vs := PackedFloat32Array()
 	var length := 0.0
 	var tangent := (path[1] - path[0]).normalized()
-	var side := tangent.cross(Vector3.FORWARD).normalized()
+	var side := tangent.cross(Vector3.FORWARD if absf(tangent.dot(Vector3.FORWARD)) < 0.9 else Vector3.UP).normalized()
 	for i in n:
 		if i > 0:
 			length += path[i].distance_to(path[i - 1])
-		vs.append(length / INTERNODE)
+		vs.append(v0 + length / INTERNODE)
 		var t_next := (path[mini(i + 1, n - 1)] - path[maxi(i - 1, 0)]).normalized()
 		side = (side - t_next * side.dot(t_next)).normalized()
 		tangent = t_next
 		var up := tangent.cross(side).normalized()
-		var r := lerpf(r0, r1, pow(float(i) / (n - 1), 1.5))
+		var r := lerpf(r0, r1, pow(float(i) / (n - 1), 1.3))
 		var ring := PackedVector3Array()
 		var nr := PackedVector3Array()
 		for k in sides + 1:
@@ -244,8 +450,7 @@ func _tube(st: SurfaceTool, path: PackedVector3Array, r0: float, r1: float, side
 		normals.append(nr)
 	for i in n - 1:
 		for k in sides:
-			var quad := [[i, k], [i + 1, k], [i, k + 1], [i, k + 1], [i + 1, k], [i + 1, k + 1]]
-			for q in quad:
+			for q: Array in [[i, k], [i + 1, k], [i, k + 1], [i, k + 1], [i + 1, k], [i + 1, k + 1]]:
 				st.set_normal(normals[q[0]][q[1]])
 				st.set_uv(Vector2(float(q[1]) / sides, vs[q[0]]))
 				st.add_vertex(rings[q[0]][q[1]])
@@ -253,54 +458,209 @@ func _tube(st: SurfaceTool, path: PackedVector3Array, r0: float, r1: float, side
 
 # --- materials and generated textures ----------------------------------------------------
 
-## Culm skin: one internode per tile. Pale, faintly streaked green (the
-## instance tint gives the real colour) with a raised joint ring, a dark
-## line at the joint and a powdery white band just below it.
-func _make_culm_material() -> StandardMaterial3D:
-	var w := 32
-	var h := 128
+## Culm skin, one internode per tile (v = 0 just above a node). Near-white
+## so the instance tint gives the hue: fine lengthwise striations, a soft
+## mottle and the odd lichen fleck, a dark node line with a raised pale ring
+## above it, and a white powdery band just below the next node. A matching
+## normal map raises the node ridge.
+static func _culm_image() -> Array[Image]:
+	var w := 64
+	var h := 256
 	var img := Image.create(w, h, false, Image.FORMAT_RGB8)
+	var bump := PackedFloat32Array()
+	bump.resize(h)
+	var noise := FastNoiseLite.new()
+	noise.seed = 31
+	noise.frequency = 0.08
+	var lichen := FastNoiseLite.new()
+	lichen.seed = 77
+	lichen.frequency = 0.25
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 5
+	var streaks := PackedFloat32Array()
 	for x in w:
-		var streak := 0.92 + 0.08 * sin(x * 1.7) * sin(x * 0.45)
+		streaks.append(rng.randf_range(0.93, 1.0))
+	for y in h:
+		var hb := 0.0
+		if y < 2:
+			hb = -0.6
+		elif y < 9:
+			hb = 1.0 - absf(y - 5.0) / 4.0
+		bump[y] = hb
+	for x in w:
+		var a := TAU * x / w
 		for y in h:
-			var v := float(y) / h
-			var c := Color(0.86, 0.93, 0.72) * streak
-			# Slight sheen gradient along each internode.
-			c = c.lightened(0.06 * sin(v * PI))
-			if y < 3:
-				c = Color(0.48, 0.5, 0.36) # the joint line
-			elif y < 7:
-				c = Color(0.95, 0.97, 0.86) # the raised ring
-			elif y > h - 12:
-				c = c.lerp(Color(0.95, 0.97, 0.94), 0.5 * (y - (h - 12)) / 12.0) # waxy bloom below the next joint
+			# Periodic around the culm: sample the noise on a cylinder.
+			var m := noise.get_noise_3d(cos(a) * 8.0, sin(a) * 8.0, y * 0.5)
+			var c := Color(0.92, 0.96, 0.86) * (streaks[x] * (0.95 + 0.05 * sin(x * 2.3)))
+			c = c.darkened(0.07 * (m * 0.5 + 0.5))
+			var l := lichen.get_noise_3d(cos(a) * 20.0, sin(a) * 20.0, y * 1.2)
+			if l > 0.55:
+				c = c.lerp(Color(0.86, 0.87, 0.8), 0.6)
+			if y < 2:
+				c = Color(0.36, 0.38, 0.27) # the node line
+			elif y < 9:
+				c = c.lerp(Color(0.98, 1.0, 0.9), 0.35 * bump[y]) # the raised ring
+			elif y > h - 26:
+				# Waxy white bloom just below the next node.
+				var f := float(y - (h - 26)) / 26.0
+				c = c.lerp(Color(1.0, 1.0, 0.98), 0.75 * smoothstep(0.0, 0.6, f))
 			img.set_pixel(x, y, c)
+	var normal := Image.create(w, h, false, Image.FORMAT_RGB8)
+	for y in h:
+		var dh := (bump[(y + 1) % h] - bump[(y - 1 + h) % h]) * 0.5
+		var n := Vector3(0, -dh * 2.5, 1).normalized()
+		var col := Color(n.x * 0.5 + 0.5, n.y * 0.5 + 0.5, n.z * 0.5 + 0.5)
+		for x in w:
+			normal.set_pixel(x, y, col)
 	img.generate_mipmaps()
+	normal.generate_mipmaps()
+	return [img, normal]
+
+
+static func _make_culm_material() -> StandardMaterial3D:
+	var imgs := _culm_image()
 	var m := StandardMaterial3D.new()
-	m.albedo_texture = ImageTexture.create_from_image(img)
+	m.albedo_texture = ImageTexture.create_from_image(imgs[0])
+	m.normal_enabled = true
+	m.normal_texture = ImageTexture.create_from_image(imgs[1])
+	m.normal_scale = 1.0
 	m.vertex_color_use_as_albedo = true
-	m.roughness = 0.45
+	m.roughness = 0.38
+	m.metallic_specular = 0.55
 	m.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
 	return m
 
 
-## Leaf spray texture: a twig from the top-left corner with narrow,
-## pointed bamboo leaves fanning out and down. Alpha-tested, lit from
-## behind so the sun glows through the canopy.
-func _make_leaf_material() -> StandardMaterial3D:
-	var size := 256
+## Fence rails: the culm skin; add_pole() tints it straw (old, dried bamboo).
+static func _make_rail_material() -> StandardMaterial3D:
+	var m := (_cache["culm"] as StandardMaterial3D).duplicate() as StandardMaterial3D
+	m.roughness = 0.5
+	return m
+
+
+## Leaf spray texture: three sub-twigs from the top-left corner with narrow,
+## pointed bamboo leaves fanning out and down. Two-tone leaves (dark
+## topsides, lighter undersides), some with yellowed tips. Alpha-tested,
+## lit from behind so the sun glows through the canopy.
+static func _make_leaf_material() -> StandardMaterial3D:
+	var size := 512
 	var img := Image.create(size, size, false, Image.FORMAT_RGBA8)
-	img.fill(Color(0, 0, 0, 0))
+	# Transparent pixels carry leaf colour so mipmaps don't darken the edges.
+	img.fill(Color(0.3, 0.45, 0.18, 0.0))
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 2199
-	# The twig runs diagonally from the top-left toward the bottom-right.
-	for k in 26:
-		var t := rng.randf_range(0.05, 0.95)
-		var base := Vector2(lerpf(20.0, 200.0, t), lerpf(16.0, 190.0, t * t))
-		var ang := deg_to_rad(rng.randf_range(40.0, 130.0))
-		var length := rng.randf_range(55.0, 95.0)
-		var width := rng.randf_range(6.0, 10.0)
-		var shade := Color(0.55, 0.8, 0.3).lerp(Color(0.25, 0.5, 0.18), rng.randf())
-		_leaf(img, base, Vector2(cos(ang), sin(ang)), length, width, shade)
+	for twig in 4:
+		var start := Vector2(rng.randf_range(10.0, 60.0), rng.randf_range(10.0, 60.0))
+		var ang := deg_to_rad(rng.randf_range(25.0, 70.0))
+		var dir := Vector2(cos(ang), sin(ang))
+		var reach := rng.randf_range(300.0, 440.0)
+		_line(img, start, start + dir * reach, 2.2, Color(0.32, 0.36, 0.16, 1.0))
+		var n := 14
+		for k in n:
+			var t := rng.randf_range(0.12, 1.0)
+			var base := start + dir * reach * t
+			var la := ang + deg_to_rad(rng.randf_range(-15.0, 75.0)) * (1.0 if k % 2 == 0 else -0.6)
+			la = clampf(la, deg_to_rad(15.0), deg_to_rad(150.0))
+			var length := rng.randf_range(70.0, 115.0) * (1.1 - t * 0.3)
+			var width := rng.randf_range(11.0, 16.0)
+			var under := rng.randf() < 0.3
+			var shade := Color(0.2, 0.38, 0.12).lerp(Color(0.36, 0.56, 0.2), rng.randf())
+			if under:
+				shade = Color(0.5, 0.66, 0.32).lerp(Color(0.6, 0.74, 0.38), rng.randf())
+			var yellow := rng.randf() < 0.18
+			_leaf(img, base, Vector2(cos(la), sin(la)), length, width, shade, yellow)
+	img.generate_mipmaps()
+	var m := StandardMaterial3D.new()
+	m.albedo_texture = ImageTexture.create_from_image(img)
+	m.vertex_color_use_as_albedo = true
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
+	m.alpha_scissor_threshold = 0.35
+	m.alpha_antialiasing_mode = BaseMaterial3D.ALPHA_ANTIALIASING_ALPHA_TO_COVERAGE
+	m.cull_mode = BaseMaterial3D.CULL_DISABLED
+	m.roughness = 0.65
+	m.backlight_enabled = true
+	m.backlight = Color(0.5, 0.6, 0.18)
+	m.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
+	return m
+
+
+## A narrow pointed leaf from `base` along `dir`, with a lighter midrib.
+static func _leaf(img: Image, base: Vector2, dir: Vector2, length: float, width: float, shade: Color, yellow: bool) -> void:
+	var size := img.get_width()
+	var across := Vector2(-dir.y, dir.x)
+	var steps := int(length * 1.5)
+	for s in steps:
+		var t := float(s) / steps
+		# Widest a third of the way along, tapering to a long point.
+		var half := width * 0.5 * sin(PI * pow(t, 0.7)) * (1.0 - t * 0.3)
+		var centre := base + dir * (t * length)
+		var hw := int(ceil(half))
+		var col := shade
+		if yellow and t > 0.7:
+			col = shade.lerp(Color(0.72, 0.66, 0.3), (t - 0.7) / 0.3)
+		for o in range(-hw * 2, hw * 2 + 1):
+			var off := o * 0.5
+			if absf(off) > half:
+				continue
+			var p := centre + across * off
+			var px := int(p.x)
+			var py := int(p.y)
+			if px < 0 or py < 0 or px >= size or py >= size:
+				continue
+			var edge := absf(off) / maxf(half, 0.5)
+			var c := col.lightened(0.15) if absf(off) < 0.6 else col.darkened(0.12 * edge)
+			img.set_pixel(px, py, Color(c.r, c.g, c.b, 1.0))
+
+
+static func _line(img: Image, a: Vector2, b: Vector2, width: float, c: Color, wrap: bool = false) -> void:
+	var w := img.get_width()
+	var h := img.get_height()
+	var length := a.distance_to(b)
+	var steps := int(length * 1.5) + 1
+	var hw := width * 0.5
+	for s in steps + 1:
+		var p := a.lerp(b, float(s) / steps)
+		for oy in range(-int(ceil(hw)), int(ceil(hw)) + 1):
+			for ox in range(-int(ceil(hw)), int(ceil(hw)) + 1):
+				if Vector2(ox, oy).length() > hw + 0.25:
+					continue
+				var px := int(p.x) + ox
+				var py := int(p.y) + oy
+				if wrap:
+					px = posmod(px, w)
+				if px < 0 or py < 0 or px >= w or py >= h:
+					continue
+				img.set_pixel(px, py, c)
+
+
+## Fern frond texture: a rachis down the middle (v = 0 at the base) with
+## alternating pinnae angled toward the tip, longest a third of the way out.
+static func _make_fern_material() -> StandardMaterial3D:
+	var w := 128
+	var h := 256
+	var img := Image.create(w, h, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0.25, 0.42, 0.14, 0.0))
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 404
+	_line(img, Vector2(w * 0.5, 0), Vector2(w * 0.5, h - 4), 2.5, Color(0.3, 0.4, 0.14, 1.0))
+	var y := 10.0
+	var side := 1.0
+	while y < h - 8:
+		var t := y / h
+		var reach := (w * 0.47) * sin(PI * minf(t * 1.25 + 0.12, 1.0))
+		var base := Vector2(w * 0.5, y)
+		var tip := base + Vector2(side * reach, reach * 0.35)
+		var shade := Color(0.2, 0.42, 0.12).lerp(Color(0.38, 0.6, 0.2), rng.randf())
+		# Each pinna is a slim leaf from the rachis.
+		var steps := int(reach) + 1
+		for s in steps:
+			var f := float(s) / steps
+			var p := base.lerp(tip, f)
+			var half := 3.6 * (1.0 - f * 0.8)
+			_line(img, p - Vector2(0, half), p + Vector2(0, half), 1.6, Color(shade.r, shade.g, shade.b, 1.0))
+		y += rng.randf_range(5.0, 7.0)
+		side = -side
 	img.generate_mipmaps()
 	var m := StandardMaterial3D.new()
 	m.albedo_texture = ImageTexture.create_from_image(img)
@@ -308,30 +668,46 @@ func _make_leaf_material() -> StandardMaterial3D:
 	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
 	m.alpha_scissor_threshold = 0.4
 	m.cull_mode = BaseMaterial3D.CULL_DISABLED
-	m.roughness = 0.7
+	m.roughness = 0.8
 	m.backlight_enabled = true
-	m.backlight = Color(0.35, 0.45, 0.12)
+	m.backlight = Color(0.3, 0.4, 0.1)
 	m.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
 	return m
 
 
-## A narrow pointed leaf from `base` along `dir`, with a lighter midrib.
-func _leaf(img: Image, base: Vector2, dir: Vector2, length: float, width: float, shade: Color) -> void:
-	var size := img.get_width()
-	var across := Vector2(-dir.y, dir.x)
-	var steps := int(length)
-	for s in steps:
-		var t := float(s) / steps
-		# Widest a third of the way along, tapering to a long point.
-		var half := width * 0.5 * sin(PI * pow(t, 0.7)) * (1.0 - t * 0.3)
-		var centre := base + dir * s
-		var hw := int(ceil(half))
-		for o in range(-hw, hw + 1):
-			var p := centre + across * o
-			var px := int(p.x)
-			var py := int(p.y)
-			if px < 0 or py < 0 or px >= size or py >= size:
-				continue
-			var edge := absf(o) / maxf(half, 0.5)
-			var c := shade.lightened(0.18) if absf(o) < 0.8 else shade.darkened(0.15 * edge)
-			img.set_pixel(px, py, Color(c.r, c.g, c.b, 1.0))
+## Brushwood crest texture (tiles sideways, 1 m wide): dense golden twigs
+## standing up from a solid base, leaning this way and that, with ragged
+## tips at different heights.
+static func _make_brush_material() -> StandardMaterial3D:
+	var w := 256
+	var h := 192
+	var img := Image.create(w, h, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0.62, 0.48, 0.3, 0.0))
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 1213
+	for y in range(h - 40, h):
+		for x in w:
+			var c := Color(0.55, 0.42, 0.26).lerp(Color(0.72, 0.58, 0.36), rng.randf())
+			img.set_pixel(x, y, c)
+	for k in 520:
+		var x := rng.randf() * w
+		var top := h * rng.randf_range(0.0, 0.75)
+		if rng.randf() < 0.35:
+			top = h * rng.randf_range(0.0, 0.25) # a few stragglers stand tallest
+		var lean := rng.randf_range(-0.35, 0.35) * (h - top)
+		var c := Color(0.6, 0.46, 0.27).lerp(Color(0.86, 0.72, 0.46), rng.randf())
+		if rng.randf() < 0.2:
+			c = Color(0.36, 0.27, 0.17)
+		_line(img, Vector2(x, h - 1), Vector2(x + lean, top), rng.randf_range(1.0, 2.2), c, true)
+	img.generate_mipmaps()
+	var m := StandardMaterial3D.new()
+	m.albedo_texture = ImageTexture.create_from_image(img)
+	m.vertex_color_use_as_albedo = true
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
+	m.alpha_scissor_threshold = 0.45
+	m.cull_mode = BaseMaterial3D.CULL_DISABLED
+	m.roughness = 0.9
+	m.backlight_enabled = true
+	m.backlight = Color(0.35, 0.25, 0.1)
+	m.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
+	return m

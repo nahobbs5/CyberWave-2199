@@ -671,16 +671,25 @@ func _test_arashiyama() -> void:
 	_check(sc_covered > int(sc.length / 3.0 * 0.6), "the shrine path runs under bamboo too")
 	var chunks := track.find_children("Bamboo_*", "MultiMeshInstance3D", true, false)
 	var total := 0
-	var on_road := 0
 	for node in chunks:
-		var mm := (node as MultiMeshInstance3D).multimesh
-		total += mm.instance_count
-		for i in mm.instance_count:
-			var p := (node as Node3D).position + mm.get_instance_transform(i).origin
-			if track.get_lateral_distance(track.to_global(p)) < track.road_width * 0.5 + track.barrier_thickness:
-				on_road += 1
-	_check(total > 12000 and chunks.size() < 400, "a grove of instanced bamboo (%d culms in %d chunks)" % [total, chunks.size()])
-	_check(on_road == 0, "no culm stands on a road (%d)" % on_road)
+		total += (node as MultiMeshInstance3D).multimesh.instance_count
+	_check(total > 12000 and total == scenery.bamboo.culm_count() and chunks.size() < 400,
+			"a grove of instanced bamboo (%d culms in %d chunks)" % [total, chunks.size()])
+	# Positions come from the builder: headless MultiMesh transforms read back as identity.
+	var off_road := func(kind: String, margin: float) -> int:
+		var hits := 0
+		for p in scenery.bamboo.positions(kind):
+			if track.get_lateral_distance(track.to_global(p)) < track.road_width * 0.5 + margin:
+				hits += 1
+		return hits
+	_check(off_road.call("culm", track.barrier_thickness) == 0, "no culm stands on a road (%d)" % off_road.call("culm", track.barrier_thickness))
+	var undergrowth := scenery.bamboo.item_count("fern") + scenery.bamboo.item_count("sasa")
+	var growth_on_road: int = off_road.call("fern", track.barrier_thickness) + off_road.call("sasa", track.barrier_thickness)
+	_check(undergrowth > 1000 and growth_on_road == 0,
+			"ferns and sasa underfoot, none on a road (%d, %d on road)" % [undergrowth, growth_on_road])
+	var crest := scenery.bamboo.item_count("brush")
+	_check(crest > 1500 and off_road.call("brush", 0.0) == 0 and scenery.bamboo.item_count("pole") > 3000,
+			"brushwood fences: crest along the walls, off the road, with bamboo rails (%d bays)" % crest)
 	var features := track.find_children("*", "TrackFeature", false, false)
 	var on_route := func(kind: TrackFeature.Kind, shortcut: String) -> bool:
 		return features.any(func(f: Node) -> bool: return (f as TrackFeature).kind == kind and (f as TrackFeature).on_shortcut == shortcut)
