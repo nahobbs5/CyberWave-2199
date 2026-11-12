@@ -5,7 +5,7 @@
     "name": "Cyberwave 2199",
     "pitch": "Retrofuturistic cyberpunk combat kart racing: luxury neon cars, drift boosts, weapons and thirteen real-world circuits, against seven AI rivals or in 2–4 player local split screen.",
     "engine": "Godot 4.7.2 · GDScript · Jolt Physics",
-    "gdd": "v6.4",
+    "gdd": "v6.9",
     "phase": "Phase 6: content and polish (GDD §16)",
     "repo": "https://github.com/nahobbs5/CyberWave-2199",
     "demo": "https://nahobbs5.github.io/CyberWave-2199/web/",
@@ -18,18 +18,51 @@
       "Run test_phase4 and test_phase6 on their own: they're long and time-sensitive."
     ],
     "folders": [
-      { "path": "scripts/vehicles/", "what": "VehicleController (raycast suspension, grip), DriftController, recovery, feedback" },
-      { "path": "scripts/race/", "what": "RaceManager, StartLaunch (rocket start), checkpoints, championship, split screen" },
-      { "path": "scripts/combat/", "what": "WeaponManager, WeaponData, StatusEffects, CombatSfx, projectiles and drones" },
-      { "path": "scripts/track/", "what": "TrackCircuit, TrackFeature, per-track scenery and reusable builders" },
-      { "path": "scripts/ui/", "what": "RaceHUD parts (hud/), podium, neon menu widgets, garage preview" },
-      { "path": "scripts/core/", "what": "InputSetup (bindings, per-player actions), GameSettings, Music" },
-      { "path": "resources/", "what": "Vehicle stats, weapon .tres (odds, durations), AI difficulty, cups" },
-      { "path": "tests/", "what": "Headless suites; tools/ has screenshot and probe scripts" },
-      { "path": "docs/", "what": "GDD, Reference, physics guide, advanced weapons, recovery" }
+      {
+        "path": "scripts/vehicles/",
+        "what": "VehicleController (raycast suspension, grip), DriftController, recovery, feedback"
+      },
+      {
+        "path": "scripts/race/",
+        "what": "RaceManager, StartLaunch (rocket start), checkpoints, championship, split screen"
+      },
+      {
+        "path": "scripts/combat/",
+        "what": "WeaponManager, WeaponData, StatusEffects, CombatSfx, projectiles and drones"
+      },
+      {
+        "path": "scripts/track/",
+        "what": "TrackCircuit, TrackFeature, per-track scenery and reusable builders"
+      },
+      {
+        "path": "scripts/ui/",
+        "what": "RaceHUD parts (hud/), podium, neon menu widgets, garage preview"
+      },
+      {
+        "path": "scripts/core/",
+        "what": "InputSetup (bindings, per-player actions), GameSettings, Music"
+      },
+      {
+        "path": "resources/",
+        "what": "Vehicle stats, weapon .tres (odds, durations), AI difficulty, cups"
+      },
+      {
+        "path": "tests/",
+        "what": "Headless suites; tools/ has screenshot and probe scripts"
+      },
+      {
+        "path": "docs/",
+        "what": "GDD, Reference, physics guide, advanced weapons, recovery"
+      }
     ]
   },
-  "statuses": ["Not started", "In progress", "Blocked", "Playtesting", "Done"],
+  "statuses": [
+    "Not started",
+    "In progress",
+    "Blocked",
+    "Playtesting",
+    "Done"
+  ],
   "milestones": [
     {
       "id": "handling",
@@ -38,22 +71,55 @@
       "current": false,
       "status": "Playtesting",
       "summary": "Four RayCast3D wheels apply spring/damper forces to a RigidBody3D. Drive, lateral grip and yaw shape the velocity in _integrate_forces for arcade handling. The 2026-11-10 physics pass added a per-step wheel cache, traction weighting and a landing stabiliser. What's left is feel.",
-      "files": ["scripts/vehicles/vehicle_controller.gd", "scripts/vehicles/vehicle_stats.gd", "scripts/ui/physics_debug_overlay.gd", "resources/vehicles/", "docs/Cyberwave_2199_Vehicle_Physics_Implementation_Guide.md"],
+      "files": [
+        "scripts/vehicles/vehicle_controller.gd",
+        "scripts/vehicles/vehicle_stats.gd",
+        "scripts/ui/physics_debug_overlay.gd",
+        "resources/vehicles/",
+        "docs/Cyberwave_2199_Vehicle_Physics_Implementation_Guide.md"
+      ],
       "prerequisites": [
         "Godot 4.7.2 with Jolt Physics",
         "Physics guide §13 (the results of the last pass) read",
         "F3 PhysicsDebugOverlay works in races and Practice"
       ],
       "steps": [
-        { "text": "Per-step wheel cache: spring length, compression, load and ray hits", "done": true },
-        { "text": "traction_fraction weighted by compression, with a 2-tick grace", "done": true },
-        { "text": "Landing: 1.5× damping and a 0.3 s pitch/roll stabiliser after more than 0.15 s in the air", "done": true },
-        { "text": "Anti-roll bars wired (find_axles + anti_roll_stiffness) but left at 0", "done": true },
-        { "text": "Cars drawn 1.3× on track (visual only; collider and rays unchanged)", "done": true },
-        { "text": "Playtest top speed, acceleration and grip for every car on 3+ tracks", "done": false },
-        { "text": "Check kerbs and bumps (Kilwa, Catacombs) never launch or flip a car", "done": false },
-        { "text": "Re-check ramp jump distances after any spring or damper change", "done": false },
-        { "text": "Write the final VehicleStats values into GDD §5.2", "done": false }
+        {
+          "text": "Per-step wheel cache: spring length, compression, load and ray hits",
+          "done": true
+        },
+        {
+          "text": "traction_fraction weighted by compression, with a 2-tick grace",
+          "done": true
+        },
+        {
+          "text": "Landing: 1.5× damping and a 0.3 s pitch/roll stabiliser after more than 0.15 s in the air",
+          "done": true
+        },
+        {
+          "text": "Anti-roll bars wired (find_axles + anti_roll_stiffness) but left at 0",
+          "done": true
+        },
+        {
+          "text": "Cars drawn 1.3× on track (visual only; collider and rays unchanged)",
+          "done": true
+        },
+        {
+          "text": "Playtest top speed, acceleration and grip for every car on 3+ tracks",
+          "done": false
+        },
+        {
+          "text": "Check kerbs and bumps (Kilwa, Catacombs) never launch or flip a car",
+          "done": false
+        },
+        {
+          "text": "Re-check ramp jump distances after any spring or damper change",
+          "done": false
+        },
+        {
+          "text": "Write the final VehicleStats values into GDD §5.2",
+          "done": false
+        }
       ],
       "test": {
         "headless": "godot --headless --fixed-fps 60 -s res://tests/test_vehicle_physics.gd",
@@ -72,21 +138,53 @@
       "current": false,
       "status": "Playtesting",
       "summary": "Hold drift and steer to slide. Charge builds only while grounded and sliding sideways: Cyan at 1 s, Magenta at 2.5 s, Gold at 4 s of neutral steering, 1.5× faster steering into the drift and 0.75× steering out. Releasing fires the boost.",
-      "files": ["scripts/vehicles/drift_controller.gd", "scripts/vehicles/vehicle_feedback.gd", "scripts/ui/hud/speed_drift_panel.gd", "scripts/ai/racing_line.gd"],
+      "files": [
+        "scripts/vehicles/drift_controller.gd",
+        "scripts/vehicles/vehicle_feedback.gd",
+        "scripts/ui/hud/speed_drift_panel.gd",
+        "scripts/ai/racing_line.gd"
+      ],
       "prerequisites": [
         "Handling milestone stable enough that grip changes don't shift drift entry",
         "Test Circuit T3 (133°) and T7 (95°) used as reference corners"
       ],
       "steps": [
-        { "text": "Three charge levels with tier colours and tones", "done": true },
-        { "text": "charge_rate(steer): 1.5× into the drift, 0.75× out", "done": true },
-        { "text": "Drift-entry hop and body angled into the slide (visual only)", "done": true },
-        { "text": "Grip blends back over drift_recovery_time = 0.15 s", "done": true },
-        { "text": "Tyre smoke, skid loop, sparks and underglow in the tier colour", "done": true },
-        { "text": "AI drift zones on the racing line", "done": true },
-        { "text": "Playtest: can Gold be reached on the 35–60 m corners of the newer tracks?", "done": false },
-        { "text": "Tune boost speed and duration per tier (GDD §18 still open)", "done": false },
-        { "text": "Re-check AI drift-boost counts after any timing change (test_phase2)", "done": false }
+        {
+          "text": "Three charge levels with tier colours and tones",
+          "done": true
+        },
+        {
+          "text": "charge_rate(steer): 1.5× into the drift, 0.75× out",
+          "done": true
+        },
+        {
+          "text": "Drift-entry hop and body angled into the slide (visual only)",
+          "done": true
+        },
+        {
+          "text": "Grip blends back over drift_recovery_time = 0.15 s",
+          "done": true
+        },
+        {
+          "text": "Tyre smoke, skid loop, sparks and underglow in the tier colour",
+          "done": true
+        },
+        {
+          "text": "AI drift zones on the racing line",
+          "done": true
+        },
+        {
+          "text": "Playtest: can Gold be reached on the 35–60 m corners of the newer tracks?",
+          "done": false
+        },
+        {
+          "text": "Tune boost speed and duration per tier (GDD §18 still open)",
+          "done": false
+        },
+        {
+          "text": "Re-check AI drift-boost counts after any timing change (test_phase2)",
+          "done": false
+        }
       ],
       "test": {
         "headless": "godot --headless --fixed-fps 60 -s res://tests/test_drift.gd",
@@ -105,22 +203,59 @@
       "current": false,
       "status": "In progress",
       "summary": "There are 11 data-driven weapons with per-position crate odds. System Override hacks every racer ahead of the user, and the time to recover depends on the victim's position, so racers farther ahead stay hacked longer: 1st 12 s down to 7th 3 s.",
-      "files": ["resources/weapons/*.tres", "scripts/combat/weapon_data.gd", "scripts/combat/weapon_manager.gd", "scripts/combat/status_effects.gd", "scripts/ai/ai_combat.gd", "docs/Cyberwave_2199_Advanced_Weapons.md"],
+      "files": [
+        "resources/weapons/*.tres",
+        "scripts/combat/weapon_data.gd",
+        "scripts/combat/weapon_manager.gd",
+        "scripts/combat/status_effects.gd",
+        "scripts/ai/ai_combat.gd",
+        "docs/Cyberwave_2199_Advanced_Weapons.md"
+      ],
       "prerequisites": [
         "Recovery rules settled (some recoveries empty the item slots)",
         "AI difficulty pace roughly right, so position-based odds are meaningful"
       ],
       "steps": [
-        { "text": "11 weapons as WeaponData resources", "done": true },
-        { "text": "position_chance per weapon (each position sums to 100); rare items never drop for 1st–2nd", "done": true },
-        { "text": "System Override: duration_by_position 12 / 10.5 / 9 / 7.5 / 6 / 4.5 / 3 s, −25% speed, −30% accel, no drift charge, no stacking", "done": true },
-        { "text": "Hunter-Killer pierces Firewall; Nitro dodge in the last 0.4 s", "done": true },
-        { "text": "Item loss on out-of-bounds / water / off-track / manual recoveries", "done": true },
-        { "text": "Weapon SFX with per-clip levels and a master limiter", "done": true },
-        { "text": "Human playtest of Override durations from the leader's seat", "done": false },
-        { "text": "Playtest crate odds over a full Grand Prix (leader vs back of the pack)", "done": false },
-        { "text": "Find why test_phase3 'every racer crossed every gate despite weapons' fails", "done": false },
-        { "text": "Decide on the 5 unbuilt GDD weapons (Holo Decoy, Gravity Mine, System Glitch, Cyber Leech, Swarm Bots)", "done": false }
+        {
+          "text": "11 weapons as WeaponData resources",
+          "done": true
+        },
+        {
+          "text": "position_chance per weapon (each position sums to 100); rare items never drop for 1st–2nd",
+          "done": true
+        },
+        {
+          "text": "System Override: duration_by_position 12 / 10.5 / 9 / 7.5 / 6 / 4.5 / 3 s, −25% speed, −30% accel, no drift charge, no stacking",
+          "done": true
+        },
+        {
+          "text": "Hunter-Killer pierces Firewall; Nitro dodge in the last 0.4 s",
+          "done": true
+        },
+        {
+          "text": "Item loss on out-of-bounds / water / off-track / manual recoveries",
+          "done": true
+        },
+        {
+          "text": "Weapon SFX with per-clip levels and a master limiter",
+          "done": true
+        },
+        {
+          "text": "Human playtest of Override durations from the leader's seat",
+          "done": false
+        },
+        {
+          "text": "Playtest crate odds over a full Grand Prix (leader vs back of the pack)",
+          "done": false
+        },
+        {
+          "text": "Find why test_phase3 'every racer crossed every gate despite weapons' fails",
+          "done": false
+        },
+        {
+          "text": "Decide on the 5 unbuilt GDD weapons (Holo Decoy, Gravity Mine, System Glitch, Cyber Leech, Swarm Bots)",
+          "done": false
+        }
       ],
       "test": {
         "headless": "godot --headless --fixed-fps 60 -s res://tests/test_weapons_advanced.gd",
@@ -139,25 +274,66 @@
       "current": false,
       "status": "In progress",
       "summary": "Each track has its own sky, fog, lighting and procedural scenery. Current work covers textured standing water, the redesigned EMP puddles and the Arashiyama bamboo rework.",
-      "files": ["scripts/track/*_scenery.gd", "scripts/track/scenery/", "assets/shaders/standing_water.gdshader", "assets/shaders/emp_puddle.gdshader", "scenes/tracks/"],
+      "files": [
+        "scripts/track/*_scenery.gd",
+        "scripts/track/scenery/",
+        "assets/shaders/standing_water.gdshader",
+        "assets/shaders/emp_puddle.gdshader",
+        "scenes/tracks/"
+      ],
       "prerequisites": [
         "Judge looks on Windows Forward+ (container screenshots are software-rendered)",
         "Water / EMP shaders committed before tuning per-track tints"
       ],
       "steps": [
-        { "text": "13 tracks with their own WorldEnvironment (sky, fog, light)", "done": true },
-        { "text": "Music on every track, faster on the final lap", "done": true },
-        { "text": "Textured standing water and scenery puddles (GDD v6.3)", "done": true },
-        { "text": "EMP puddles redesigned as a clear hazard (lip, arcs, signs)", "done": true },
-        { "text": "Arashiyama bamboo reworked (straight jointed culms, crowns meeting overhead)", "done": true },
-        { "text": "Forward+ visual pass per track on Windows: fog density, glow, hazard readability", "done": false },
-        { "text": "Performance pass on Hoia, Arashiyama and Gardens, including 4-view split screen", "done": false },
-        { "text": "Fix the Arashiyama shortcut test failures", "done": false },
-        { "text": "Correct GDD §12.1: Kilwa now has music (The Dragon's Lair)", "done": false }
+        {
+          "text": "13 tracks with their own WorldEnvironment (sky, fog, light)",
+          "done": true
+        },
+        {
+          "text": "Music on every track, faster on the final lap",
+          "done": true
+        },
+        {
+          "text": "Textured standing water and scenery puddles (GDD v6.3)",
+          "done": true
+        },
+        {
+          "text": "EMP puddles redesigned as a clear hazard (lip, arcs, signs)",
+          "done": true
+        },
+        {
+          "text": "Arashiyama bamboo reworked (straight jointed culms, crowns meeting overhead)",
+          "done": true
+        },
+        {
+          "text": "See-through light beams removed (Catacombs grates, glacier skylights, Crazy House windows, Arashiyama canopy) (v6.8)",
+          "done": true
+        },
+        {
+          "text": "Boost pads laid out as single / diagonal / triangle, fixed per track (v6.6)",
+          "done": true
+        },
+        {
+          "text": "Forward+ visual pass per track on Windows: fog density, glow, hazard readability",
+          "done": false
+        },
+        {
+          "text": "Performance pass on Hoia, Arashiyama and Gardens, including 4-view split screen",
+          "done": false
+        },
+        {
+          "text": "Fix the Arashiyama shortcut test failures",
+          "done": false
+        },
+        {
+          "text": "Correct GDD §12.1: Kilwa now has music (The Dragon's Lair)",
+          "done": true
+        }
       ],
       "test": {
         "headless": "godot --headless --fixed-fps 60 -s res://tests/test_phase6.gd",
-        "also": "test_quinta_normal.gd, test_vale_da_lua.gd, test_choquequirao.gd, test_kilwa_kisiwani.gd",
+        "also": "test_boost_patterns.gd, test_quinta_normal.gd, test_vale_da_lua.gd, test_choquequirao.gd, test_kilwa_kisiwani.gd",
         "manual": "Versus → each cup's tracks at 1080p with Debug → Monitors open (FPS). Check that water and EMP puddles read at full speed and fog never hides a corner."
       },
       "blockers": "Arashiyama: 'shortcut is shorter (350 vs 470)' and 'every gate counted on the shortcut' fail.",
@@ -172,24 +348,67 @@
       "current": false,
       "status": "Playtesting",
       "summary": "The race HUD was rebuilt after the 'Slipstream Under the Neon Moon' art (v4.9). The garage is a full-screen neon room, and results, pause and podium are restyled. What's left is on-screen checks and the remaining GDD §11.8 presentation items.",
-      "files": ["scripts/ui/race_hud.gd", "scripts/ui/hud/", "scripts/menu/garage.gd", "scripts/ui/vehicle_preview.gd", "scripts/ui/podium/", "scripts/ui/pause_menu.gd"],
+      "files": [
+        "scripts/ui/race_hud.gd",
+        "scripts/ui/hud/",
+        "scripts/menu/garage.gd",
+        "scripts/ui/vehicle_preview.gd",
+        "scripts/ui/podium/",
+        "scripts/ui/pause_menu.gd"
+      ],
       "prerequisites": [
         "Reference art in 'reference files/' for any screen being restyled",
         "UIStyle / Neon* widgets reused (no one-off styling)"
       ],
       "steps": [
-        { "text": "HUD: POSITION + standings, LAP / time / coins, speed gauge with charge cells, minimap over item squares", "done": true },
-        { "text": "Neon results (two pages for sets) and podium ceremony", "done": true },
-        { "text": "Pause menu with volume and controls keycaps (v6.0)", "done": true },
-        { "text": "Garage room with COSMETICS / INFO tabs, turntable, Apply", "done": true },
-        { "text": "Loading card with progress bar", "done": true },
-        { "text": "On-screen check of the HUD at 75% and 150% scale in 1P and 3–4P split screen", "done": false },
-        { "text": "Garage: try on every cosmetic on all 8 cars and check stripes and decals line up", "done": false },
-        { "text": "Decide on the GDD §11.8 pre-race camera sweep and the §11.9 first-time tutorial", "done": false }
+        {
+          "text": "HUD: POSITION + standings, LAP / time / coins, speed gauge with charge cells, minimap over item squares",
+          "done": true
+        },
+        {
+          "text": "Neon results (two pages for sets) and podium ceremony",
+          "done": true
+        },
+        {
+          "text": "Pause menu with volume and controls keycaps (v6.0)",
+          "done": true
+        },
+        {
+          "text": "Garage room with COSMETICS / INFO tabs, turntable, Apply",
+          "done": true
+        },
+        {
+          "text": "Loading card with progress bar",
+          "done": true
+        },
+        {
+          "text": "HUD reads \"2/8\", \"1/3\" and 00:23.567; mode / track line removed (v6.9)",
+          "done": true
+        },
+        {
+          "text": "Results: PTS column in every race, projected times for racers placed without finishing, DNF only for last place / Elimination runner-up (v6.5–6.6)",
+          "done": true
+        },
+        {
+          "text": "Split screen uses the single-player results layout with player-coloured rows (v6.7)",
+          "done": true
+        },
+        {
+          "text": "On-screen check of the HUD at 75% and 150% scale in 1P and 3–4P split screen",
+          "done": false
+        },
+        {
+          "text": "Garage: try on every cosmetic on all 8 cars and check stripes and decals line up",
+          "done": false
+        },
+        {
+          "text": "Decide on the GDD §11.8 pre-race camera sweep and the §11.9 first-time tutorial",
+          "done": false
+        }
       ],
       "test": {
         "headless": "godot --headless --fixed-fps 60 -s res://tests/test_ui.gd",
-        "also": "test_phase5.gd (menus, garage, shop), test_podium.gd",
+        "also": "test_phase5.gd (menus, garage, shop), test_podium.gd, test_race_end.gd (projected times, DNF)",
         "manual": "Garage: try on and apply one item per category on two cars. Then race, pause, and finish. The podium should show, then results; play a Versus set to see both results pages."
       },
       "blockers": "",
@@ -204,21 +423,56 @@
       "current": true,
       "status": "In progress",
       "summary": "A four-lamp start-light board on the gantry lights one lamp per beep: three reds, then green on START. The new rocket start (GDD v6.4) gives a boost for holding accelerate as the '2' fades and a burnout for holding too early. AI rivals do it too, with odds set by difficulty.",
-      "files": ["scripts/race/start_launch.gd", "scripts/race/race_manager.gd", "assets/ui/start_lights.gdshader", "resources/ai/easy.tres", "resources/ai/hard.tres", "scripts/ai/ai_difficulty.gd", "tests/test_start_boost.gd"],
+      "files": [
+        "scripts/race/start_launch.gd",
+        "scripts/race/race_manager.gd",
+        "assets/ui/start_lights.gdshader",
+        "resources/ai/easy.tres",
+        "resources/ai/hard.tres",
+        "scripts/ai/ai_difficulty.gd",
+        "tests/test_start_boost.gd"
+      ],
       "prerequisites": [
         "Countdown beeps aligned with the lamps (clip played from 0 s, beeps 1 s apart)",
         "Tests that freeze AI neutralise launches (test_phase3 _freeze_field, test_phase2 no_launches)"
       ],
       "steps": [
-        { "text": "Start-light board on the gantry, one lamp per beep, lights out 4 s after START", "done": true },
-        { "text": "3 / 2 / 1 / START countdown with controls locked", "done": true },
-        { "text": "StartLaunch per racer: rocket window as '2' fades; earlier = burnout (smoke, spin, 1 s no control)", "done": true },
-        { "text": "Revving before START: exhaust pops, rear squat, body shudder", "done": true },
-        { "text": "AI odds per difficulty (rocket_start_chance / burnout_chance)", "done": true },
-        { "text": "Playtest the window width with keyboard and a gamepad", "done": false },
-        { "text": "Check lamp / beep / word sync on Windows Forward+ and in the web build", "done": false },
-        { "text": "Check AI odds feel per difficulty (Easy 15% / 20%, Normal 40% / 8%, Hard 80% / 2%)", "done": false },
-        { "text": "Commit start_launch.gd and test_start_boost.gd (currently untracked)", "done": false }
+        {
+          "text": "Start-light board on the gantry, one lamp per beep, lights out 4 s after START",
+          "done": true
+        },
+        {
+          "text": "3 / 2 / 1 / START countdown with controls locked",
+          "done": true
+        },
+        {
+          "text": "StartLaunch per racer: rocket window as '2' fades; earlier = burnout (smoke, spin, 1 s no control)",
+          "done": true
+        },
+        {
+          "text": "Revving before START: exhaust pops, rear squat, body shudder",
+          "done": true
+        },
+        {
+          "text": "AI odds per difficulty (rocket_start_chance / burnout_chance)",
+          "done": true
+        },
+        {
+          "text": "Playtest the window width with keyboard and a gamepad",
+          "done": false
+        },
+        {
+          "text": "Check lamp / beep / word sync on Windows Forward+ and in the web build",
+          "done": false
+        },
+        {
+          "text": "Check AI odds feel per difficulty (Easy 15% / 20%, Normal 40% / 8%, Hard 80% / 2%)",
+          "done": false
+        },
+        {
+          "text": "Commit start_launch.gd and test_start_boost.gd (done in cf3fb49)",
+          "done": true
+        }
       ],
       "test": {
         "headless": "godot --headless --fixed-fps 60 -s res://tests/test_start_boost.gd",
@@ -237,20 +491,50 @@
       "current": false,
       "status": "In progress",
       "summary": "Gamepads drive, fight and navigate every menu. Split screen gives each device its own p1_–p4_ actions, and controller kinds (Xbox, PlayStation, Switch, generic) are recognised for icons. Real-pad testing is the gap.",
-      "files": ["scripts/core/input_setup.gd", "scripts/menu/device_input.gd", "scripts/ui/controller_icon.gd", "scripts/race/split_screen.gd", "scripts/menu/settings_menu.gd"],
+      "files": [
+        "scripts/core/input_setup.gd",
+        "scripts/menu/device_input.gd",
+        "scripts/ui/controller_icon.gd",
+        "scripts/race/split_screen.gd",
+        "scripts/menu/settings_menu.gd"
+      ],
       "prerequisites": [
         "At least two physical gamepads (one Xbox-style, one PlayStation-style)",
         "Default bindings agreed (GDD §3.3)"
       ],
       "steps": [
-        { "text": "Default pad bindings: RT / LT, RB drift, LB weapon, Y trick, D-pad slots / reset / camera, RS look back", "done": true },
-        { "text": "Per-player actions (InputSetup.build_player_actions) for split screen", "done": true },
-        { "text": "DeviceInput.controller_kind + ControllerIcon on the connect screen", "done": true },
-        { "text": "A / B in single-player menus, pause, podium and results (v5.6)", "done": true },
-        { "text": "Rebinding keyboard and pad separately, including stick directions", "done": true },
-        { "text": "Real-pad pass through every menu with Xbox and PlayStation pads", "done": false },
-        { "text": "3–4P split screen with real pads on a heavy track", "done": false },
-        { "text": "Decide and build pad-disconnect handling mid-race", "done": false }
+        {
+          "text": "Default pad bindings: RT / LT, RB drift, LB weapon, Y trick, D-pad slots / reset / camera, RS look back",
+          "done": true
+        },
+        {
+          "text": "Per-player actions (InputSetup.build_player_actions) for split screen",
+          "done": true
+        },
+        {
+          "text": "DeviceInput.controller_kind + ControllerIcon on the connect screen",
+          "done": true
+        },
+        {
+          "text": "A / B in single-player menus, pause, podium and results (v5.6)",
+          "done": true
+        },
+        {
+          "text": "Rebinding keyboard and pad separately, including stick directions",
+          "done": true
+        },
+        {
+          "text": "Real-pad pass through every menu with Xbox and PlayStation pads",
+          "done": false
+        },
+        {
+          "text": "3–4P split screen with real pads on a heavy track",
+          "done": false
+        },
+        {
+          "text": "Decide and build pad-disconnect handling mid-race",
+          "done": false
+        }
       ],
       "test": {
         "headless": "godot --headless --fixed-fps 60 -s res://tests/test_pad_menus.gd",
@@ -264,77 +548,380 @@
     }
   ],
   "backlog": [
-    { "id": "b1", "system": "Handling", "title": "Physics interpolation for high-refresh camera smoothness", "priority": "P2", "done": false },
-    { "id": "b2", "system": "Handling", "title": "Final VehicleStats pass and GDD §5.2 update", "priority": "P2", "done": false },
-    { "id": "b3", "system": "Drifting", "title": "Per-tier boost strength / duration tuning", "priority": "P1", "done": false },
-    { "id": "b4", "system": "Weapons", "title": "Investigate test_phase3 gate-count failure in the weapons race", "priority": "P1", "done": false },
-    { "id": "b5", "system": "Weapons", "title": "Decide on Holo Decoy / Gravity Mine / System Glitch / Cyber Leech / Swarm Bots", "priority": "P3", "done": false },
-    { "id": "b6", "system": "Weapons", "title": "AI Firewall timing (spends it pre-emptively)", "priority": "P3", "done": false },
-    { "id": "b7", "system": "Atmosphere", "title": "Fix Arashiyama shortcut length / gate tests", "priority": "P1", "done": false },
-    { "id": "b8", "system": "Atmosphere", "title": "Africa Cup races 2 and 3", "priority": "P2", "done": false },
-    { "id": "b9", "system": "Atmosphere", "title": "GDD §12.1: list Kilwa's music", "priority": "P3", "done": false },
-    { "id": "b10", "system": "UI", "title": "Pre-race camera sweep (GDD §11.8)", "priority": "P3", "done": false },
-    { "id": "b11", "system": "UI", "title": "First-time tutorial (GDD §11.9)", "priority": "P3", "done": false },
-    { "id": "b12", "system": "Race start", "title": "Web build check of the start-light / beep sync", "priority": "P2", "done": false },
-    { "id": "b13", "system": "Controllers", "title": "Pad disconnect / reconnect handling", "priority": "P2", "done": false },
-    { "id": "b14", "system": "Controllers", "title": "Rumble feedback", "priority": "P3", "done": false },
-    { "id": "b15", "system": "Tests", "title": "test_phase5 personal-best checks failing", "priority": "P2", "done": false }
+    {
+      "id": "b1",
+      "system": "Handling",
+      "title": "Physics interpolation for high-refresh camera smoothness",
+      "priority": "P2",
+      "done": false
+    },
+    {
+      "id": "b2",
+      "system": "Handling",
+      "title": "Final VehicleStats pass and GDD §5.2 update",
+      "priority": "P2",
+      "done": false
+    },
+    {
+      "id": "b3",
+      "system": "Drifting",
+      "title": "Per-tier boost strength / duration tuning",
+      "priority": "P1",
+      "done": false
+    },
+    {
+      "id": "b4",
+      "system": "Weapons",
+      "title": "Investigate test_phase3 gate-count failure in the weapons race",
+      "priority": "P1",
+      "done": false
+    },
+    {
+      "id": "b5",
+      "system": "Weapons",
+      "title": "Decide on Holo Decoy / Gravity Mine / System Glitch / Cyber Leech / Swarm Bots",
+      "priority": "P3",
+      "done": false
+    },
+    {
+      "id": "b6",
+      "system": "Weapons",
+      "title": "AI Firewall timing (spends it pre-emptively)",
+      "priority": "P3",
+      "done": false
+    },
+    {
+      "id": "b7",
+      "system": "Atmosphere",
+      "title": "Fix Arashiyama shortcut length / gate tests",
+      "priority": "P1",
+      "done": false
+    },
+    {
+      "id": "b8",
+      "system": "Atmosphere",
+      "title": "Africa Cup races 2 and 3",
+      "priority": "P2",
+      "done": false
+    },
+    {
+      "id": "b9",
+      "system": "Atmosphere",
+      "title": "GDD §12.1: list Kilwa's music",
+      "priority": "P3",
+      "done": true
+    },
+    {
+      "id": "b10",
+      "system": "UI",
+      "title": "Pre-race camera sweep (GDD §11.8)",
+      "priority": "P3",
+      "done": false
+    },
+    {
+      "id": "b11",
+      "system": "UI",
+      "title": "First-time tutorial (GDD §11.9)",
+      "priority": "P3",
+      "done": false
+    },
+    {
+      "id": "b12",
+      "system": "Race start",
+      "title": "Web build check of the start-light / beep sync",
+      "priority": "P2",
+      "done": false
+    },
+    {
+      "id": "b13",
+      "system": "Controllers",
+      "title": "Pad disconnect / reconnect handling",
+      "priority": "P2",
+      "done": false
+    },
+    {
+      "id": "b14",
+      "system": "Controllers",
+      "title": "Rumble feedback",
+      "priority": "P3",
+      "done": false
+    },
+    {
+      "id": "b15",
+      "system": "Tests",
+      "title": "test_phase5 personal-best checks failing",
+      "priority": "P2",
+      "done": false
+    },
+    {
+      "id": "b16",
+      "system": "Atmosphere",
+      "title": "Web build: make a 96 kbps .ogg copy of alex-morgan Background Music in music/web/",
+      "priority": "P2",
+      "done": true
+    }
   ],
   "decisions": [
-    { "date": "2026-11-05", "decision": "Keyboard drift is Shift + A/D instead of Q/E", "why": "More intuitive in Phase 1 testing", "gdd": "v1.1" },
-    { "date": "2026-11-05", "decision": "Vegas Overdrive shortened from 4.4 km to 3.2 km", "why": "The Strip felt too long on the first drive", "gdd": "v1.6" },
-    { "date": "2026-11-05", "decision": "No control instructions on the HUD; controls live in the pause menu", "why": "Keep the race view clean", "gdd": "" },
-    { "date": "2026-11-06", "decision": "Countdown is 3 / 2 / 1 / START with a start-light board, one lamp per beep", "why": "Readable start that matches the audio", "gdd": "v2.1" },
-    { "date": "2026-11-06", "decision": "Gamepad: RB drift (hold + steer), LB weapon, Y trick, D-pad up reset", "why": "Bumper drift frees the face buttons", "gdd": "v2.7" },
-    { "date": "2026-11-07", "decision": "Drift charges 1.5× steering in, 0.75× out, with an entry hop", "why": "Mario Kart style feel", "gdd": "v3.0" },
-    { "date": "2026-11-07", "decision": "Cars drawn 1.3× on track only", "why": "Readability without touching physics", "gdd": "" },
-    { "date": "2026-11-10", "decision": "Race ends once all but one car have finished", "why": "No waiting on the last car", "gdd": "v4.8" },
-    { "date": "2026-11-10", "decision": "Crate odds set per position for every weapon", "why": "Leaders get defence, trailers get catch-up", "gdd": "v5.0" },
-    { "date": "2026-11-10", "decision": "System Override time depends on the victim's position (1st 12 s … 7th 3 s); weapons stay usable", "why": "Racers farther ahead recover more slowly; 3× the first spec", "gdd": "v5.1" },
-    { "date": "2026-11-10", "decision": "Hunter-Killer pierces Firewall; dodge with a well-timed Nitro", "why": "Gives the leader a skill-based escape instead of a shield", "gdd": "v5.2" },
-    { "date": "2026-11-10", "decision": "Some recoveries (out of bounds, water, off track, manual) empty the item slots", "why": "Falling off or resetting has a cost", "gdd": "" },
-    { "date": "2026-11-10", "decision": "Anti-roll left at 0; spring force not clamped at full travel", "why": "Clamping and bars shortened jumps and hurt kerbs", "gdd": "" },
-    { "date": "2026-11-12", "decision": "Track coins move to a new random layout every lap", "why": "Encourage lines off the racing line", "gdd": "v6.2" },
-    { "date": "2026-11-12", "decision": "Rocket start replaces 'no false-start penalties'", "why": "Skill at the start, with risk", "gdd": "v6.4" },
-    { "date": "2026-11-12", "decision": "README slimmed to a landing page; deep docs in docs/Reference.md; tracker data in Git as dev/tracker.json", "why": "Keep GitHub current and tracking inside the normal Git workflow", "gdd": "" }
+    {
+      "date": "2026-11-05",
+      "decision": "Keyboard drift is Shift + A/D instead of Q/E",
+      "why": "More intuitive in Phase 1 testing",
+      "gdd": "v1.1"
+    },
+    {
+      "date": "2026-11-05",
+      "decision": "Vegas Overdrive shortened from 4.4 km to 3.2 km",
+      "why": "The Strip felt too long on the first drive",
+      "gdd": "v1.6"
+    },
+    {
+      "date": "2026-11-05",
+      "decision": "No control instructions on the HUD; controls live in the pause menu",
+      "why": "Keep the race view clean",
+      "gdd": ""
+    },
+    {
+      "date": "2026-11-06",
+      "decision": "Countdown is 3 / 2 / 1 / START with a start-light board, one lamp per beep",
+      "why": "Readable start that matches the audio",
+      "gdd": "v2.1"
+    },
+    {
+      "date": "2026-11-06",
+      "decision": "Gamepad: RB drift (hold + steer), LB weapon, Y trick, D-pad up reset",
+      "why": "Bumper drift frees the face buttons",
+      "gdd": "v2.7"
+    },
+    {
+      "date": "2026-11-07",
+      "decision": "Drift charges 1.5× steering in, 0.75× out, with an entry hop",
+      "why": "Mario Kart style feel",
+      "gdd": "v3.0"
+    },
+    {
+      "date": "2026-11-07",
+      "decision": "Cars drawn 1.3× on track only",
+      "why": "Readability without touching physics",
+      "gdd": ""
+    },
+    {
+      "date": "2026-11-10",
+      "decision": "Race ends once all but one car have finished",
+      "why": "No waiting on the last car",
+      "gdd": "v4.8"
+    },
+    {
+      "date": "2026-11-10",
+      "decision": "Crate odds set per position for every weapon",
+      "why": "Leaders get defence, trailers get catch-up",
+      "gdd": "v5.0"
+    },
+    {
+      "date": "2026-11-10",
+      "decision": "System Override time depends on the victim's position (1st 12 s … 7th 3 s); weapons stay usable",
+      "why": "Racers farther ahead recover more slowly; 3× the first spec",
+      "gdd": "v5.1"
+    },
+    {
+      "date": "2026-11-10",
+      "decision": "Hunter-Killer pierces Firewall; dodge with a well-timed Nitro",
+      "why": "Gives the leader a skill-based escape instead of a shield",
+      "gdd": "v5.2"
+    },
+    {
+      "date": "2026-11-10",
+      "decision": "Some recoveries (out of bounds, water, off track, manual) empty the item slots",
+      "why": "Falling off or resetting has a cost",
+      "gdd": ""
+    },
+    {
+      "date": "2026-11-10",
+      "decision": "Anti-roll left at 0; spring force not clamped at full travel",
+      "why": "Clamping and bars shortened jumps and hurt kerbs",
+      "gdd": ""
+    },
+    {
+      "date": "2026-11-12",
+      "decision": "Track coins move to a new random layout every lap",
+      "why": "Encourage lines off the racing line",
+      "gdd": "v6.2"
+    },
+    {
+      "date": "2026-11-12",
+      "decision": "Rocket start replaces 'no false-start penalties'",
+      "why": "Skill at the start, with risk",
+      "gdd": "v6.4"
+    },
+    {
+      "date": "2026-11-12",
+      "decision": "README slimmed to a landing page; deep docs in docs/Reference.md; tracker data in Git as dev/tracker.json",
+      "why": "Keep GitHub current and tracking inside the normal Git workflow",
+      "gdd": ""
+    },
+    {
+      "date": "2026-11-12",
+      "decision": "Results show PTS in every race; racers placed without finishing get projected times, DNF only for last place and the Elimination runner-up",
+      "why": "Every row gets a time without waiting for the field",
+      "gdd": "v6.5–6.6"
+    },
+    {
+      "date": "2026-11-12",
+      "decision": "Podium fanfare only with the crown (human winner); race SFX stay muted on results",
+      "why": "A fanfare for an AI win felt wrong",
+      "gdd": "v6.6"
+    },
+    {
+      "date": "2026-11-12",
+      "decision": "Boost pads laid out as a single, diagonal of three or triangle, seeded per track",
+      "why": "Variety, while each track stays learnable",
+      "gdd": "v6.6"
+    },
+    {
+      "date": "2026-11-12",
+      "decision": "Split screen uses the single-player results layout; results without a podium play Background Music",
+      "why": "One results look everywhere; Victory reserved for the podium",
+      "gdd": "v6.7"
+    },
+    {
+      "date": "2026-11-12",
+      "decision": "See-through light beams removed on every track",
+      "why": "They read as UFO lights",
+      "gdd": "v6.8"
+    },
+    {
+      "date": "2026-11-12",
+      "decision": "HUD drops the mode / track line; position and lap as \"2/8\" and \"1/3\", time as 00:23.567",
+      "why": "Closer to the HUD reference art",
+      "gdd": "v6.9"
+    }
   ],
   "playtest": [
-    { "area": "Handling", "items": [
-      { "text": "Each car feels distinct on a straight and in a hairpin", "done": false },
-      { "text": "Kerbs never launch or flip the car", "done": false },
-      { "text": "Ramp landings settle without bouncing", "done": false },
-      { "text": "Walls: scraping slows you down but doesn't trap the car", "done": false }
-    ]},
-    { "area": "Drifting", "items": [
-      { "text": "Gold is reachable on long corners and feels earned", "done": false },
-      { "text": "Drift entry (hop) is reliable on keyboard and pad", "done": false },
-      { "text": "The boost after release clearly pays off", "done": false }
-    ]},
-    { "area": "Race start", "items": [
-      { "text": "Lamps, beeps and 3 / 2 / 1 / START line up", "done": false },
-      { "text": "Rocket start is learnable within 3 tries", "done": false },
-      { "text": "Burnout is clearly your fault, not the game's", "done": false }
-    ]},
-    { "area": "Weapons", "items": [
-      { "text": "Being hacked as leader feels fair, not race-ending", "done": false },
-      { "text": "Hunter-Killer warning gives enough time to dodge", "done": false },
-      { "text": "Crate odds feel right from 1st and from 8th", "done": false },
-      { "text": "Every hit is readable (visual + sound)", "done": false }
-    ]},
-    { "area": "Atmosphere", "items": [
-      { "text": "Corners are visible through the fog on every track", "done": false },
-      { "text": "Water and EMP puddles read at full speed", "done": false },
-      { "text": "Frame rate holds on the heaviest tracks", "done": false }
-    ]},
-    { "area": "HUD & garage", "items": [
-      { "text": "Position, lap and item are readable at a glance", "done": false },
-      { "text": "Nothing overlaps at 150% HUD scale", "done": false },
-      { "text": "Garage try-on / Apply is clear without instructions", "done": false }
-    ]},
-    { "area": "Controllers", "items": [
-      { "text": "Every menu works with a pad alone", "done": false },
-      { "text": "Split screen: each pad controls only its own car", "done": false },
-      { "text": "Rebinding a pad button sticks after restart", "done": false }
-    ]}
+    {
+      "area": "Handling",
+      "items": [
+        {
+          "text": "Each car feels distinct on a straight and in a hairpin",
+          "done": false
+        },
+        {
+          "text": "Kerbs never launch or flip the car",
+          "done": false
+        },
+        {
+          "text": "Ramp landings settle without bouncing",
+          "done": false
+        },
+        {
+          "text": "Walls: scraping slows you down but doesn't trap the car",
+          "done": false
+        }
+      ]
+    },
+    {
+      "area": "Drifting",
+      "items": [
+        {
+          "text": "Gold is reachable on long corners and feels earned",
+          "done": false
+        },
+        {
+          "text": "Drift entry (hop) is reliable on keyboard and pad",
+          "done": false
+        },
+        {
+          "text": "The boost after release clearly pays off",
+          "done": false
+        }
+      ]
+    },
+    {
+      "area": "Race start",
+      "items": [
+        {
+          "text": "Lamps, beeps and 3 / 2 / 1 / START line up",
+          "done": false
+        },
+        {
+          "text": "Rocket start is learnable within 3 tries",
+          "done": false
+        },
+        {
+          "text": "Burnout is clearly your fault, not the game's",
+          "done": false
+        }
+      ]
+    },
+    {
+      "area": "Weapons",
+      "items": [
+        {
+          "text": "Being hacked as leader feels fair, not race-ending",
+          "done": false
+        },
+        {
+          "text": "Hunter-Killer warning gives enough time to dodge",
+          "done": false
+        },
+        {
+          "text": "Crate odds feel right from 1st and from 8th",
+          "done": false
+        },
+        {
+          "text": "Every hit is readable (visual + sound)",
+          "done": false
+        }
+      ]
+    },
+    {
+      "area": "Atmosphere",
+      "items": [
+        {
+          "text": "Corners are visible through the fog on every track",
+          "done": false
+        },
+        {
+          "text": "Water and EMP puddles read at full speed",
+          "done": false
+        },
+        {
+          "text": "Frame rate holds on the heaviest tracks",
+          "done": false
+        }
+      ]
+    },
+    {
+      "area": "HUD & garage",
+      "items": [
+        {
+          "text": "Position, lap and item are readable at a glance",
+          "done": false
+        },
+        {
+          "text": "Nothing overlaps at 150% HUD scale",
+          "done": false
+        },
+        {
+          "text": "Garage try-on / Apply is clear without instructions",
+          "done": false
+        }
+      ]
+    },
+    {
+      "area": "Controllers",
+      "items": [
+        {
+          "text": "Every menu works with a pad alone",
+          "done": false
+        },
+        {
+          "text": "Split screen: each pad controls only its own car",
+          "done": false
+        },
+        {
+          "text": "Rebinding a pad button sticks after restart",
+          "done": false
+        }
+      ]
+    }
   ]
 }

@@ -240,7 +240,7 @@ func _test_layout() -> void:
 	var sun := track.get_node("Sun") as DirectionalLight3D
 	_check(sun.shadow_enabled and sun.light_energy >= 1.8 and -sun.global_transform.basis.z.y < -0.6, "a high, strong sun")
 	_check(track.get_node("_GenCornerSigns").get_child_count() > 0, "corner signs on the tight bends")
-	_check(track.find_children("*", "TrackFeature", false, false).size() == 5, "5 track features")
+	_check(track.find_children("*", "TrackFeature", false, false).filter(func(f: TrackFeature) -> bool: return not f.pattern_copy).size() == 5, "5 track features")
 	track.queue_free()
 	await process_frame
 

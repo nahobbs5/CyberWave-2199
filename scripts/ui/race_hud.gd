@@ -96,7 +96,6 @@ func setup(manager: RaceManager) -> void:
 		trick.trick_landed.connect(func() -> void: _play("trick_land"))
 	results.continue_pressed.connect(func() -> void: race.continue_after_results())
 	results.menu_pressed.connect(func() -> void: race.quit_to_menu())
-	info.mode_label.text = _mode_text()
 	info.set_coins_visible(not race.is_multiplayer())
 	minimap.setup(race)
 	if split_view:
@@ -176,16 +175,6 @@ func _active_count() -> int:
 	return race.racers.filter(func(r: RaceProgress) -> bool: return not r.eliminated).size()
 
 
-func _mode_text() -> String:
-	var config := race.config
-	if race.championship != null:
-		var c := race.championship
-		# Set at the start, before this race is recorded.
-		return "%s  -  RACE %d / %d: %s" % [c.gp.display_name.to_upper(), c.race_index + 1, c.race_count(),
-				config.track_name]
-	return "%s  -  %s" % [RaceConfig.MODE_NAMES[config.mode].to_upper(), config.track_name]
-
-
 # --- per frame -------------------------------------------------------------------
 
 func _process(delta: float) -> void:
@@ -193,9 +182,9 @@ func _process(delta: float) -> void:
 		return
 	var p := racer
 	info.show_position(p.finish_position if p.eliminated else p.position, _active_count(), p.eliminated)
-	info.lap_value.text = "%d / %d" % [p.display_lap(), race.total_laps]
+	info.lap_value.text = "%d/%d" % [p.display_lap(), race.total_laps]
 	var shown_time := p.finish_time if p.finished else race.race_time
-	info.time_value.text = RaceProgress.format_time(shown_time)
+	info.time_value.text = RaceProgress.format_hud_time(shown_time)
 	info.coin_label.text = str(race.coins.collected_by(p.vehicle))
 	_track_position(delta)
 

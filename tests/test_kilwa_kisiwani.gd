@@ -232,7 +232,7 @@ func _test_layout() -> void:
 	_check(sun.shadow_enabled and elevation > 12.0 and elevation < 32.0, "a low late-afternoon sun (%.0f deg up)" % elevation)
 	_check(sun.light_color.r > sun.light_color.b + 0.25, "warm light")
 	_check(track.get_node("_GenCornerSigns").get_child_count() > 0, "corner signs on the tight bends")
-	_check(track.find_children("*", "TrackFeature", false, false).size() == 6, "6 track features")
+	_check(track.find_children("*", "TrackFeature", false, false).filter(func(f: TrackFeature) -> bool: return not f.pattern_copy).size() == 6, "6 track features")
 	track.queue_free()
 	await process_frame
 

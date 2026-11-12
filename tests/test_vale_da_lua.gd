@@ -147,7 +147,7 @@ func _test_layout() -> void:
 	_check(wet_road == 0, "the water zone never reaches a road (%d samples)" % wet_road)
 	_check(scenery.is_roofed(track.to_local(track.to_global(sc.point_at(sc.length * 0.4)))) or scenery.is_roofed(ValeDaLuaScenery.OVERHANG_CENTRE),
 			"the shortcut ledge runs under the overhang")
-	var features := track.find_children("*", "TrackFeature", false, false)
+	var features := track.find_children("*", "TrackFeature", false, false).filter(func(f: TrackFeature) -> bool: return not f.pattern_copy) # authored (not boost-pad pattern copies)
 	_check(features.size() == 7, "7 track features (%d)" % features.size())
 	track.queue_free()
 	await process_frame

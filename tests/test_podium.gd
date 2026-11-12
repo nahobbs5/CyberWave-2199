@@ -201,6 +201,7 @@ func _test_grand_prix_ceremony() -> void:
 			"the winner's car is up on its platform")
 	_check(ceremony._played_fanfare and ceremony.confetti.size() == 3 and ceremony.confetti[0].emitting,
 			"confetti and fanfare")
+	_check(ceremony.fanfare.playing, "the fanfare plays with the crown (human winner)")
 	_check(ceremony.is_race_sound_muted() and AudioServer.is_bus_mute(AudioServer.get_bus_index(&"SFX")),
 			"race sound effects are muted during the ceremony")
 	_check(ceremony.fanfare.bus == &"Music", "the fanfare isn't on the muted SFX bus")
@@ -211,11 +212,12 @@ func _test_grand_prix_ceremony() -> void:
 	await _press_accept()
 	_check(race.race_hud.is_results_visible(), "Continue opens the results")
 	_check(ceremony.is_finished(), "and the ceremony closes")
-	_check(not AudioServer.is_bus_mute(AudioServer.get_bus_index(&"SFX")), "race sound effects come back after it")
+	_check(AudioServer.is_bus_mute(AudioServer.get_bus_index(&"SFX")), "race sound effects stay off on the results")
 	for i in 40:
 		await process_frame
 	_check(not is_instance_valid(ceremony), "then frees itself")
 	await _end(race)
+	_check(not AudioServer.is_bus_mute(AudioServer.get_bus_index(&"SFX")), "race sound effects come back once the race is gone")
 
 
 ## An AI rival wins the cup: no crown. Gamepad A skips the ceremony, then
@@ -236,6 +238,7 @@ func _test_ai_winner_and_pad() -> void:
 	await _press_pad_a()
 	_check(ceremony.is_prompt_shown(), "gamepad A skips to the Continue prompt")
 	_check(not stage.crown.visible, "no crown for an AI winner")
+	_check(ceremony._played_fanfare and not ceremony.fanfare.playing, "and no fanfare (it belongs to the crown)")
 	await _press_pad_a()
 	_check(race.race_hud.is_results_visible() and ceremony.is_finished(), "gamepad A again opens the results")
 	await _end(race)

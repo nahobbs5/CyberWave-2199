@@ -199,13 +199,6 @@ func _setup_materials() -> void:
 	material("fur", Color(0.36, 0.24, 0.15), 0.0, 0.0, 0.9)
 	material("giraffe", Color(0.9, 0.72, 0.38), 0.0, 0.0, 0.7)
 	material("eagle", Color(0.42, 0.3, 0.2), 0.0, 0.0, 0.8)
-	var beam := StandardMaterial3D.new()
-	beam.albedo_color = Color(0.75, 0.65, 0.5, 0.12)
-	beam.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	beam.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
-	beam.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	beam.cull_mode = BaseMaterial3D.CULL_DISABLED
-	register_material("beam", beam)
 
 
 func _house_material(lava: float, drips: float) -> ShaderMaterial:
@@ -293,7 +286,8 @@ func add_blob(key: String, centre: Vector3, size: Vector3, yaw: float = 0.0) -> 
 
 # --- light ---------------------------------------------------------------------------------
 
-## Oval windows in the roof with shafts of daylight.
+## Oval windows in the roof letting daylight onto the road (no visible
+## beam or fog cone: they read as UFO lights).
 func _sky_windows() -> void:
 	for i in SKY_WINDOWS:
 		var o := track.wrap_offset(track.start_line_offset + 120.0 + track.length * i / SKY_WINDOWS)
@@ -302,7 +296,6 @@ func _sky_windows() -> void:
 		var f := at(o)
 		var c := f.translated_local(Vector3(lat, top - 0.5, 0))
 		add_cyl("sky_window", 2.6, 0.4, Transform3D(c.basis.scaled(Vector3(1.0, 1.0, 1.6)), c.origin), 14)
-		add_cyl("beam", 3.0, top - 0.5, Transform3D(f.basis.scaled(Vector3(1.0, 1.0, 1.6)), f * Vector3(lat, 0.02, 0)), 14, 2.4)
 		var spot := SpotLight3D.new()
 		spot.name = "WindowShaft%d" % (i + 1)
 		spot.position = f * Vector3(lat, top - 1.0, 0)
@@ -311,7 +304,7 @@ func _sky_windows() -> void:
 		spot.light_energy = 6.0
 		spot.spot_range = top + 6.0
 		spot.spot_angle = 20.0
-		spot.light_volumetric_fog_energy = 3.0
+		spot.light_volumetric_fog_energy = 0.0
 		add_node(spot)
 		window_shafts += 1
 		_add_glow(f * Vector3(lat, top, 0), 18.0)

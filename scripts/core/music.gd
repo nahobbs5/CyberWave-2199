@@ -7,8 +7,11 @@ extends RefCounted
 
 const MENU := "res://music/ikoliks_aj-cyberpunk-cyberpunk-music-614562.mp3"
 const GARAGE := "res://music/ikoliks-wings-of-hope-no-copyright-music-background-corporate-380579.mp3"
-## Podium ceremony and the results screen (carries on from one to the other).
+## Podium ceremony and the results screen after it (carries on from one to
+## the other).
 const VICTORY := "res://music/alex-morgan-victory-591331.mp3"
+## Results screen with no podium before it (e.g. mid Grand Prix races).
+const RESULTS := "res://music/alex-morgan-background-music-591322.mp3"
 
 const FADE := 0.6
 const SILENT_DB := -40.0

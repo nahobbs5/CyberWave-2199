@@ -1,12 +1,12 @@
 class_name Credits
 extends Control
-## Credits: who made the game and where the music, sounds, fonts, textures
-## and art come from. Back (or Esc / gamepad B) returns to the main menu.
+## Credits: who made the game and where the music, sounds, fonts and
+## textures come from. Back (or Esc / gamepad B) returns to the main menu.
 ## Laid out after "reference files/Cyberwave 2199 Neon Credits.png"
 ## (NeonScreenLayout): one neon panel of rows, each a slanted heading tab
 ## with an icon on the left and the credit on the right.
 
-## [heading, icon kind, [lines...]]; the README's Credits section lists the
+## [heading, icon kind, [lines...]]; docs/Reference.md's Credits section lists the
 ## same. MUSIC is drawn from MUSIC below instead of its lines.
 const SECTIONS := [
 	["GAME", "car", ["Cyberwave 2199 by Nathan Hobbs"]],
@@ -27,7 +27,6 @@ const SECTIONS := [
 		"Poly Haven (polyhaven.com), CC0: asphalt, concrete, rust, metal, brick, wood,",
 		"grass, mud, stone, paving, reed and tile textures, and the kloofendal skies",
 	]],
-	["ART", "palette", ["Weapon icons from the Weapon Arsenal concept art"]],
 	["ENGINE", "gear", ["Made with Godot Engine (godotengine.org), MIT License"]],
 ]
 
@@ -49,7 +48,8 @@ const MUSIC := [
 	["Epic Victory March for Heroes", "DesiFreeMusic", "Choquequirao"],
 	["The Dragon's Lair", "vishiv", "Kilwa Kisiwani Ruins"],
 	["The Garden Wakes", "stageechoesmusic", "Test Circuit and free drive"],
-	["Victory", "alex-morgan", "podium and results"],
+	["Background Music", "alex-morgan", "other results screens"],
+	["Victory", "alex-morgan", "podium and the results after it"],
 ]
 
 const TAB_WIDTH := 300.0
@@ -141,8 +141,12 @@ func _section_row(section: Array) -> Control:
 	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	body.alignment = BoxContainer.ALIGNMENT_CENTER
 	line.add_child(body)
-	if section[0] == "MUSIC":
+	# The tab draws at most 56 px tall from its top, so on a tall row (music,
+	# the multi-line sound list) keep it pinned to the top instead of letting it
+	# stretch: otherwise its icon and heading centre below the drawn box.
+	if section[0] == "MUSIC" or section[2].size() > 2:
 		tab.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	if section[0] == "MUSIC":
 		body.add_child(_music_table())
 	for text in section[2]:
 		body.add_child(UIStyle.label(text, 20, Color.WHITE))

@@ -262,10 +262,13 @@ func _build_overlay(count: int) -> void:
 	anchor.add_child(minimap)
 	minimap.setup(race)
 
-	results = ResultsScreen.new()
+	results = NeonResultsScreen.new() # same results as single player (split-screen mode)
 	overlay.add_child(results)
 	results.continue_pressed.connect(func() -> void: race.continue_after_results())
-	results.menu_pressed.connect(func() -> void: race.quit_to_menu())
+	# "Quit to Home": the title screen (Single Player / Multiplayer / Settings).
+	results.menu_pressed.connect(func() -> void:
+		GameSession.series = null
+		GameSession.to_title(race.get_tree()))
 	race.all_players_finished.connect(func() -> void:
 		for hud in huds:
 			hud.announcer.announce("", 0.01, Color.WHITE)

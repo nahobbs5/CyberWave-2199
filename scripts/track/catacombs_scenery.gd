@@ -134,13 +134,6 @@ func _setup_materials() -> void:
 	water.set_shader_parameter("glint_color", Color(1.0, 0.7, 0.4))
 	water.set_shader_parameter("ripple_speed", 0.4)
 	register_material("water", water)
-	var beam := StandardMaterial3D.new()
-	beam.albedo_color = Color(0.3, 0.36, 0.48, 0.16)
-	beam.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	beam.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
-	beam.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	beam.cull_mode = BaseMaterial3D.CULL_DISABLED
-	register_material("beam", beam)
 	register_material("ossuary", _ossuary_material())
 
 

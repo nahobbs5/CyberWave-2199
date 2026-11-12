@@ -1,6 +1,6 @@
 # Cyberwave 2199: Reference
 
-The detailed companion to the [README](../README.md). It covers how each system works, every track, the weapons, the project layout and the headless checks. The [Game Design Document](Game%20Design%20Document.md) (v6.4) is the design authority; this file describes what is **built**. The [dev tracker](https://nahobbs5.github.io/CyberWave-2199/dev/) follows the work still in progress.
+The detailed companion to the [README](../README.md). It covers how each system works, every track, the weapons, the project layout and the headless checks. The [Game Design Document](Game%20Design%20Document.md) (v6.9) is the design authority; this file describes what is **built**. The [dev tracker](https://nahobbs5.github.io/CyberWave-2199/dev/) follows the work still in progress.
 
 Last refreshed 2026-11-12.
 
@@ -100,7 +100,7 @@ The layout is the `control_points` list on `scenes/tracks/test_circuit.tscn`, sa
 - **Grid:** seven AI rivals fill slots 1–7 and you start last (GDD §2.1). Controls are locked during the 3 / 2 / 1 / START countdown. **Rocket start:** press and hold accelerate as the "2" fades for a boost off the line; holding from earlier is a burnout (smoke, a spin, a slow start). The exhausts pop while you rev (`scripts/race/start_launch.gd`). AI rivals do it too: more rocket starts and fewer burnouts on harder difficulties (`rocket_start_chance` / `burnout_chance` in `resources/ai/*.tres`). A start-light board on the gantry over the line lights one lamp per beep: three reds, then green on START (lights out 4 s later).
 - **Checkpoints:** 8 evenly spaced gates, with gate 0 at the start/finish line. A gate only counts if it is the next one in order. Skipping ahead, reversing through gates, or a recovery teleport never adds progress. Crossing the line after every gate completes a lap.
 - **Positions** are live: finishers in finishing order, everyone else by distance raced since their last valid gate.
-- **When you finish,** your car switches to autopilot. The race ends for everyone once all but one car have finished: the last car (human or AI) is placed last at once and its time reads CLASSIFIED. Elimination ends when the first finalist crosses instead. A podium ceremony plays after a Grand Prix, a Versus set or a single Versus race, then the results screen (see HUD and results).
+- **When you finish,** your car switches to autopilot. The race ends for everyone once all but one car have finished: the last car (human or AI) is placed last at once. Racers placed without crossing the line get a **projected time** from their pace so far; only the last place and Elimination's runner-up show **DNF**. Projected times never count as personal bests. Elimination ends when the first finalist crosses instead. A podium ceremony plays after a Grand Prix, a Versus set or a single Versus race, then the results screen (see HUD and results).
 - **HUD:** position, lap, race time, live standings and lap / finish banners (see HUD and results below). Driving the wrong way hangs a 3D neon WRONG WAY sign over the road ahead (`scripts/race/wrong_way_sign.gd`).
 - **AI difficulty, laps and weapons** come from the race setup screen. When `race.tscn` is run directly, they come from the `Race` node in the Inspector instead (`difficulty`, `total_laps`, `weapons_enabled`).
 
@@ -120,7 +120,7 @@ The layout is the `control_points` list on `scenes/tracks/test_circuit.tscn`, sa
   - A red **ELIMINATION** arch marks checkpoint 4 (the lap midpoint).
   - On each lap, racers qualify in the order they cross it: 6 on lap 1, 4 on lap 2, 2 on lap 3. The moment the last place is taken, everyone else still racing is out. There's no timer, and the start/finish line never eliminates anyone.
   - Eliminated cars stop colliding with active racers and stop fighting at once, then shrink away and disappear. Their positions are 7–8, 5–6 and 3–4, ordered by how far they'd got.
-  - The first finalist across the line wins, and the other is classified second.
+  - The first finalist across the line wins; the other is placed second and shows DNF.
   - HUD: active racers, the next elimination, places left, your distance to the gate, a QUALIFIED banner when you get through, and an "X ELIMINATED" feed. If you're knocked out, the camera follows the leader and the results appear.
 - **Pause menu** (Esc / Start): the whole race stops (physics, timers, AI). Neon **Resume**, **Restart race** and **Quit to main menu** buttons, a VOLUME panel (Master / Music / Sound effects, shared with Settings), a picture of your car, and a controls table read from your current bindings (keyboard keys as magenta keycaps, gamepad inputs as cyan ones).
 
@@ -241,8 +241,8 @@ The race HUD is built from small parts in `scripts/ui/hud/`, coordinated by `Rac
 
 | Where | What |
 |---|---|
-| Top left | **POSITION** with a big slanted number (pulses cyan with POSITION UP! when you gain a place, orange when you lose one), then the live standings: a place box, a shield emblem in the racer's colour and their name, your row in gold. Only racers still in the race. Elimination info below |
-| Top right | LAP and the race time, with your coins (count and coin symbol) under the time |
+| Top left | **POSITION** as a big slanted "2/8" (pulses cyan with POSITION UP! when you gain a place, orange when you lose one), then the live standings: a place box, a shield emblem in the racer's colour and their name, your row in gold. Only racers still in the race. Elimination info below |
+| Top right | LAP as "1/3" and the race time as 00:23.567, with your coins (count and coin symbol) under the time in single player |
 | Top centre | Announcements that pop in and fade: 3 / 2 / 1 / START, LAP, FINAL LAP!, NEW BEST LAP!, 1ST PLACE! (taking the lead from lap 2, at most every 10 s), FINISH!, QUALIFIED, plus INCOMING and the elimination feed |
 | Bottom left | A round speed gauge (km/h) with five drift-charge cells under the number in the current tier's colour |
 | Bottom right | The minimap, with the two item squares (number badges 1 and 2) under it |
@@ -250,18 +250,20 @@ The race HUD is built from small parts in `scripts/ui/hud/`, coordinated by `Rac
 
 Split-screen views keep lap and time under the position and the items top right, so the corner next to the shared minimap stays clear. Layout after `reference files/Cyberpunk Slipstream Under the Neon Moon.png` (GDD §11.5).
 
-There are no control instructions on the HUD; the controls (from your current bindings) are in the pause menu.
+There's no mode or track name on the HUD, and no control instructions; the controls (from your current bindings) are in the pause menu.
 
 **Results screen** (single player, `NeonResultsScreen`, after `reference files/Cyberwave 2199 Race Results.png`), over the dimmed race:
 - **Left card:** your placement in big letters between gold laurels ("P3", then "3RD PLACE" and VICTORY! / PODIUM! / ...), your car, the track's picture with its name and mode, and YOUR TIME / BEST LAP / LAPS / COINS rows with gold NEW BEST tags. Your new coin balance and anything newly affordable sit under the card.
-- **Table:** every racer, with a gold / silver / bronze place badge, their car in its own paint (rendered when the screen opens, by `CarThumbnails.request_looks`), name, total time and best lap. Your row is magenta.
+- **Table:** every racer, with a gold / silver / bronze place badge, their car in its own paint (rendered when the screen opens, by `CarThumbnails.request_looks`), name, **PTS** (the points the place earns on the Grand Prix scale, shown in every race), total time and best lap. Projected times and DNF as under Racing. Your row is magenta.
 - **Buttons:** **Race again / Next race** and **Main menu**.
 - **Grand Prix and Versus sets** are two pages, as in Mario Kart: the race with +points, then Continue shows the standings (rows slide into points order, totals count up), then Continue goes on.
 - It animates in over about 1.5 s; Enter / A or a click skips to the end.
 
-Split screen keeps the simpler shared results screen (`ResultsScreen`).
+**Split screen** uses the same layout, shared by everyone: the card shows the best-placed human (placement and car in their player colour, TIME / BEST LAP / LAPS), with a line per player (place and time) where the coins would be. Each player's row is filled in their colour, and the menu button reads **Quit to Home** (back to the title screen).
 
-**Podium ceremony** (`scripts/ui/podium/`, GDD §11.7a): before the results after a Grand Prix, a Versus set or a single Versus race. The top three cars drive onto neon platforms on the menu's night street, the platforms rise 3rd, 2nd, then 1st, and a crown drops over a human winner, with spotlights, confetti and a fanfare. The *Victory* theme starts and carries on into the results. Race sound effects are muted while it shows. A / Enter skips to the end.
+**Music:** after a podium, its *Victory* theme carries on; any other results screen (mid-Grand Prix races, a single Elimination) plays alex-morgan's *Background Music*. Race sound effects stay muted on the results screen.
+
+**Podium ceremony** (`scripts/ui/podium/`, GDD §11.7a): before the results after a Grand Prix, a Versus set or a single Versus race. The top three cars drive onto neon platforms on the menu's night street, the platforms rise 3rd, 2nd, then 1st, and a crown drops over a human winner, with spotlights and confetti. The fanfare only plays with the crown (a human winner). The *Victory* theme starts and carries on into the results. Race sound effects are muted while it shows. A / Enter skips to the end.
 
 **Style:** `UIStyle` (`scripts/ui/ui_style.gd`) holds the colour system (magenta = you / selection / drifting, cyan = boost / speed / navigation, gold = coins and rewards, orange-red = warnings), translucent purple panels with thin neon borders, and the fonts: **Oxanium** for headings and big numbers, **Rajdhani** for everything else (the project theme, `resources/ui/cyberwave_theme.tres`). Both fonts are under the SIL Open Font License (`assets/fonts/*-OFL.txt`). Menus fade in and buttons have a focus glow and a small pop.
 
@@ -273,7 +275,8 @@ One song per screen or track (`scripts/core/music.gd`; race music per track in `
 |---|---|---|
 | Title, main menu, setup screens, settings, credits | Cyberpunk | ikoliks_aj |
 | Garage | Wings of Hope | ikoliks |
-| Podium ceremony and results | Victory | alex-morgan |
+| Podium ceremony and the results after it | Victory | alex-morgan |
+| Other results screens (no podium) | Background Music | alex-morgan |
 | The Stacks | Cyber Dreams | Lilex |
 | Six Flags New Orleans | Race Winner | TheBoysBeats |
 | Vegas Overdrive | Heavy Racing | SPmusic |
@@ -340,23 +343,23 @@ Europe Cup race 1. A 3.2 km winding **dirt road through Romania's haunted forest
 
 #### Catacombs Descent (GDD §8.5)
 
-Europe Cup race 2. A 2.8 km twisting race **through the quarried tunnels under Paris**, roofed over every metre: no sky anywhere. The road is a 12 m strip of wet cobbles, the narrowest in the game, between low sandstone kerbs with dim pink racing neon. The stone walls stand about 3 m beyond the kerbs, under barrel vaults about 7.5 m high. Tight corners (30–45 m radius), short straights and narrow chevron boards on every bend. It's lit by about 160 wall torches with a soft flame flicker (steady with Reduced flashing), candle clusters, and five shafts of pale light through iron street grates.
+Europe Cup race 2. A 2.8 km twisting race **through the quarried tunnels under Paris**, roofed over every metre: no sky anywhere. The road is a 12 m strip of wet cobbles, the narrowest in the game, between low sandstone kerbs with dim pink racing neon. The stone walls stand about 3 m beyond the kerbs, under barrel vaults about 7.5 m high. Tight corners (30–45 m radius), short straights and narrow chevron boards on every bend. It's lit by about 160 wall torches with a soft flame flicker (steady with Reduced flashing), candle clusters, and pale light falling through five iron street grates (no visible beams).
 
 - **Barrière d'Enfer** (start/finish): a tall 15 m vaulted chamber with cut-stone piers and iron braziers by the gantry. At its far end, over a low archway, the carved lintel **"ARRÊTE ! C'EST ICI L'EMPIRE DE LA MORT"**. Boost pad with item boxes.
-- **Ossuary galleries:** chicanes between walls of stacked bones set with rows of real skulls, with a row of skulls along the top ledge. Candles and skull heaps on the floor. A light shaft.
+- **Ossuary galleries:** chicanes between walls of stacked bones set with rows of real skulls, with a row of skulls along the top ledge. Candles and skull heaps on the floor. Pale light from a street grate.
 - **Crypt:** burial niches in three rows (most sealed with slabs, a few open with a skull inside), and sarcophagi along the walls. Jump over a hump of fallen masonry.
 - **Service passage:** pipes along both walls and red emergency lamps.
-- **Flooded cistern:** a wide, 12 m high hall of columns standing in black water, with standing water on the road (keep right to stay dry). A light shaft.
-- **Forgotten chapel:** the road sweeps past an apse with an altar, a white statue, a cross, candelabras, dozens of candles and a strong shaft of light.
+- **Flooded cistern:** a wide, 12 m high hall of columns standing in black water, with standing water on the road (keep right to stay dry). Pale light from a street grate.
+- **Forgotten chapel:** the road sweeps past an apse with an altar, a white statue, a cross, candelabras, dozens of candles and pale light from above.
 - **More ossuary**, then the **quarry:** bare rock walls propped with timber. A fallen cable has electrified a puddle (EMP).
 - **Tomb gallery** back to the start.
 - **Flooded crypt** (shortcut): a 10 m passage under a 5.6 m vault that cuts across the waist of the lap. It's about 300 m shorter than the main road, but half of it is under water and a **fallen-rubble barricade** (smashable) blocks the half-collapsed stretch. Boost ring at the exit, three bonus coins.
-- **Atmosphere:** near-black background, low warm ambient light and dark brown fog, so the tunnels fade to black about 60 m ahead (plus volumetric fog in Forward+, which turns the grate light into visible beams).
+- **Atmosphere:** near-black background, low warm ambient light and dark brown fog, so the tunnels fade to black about 60 m ahead (plus volumetric fog in Forward+). The street grates light the road but cast no visible beams (GDD v6.8: they read as UFO lights).
 - Built from code: `CatacombsScenery` and the new `TunnelBuilder`, with Poly Haven old_stone_wall, large_sandstone_blocks and cobblestone_floor_08 textures and a generated bone-wall texture (colour and normal map). About 18,000 skulls are one small instanced mesh in 100 m chunks.
 
 #### Arashiyama Circuit (GDD §8.6)
 
-Asia Cup race 1. A 3.1 km race **through Kyoto's bamboo grove on a soft, sunny day**, built to feel like an indoor garden out of doors. Tall culms bow in from both sides until their leaves close over the road like a green ceiling (about three quarters of the lap is under the canopy). The sun comes through in slanting shafts and dapples the road through the leaves. The road is 13 m of paved stone between brushwood (shibagaki) fences with two bamboo rails, with soft green racing neon along the fence tops and vermilion chevrons. Corners are drift-friendly 35–60 m radius bends with one hairpin and short straights.
+Asia Cup race 1. A 3.1 km race **through Kyoto's bamboo grove on a soft, sunny day**, built to feel like an indoor garden out of doors. Tall culms bow in from both sides until their leaves close over the road like a green ceiling (about three quarters of the lap is under the canopy). The sun dapples the road through the leaves. The road is 13 m of paved stone between brushwood (shibagaki) fences with two bamboo rails, with soft green racing neon along the fence tops and vermilion chevrons. Corners are drift-friendly 35–60 m radius bends with one hairpin and short straights.
 
 - **Start plaza** (open sky): stone lanterns and white and vermilion banners along the grid, then a timber gate with a tiled roof, paper lanterns and the **ARASHIYAMA** plaque where the road enters the grove.
 - **The grove:** S-bends under the canopy, past a stacked mossy-boulder wall. Boost pad on the exit.
@@ -365,7 +368,7 @@ Asia Cup race 1. A 3.1 km race **through Kyoto's bamboo grove on a soft, sunny d
 - **Rain-soaked stretch:** wet, glossy stone with puddles near the edges and standing water on the road (keep right to stay dry), then a jump over a hump of roots and an electrified puddle from a fallen lantern cable (EMP).
 - **Temple garden** (open sky, walled): white plaster walls with tiled caps around a levelled moss garden with a pond (rocks, a pine island, snow-viewing lanterns), clipped azalea mounds, maples, stone lanterns, a raked-gravel garden with moss-ringed rock groups, and the abbot's hall.
 - **Shrine path** (shortcut): a 9 m lane under the bamboo through black torii with straw ropes and paper lanterns, past a small shrine. It's about 200 m shorter, but **fallen bamboo** (smashable) blocks the entrance. Boost ring at the exit, three bonus coins.
-- **Atmosphere:** the kloofendal overcast sky, a warm sun with shadows (limited to 90 m), green-tinted ambient light, light green haze (plus volumetric fog in Forward+, which turns the sun into visible shafts).
+- **Atmosphere:** the kloofendal overcast sky, a warm sun with shadows (limited to 90 m), green-tinted ambient light, light green haze (plus volumetric fog in Forward+). The sun comes through the canopy in dapples, with no visible shafts (GDD v6.8).
 - **Bamboo (GDD v6.1 rework, after `reference files/Bamboo Forest 1-5.webp`):** straight, rigid, jointed culms tilted from the base 9–15° toward the road, with leaves only on the top third as flat fans at the branch nodes, so the crowns meet high overhead. Stands are clumped in greens and blue-greys, with ferns, sasa and fallen culms underfoot, bristly brushwood fence crests with thick bamboo rails, and a darker, greener grade.
 - Built from code: `ArashiyamaScenery` and `BambooBuilder` (straight, arching and dead culm kinds, with low-detail meshes past 15 m; instanced), with Poly Haven pavement_01 (road), reed_roof_04 (fences), hinoki_planks (bridge and timber), dry_decay_leaves (ground), mossy_stone_wall and sparse_grass (moss) textures, and generated culm and leaf textures.
 
@@ -375,7 +378,7 @@ Europe Cup race 3. A 3.1 km race **through an ice cave under Vatnajökull, Icela
 - **Glacier Mouth** (start): a huge opening onto bright daylight and snow, beside the grid.
 - **Blue Cathedral:** a vast swirling hall along the longest straight, with a meltwater stream beside the road. Boost pad with item boxes.
 - **Icicle Gallery:** lower and wide, lined with icicle curtains and hourglass ice columns.
-- **Moulin Hall:** five meltwater holes in the roof pour shafts of sky light onto snow drifts. Boost ring and a meltwater ford across the road.
+- **Moulin Hall:** five meltwater holes in the roof let sky light onto snow drifts (no visible beams). Boost ring and a meltwater ford across the road.
 - **Ash Canyon:** a tall gorge striped with black volcanic ash, with a snow-drift jump.
 - **Frozen Lake:** a glassy lake beside the road under ice chandeliers, and a slush puddle (EMP), back to the mouth.
 - **Crystal Tube** (shortcut): a narrow, glowing round tunnel of scalloped ice from the Cathedral to the Gallery, with white light at its far end. About 120 m shorter, but an **ice wall** (smashable) blocks the entrance. Boost ring at the exit, three bonus coins.
@@ -392,7 +395,7 @@ Asia Cup race 2. A 2.9 km race **inside Hang Nga's Crazy House** in Da Lat, Viet
 - **Lava Grotto:** orange-red pitted walls and giant mushrooms, with a sap puddle (EMP).
 - **Bone Gallery:** bone arches over the road (never lower than 7.5 m), knotted railings and a giant spider web on the wall. Stair-step jump.
 - **Rib Tunnel** (shortcut): a narrow passage lined with bone ribs that carries straight on where the road turns into the Gables. About 250 m shorter, but a **bone barricade** (smashable) blocks the entrance. Boost ring at the exit, three bonus coins.
-- About 29 staircases (1,500 steps) in all, eight shafts of daylight through roof windows.
+- About 29 staircases (1,500 steps) in all, daylight through eight oval roof windows (no visible beams).
 - The location is spelled "Da Lat" because the game fonts lack the Vietnamese "ạ".
 - Built from code: `CrazyHouseScenery` on the same `CaveShellBuilder` as the glacier (with slow "bulge" swellings), organic tube and blob helpers for bones, branches, railings and figures, and a procedural bark-and-drips shader (`assets/shaders/crazy_house.gdshader`, with a lava variant). Poly Haven dirty_concrete (road), patterned_plaster_wall (barriers), brown_mud_leaves_01 (floor) and hinoki_planks (the gables).
 
@@ -521,6 +524,7 @@ A 3.2 km night circuit (shortened from 4.4 km after your first drive) with 20 m 
 - **AI shortcuts:** each AI decides once per approach (the shortcut's `ai_chance` × the difficulty's `shortcut_chance` × aggression), then follows the shortcut at its own safe speeds and rejoins the racing line. If it gets pinned while still heading for a shortcut it isn't on (a late turn-in), it gives up and follows the main road.
 - **Junction design:** a shortcut should leave at a gentle angle (the Luxor one turns in about 55°). A first version peeled off at nearly 110° and trapped a car in the wedge between the roads.
 - **`TrackFeature`**: boost pads, boost rings, EMP puddles, breakable barriers, **jump ramps** and **water**, placed by distance (or near a layout point) on the main road or a shortcut. Every kind is lit and marked so it reads at speed.
+  - **Boost pad patterns:** each main-road boost pad is laid out as a single pad, three in a diagonal, or a triangle (two side by side, then one ahead). The pattern is random per pad but seeded by the track, so a track always has the same layout. The first pad is the `TrackFeature`; the others are generated copies (`pattern_copy`). Checks: `tests/test_boost_patterns.gd`.
   - **Item boxes:** every jump ramp carries a row of "?" crates just above its lip (about one per 4.5 m of width), so you grab one at take-off. A boost pad or ring gets two crates when its `item_boxes` box is ticked in the Inspector. Currently ticked: The Stacks' Gallery pad and Rotunda ring, Six Flags' Coaster Run pad, and Vegas' second Strip pad and tunnel ring.
   - **Jump ramp:** a solid wedge (`length` × `width`, lip of `ramp_height`) that the wheels drive up. Put them on straights at full road width. On the Coaster Run a car at full speed gets about 1.6 s of air and 4 m of height, and lands on its wheels.
   - **Water:** standing water makes cars **wet**: top speed ×0.88 and grip ×0.75 while in it (and for 0.3 s after), with spray from the rear wheels and "WET" in the effects line. A Firewall doesn't keep you dry; wet stacks with EMP and Road Spike effects. The water is textured (drifting ripples, rain-drop rings, silt, glints and a soft shoreline; `assets/shaders/standing_water.gdshader`), and scenery puddles and ponds share it.
@@ -532,7 +536,7 @@ A 3.2 km night circuit (shortened from 4.4 km after your first drive) with 20 m 
   - `ChainLinkFence`: damaged fencing with a procedural chain-link texture
   - `TreeBuilder`: a procedural forest. A few tree meshes (lofted bark tubes plus needle clumps: crooked, pine, bare, snag) are built once, then scattered as MultiMesh instances in 200 m chunks with a visibility range (300 m past the chunk), so thousands of trees cost a few draw calls.
   - `SceneryTerrain` also takes an optional `carve` function (ravines under bridges) and can skip the flood water.
-  - `TunnelBuilder`: a stone barrel vault along a stretch of the main road or a shortcut, with walls lined per side as `skulls` (ossuary), `tombs`, `pipes`, `rock` or plain `stone`, arch ribs, torches, candles and grate light shafts. Wall pieces that would stand on another road are left out at junctions, but the vault always closes over the top. Span ends get a stone face around the opening, so a low tunnel entering a tall chamber reads as an archway.
+  - `TunnelBuilder`: a stone barrel vault along a stretch of the main road or a shortcut, with walls lined per side as `skulls` (ossuary), `tombs`, `pipes`, `rock` or plain `stone`, arch ribs, torches, candles and grate lights. Wall pieces that would stand on another road are left out at junctions, but the vault always closes over the top. Span ends get a stone face around the opening, so a low tunnel entering a tall chamber reads as an archway.
   - `BambooBuilder`: a procedural bamboo grove. A few culm meshes (straight, jointed tubes tilted from the base, with branch fans of leaves only up high, plus low-detail far versions) are built once, with generated culm and leaf textures, then scattered as MultiMesh instances in 120 m chunks, each with its own tint. Culms and leaves cast shadows, so the sun dapples the road.
   - `SceneryTerrain.height_at()` gives the ground height at any point, so scenery can stand on the terrain.
   - `HallBuilder`: an interior hall along a stretch of road: marble wainscot, plaster walls, pilasters, open arched window bays or bookshelf bays, a coffered painted ceiling and chandeliers. Plus a stand-alone `bookcase()`.
@@ -706,7 +710,8 @@ Swap in any suite:
 | `test_weapons_advanced.gd` | Hunter-Killer, Overdrive, System Override: odds, counters, AI use |
 | `test_recovery_items.gd` | Which recoveries clear the item slots |
 | `test_weapon_sfx.gd` | Weapon and barrier sounds |
-| `test_race_end.gd` | Last-car classification |
+| `test_race_end.gd` | Last-car classification, projected times, DNF |
+| `test_boost_patterns.gd` | Boost-pad patterns: single, diagonal, triangle, same layout every load |
 | `test_podium.gd` | Podium ceremony timeline |
 | `test_slipstream_ring.gd` | Slipstream ring |
 | `test_multiplayer.gd` | Split screen: devices, views, setup screens |
@@ -788,7 +793,6 @@ The exit code is non-zero if anything fails. These checks do **not** judge how t
 - **Music:** see the Audio table above (ikoliks_aj, ikoliks, alex-morgan, Lilex, TheBoysBeats, SPmusic, kulakovka, Ob-Lix, ed-musicproductions, sonican, elisaveta_stoycheva, theorienvibes, restum-anoush, DesiFreeMusic, vishiv, stageechoesmusic).
 - **Sound:** Short beep countdown, Shield drop, Electric zap 001, Crowbar drop 1 (rear), Planks clattering and Missile lock detected by freesound_community; Sci-fi energy shield activation by vadim_makes_sound; Electrical current 2 by 49053354; Sci-fi weapon shoot firing pulse TM 05 by rescopicsound; Field: launching a small model rocket by fronbondi_skegs; Missile explosion by voicebosch.
 - **Fonts:** Oxanium and Rajdhani, SIL Open Font License 1.1 (`assets/fonts/`).
-- **Weapon icons:** from the Weapon Arsenal concept art.
 - **Engine:** Godot Engine, MIT License.
 
 The in-game Credits screen (`scripts/menu/credits.gd`) shows the same list.
@@ -797,7 +801,7 @@ Environment textures and the track skies are from [Poly Haven](https://polyhaven
 
 ## Status and known issues
 
-As of 2026-11-12 (GDD v6.4). Phase 6, content and polish, is in progress. The [dev tracker](https://nahobbs5.github.io/CyberWave-2199/dev/) holds the live milestone status.
+As of 2026-11-12 (GDD v6.9). Phase 6, content and polish, is in progress. The [dev tracker](https://nahobbs5.github.io/CyberWave-2199/dev/) holds the live milestone status.
 
 - **Content built:** 13 tracks in 5 cups (Africa Cup locked for Grand Prix until it has more races), 8 cars, 11 weapons, 7 named rivals, split screen for 2–4 players, podium, music on every track.
 - **Weapons:** Railgun, Hunter Drone, EMP Pulse, Road Spike, Nitro Overload, Triple Nitro, Triple Spike, Firewall, Hunter-Killer Drone, Overdrive Protocol and System Override. The GDD §6.3 roster's Holo Decoy, Gravity Mine, System Glitch, Cyber Leech and Swarm Bots are not built.
@@ -809,5 +813,4 @@ As of 2026-11-12 (GDD v6.4). Phase 6, content and polish, is in progress. The [d
 - **Screenshots from the dev container are software-rendered** (Compatibility / lavapipe). Forward+ on Windows shows stronger glow, fog and reflections.
 - **Split screen hasn't been played with real gamepads** on the heaviest tracks (the Hoia forest, Arashiyama bamboo); four views there may be slow.
 - **Balance is ongoing:** vehicle stats, AI pace (`speed_factor` in `resources/ai/*.tres`), crate odds, System Override durations, rocket-start odds and coin prices are all playtest-driven (GDD §18).
-- **GDD §12.1** still lists Kilwa Kisiwani's music as "None yet"; the game plays *The Dragon's Lair* by vishiv.
 - **Car models are stylised low-poly** built from code. Any car can take a `.glb` instead (see Vehicle models).

@@ -59,7 +59,6 @@ var _open: Dictionary = {}
 ## Vector2i (10 m cell) -> Array of [Vector3, radius]: spots kept free of bamboo.
 var _reserved: Dictionary = {}
 var _offsets: Dictionary = {}
-var _sun_dir := Vector3(-0.42, -0.78, -0.46).normalized()
 var bamboo: BambooBuilder
 
 
@@ -69,9 +68,6 @@ func build() -> void:
 	_open.clear()
 	_reserved.clear()
 	_noise = SceneryTerrain.make_noise(TERRAIN_SEED)
-	var sun := track.get_node_or_null("Sun") as Node3D
-	if sun != null:
-		_sun_dir = (-sun.transform.basis.z).normalized()
 	_offsets = {
 		"start": _off(START_FROM), "grove": _off(GROVE_FROM),
 		"bridge_from": _off(BRIDGE_FROM), "bridge_to": _off(BRIDGE_TO),
@@ -80,7 +76,7 @@ func build() -> void:
 	}
 	_mark_open()
 	cast_shadows = true
-	no_shadow_keys = ["beam", "wet", "puddle", "lantern_glow", "paper", "hill", "gravel", "gravel_line", "moss_patch", "shoji"]
+	no_shadow_keys = ["wet", "puddle", "lantern_glow", "paper", "hill", "gravel", "gravel_line", "moss_patch", "shoji"]
 
 	# Structures first: they reserve their ground so no bamboo grows through them.
 	_start_plaza()
@@ -105,7 +101,6 @@ func build() -> void:
 	_fence_rails()
 	bamboo.commit()
 	await step(0.9)
-	_light_shafts()
 
 
 func _off(p: Vector3) -> float:
@@ -229,13 +224,6 @@ func _setup_materials() -> void:
 	wet.set_shader_parameter("ripple_strength", 0.2)
 	register_material("wet", wet)
 	register_material("puddle", water_material(Color(0.03, 0.045, 0.045), Color(0.12, 0.15, 0.15), 0.72, 1.0, 0.25))
-	var beam := StandardMaterial3D.new()
-	beam.albedo_color = Color(1.0, 0.92, 0.7, 0.07)
-	beam.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	beam.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
-	beam.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	beam.cull_mode = BaseMaterial3D.CULL_DISABLED
-	register_material("beam", beam)
 
 
 # --- terrain -------------------------------------------------------------------------
@@ -947,19 +935,3 @@ func _shrine(xf: Transform3D) -> void:
 	add_light(xf * Vector3(0, 2.6, -3.5), Color(1.0, 0.78, 0.48), 1.2, 10.0)
 	_reserve(xf.origin, 7.0)
 
-
-# --- light ------------------------------------------------------------------------------
-
-## Shafts of sunlight slanting down through gaps in the canopy (soft, additive).
-func _light_shafts() -> void:
-	var up := -_sun_dir
-	var d := 40.0
-	while d < track.length:
-		if not is_open_offset(d):
-			for k in 3:
-				var foot := at(d + k * 7.0, rng.randf_range(-5.0, 5.0)).origin
-				var length := 17.0 / maxf(up.y, 0.2)
-				var basis := Basis.looking_at(up, Vector3.FORWARD if absf(up.dot(Vector3.FORWARD)) < 0.9 else Vector3.RIGHT)
-				var xf := Transform3D(basis, foot).rotated_local(Vector3.RIGHT, -PI * 0.5)
-				add_cyl("beam", rng.randf_range(0.8, 1.6), length, xf, 10, rng.randf_range(1.6, 2.6))
-		d += rng.randf_range(60.0, 100.0)

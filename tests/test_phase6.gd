@@ -281,7 +281,9 @@ func _test_layout(path: String, track_name: String, min_length: float, max_lengt
 			"chevron signs on the sharp corners (%d)" % track.get_node("_GenCornerSigns").get_child_count())
 	var scenery := track.get_node("Scenery/Generated")
 	_check(scenery != null and scenery.get_child_count() > 20, "the city is built (%d nodes)" % scenery.get_child_count())
-	var features := track.find_children("*", "TrackFeature", false, false)
+	# Authored features (boost-pad pattern copies are generated on top).
+	var features := track.find_children("*", "TrackFeature", false, false).filter(
+			func(f: TrackFeature) -> bool: return not f.pattern_copy)
 	_check(features.size() == feature_count, "%d track features placed (%d)" % [feature_count, features.size()])
 	track.queue_free()
 	await process_frame

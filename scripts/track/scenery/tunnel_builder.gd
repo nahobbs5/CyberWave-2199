@@ -16,7 +16,7 @@ extends RefCounted
 ##
 ## Materials expected on the scenery (keys): the wall / vault / rib keys given
 ## in the options, plus ossuary, rock, niche, slab, pipe, iron, wood, wax,
-## flame, red_lamp, grate_glow and beam.
+## flame, red_lamp and grate_glow.
 
 const STEP := 3.0
 ## Segments across the arch.
@@ -235,7 +235,8 @@ func skull_pile(xf: Transform3D, count: int) -> void:
 		place_skull.call(Transform3D(xf.basis.rotated(Vector3.UP, scenery.rng.randf_range(-0.8, 0.8)), p.origin))
 
 
-## A shaft of pale light through an iron street grate in the vault.
+## Pale light through an iron street grate in the vault: the grate glows
+## and lights the road below (no visible beam: it read as a UFO light).
 func shaft(f: Transform3D, lateral: float, top: float) -> void:
 	var c := f.translated_local(Vector3(lateral, top - 0.2, 0))
 	scenery.add_box("grate_glow", Vector3(2.0, 0.05, 2.0), c.translated_local(Vector3(0, 0.12, 0)))
@@ -243,7 +244,6 @@ func shaft(f: Transform3D, lateral: float, top: float) -> void:
 		var o := -0.8 + i * 0.4
 		scenery.add_box("iron", Vector3(2.2, 0.1, 0.08), c.translated_local(Vector3(0, 0, o)))
 		scenery.add_box("iron", Vector3(0.08, 0.1, 2.2), c.translated_local(Vector3(o, 0, 0)))
-	scenery.add_cyl("beam", 1.9, top - 0.3, f.translated_local(Vector3(lateral, 0.02, 0)), 12, 1.0)
 	var spot := SpotLight3D.new()
 	spot.position = c.origin
 	spot.basis = Basis(Vector3.RIGHT, -PI * 0.5)
@@ -251,7 +251,7 @@ func shaft(f: Transform3D, lateral: float, top: float) -> void:
 	spot.light_energy = 7.0
 	spot.spot_range = top + 4.0
 	spot.spot_angle = 20.0
-	spot.light_volumetric_fog_energy = 4.0
+	spot.light_volumetric_fog_energy = 0.0
 	scenery.add_node(spot)
 
 

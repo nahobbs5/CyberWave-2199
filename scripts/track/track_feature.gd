@@ -68,6 +68,11 @@ const WET_LINGER := 0.3
 
 ## Times anything triggered it (tests / telemetry).
 var triggered: int = 0
+## Main-road boost pads become a pattern (BoostPattern): this node is the
+## first pad; the others are generated copies (pattern_copy).
+var pattern_copy: bool = false
+## The pattern this pad was given: &"single", &"diagonal" or &"triangle".
+var pattern: StringName = &"single"
 
 var _cooldowns: Dictionary = {}
 var _broken_time: float = 0.0
@@ -86,19 +91,83 @@ func _ready() -> void:
 	_rebuild_visuals()
 
 
+const PATTERNS: Array[StringName] = [&"single", &"diagonal", &"triangle"]
+## Boost-pad patterns: metres between rows along the road, and sideways.
+const PATTERN_ROW_GAP := 14.0
+const DIAGONAL_STEP := 4.5
+const TRIANGLE_HALF := 3.0
+
+
 ## Called by the TrackCircuit once its curve (and shortcuts) are built.
 func place_on_track(track: TrackCircuit) -> void:
+	if kind == Kind.BOOST_PAD and on_shortcut == "" and not pattern_copy:
+		_place_pattern(track)
+		return
+	_place_at(track, 0.0, lateral)
+
+
+## Main-road boost pad: a single pad, three in a diagonal, or two side by
+## side then one (a triangle). Picked from a seed of the track and this
+## node's name, so a track always has the same layout.
+func _place_pattern(track: TrackCircuit) -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash("%s|%s" % [track.scene_file_path, name])
+	pattern = PATTERNS[rng.randi_range(0, PATTERNS.size() - 1)]
+	var room := maxf(0.0, track.road_width * 0.5 - width * 0.5 - 1.0)
+	var spots: Array[Vector2] = [] # (along, lateral offset from centre)
+	match pattern:
+		&"diagonal":
+			var step := minf(DIAGONAL_STEP, room)
+			var dir := 1.0 if rng.randf() < 0.5 else -1.0
+			for i in 3:
+				spots.append(Vector2(i * PATTERN_ROW_GAP, (i - 1) * step * dir))
+		&"triangle":
+			var half := minf(TRIANGLE_HALF, room)
+			spots.append_array([Vector2(0.0, -half), Vector2(0.0, half), Vector2(PATTERN_ROW_GAP, 0.0)])
+		_:
+			spots.append(Vector2.ZERO)
+	# Keep the whole pattern on the road.
+	var reach := 0.0
+	for spot in spots:
+		reach = maxf(reach, absf(spot.y))
+	var centre := clampf(lateral, -room + reach, room - reach) if room >= reach else 0.0
+	_place_at(track, spots[0].x, centre + spots[0].y)
+	var parent := get_parent()
+	for i in range(1, spots.size()):
+		var copy := TrackFeature.new()
+		copy.name = "%s%s_%d" % [TrackCircuit.GENERATED_PREFIX, name, i]
+		copy.pattern_copy = true
+		copy.pattern = pattern
+		copy.kind = kind
+		# Its own spot, so placing it again on its own lands in the same place.
+		copy.offset = offset + spots[i].x
+		copy.lateral = centre + spots[i].y
+		copy.anchor_point = anchor_point
+		copy.width = width
+		copy.length = length
+		copy.boost_extra = boost_extra
+		copy.boost_duration = boost_duration
+		copy.boost_kick = boost_kick
+		parent.add_child(copy)
+		copy.place_on_track(track)
+		# A pad under a road column (Kilwa) is dropped.
+		if track.column_near(track.to_local(copy.global_position), width * 0.5) >= 0:
+			parent.remove_child(copy)
+			copy.queue_free()
+
+
+func _place_at(track: TrackCircuit, along: float, p_lateral: float) -> void:
 	var xf: Transform3D
 	var sc := track.get_node_or_null(on_shortcut) as TrackShortcut if on_shortcut != "" else null
 	if sc != null and sc.is_valid():
 		var tangent := sc.tangent_at(offset)
 		var right := tangent.cross(Vector3.UP).normalized()
-		xf = Transform3D(Basis.looking_at(tangent, Vector3.UP), sc.point_at(offset) + right * lateral)
+		xf = Transform3D(Basis.looking_at(tangent, Vector3.UP), sc.point_at(offset) + right * p_lateral)
 	else:
-		var d := offset
+		var d := offset + along
 		if anchor_point != Vector3.ZERO:
 			d += track.curve.get_closest_offset(anchor_point)
-		xf = track.global_transform.affine_inverse() * track.get_safe_transform(d, lateral, 0.0)
+		xf = track.global_transform.affine_inverse() * track.get_safe_transform(track.wrap_offset(d), p_lateral, 0.0)
 	transform = xf
 	_rebuild_visuals()
 

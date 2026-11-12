@@ -3,7 +3,7 @@
 **Retrofuturistic cyberpunk combat kart racing, built in Godot 4.**
 Luxury neon cars, drift boosts, weapons and thirteen circuits set in real-world places, against seven AI rivals or with up to four players in local split screen.
 
-**▶ [Play the browser demo](https://nahobbs5.github.io/CyberWave-2199/web/)** · **🛠 [Dev tracker](https://nahobbs5.github.io/CyberWave-2199/dev/)** · **📖 [Full reference](docs/Reference.md)** · **📐 [Game Design Document](docs/Game%20Design%20Document.md)** (v6.4)
+**▶ [Play the browser demo](https://nahobbs5.github.io/CyberWave-2199/web/)** · **🛠 [Dev tracker](https://nahobbs5.github.io/CyberWave-2199/dev/)** · **📖 [Full reference](docs/Reference.md)** · **📐 [Game Design Document](docs/Game%20Design%20Document.md)** (v6.9)
 
 > **Status (2026-11-12):** Phase 6, content and polish, is in progress (GDD §16). Every track, car and mode below is playable. Handling, drift timing, weapon balance, atmosphere, UI and controller support are still being tuned; the dev tracker has the details.
 
@@ -58,26 +58,7 @@ The Africa Cup has one race so far. It's open in Versus and locked for Grand Pri
 | Pause | Esc | Start / Options |
 | Menus | Enter / Esc, arrows, mouse | A / B, D-pad or left stick |
 
-Every action can be rebound in **Settings → Controls**. Defaults live in `scripts/core/input_setup.gd`.
-
-## Getting started
-
-1. Install **Godot 4.7** (the project uses GDScript and Jolt Physics, no plugins).
-2. Open `project.godot` and press **F5**. The boot splash (`scenes/boot.tscn`) loads the title menu: **Single Player**, **Multiplayer**, Settings, Credits, Exit.
-3. **Practice** on the single-player menu drives the test circuit freely. Running `scenes/race/race.tscn` directly (**F6**) starts a Versus race from the `Race` node's Inspector settings.
-
-Save data (profile, settings, Grand Prix) is in `%APPDATA%\Godot\app_userdata\Cyberwave 2199\`.
-
-## Running the checks
-
-Headless suites live in `tests/`. Each one uses its own `user://test_*` saves, so running them never touches your profile.
-
-```
-godot --headless --import
-godot --headless --fixed-fps 60 -s res://tests/test_drift.gd
-```
-
-Main suites: `test_phase1`–`test_phase6` (driving, racing, combat, modes, menus / progression, content), plus focused ones such as `test_vehicle_physics`, `test_drift`, `test_start_boost`, `test_weapons_advanced`, `test_ui`, `test_multiplayer` and `test_pad_menus`. Run `test_phase4` and `test_phase6` on their own; they're long and time-sensitive. See [docs/Reference.md](docs/Reference.md#running-the-headless-checks) for the full list and the known failures.
+Every action can be rebound in **Settings → Controls**.
 
 ## Documentation
 

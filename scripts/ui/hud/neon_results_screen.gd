@@ -35,8 +35,12 @@ var affordable_note: Label
 var lap_best_tag: Label
 var time_best_tag: Label
 var car_stage: _CarStage
+## The stat-row captions / bars the split-screen version relabels or hides.
+var time_caption: Label
+var coins_row: Control
 
 var _frame: Control
+var _players_list: VBoxContainer
 ## Everything, in 1280x720 design coordinates, centred on _frame.
 var _canvas: Control
 var _left: NeonPanel
@@ -57,10 +61,13 @@ var _totals_before: Dictionary = {}
 
 func open(manager: RaceManager) -> void:
 	race = manager
-	Music.play(race.get_tree(), Music.VICTORY)
+	set_race_sfx_muted(true)
+	Music.play(race.get_tree(), music_path())
 	standings_page = false
 	_slide = -1.0
-	var player := race.player
+	var mp := race.is_multiplayer()
+	# Split screen: the card is about the best-placed human.
+	var player := best_human() if mp else race.player
 	var c := race.championship
 	title.text = context_text()
 	_title_bar.label.text = "RACE RESULTS"
@@ -69,7 +76,18 @@ func open(manager: RaceManager) -> void:
 	subtitle.text = placement_subtitle()
 	big_place.text = "OUT" if player.eliminated else "P%d" % place
 	var ink := UIStyle.DANGER if player.eliminated else (UIStyle.GOLD if place == 1 else Color(1.0, 0.3, 0.9))
+	if mp:
+		ink = _highlight(player)
+		placement.text = "%s  %s" % [player.display_name, "WINS!" if place == 1 else ordinal(place)]
 	big_place.add_theme_color_override("font_color", ink)
+	# Split screen pays and records nothing: a line per player instead of coins.
+	time_caption.text = "TIME" if mp else "YOUR TIME"
+	coins_row.visible = not mp
+	balance_label.visible = not mp
+	affordable_note.visible = not mp
+	players_box.visible = mp
+	if mp:
+		_fill_players()
 	_laurels.color = place_color(place) if place <= 3 and not player.eliminated else UIStyle.GOLD
 	_laurels.queue_redraw()
 	time_value.text = ("OUT  LAP %d" % player.eliminated_lap) if player.eliminated \
@@ -83,7 +101,10 @@ func open(manager: RaceManager) -> void:
 	_fill_rewards()
 	_set_continue_text()
 	menu_button.visible = c == null or not c.is_complete()
-	menu_button.text = "Main menu"
+	# Split screen: back to the title screen (home), not car select.
+	menu_button.text = "Quit to Home" if mp else "Main menu"
+	(menu_button as NeonMenuButton).icon_kind = "home" if mp else "car"
+	menu_button.queue_redraw()
 	continue_button.disabled = true
 	menu_button.disabled = true
 	_buttons_delay = 1.5
@@ -113,7 +134,7 @@ func _set_continue_text() -> void:
 	elif c == null:
 		continue_button.text = "Race again"
 	elif c.is_complete():
-		continue_button.text = "Back to main menu"
+		continue_button.text = "Back to car select" if race.is_multiplayer() else "Back to main menu"
 	else:
 		continue_button.text = "Next Race"
 	(continue_button as NeonMenuButton).icon_kind = "reset" if c == null else "play"
@@ -220,6 +241,7 @@ func refresh() -> void:
 		var cells: Array = _cells[i]
 		row.racer_id = racer.racer_id
 		row.mine = racer.is_player
+		row.fill = _highlight(racer)
 		row.accent = racer.color
 		row.place = i + 1
 		row.picture = CarThumbnails.get_look_texture(racer.racer_id)
@@ -267,6 +289,14 @@ func _layout_rows() -> void:
 
 
 func _fill_rewards() -> void:
+	if race.is_multiplayer():
+		time_best_tag.visible = false
+		lap_best_tag.visible = false
+		best_banner.visible = false
+		_coins_total = 0
+		coins_value.text = "+0"
+		_rewards_final = ""
+		return
 	var r := race.reward_summary
 	var race_best := not r.is_empty() and bool(r.best_race)
 	var lap_best := not r.is_empty() and bool(r.best_lap)
@@ -304,6 +334,21 @@ func _fill_rewards() -> void:
 		_rewards_final += "\nNow affordable in the Garage: " + ", ".join(names) + more
 
 
+## Split screen: one coloured line per player on the card.
+func _fill_players() -> void:
+	for child in _players_list.get_children():
+		_players_list.remove_child(child)
+		child.queue_free()
+	for p in race.players:
+		var time := ("OUT  LAP %d" % p.eliminated_lap) if p.eliminated \
+				else (RaceProgress.format_time(p.finish_time) if p.finish_time >= 0.0 else "DNF")
+		var place := "OUT" if p.eliminated else ordinal(p.finish_position)
+		var line := UIStyle.stat("%s    %s    %s" % [p.display_name, place, time], 17, _highlight(p))
+		line.add_theme_font_override("font", UIStyle.slanted_font(true))
+		line.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_players_list.add_child(line)
+
+
 static func _thousands(n: int) -> String:
 	var s := str(absi(n))
 	var out := ""
@@ -329,7 +374,8 @@ func _request_pictures() -> void:
 	var sizes := {}
 	for r in race.racers:
 		looks[r.racer_id] = race.racer_look(r.racer_id, r.color)
-	sizes[race.player.racer_id] = Vector2i(480, 256)
+	var shown := best_human() if race.is_multiplayer() else race.player
+	sizes[shown.racer_id] = Vector2i(480, 256)
 	car_stage.picture = null
 	car_stage.queue_redraw()
 	var screen: WeakRef = weakref(self)
@@ -337,7 +383,8 @@ func _request_pictures() -> void:
 		var me := screen.get_ref() as NeonResultsScreen
 		if me == null or me.race == null:
 			return
-		me.car_stage.picture = CarThumbnails.get_look_texture(me.race.player.racer_id)
+		var who := me.best_human() if me.race.is_multiplayer() else me.race.player
+		me.car_stage.picture = CarThumbnails.get_look_texture(who.racer_id)
 		me.car_stage.queue_redraw()
 		me.refresh(), sizes)
 
@@ -468,12 +515,13 @@ func _build() -> void:
 	_rewards_caption = Label.new()
 	rewards_box = VBoxContainer.new()
 	affordable_label = Label.new()
-	players_box = VBoxContainer.new()
 	standings_box = VBoxContainer.new()
 	grid_box = VBoxContainer.new()
 	_championship_grid = GridContainer.new()
 	_grid_label = Label.new()
-	for n in [_tiles, _rewards_caption, rewards_box, affordable_label, players_box, standings_box, grid_box,
+	# The left card's player list stands in for the plain screen's players_box.
+	players_box = _players_list
+	for n in [_tiles, _rewards_caption, rewards_box, affordable_label, standings_box, grid_box,
 			_championship_grid, _grid_label]:
 		(n as Control).visible = false
 		_canvas.add_child(n)
@@ -548,12 +596,19 @@ func _build_left() -> void:
 	var t := _stat_row(box, "stopwatch", "YOUR TIME", UIStyle.CYAN)
 	time_value = t[0]
 	time_best_tag = t[1]
+	time_caption = (t[0] as Label).get_parent().get_child(1) as Label
 	var b := _stat_row(box, "trophy", "BEST LAP", UIStyle.CYAN)
 	best_value = b[0]
 	lap_best_tag = b[1]
 	laps_value = _stat_row(box, "flags", "LAPS", Color.WHITE)[0]
 	var coins := _stat_row(box, "coin", "COINS", UIStyle.GOLD)
 	coins_value = coins[0]
+	coins_row = (coins[0] as Label).get_parent().get_parent() as Control
+	# Split screen: "P1   3RD   2:31.40" per player where the coins go.
+	_players_list = VBoxContainer.new()
+	_players_list.add_theme_constant_override("separation", 0)
+	_players_list.visible = false
+	box.add_child(_players_list)
 	balance_label = UIStyle.stat("", 14, UIStyle.MUTED)
 	balance_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	(coins[1] as Label).get_parent().add_child(balance_label)
@@ -677,8 +732,9 @@ func _build_table() -> void:
 class ResultRow extends PanelContainer:
 	var racer_id: int = 0
 	var place: int = 1
-	## The player's row (filled magenta).
+	## A human's row: filled with `fill` (magenta; split screen: their player colour).
 	var mine: bool = false
+	var fill: Color = UIStyle.MAGENTA
 	var accent: Color = Color.WHITE
 	var picture: Texture2D
 	## Standings page: no car picture column shift.
@@ -692,14 +748,14 @@ class ResultRow extends PanelContainer:
 		var h := size.y
 		var s := h * 0.32
 		var bar := PackedVector2Array([Vector2(s + 8, 0), Vector2(size.x, 0), Vector2(size.x - s, h), Vector2(8, h)])
-		var fill_l := Color(0.85, 0.12, 0.7, 0.95) if mine else Color(0.1, 0.1, 0.2, 0.86)
-		var fill_r := Color(0.6, 0.05, 0.55, 0.95) if mine else Color(0.06, 0.06, 0.14, 0.86)
+		var fill_l := Color(fill.darkened(0.05), 0.95) if mine else Color(0.1, 0.1, 0.2, 0.86)
+		var fill_r := Color(fill.darkened(0.35), 0.95) if mine else Color(0.06, 0.06, 0.14, 0.86)
 		draw_polygon(bar, PackedColorArray([fill_l, fill_r, fill_r, fill_l]))
 		var outline := bar.duplicate()
 		outline.append(bar[0])
-		var edge := Color(1.0, 0.6, 0.95) if mine else Color(accent, 0.35)
+		var edge := fill.lightened(0.5) if mine else Color(accent, 0.35)
 		if mine:
-			draw_polyline(outline, Color(UIStyle.MAGENTA, 0.35), 8.0, true)
+			draw_polyline(outline, Color(fill, 0.35), 8.0, true)
 		draw_polyline(outline, edge, 2.0 if mine else 1.2, true)
 		# Place badge.
 		var bw := 66.0

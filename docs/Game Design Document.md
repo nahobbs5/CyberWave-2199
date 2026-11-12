@@ -1,5 +1,5 @@
 # CYBERWAVE 2199
-## Game Design Document — Version 6.5
+## Game Design Document — Version 6.9
 
 **Status:** Development Baseline  
 **Engine:** Godot 4  
@@ -655,7 +655,7 @@ A fictionalized underground circuit through skull-lined tunnels, flooded chamber
 
 **Identity:** Constrained racing, precision, claustrophobic atmosphere.
 
-Built at about 2.8 km, fully underground: a vaulted stone ceiling covers every metre of both routes, and no sky is visible. The 12 m road is the narrowest in the game, with tight corners (30–45 m radius) and short straights. It's lit by wall torches, candles and a few shafts of pale light through street grates, and the tunnels fade to black ahead. Landmarks in driving order:
+Built at about 2.8 km, fully underground: a vaulted stone ceiling covers every metre of both routes, and no sky is visible. The 12 m road is the narrowest in the game, with tight corners (30–45 m radius) and short straights. It's lit by wall torches, candles and pale light falling through a few street grates (no visible beams), and the tunnels fade to black ahead. Landmarks in driving order:
 - the tall Barrière d'Enfer start chamber;
 - the "Arrête ! C'est ici l'Empire de la Mort" lintel into the ossuary galleries (walls of stacked bones set with skulls);
 - a crypt of burial niches and sarcophagi;
@@ -675,7 +675,7 @@ A racing circuit through dense bamboo forests, mountain roads, bridges, and rain
 
 **Identity:** Technical cornering, drifting, natural scenery.
 
-Built at about 3.1 km on a soft, sunny day. It should feel like an indoor garden out of doors, after the Sagano grove photos in the reference files. Tall, nearly straight culms (16–23 m) in deep green, blue-grey and olive, with white-ringed nodes, stand in dense clumps. Their trunks are bare; leaves grow only in the top third. Beside the road the culms lean in so their crowns meet high overhead like a green ceiling, with the sun coming through in shafts and dapples, and the grove goes dark green into the distance. The canopy covers about three quarters of the lap and opens only at the start plaza, the bridge and the temple garden. Ferns and sasa grow underfoot, among a few fallen culms. The 13 m road is paved stone between golden brushwood (shibagaki) fences, about 2 m tall with a bristly crest above two thick bamboo rails. It has medium-radius drift corners (35–60 m), one hairpin and short straights. Landmarks in driving order:
+Built at about 3.1 km on a soft, sunny day. It should feel like an indoor garden out of doors, after the Sagano grove photos in the reference files. Tall, nearly straight culms (16–23 m) in deep green, blue-grey and olive, with white-ringed nodes, stand in dense clumps. Their trunks are bare; leaves grow only in the top third. Beside the road the culms lean in so their crowns meet high overhead like a green ceiling, with the sun coming through in dapples, and the grove goes dark green into the distance. The canopy covers about three quarters of the lap and opens only at the start plaza, the bridge and the temple garden. Ferns and sasa grow underfoot, among a few fallen culms. The 13 m road is paved stone between golden brushwood (shibagaki) fences, about 2 m tall with a bristly crest above two thick bamboo rails. It has medium-radius drift corners (35–60 m), one hairpin and short straights. Landmarks in driving order:
 - an open start plaza with stone lanterns and banners;
 - a timber gate marked ARASHIYAMA into the grove's S-bends;
 - a long wooden bridge over the Katsura river, with the mountains behind;
@@ -698,7 +698,7 @@ Built at about 3.1 km with a 14 m road and long flowing corners (55–115 m radi
 - the Glacier Mouth: the start hall, with a huge opening onto bright daylight and snow beside the grid;
 - the Blue Cathedral: a vast swirling hall along the longest straight, with a meltwater stream (boost pad);
 - the Icicle Gallery: lower and lined with icicle curtains and hourglass ice columns;
-- Moulin Hall: meltwater holes in the roof pour shafts of sky light onto snow drifts (boost ring, meltwater ford on the road);
+- Moulin Hall: meltwater holes in the roof let sky light onto snow drifts (no visible beams) (boost ring, meltwater ford on the road);
 - the Ash Canyon: a tall gorge striped with black volcanic ash (snow-drift jump);
 - the Frozen Lake: a glassy lake under ice chandeliers (slush EMP puddle), back to the mouth.
 
@@ -845,7 +845,7 @@ Overdrive flights stay low under the hall's ceiling and the gallery and swing ro
 Tracks may contain:
 - Question-mark weapon crates
 - Collectible coins
-- Speed boost pads
+- Speed boost pads. Each pad on the main road is laid out as one of three patterns: a single pad, three in a diagonal, or two side by side then one ahead (a triangle). The pattern is picked at random per pad but seeded by the track, so a track always has the same layout.
 - Speed boost rings
 - Jump ramps
 - Directional signs
@@ -1094,7 +1094,7 @@ Clicking an item previews it on the car; Apply equips every owned item being pre
 
 ## 11.5 Race HUD
 
-Laid out after *Cyberpunk Slipstream Under the Neon Moon*: top left, POSITION with a big slanted number and the live standings under it (place box, a shield emblem in the racer's colour, NAME; your row in gold); top right, LAP, the race time and (single player) the coin count under the time; bottom left, a round speed gauge (km/h) with the drift charge cells under the number; bottom right, the minimap with the two item squares (number badges 1 and 2) under it; bottom centre, the SLIPSTREAM banner while a slipstream boost runs. Split-screen views keep lap and time under the position and the items top right, so the corner by the shared minimap stays clear.
+Laid out after *Cyberpunk Slipstream Under the Neon Moon*: top left, POSITION with a big slanted "2/8" and the live standings under it (no mode or track name on the HUD) (place box, a shield emblem in the racer's colour, NAME; your row in gold); top right, LAP "1/3", the race time as 00:23.567 and (single player) the coin count under the time; bottom left, a round speed gauge (km/h) with the drift charge cells under the number; bottom right, the minimap with the two item squares (number badges 1 and 2) under it; bottom centre, the SLIPSTREAM banner while a slipstream boost runs. Split-screen views keep lap and time under the position and the items top right, so the corner by the shared minimap stays clear.
 
 Display:
 - Current position out of eight
@@ -1130,15 +1130,15 @@ The single-player results are laid out after the "Cyberwave 2199 Race Results" r
   - the track's picture, name and mode (Versus Race, Elimination, or the cup and race number);
   - rows for YOUR TIME, BEST LAP, LAPS and COINS (counting up). A gold NEW BEST tag marks a personal best time or lap.
   - Under the card: your new coin balance and any newly affordable cosmetics.
-- **Table:** every racer, with a slanted place badge (gold / silver / bronze for the top three), a picture of their car in their own paint, their name, the points the place earns (PTS, in every race, on the Grand Prix scale), total time and best lap. A racer placed without crossing the line shows DNF for the time. Your row is filled magenta.
+- **Table:** every racer, with a slanted place badge (gold / silver / bronze for the top three), a picture of their car in their own paint, their name, the points the place earns (PTS, in every race, on the Grand Prix scale), total time and best lap. A racer placed without crossing the line (the race is over for the players) gets a projected time from their pace so far; only the last place and Elimination's runner-up show DNF. Projected times never count as personal bests. Your row is filled magenta.
 - **Buttons:** RACE AGAIN (or the next step) and MAIN MENU.
 - **Hint bar:** A / Enter Confirm, Start / Esc Pause.
 - **Grand Prix and Versus sets** work as in Mario Kart:
   - first the race, with the +PTS column counting toward the cup;
   - Continue then shows the STANDINGS (FINAL STANDINGS after the last race): the rows slide into championship order and the totals count up from the old ones;
   - Continue again goes to the next race (or back to the main menu).
-- Split screen keeps its simpler shared results (a line per player, the finishing order, championship standings).
-- The *Victory* theme plays (carried on from the podium when there is one).
+- Split screen uses the same results, shared by everyone: the card shows the best-placed human (their placement and car in their player colour, TIME / BEST LAP / LAPS), with a line per player (place and time) where the coins would be, since split screen pays nothing. Each player's table row is filled in their colour. The menu button reads Quit to Home (home icon) and goes back to the title screen.
+- Music: after a podium, its *Victory* theme carries on; any other results screen (e.g. mid-Grand Prix races, single Elimination) plays alex-morgan's *Background Music*.
 
 ## 11.7a Podium Ceremony
 
@@ -1148,8 +1148,8 @@ A victory podium plays before the results screen (laid out after the "Neon Grand
 - The top three's cars, dressed as they raced (player 1's garage cosmetics, players 2–4 in their player colour, rivals in their colours, everyone's own plate).
 - A place tag on each platform ("1ST | NAME"). Player names use the split-screen player colours (single player: magenta); rivals are white. The winner's tag carries CUP CHAMPION / SET WINNER / RACE WINNER.
 - The banner reads "CONGRATULATIONS!" when a human made the top three, else "FINAL PODIUM".
-- A gold crown over the winner when the winner is a human player (no crown for an AI rival), sweeping spotlights, confetti and a short fanfare (a placeholder synthesized call; a `sounds/victory_fanfare` .ogg/.mp3/.wav replaces it). Reduced flashing stops the spotlight sweep and halves the confetti.
-- Audio: the *Victory* theme replaces the race music as the podium appears and carries on into the results. The race keeps running behind the podium, so its sound effects (weapons, drones, skids) are muted until the podium closes. The fanfare plays on the Music channel so it is still heard.
+- A gold crown over the winner when the winner is a human player (no crown for an AI rival), sweeping spotlights, confetti, and a short fanfare with the crown, so only when a human wins (a placeholder synthesized call; a `sounds/victory_fanfare` .ogg/.mp3/.wav replaces it). Reduced flashing stops the spotlight sweep and halves the confetti.
+- Audio: the *Victory* theme replaces the race music as the podium appears and carries on into the results. The race keeps running behind the podium, so its sound effects (weapons, drones, skids, plank clatter, spike drops) are muted through the podium and the results screen, after every race, and come back with the next scene. The fanfare plays on the Music channel so it is still heard.
 - The camera starts wide and slowly pushes in towards the winner.
 - A / Enter (or a click) skips to the end; once "A Continue" appears, it opens the results.
 
@@ -1221,7 +1221,8 @@ One song per screen or track. Moving between menus that share a song doesn't res
 |---|---|---|
 | Title, main menu, setup screens, settings, credits | Cyberpunk | ikoliks_aj |
 | Garage | Wings of Hope | ikoliks |
-| Podium ceremony and results | Victory | alex-morgan |
+| Podium ceremony and the results after it | Victory | alex-morgan |
+| Other results screens (no podium) | Background Music | alex-morgan |
 | The Stacks | Cyber Dreams | Lilex |
 | Six Flags New Orleans | Race Winner | TheBoysBeats |
 | Vegas Overdrive | Heavy Racing | SPmusic |
@@ -1234,7 +1235,7 @@ One song per screen or track. Moving between menus that share a song doesn't res
 | Parque Quinta Normal Greenhouse | To the Moon and Back | theorienvibes |
 | Vale da Lua | Rise of the Phoenix | restum-anoush |
 | Choquequirao | Epic Victory March for Heroes | DesiFreeMusic |
-| Kilwa Kisiwani Ruins | None yet | |
+| Kilwa Kisiwani Ruins | The Dragon's Lair | vishiv |
 | Test Circuit and Free Drive | The Garden Wakes | stageechoesmusic |
 
 The web build plays smaller 96 kbps .ogg copies (`music/web/`) of every song.
@@ -1623,5 +1624,9 @@ Changes after Version 1.0 should be tracked as revisions rather than silently re
 | 6.3 | 2026-11-12 | Textured standing water and scenery puddles; EMP puddles redesigned to read clearly as a hazard (§8.7). |
 | 6.4 | 2026-11-12 | Rocket start replaces "no false-start penalties": a boost for pressing as the 2 fades, a burnout for pressing too early (§11.8). AI rivals rocket-start and burn out too, better at harder difficulties (§7.2). |
 | 6.5 | 2026-11-12 | Results table: PTS column moved before the times and shown in every race; racers placed without crossing the line show DNF instead of "classified" (§11.7). |
+| 6.6 | 2026-11-12 | Podium fanfare only with the crown (human winner); race sound effects stay muted on the results screen; classified racers get projected times, DNF only for last place and the Elimination runner-up; boost pads laid out as a single, a diagonal of three or a triangle, fixed per track (§8.7, §11.7, §11.7a). |
+| 6.7 | 2026-11-12 | Split screen gets the single-player results layout (placement card, neon table, standings page) with player-coloured rows and a line per player (§11.7). A results screen with no podium before it plays alex-morgan's *Background Music*; *Victory* stays with the podium (§12). |
+| 6.8 | 2026-11-12 | See-through light beams removed everywhere (they read as UFO lights): under the Catacombs street grates, the Vatnajökull skylights and the Crazy House roof windows, and the sun shafts through the Arashiyama canopy. The grates, holes and windows still light the road (§8.5, §8.6, §8.6a, Crazy House). |
+| 6.9 | 2026-11-12 | Race HUD closer to the reference: the mode / track line is gone; position and lap read "2/8" and "1/3"; the race time reads 00:23.567, with the coins under it in single player (§11.5). |
 
-**End of Game Design Document — Version 6.5**
+**End of Game Design Document — Version 6.9**

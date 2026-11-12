@@ -214,7 +214,7 @@ func _test_credits() -> void:
 		_check(text.contains(wanted), "credits mention %s" % wanted)
 	# Every song and sound clip the game plays credits its author (file names
 	# start with the author's handle).
-	var used: Array[String] = [Music.MENU, Music.GARAGE, Music.VICTORY, RaceManager.COUNTDOWN_SOUND.resource_path]
+	var used: Array[String] = [Music.MENU, Music.GARAGE, Music.VICTORY, Music.RESULTS, RaceManager.COUNTDOWN_SOUND.resource_path]
 	for track in TrackCatalog.names():
 		if TrackCatalog.music(track) != "":
 			used.append(TrackCatalog.music(track))
@@ -678,9 +678,12 @@ func _test_hud(race: RaceManager) -> void:
 	await _frames(2)
 	var p := race.player
 	_check(hud.get_position_text() == "POS %d / 8" % p.position, "position panel (%s)" % hud.get_position_text())
-	_check(hud.info.lap_value.text == "1 / 3", "lap (%s)" % hud.info.lap_value.text)
-	_check(hud.info.time_value.text == RaceProgress.format_time(race.race_time)
-			or hud.info.time_value.text.length() == 7, "race time shown (%s)" % hud.info.time_value.text)
+	_check(hud.info.lap_value.text == "1/3", "lap (%s)" % hud.info.lap_value.text)
+	_check(hud.info.time_value.text == RaceProgress.format_hud_time(race.race_time)
+			or hud.info.time_value.text.length() == 9, "race time shown as mm:ss.mmm (%s)" % hud.info.time_value.text)
+	var track_named := hud.info.find_children("*", "Label", true, false).any(func(l: Label) -> bool:
+		return l.text.to_upper().contains(race.config.track_name.to_upper()) or l.text.contains("VERSUS"))
+	_check(not track_named, "no mode / track line on the HUD")
 	_check(hud.get_standings_text().split("\n").size() == 8, "standings list all eight")
 	var cards := hud.find_children("*", "ControlsCard", true, false) + proto.find_children("*", "ControlsCard", true, false)
 	_check(cards.is_empty(), "no controls on the HUD")
@@ -815,7 +818,10 @@ func _test_results(race: RaceManager) -> void:
 	_check(results.placement.text == "%s PLACE" % ResultsScreen.ordinal(p.finish_position), "placement (%s)" % results.placement.text)
 	var expected_sub := "VICTORY!" if p.finish_position == 1 else ("PODIUM!" if p.finish_position <= 3 else "RACE COMPLETE")
 	_check(results.subtitle.text == expected_sub, "subtitle for P%d (%s)" % [p.finish_position, results.subtitle.text])
-	_check(results.time_value.text == RaceProgress.format_time(p.finish_time), "race time tile")
+	# Placed last without crossing the line (the race ends then): DNF, no record.
+	var crossed := p.finish_time >= 0.0
+	var want_time := RaceProgress.format_time(p.finish_time) if crossed else "DNF"
+	_check(results.time_value.text == want_time, "race time tile (%s, P%d)" % [results.time_value.text, p.finish_position])
 	_check(results.best_value.text == RaceProgress.format_time(p.best_lap), "best lap tile")
 	var r := race.reward_summary
 	var sum := 0
@@ -826,7 +832,7 @@ func _test_results(race: RaceManager) -> void:
 	await _frames(1)
 	_check(not results.is_animating(), "skipping ends the animation")
 	_check(results.get_coins_shown() == "+%d" % r.total, "coins counted up to the total (%s)" % results.get_coins_shown())
-	_check(results.best_banner.visible, "first race is a personal best")
+	_check(results.best_banner.visible == crossed, "first race is a personal best (unless DNF)")
 	var player_rows := 0
 	for i in results._rows.size():
 		var row := results._rows[i] as NeonResultsScreen.ResultRow
@@ -843,7 +849,7 @@ func _test_results(race: RaceManager) -> void:
 		_check(neon.laps_value.text == "%d / %d" % [race.total_laps, race.total_laps], "laps row (%s)" % neon.laps_value.text)
 		_check(neon.balance_label.text.begins_with("Balance %s" % NeonResultsScreen._thousands(int(r.coins_after))),
 				"new balance under the card (%s)" % neon.balance_label.text)
-		_check(neon.time_best_tag.visible, "NEW BEST tag on your time")
+		_check(neon.time_best_tag.visible == crossed, "NEW BEST tag on your time (unless DNF)")
 		_check(neon._header_cells[3].text == "PTS" and neon._header_cells[4].text == "TOTAL TIME", "race columns: PTS before the times")
 		var mine := neon._row_ids.find(p.racer_id)
 		_check(mine >= 0 and (neon._cells[mine][2] as Label).text == "+%d" % Championship.points_for(p.finish_position),

@@ -645,17 +645,37 @@ func is_race_complete() -> bool:
 
 
 ## Gives everyone still racing a final position in their current order.
+## Each gets a projected finish time from their pace so far, except the
+## last place and Elimination's runner-up, who show DNF (no time).
 func _classify_remaining() -> void:
 	_update_positions()
+	var prev_time := 0.0
 	for racer in get_standings():
 		if racer.finished:
+			if racer.finish_time > 0.0:
+				prev_time = maxf(prev_time, racer.finish_time)
 			continue
 		_finish_count += 1
 		racer.finished = true
 		racer.finish_position = _finish_count
+		if elimination == null and racer.finish_position < racers.size():
+			racer.finish_time = maxf(projected_finish_time(racer), prev_time + 0.1)
+			racer.time_projected = true
+			prev_time = racer.finish_time
 		racer_finished.emit(racer)
 		if racer.is_player:
 			_on_player_finished(racer)
+
+
+## When `racer` would cross the line at its average pace so far.
+func projected_finish_time(racer: RaceProgress) -> float:
+	var segment := track.length / float(track.checkpoint_count)
+	var total := float(total_laps * track.checkpoint_count + 1) * segment
+	var remaining := maxf(0.0, total - racer.race_distance)
+	var pace := racer.race_distance / race_time if race_time > 0.5 else 0.0
+	if pace < 5.0:
+		pace = maxf(racer.vehicle.stats.top_speed * 0.8, 5.0) if racer.vehicle != null else 30.0
+	return race_time + remaining / pace
 
 
 func _eliminate(out: Array[RaceProgress]) -> void:
@@ -830,7 +850,7 @@ func _grant_rewards(reward: Dictionary) -> void:
 	var before := profile.coins
 	profile.add_coins(int(reward.total))
 	var bests := {"race": false, "lap": false}
-	if not player.eliminated and player.finish_time > 0.0:
+	if not player.eliminated and player.finish_time > 0.0 and not player.time_projected:
 		bests = profile.record_race_time(config.track_name, total_laps, player.finish_time, player.best_lap)
 	profile.save()
 	reward_summary = {

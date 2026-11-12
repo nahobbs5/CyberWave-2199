@@ -28,6 +28,9 @@ var finished: bool = false
 var eliminated: bool = false
 var eliminated_lap: int = 0
 var finish_time: float = -1.0
+## finish_time is an estimate: placed at the end without crossing the line
+## (RaceManager._classify_remaining). Never a personal best.
+var time_projected: bool = false
 ## 1 = winner. 0 until finished.
 var finish_position: int = 0
 ## Live race position (1 = leading), updated by RaceManager.
@@ -104,6 +107,13 @@ static func is_ahead(a: RaceProgress, b: RaceProgress) -> bool:
 	if not is_equal_approx(a.race_distance, b.race_distance):
 		return a.race_distance > b.race_distance
 	return a.grid_slot < b.grid_slot
+
+
+## The race HUD's clock, as in the reference art: "00:23.567".
+static func format_hud_time(seconds: float) -> String:
+	if seconds < 0.0:
+		return "--:--.---"
+	return "%02d:%06.3f" % [int(seconds) / 60, fmod(seconds, 60.0)]
 
 
 static func format_time(seconds: float) -> String:

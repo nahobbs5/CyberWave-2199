@@ -152,6 +152,7 @@ func _test_track_music() -> void:
 	for track in want:
 		_check(TrackCatalog.music(track) == want[track] and ResourceLoader.exists(want[track]), "%s has its music" % track)
 	_check(ResourceLoader.exists(Music.VICTORY), "victory theme exists")
+	_check(ResourceLoader.exists(Music.RESULTS), "results theme exists")
 	# The web build drops the .mp3s and plays music/web/<name>.ogg copies.
 	var songs: Array[String] = [Music.MENU, Music.GARAGE, Music.VICTORY]
 	for track in TrackCatalog.names():

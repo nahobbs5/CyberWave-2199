@@ -45,6 +45,8 @@ var _coins_total: int = 0
 var _anim: Tween
 var _buttons_delay: float = 0.0
 var _refresh: float = 0.0
+## Opened by the podium: keep its Victory theme; otherwise the results theme.
+var after_podium: bool = false
 
 
 func _init() -> void:
@@ -68,10 +70,30 @@ func get_coins_shown() -> String:
 	return coins_value.text
 
 
+## Track and combat sounds (AI still racing behind: planks, spikes,
+## drones...) stay off while the results are up; back on when the race
+## scene goes (restart, next race, menu). Music is on its own bus.
+static func set_race_sfx_muted(on: bool) -> void:
+	var index := AudioServer.get_bus_index(&"SFX")
+	if index >= 0:
+		AudioServer.set_bus_mute(index, on or GameSettings.volume("sfx") <= 0.001)
+
+
+func _exit_tree() -> void:
+	if visible:
+		set_race_sfx_muted(false)
+
+
+## Victory after the podium, the results theme otherwise.
+func music_path() -> String:
+	return Music.VICTORY if after_podium else Music.RESULTS
+
+
 ## Shows the results for the player's finish and starts the animation.
 func open(manager: RaceManager) -> void:
 	race = manager
-	Music.play(race.get_tree(), Music.VICTORY)
+	set_race_sfx_muted(true)
+	Music.play(race.get_tree(), music_path())
 	var player := race.player
 	var c := race.championship
 	var mp := race.is_multiplayer()
@@ -105,7 +127,7 @@ func open(manager: RaceManager) -> void:
 	else:
 		continue_button.text = "Next Race"
 	menu_button.visible = c == null or not c.is_complete()
-	menu_button.text = "Car select" if mp else "Main menu"
+	menu_button.text = "Quit to Home" if mp else "Main menu"
 	if mp and c != null and c.is_complete():
 		continue_button.text = "Back to car select"
 	continue_button.disabled = true

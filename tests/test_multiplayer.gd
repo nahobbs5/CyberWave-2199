@@ -494,15 +494,29 @@ func _test_full_race() -> void:
 	await process_frame
 	await process_frame
 	_check(race.split.results.visible, "the shared results open")
+	var neon := race.split.results as NeonResultsScreen
+	_check(neon != null, "split screen uses the single-player (neon) results")
 	_check(race.split.results.players_box.visible and race.split.results.players_box.get_child_count() == 4,
 			"with a line per player")
+	if neon != null:
+		_check(not neon.coins_row.visible and not neon.balance_label.visible, "no coins on the split-screen card")
+		var colours_ok := true
+		var humans := 0
+		for i in neon._rows.size():
+			var row := neon._rows[i] as NeonResultsScreen.ResultRow
+			if row.visible and row.mine:
+				humans += 1
+				var racer := race.racers.filter(func(r: RaceProgress) -> bool: return r.racer_id == row.racer_id)[0] as RaceProgress
+				colours_ok = colours_ok and row.fill == SplitScreen.PLAYER_COLORS[race.player_slot(racer)]
+		_check(humans == 4 and colours_ok, "each player's table row in their colour (%d rows)" % humans)
 	var any_open := false
 	for hud in race.split.huds:
 		any_open = any_open or hud.is_results_visible()
 	_check(not any_open, "the per-view results stay closed")
 	_check(race.reward_summary.is_empty() and PlayerProfile.get_profile().coins == coins_before, "no coins paid")
 	_check(PlayerProfile.get_profile().best_for("Test Circuit", 1).is_empty(), "no personal bests recorded")
-	_check(race.split.results.menu_button.text == "Car select", "the menu button goes back to car select")
+	_check(race.split.results.menu_button.text == "Quit to Home" and (race.split.results.menu_button as NeonMenuButton).icon_kind == "home",
+			"the menu button quits to home, with the home icon")
 	await _end(race)
 
 
@@ -532,7 +546,15 @@ func _test_grand_prix() -> void:
 	_check(FileAccess.get_file_as_string(TEST_SAVE) == saved_text, "the single-player save is untouched")
 	await process_frame
 	await process_frame
-	_check(race.split.results.standings_box.visible, "championship standings on the results")
+	var gp_neon := race.split.results as NeonResultsScreen
+	gp_neon.show_standings()
+	gp_neon.skip_animation()
+	var ranking := c.standings()
+	var rows_ok := gp_neon.standings_page
+	for i in ranking.size():
+		rows_ok = rows_ok and (gp_neon._rows[i] as NeonResultsScreen.ResultRow).racer_id == ranking[i] \
+				and (gp_neon._cells[i][2] as Label).text == str(c.points[ranking[i]])
+	_check(rows_ok, "Continue shows the championship standings with totals")
 	await _end(race)
 	var ai_off := Championship.create(load(GP1) as GrandPrixData, "normal", true, load(ROSTER) as RivalRoster,
 			"", PackedInt32Array([-1, 0, 1]), PackedStringArray(), false)

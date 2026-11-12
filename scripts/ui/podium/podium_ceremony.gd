@@ -7,8 +7,8 @@ extends CanvasLayer
 ## A full-screen PodiumStage (the top three's cars driving onto neon
 ## platforms that rise, a crown over the winner, spotlights) under a 2D
 ## layer: the "GRAND PRIX / CONGRATULATIONS!" banner, a place tag on each
-## platform, the cup's trophy (Grand Prix), confetti, a fanfare and an
-## "A Continue" prompt. Grand Prix places come from the cup standings, a
+## platform, the cup's trophy (Grand Prix), confetti, a fanfare (only when
+## a human wins and is crowned) and an "A Continue" prompt. Grand Prix places come from the cup standings, a
 ## Versus set's from its points, a single race's from the finishing order.
 ## The Grand Prix ceremony is longer and bigger.
 ##
@@ -115,6 +115,7 @@ static func open_then(race: RaceManager, results: ResultsScreen, delay: float = 
 	ceremony.time = -delay
 	ceremony.finished.connect(func() -> void:
 		if is_instance_valid(results):
+			results.after_podium = true
 			results.open(race))
 	race.add_child(ceremony)
 	return ceremony
@@ -248,14 +249,15 @@ func _advance(delta: float) -> void:
 	_update_overlay()
 
 
-## Confetti, flashes and the fanfare as the crown drops.
+## Confetti as the winner is revealed; the fanfare only with the crown
+## (a human winner).
 func _celebrate() -> void:
 	if _played_fanfare:
 		return
 	_played_fanfare = true
 	for p in confetti:
 		p.emitting = true
-	if fanfare != null:
+	if fanfare != null and stage != null and stage.winner_is_human():
 		fanfare.play()
 
 

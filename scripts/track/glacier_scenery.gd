@@ -204,13 +204,6 @@ func _setup_materials() -> void:
 	lake.emission = Color(0.1, 0.35, 0.55)
 	lake.emission_energy_multiplier = 0.6
 	register_material("lake", lake)
-	var beam := StandardMaterial3D.new()
-	beam.albedo_color = Color(0.45, 0.6, 0.75, 0.13)
-	beam.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	beam.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
-	beam.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	beam.cull_mode = BaseMaterial3D.CULL_DISABLED
-	register_material("beam", beam)
 
 
 func _ice_material(ash_amount: float, scale: float, base_glow: float) -> ShaderMaterial:
@@ -461,7 +454,8 @@ func _cathedral_stream() -> void:
 		d += 3.0
 
 
-## Moulin Hall: holes in the roof with sky light pouring down, snow below.
+## Moulin Hall: holes in the roof letting sky light onto the road, snow
+## below (no visible beam or fog cone: they read as UFO lights).
 func _moulins(cave: CaveShellBuilder) -> void:
 	var h := track.road_width * 0.5
 	var from := float(zone_offsets["moulin"])
@@ -473,7 +467,6 @@ func _moulins(cave: CaveShellBuilder) -> void:
 		var top := _ceiling_at(pr, lat)
 		var f := at(o)
 		add_cyl("sky_hole", 3.2, 0.5, f.translated_local(Vector3(lat, top - 0.6, 0)), 14)
-		add_cyl("beam", 3.6, top - 0.6, f.translated_local(Vector3(lat, 0.02, 0)), 14, 2.8)
 		var spot := SpotLight3D.new()
 		spot.name = "Skylight%d" % (i + 1)
 		spot.position = f * Vector3(lat, top - 1.0, 0)
@@ -482,7 +475,7 @@ func _moulins(cave: CaveShellBuilder) -> void:
 		spot.light_energy = 8.0
 		spot.spot_range = top + 6.0
 		spot.spot_angle = 22.0
-		spot.light_volumetric_fog_energy = 4.0
+		spot.light_volumetric_fog_energy = 0.0
 		add_node(spot)
 		skylights += 1
 		_add_glow(f * Vector3(lat, top, 0), 22.0)

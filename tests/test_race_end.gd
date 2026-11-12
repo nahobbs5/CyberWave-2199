@@ -22,6 +22,7 @@ func _run_all() -> void:
 	await _test_last_player()
 	await _test_split_screen()
 	await _test_elimination()
+	await _test_projected_times()
 	print("\n%d checks passed, %d failed" % [_passed, _failed])
 	quit(1 if _failed > 0 else 0)
 
@@ -138,4 +139,27 @@ func _test_elimination() -> void:
 	_check(race.elimination != null, "an Elimination race")
 	race._check_last_car()
 	_check(not race.racers.any(func(r: RaceProgress) -> bool: return r.finished), "the last-car rule doesn't run")
+	await _end(race)
+
+
+## Placed without crossing the line (a Grand Prix records the field at your
+## finish): everyone gets a projected time except last place (DNF).
+func _test_projected_times() -> void:
+	_current = "projected times"
+	print("- classified cars get projected times; only last place is DNF")
+	var race := await _start(_config())
+	for i in 120:
+		await physics_frame
+	var now := race.race_time
+	race._classify_remaining()
+	var standings := race.get_standings()
+	var ok := true
+	var prev := now
+	for i in standings.size() - 1:
+		var r := standings[i]
+		ok = ok and r.finish_position == i + 1 and r.time_projected and r.finish_time > prev
+		prev = r.finish_time
+	_check(ok, "places 1-7: projected times, later than now and in place order")
+	var last := standings[standings.size() - 1]
+	_check(last.finish_position == 8 and last.finish_time < 0.0 and not last.time_projected, "8th: no time (DNF)")
 	await _end(race)
