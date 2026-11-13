@@ -796,10 +796,26 @@ func _test_gardens() -> void:
 	root.add_child(track)
 	await physics_frame
 	await physics_frame
-	_check(track.elevated and track.find_child("*Deck", false, false) is StaticBody3D, "an elevated deck with its own collider")
+	_check(track.elevated and track.sloped and track.find_child("*RoadSurface", false, false) is StaticBody3D,
+			"a sloped skyway on a collider that follows the deck")
 	var ground := track.find_child("*Ground", false, false)
 	var slab := ground.get_child(0) as CollisionShape3D if ground != null else null
-	_check(slab != null and is_equal_approx(slab.position.y, -track.ground_depth - 1.0), "the ground is 24 m below the deck")
+	_check(slab != null and is_equal_approx(slab.position.y + 1.0, GardensScenery.FLOOR_Y), "the ground slab is at the jungle floor")
+	# The skyway swoops: about 14 m up past the Bayfront, 38 m round the Great Wrap.
+	var lo := INF
+	var hi := -INF
+	var max_bank := 0.0
+	var dd := 0.0
+	while dd < track.length:
+		var y := track.get_center_at(dd).y - GardensScenery.FLOOR_Y
+		lo = minf(lo, y)
+		hi = maxf(hi, y)
+		max_bank = maxf(max_bank, rad_to_deg(absf(track.bank_at(dd))))
+		dd += 5.0
+	_check(lo > 12.0 and lo < 17.0 and hi > 35.0 and hi < 40.0, "the deck is %.0f-%.0f m above the jungle" % [lo, hi])
+	var wrap_y := track.curve.get_closest_point(GardensScenery.WRAP_TREE).y - GardensScenery.FLOOR_Y
+	_check(wrap_y > 34.0, "highest round the Great Wrap (%.0f m)" % wrap_y)
+	_check(max_bank > 5.0 and max_bank < 9.0, "banked in the sweepers (%.0f deg)" % max_bank)
 	_check(track.road_material != null and (track.road_material as BaseMaterial3D).transparency != BaseMaterial3D.TRANSPARENCY_DISABLED,
 			"the road is glass")
 	_check(track.open_edges.size() >= 2, "open edges on the main loop (%d)" % track.open_edges.size())
@@ -807,18 +823,22 @@ func _test_gardens() -> void:
 	var drop := func(pos: Vector3) -> float:
 		var hit := space.intersect_ray(PhysicsRayQueryParameters3D.create(pos + Vector3.UP * 10.0, pos + Vector3.DOWN * 40.0))
 		return (hit.position as Vector3).y if hit else -INF
+	# Heights below are measured from the road surface at each spot.
+	var rel := func(d: float, lat: float) -> float:
+		var at := track.get_safe_transform(d, lat, 0.0).origin
+		return (drop.call(at) as float) - at.y
 	var edge := track.road_width * 0.5 + track.barrier_thickness * 0.5
 	var open_ok := true
 	for e in track.open_edges:
 		var mid := (e.x + e.y) * 0.5
 		var side := signf(e.z)
-		open_ok = open_ok and absf(drop.call(track.get_safe_transform(mid, side * edge, 0.0).origin)) < 0.1 \
-				and drop.call(track.get_safe_transform(mid, side * (edge + 2.5), 0.0).origin) < -20.0 \
-				and drop.call(track.get_safe_transform(mid, -side * edge, 0.0).origin) > 3.0
+		open_ok = open_ok and absf(rel.call(mid, side * edge)) < 0.15 \
+				and rel.call(mid, side * (edge + 2.5)) < -12.0 \
+				and rel.call(mid, -side * edge) > 3.0
 	_check(open_ok, "open edges: no wall (only the deck under the edge, a drop beyond), the far side still walled")
-	var walled := drop.call(track.get_safe_transform(track.start_line_offset, edge, 0.0).origin) as float
+	var walled := rel.call(track.start_line_offset, edge) as float
 	_check(walled > 3.0, "elsewhere the barrier is there (%.1f m)" % walled)
-	_check(drop.call(track.get_safe_transform(500.0, 0.0, 0.0).origin) > -0.1, "the deck holds the road up")
+	_check(rel.call(500.0, 0.0) > -0.15, "the deck holds the road up")
 	_check(not track.is_open_edge(track.start_line_offset, -1.0) and track.is_open_edge(track.open_edges[0].x + 1.0, track.open_edges[0].z),
 			"is_open_edge answers")
 	var sc := track.shortcuts[0]
@@ -829,7 +849,7 @@ func _test_gardens() -> void:
 	var right := t.cross(Vector3.UP).normalized()
 	var sc_edge := sc.road_width * 0.5 + track.barrier_thickness * 0.5
 	var p := track.to_global(sc.point_at(mid_d) + right * signf(e0.z) * sc_edge)
-	_check(absf(drop.call(p)) < 0.1, "no wall on the shortcut's open edge")
+	_check(absf(drop.call(p) - p.y) < 0.15, "no wall on the shortcut's open edge")
 	var glass := track.find_children("*", "TrackFeature", true, false).filter(func(f: TrackFeature) -> bool:
 		return f.kind == TrackFeature.Kind.BREAKABLE and f.on_shortcut == sc.name)
 	_check(glass.size() == 1, "a smashable glass panel at the Cloud Forest entrance")
@@ -842,7 +862,8 @@ func _test_gardens() -> void:
 	for t2 in scenery.supertrees.placed:
 		var base := t2[0] as Vector3
 		var span := SupertreeBuilder.canopy_span(base.y, t2[1])
-		var at_road_level := span.y > -1.0 and span.x < GardensScenery.ROAD_CLEARANCE
+		var road_y := scenery.road_y_near(base)
+		var at_road_level := span.y > road_y - 1.0 and span.x < road_y + GardensScenery.ROAD_CLEARANCE
 		var top := Vector3(base.x, 0, base.z)
 		if scenery.edge_distance(top) < 2.0 or (at_road_level and scenery.edge_distance(top) < t2[2]):
 			low.append("(%d, %d)" % [base.x, base.z])
@@ -862,12 +883,14 @@ func _test_skyway_fall(race: RaceManager) -> void:
 	me.teleport(out)
 	var fell := false
 	var frames := 0
+	var deck_y := out.origin.y - 1.0
 	while frames < 240 and me.recovery.last_reason == "":
-		fell = fell or me.global_position.y < -3.0
+		fell = fell or me.global_position.y < deck_y - 3.0
 		await physics_frame
 		frames += 1
 	_check(fell, "the car drops off the edge")
 	_check(me.recovery.last_reason in ["out of bounds", "off track"], "and is recovered (%s)" % me.recovery.last_reason)
 	await _frames(150)
-	_check(track.is_on_road(me.global_position) and me.global_position.y > -0.5 and me.global_position.y < 3.0,
-			"back on the deck (y %.1f)" % me.global_position.y)
+	var on_deck := me.global_position.y - track.road_floor_y(me.global_position)
+	_check(track.is_on_road(me.global_position) and on_deck > -0.5 and on_deck < 3.0,
+			"back on the deck (%.1f m above it)" % on_deck)

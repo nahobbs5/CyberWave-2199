@@ -12,8 +12,11 @@ extends TrackScenery
 ## wooden dragon, with a second open edge; then back through the grove. The
 ## shortcut is the Cloud Forest walk: through a smashable glass panel into
 ## the Cloud Forest dome, round the misty waterfall mountain (two open
-## edges), and out to rejoin the Bayfront. The road is flat at y = 0;
-## positions are layout coordinates matching gardens_by_the_bay.tscn.
+## edges), and out to rejoin the Bayfront. The skyway is sloped (GDD 8.6c):
+## it swoops between about 14 m (the Bayfront) and 38 m (the Great Wrap)
+## above the ground, which is flat at FLOOR_Y, and banks in the long
+## sweepers; anything that meets the deck works from the road's height there.
+## Positions are layout coordinates matching gardens_by_the_bay.tscn.
 
 ## The tallest Supertree, inside the Great Wrap hairpin.
 const WRAP_TREE := Vector3(517, 0, 150)
@@ -47,16 +50,20 @@ const JUNGLE_SPACING := 11.0
 const BEAM_SPACING := 4.0
 const STRIP_SPACING := 8.0
 const PYLON_SPACING := 45.0
-## Nothing over a road comes lower than this.
+## Nothing over a road comes lower than this above it.
 const ROAD_CLEARANCE := 7.5
+## The ground under the skyway (track-local y).
+const FLOOR_Y := -24.0
 
-var floor_y: float = -24.0
+var floor_y: float = FLOOR_Y
+## The Cloud Forest walkway's height by the mountain (set in _cloud_forest).
+var walk_y: float = 0.0
 var supertrees: SupertreeBuilder
 var trees: TreeBuilder
 
 
 func build() -> void:
-	floor_y = -track.ground_depth if track.elevated else 0.0
+	floor_y = FLOOR_Y
 	_materials_setup()
 	_deck(track.curve, track.road_width, true)
 	for sc in track.shortcuts:
@@ -121,22 +128,26 @@ func _deck(curve: Curve3D, width: float, closed: bool) -> void:
 	while d < length - (0.0 if closed else BEAM_SPACING):
 		var p := curve.sample_baked(d)
 		var q := curve.sample_baked(fposmod(d + BEAM_SPACING, length) if closed else minf(d + BEAM_SPACING, length))
-		var dir := Vector3(q.x - p.x, 0, q.z - p.z)
-		if dir.length() < 0.01:
+		var dir := q - p
+		if Vector2(dir.x, dir.z).length() < 0.01:
 			d += BEAM_SPACING
 			continue
+		# Pitched with the road, and on the main loop banked with it too.
 		var basis := Basis.looking_at(dir.normalized(), Vector3.UP)
+		if closed and track.sloped:
+			basis = track.road_frame(d + BEAM_SPACING * 0.5)
+		var up := basis.y
 		var mid := (p + q) * 0.5
 		var seg := dir.length() + 0.4
 		# A beam across under the glass.
-		add_box("deck_wood", Vector3(half * 2.0, 0.35, 0.35), Transform3D(basis, p + Vector3(0, -0.4, 0)))
+		add_box("deck_wood", Vector3(half * 2.0, 0.35, 0.35), Transform3D(basis, p - up * 0.4))
 		for side in [-1.0, 1.0]:
 			var right: Vector3 = basis.x * side
 			# Edge girder and its light strip, outside the barrier.
-			add_box("deck_wood", Vector3(0.45, 0.9, seg), Transform3D(basis, mid + right * (half + 0.2) + Vector3(0, -0.45, 0)))
-			add_box("fascia", Vector3(0.08, 0.12, seg), Transform3D(basis, mid + right * (half + 0.45) + Vector3(0, -0.25, 0)))
+			add_box("deck_wood", Vector3(0.45, 0.9, seg), Transform3D(basis, mid + right * (half + 0.2) - up * 0.45))
+			add_box("fascia", Vector3(0.08, 0.12, seg), Transform3D(basis, mid + right * (half + 0.45) - up * 0.25))
 		if int(round(d / BEAM_SPACING)) % int(STRIP_SPACING / BEAM_SPACING) == 0:
-			add_box("deck_wood", Vector3(width - 1.0, 0.03, 0.3), Transform3D(basis, p + Vector3(0, 0.035, 0)))
+			add_box("deck_wood", Vector3(width - 1.0, 0.03, 0.3), Transform3D(basis, p + up * 0.035))
 		d += BEAM_SPACING
 
 
@@ -150,7 +161,8 @@ func _pylons() -> void:
 		var d := PYLON_SPACING * 0.5
 		while d < length:
 			var p := curve.sample_baked(d)
-			add_cyl("pylon", 0.7, -floor_y - 0.6, xform(Vector3(p.x, floor_y, p.z)), 8, 0.5)
+			# From the ground up to the deck's underside here.
+			add_cyl("pylon", 0.7, p.y - 0.6 - floor_y, xform(Vector3(p.x, floor_y, p.z)), 8, 0.5)
 			d += PYLON_SPACING
 
 
@@ -164,10 +176,17 @@ func supertree_fits(pos: Vector3, height: float, radius: float) -> bool:
 	if not clear(pos, trunk_r):
 		return false
 	# A canopy that reaches road level (from just under the deck to the
-	# clearance height) must stay clear of every road.
-	if span.y > -1.0 and span.x < ROAD_CLEARANCE:
+	# clearance height above it, at the nearest road's height) must stay
+	# clear of every road.
+	var road_y := road_y_near(pos)
+	if span.y > road_y - 1.0 and span.x < road_y + ROAD_CLEARANCE:
 		return clear(pos, radius + 1.0)
 	return true
+
+
+## Height (track-local y) of the nearest road (main loop or shortcut).
+func road_y_near(pos: Vector3) -> float:
+	return track.to_local(Vector3(0, track.road_floor_y(track.to_global(Vector3(pos.x, 0, pos.z))), 0)).y
 
 
 func _supertrees() -> void:
@@ -211,7 +230,7 @@ func _dome(centre: Vector3, radius: float, height: float, lat: int, lon: int) ->
 
 ## True for points of a dome that a road (and the cars on it) passes through.
 func _in_doorway(p: Vector3) -> bool:
-	return p.y < ROAD_CLEARANCE + 3.0 and p.y > floor_y + 4.0 and edge_distance(p) < 14.0
+	return p.y < road_y_near(p) + ROAD_CLEARANCE + 3.0 and p.y > floor_y + 4.0 and edge_distance(p) < 14.0
 
 
 func _rib(a: Vector3, b: Vector3) -> void:
@@ -227,7 +246,9 @@ func _rib(a: Vector3, b: Vector3) -> void:
 func _cloud_forest() -> void:
 	_dome(CLOUD_FOREST, CLOUD_FOREST_RADIUS, CLOUD_FOREST_HEIGHT, 9, 30)
 	var base := Vector3(MOUNTAIN.x, floor_y, MOUNTAIN.z)
-	var top_y := 30.0
+	# The walkway's height where it wraps the mountain.
+	walk_y = road_y_near(MOUNTAIN + Vector3(0, 0, -40.0))
+	var top_y := walk_y + 30.0
 	var noise := FastNoiseLite.new()
 	noise.seed = random_seed
 	noise.frequency = 0.08
@@ -266,14 +287,14 @@ func _cloud_forest() -> void:
 	add_cyl("water", 14.0, 0.6, xform(Vector3(base.x, floor_y, base.z - 38.0)), 18)
 	for m in 10:
 		add_sphere("mist", rng.randf_range(5.0, 9.0), xform(Vector3(base.x + rng.randf_range(-14, 14), floor_y + rng.randf_range(2, 10), base.z - 38.0 + rng.randf_range(-8, 8))), 4, 8)
-	add_text("CLOUD FOREST", Transform3D(Basis(Vector3.UP, PI * 0.6), Vector3(CLOUD_FOREST.x + 70.0, 30.0, CLOUD_FOREST.z - 60.0)),
+	add_text("CLOUD FOREST", Transform3D(Basis(Vector3.UP, PI * 0.6), Vector3(CLOUD_FOREST.x + 70.0, walk_y + 30.0, CLOUD_FOREST.z - 60.0)),
 			Color(0.6, 0.95, 1.0), 0.06, 140)
 
 
 ## The mountain narrows in a little near the walkway level (the walkway
 ## wraps it closely).
 func mountain_scale_at(y: float) -> float:
-	return 1.0 - 0.12 * exp(-pow((y - 0.0) / 10.0, 2.0))
+	return 1.0 - 0.12 * exp(-pow((y - walk_y) / 10.0, 2.0))
 
 
 ## The Flower Dome: a lower, wider dome with a garden and the wooden dragon
@@ -429,6 +450,9 @@ func _jungle() -> void:
 			# Emergents: taller trees whose crowns rise past the deck, away from roads.
 			if rng.randf() < 0.12 and clear(p, 12.0):
 				s = rng.randf_range(1.3, 1.45)
+			elif edge_distance(p) < 14.0:
+				# Crowns (about 21 m at scale 1) stay under a low deck nearby.
+				s = minf(s, (road_y_near(p) - floor_y - 2.0) / 21.0)
 			trees.place("rainforest", Transform3D(Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3.ONE * s), ground))
 		x += JUNGLE_SPACING
 	trees.commit()
@@ -452,6 +476,6 @@ func _in_dome(p: Vector3) -> bool:
 ## the rest of the night glow is emissive.
 func _lights() -> void:
 	add_light(at(track.start_line_offset, 0.0, 14.0).origin, Color(0.85, 0.6, 1.0), 2.0, 60.0)
-	add_light(WRAP_TREE + Vector3(0, 8.0, 0), Color(0.6, 0.3, 1.0), 2.5, 75.0)
-	add_light(Vector3(MOUNTAIN.x, 12.0, MOUNTAIN.z - 45.0), Color(0.5, 0.9, 1.0), 2.2, 70.0)
+	add_light(WRAP_TREE + Vector3(0, road_y_near(WRAP_TREE) + 8.0, 0), Color(0.6, 0.3, 1.0), 2.5, 75.0)
+	add_light(Vector3(MOUNTAIN.x, walk_y + 12.0, MOUNTAIN.z - 45.0), Color(0.5, 0.9, 1.0), 2.2, 70.0)
 	add_light(Vector3(FLOWER_DOME.x, floor_y + 22.0, FLOWER_DOME.z), Color(1.0, 0.7, 0.4), 3.0, 55.0)

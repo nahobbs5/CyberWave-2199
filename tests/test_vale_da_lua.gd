@@ -120,6 +120,18 @@ func _test_layout() -> void:
 	for y in scenery.crossing_depths:
 		shallowest = maxf(shallowest, y)
 	_check(shallowest <= -4.0, "the water is at least 4 m below every bridge (%.1f m)" % shallowest)
+	# Rolling canyon country: the road rises over the headland and drops to the gorge.
+	var lo := INF
+	var hi := -INF
+	var max_bank := 0.0
+	var dh := 0.0
+	while dh < track.length:
+		lo = minf(lo, track.get_center_at(dh).y)
+		hi = maxf(hi, track.get_center_at(dh).y)
+		max_bank = maxf(max_bank, rad_to_deg(absf(track.bank_at(dh))))
+		dh += 5.0
+	_check(track.sloped and lo < -6.0 and hi > 10.0, "the road climbs and drops (%.0f to %.0f m)" % [lo, hi])
+	_check(max_bank > 3.0 and max_bank < 7.0, "gently banked sweepers (%.0f deg)" % max_bank)
 	_check(scenery.waterfalls >= 3, "waterfalls (%d)" % scenery.waterfalls)
 	_check(track.find_children("Water_*", "MeshInstance3D", true, false).size() >= 4, "moving water in every river")
 	var on_road := 0
@@ -171,18 +183,20 @@ func _test_shelf_fall(race: RaceManager) -> void:
 	await _frames(30)
 	var e := track.open_edges[0]
 	var mid := (e.x + e.y) * 0.5
-	me.teleport(track.get_safe_transform(mid, signf(e.z) * (track.road_width * 0.5 + 5.0), 1.0))
+	var start := track.get_safe_transform(mid, signf(e.z) * (track.road_width * 0.5 + 5.0), 1.0)
+	me.teleport(start)
 	var fell := false
 	var frames := 0
 	while frames < 300 and me.recovery.last_reason == "":
-		fell = fell or me.global_position.y < -2.0
+		fell = fell or me.global_position.y < start.origin.y - 3.0
 		await physics_frame
 		frames += 1
 	_check(fell, "the car drops off the shelf")
 	_check(me.recovery.last_reason == "water", "and splashes into the creek (%s)" % me.recovery.last_reason)
 	await _frames(150)
-	_check(track.is_on_road(me.global_position) and me.global_position.y > -0.5 and me.global_position.y < 3.0,
-			"back on the road (y %.1f)" % me.global_position.y)
+	var above := me.global_position.y - track.road_floor_y(me.global_position)
+	_check(track.is_on_road(me.global_position) and above > -0.5 and above < 3.0,
+			"back on the road (%.1f m above it)" % above)
 
 
 func _test_forced_shortcut(race: RaceManager) -> void:

@@ -54,6 +54,9 @@ static func build(scenery: TrackScenery, bounds: Rect2, cell: float = 7.0, ampli
 	_add_water_zone(scenery, bounds, cell, nx, nz, heights, water_level)
 
 
+## On a sloped track, how much of the nearby road's height the open land
+## takes (1 = the land rises fully with the road).
+const SLOPED_FOLLOW := 0.8
 ## Water deeper than this (m) recovers a car that drives over it.
 const DEEP_WATER := 0.6
 ## Deep water closer than this to a road edge is left out (barriers, bridges).
@@ -110,10 +113,16 @@ static func height_at(scenery: TrackScenery, noise: FastNoiseLite, amplitude: fl
 		carve: Callable = Callable()) -> float:
 	var track := scenery.track
 	var h := noise.get_noise_2d(x, z) * amplitude + 0.35
-	# Dry, level banks along the roads (just below the road surface).
+	# Dry, level banks along the roads (just below the road surface). On a
+	# sloped track that's the nearby road's height, and the land round it
+	# rises and falls with the road (hills under the climbs).
+	var road_y := 0.0
+	if track.sloped:
+		road_y = scenery.road_y_at(Vector3(x, 0, z))
+		h += road_y * SLOPED_FOLLOW
 	var off_road := scenery.edge_distance(Vector3(x, 0, z)) - (track.barrier_thickness + 5.0)
 	var t := clampf(off_road / 14.0, 0.0, 1.0)
-	var final_h := lerpf(-0.04, h, t * t * (3.0 - 2.0 * t))
+	var final_h := lerpf(road_y - 0.04, h, t * t * (3.0 - 2.0 * t))
 	if carve.is_valid():
 		final_h += float(carve.call(x, z))
 	return final_h

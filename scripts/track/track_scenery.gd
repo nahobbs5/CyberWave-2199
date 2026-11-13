@@ -28,7 +28,8 @@ var no_shadow_keys: Array[String] = []
 
 var _batches: Dictionary = {}
 ## Spatial index of road samples: Vector2i cell -> PackedFloat32Array of
-## (x, z, half_width) triples, for fast clear() / edge_distance() queries.
+## (x, z, half_width, y) per sample, for fast clear() / edge_distance() /
+## road_y_at() queries.
 var _road_cells: Dictionary = {}
 var _materials: Dictionary = {}
 var _root: Node3D
@@ -94,8 +95,31 @@ func edge_distance(local_pos: Vector3) -> float:
 				var d := sqrt(ex * ex + ez * ez) - cell[i + 2]
 				if d < best:
 					best = d
-				i += 3
+				i += 4
 	return best
+
+
+## Height (track-local y) of the road nearest a point by horizontal
+## distance (main loop or shortcut), searching about 100 m round it; 0 if
+## no road is that close. Sloped tracks dress their ground with it.
+func road_y_at(local_pos: Vector3) -> float:
+	var cx := int(floor(local_pos.x / ROAD_CELL))
+	var cz := int(floor(local_pos.z / ROAD_CELL))
+	var best := INF
+	var y := 0.0
+	for dz in range(-2, 3):
+		for dx in range(-2, 3):
+			var cell: PackedFloat32Array = _road_cells.get(Vector2i(cx + dx, cz + dz), PackedFloat32Array())
+			var i := 0
+			while i < cell.size():
+				var ex := local_pos.x - cell[i]
+				var ez := local_pos.z - cell[i + 1]
+				var d := ex * ex + ez * ez
+				if d < best:
+					best = d
+					y = cell[i + 3]
+				i += 4
+	return y
 
 
 func _build_road_index() -> void:
@@ -115,6 +139,7 @@ func _index_curve(curve: Curve3D, half: float) -> void:
 		cell.append(p.x)
 		cell.append(p.z)
 		cell.append(half)
+		cell.append(p.y)
 		_road_cells[key] = cell
 		d += 2.5
 

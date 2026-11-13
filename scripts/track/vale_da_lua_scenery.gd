@@ -77,7 +77,13 @@ func build() -> void:
 	_rivers.clear()
 	for name in RIVERS:
 		_rivers[name] = PackedVector3Array(RIVERS[name])
-	_rivers["spring"] = PackedVector3Array(SPRING)
+	# The spring pours off the overhang above the shortcut ledge: lift its top
+	# with the ledge's height (the road is sloped, GDD 8.6e).
+	var spring := PackedVector3Array(SPRING)
+	var ledge := road_y_at(OVERHANG_CENTRE)
+	for i in spring.size() - 1:
+		spring[i].y += ledge
+	_rivers["spring"] = spring
 	_index_rivers()
 	_noise = SceneryTerrain.make_noise(random_seed)
 	await step(0.05)
@@ -153,7 +159,8 @@ static func _water_y(y0: float, y1: float, t: float) -> float:
 	return lerpf(y0, y1, t)
 
 
-## Terrain carve: river slots, and the rock dome above the shortcut.
+## Terrain carve: river slots (their beds 9 m below the water, wherever the
+## land round them stands), and the rock dome above the shortcut.
 func _carve(x: float, z: float) -> float:
 	var c := 0.0
 	var r := river_at(x, z)
@@ -162,7 +169,8 @@ func _carve(x: float, z: float) -> float:
 		var w: float = r[2]
 		var water: float = r[1]
 		var t := 1.0 - smoothstep(w * 0.72, w * 1.0, d)
-		c = -(absf(water) + 9.0) * t
+		var land := SceneryTerrain.height_at(self, _noise, TERRAIN_AMPLITUDE, x, z)
+		c = (minf(land, water - 9.0) - land) * t
 	var dd := Vector2(x - DOME.x, z - DOME.z).length()
 	if dd < DOME_RADIUS:
 		var u := dd / DOME_RADIUS
@@ -352,7 +360,8 @@ func _count_crossings() -> void:
 			var on_road := edge_distance(Vector3(p.x, 0, p.z)) < 0.0
 			if on_road and not inside:
 				river_crossings += 1
-				crossing_depths.append(p.y)
+				# Depth of the water below the road there.
+				crossing_depths.append(p.y - road_y_at(p))
 			inside = on_road
 
 
@@ -369,7 +378,7 @@ func _rock_bridges() -> void:
 			var p: Vector3 = smp[0]
 			if edge_distance(Vector3(p.x, 0, p.z)) > 0.0:
 				continue
-			var off := track.curve.get_closest_offset(Vector3(p.x, 0, p.z))
+			var off := track.curve.get_closest_offset(Vector3(p.x, road_y_at(p), p.z))
 			var d := -w - 6.0
 			while d <= w + 6.0:
 				var f := at(track.wrap_offset(off + d))
@@ -394,17 +403,19 @@ func _shelf_rocks() -> void:
 ## The rock overhang over the shortcut ledge, where the stream pours off.
 func _overhang() -> void:
 	var c := OVERHANG_CENTRE
+	# Over the ledge, whatever height the shortcut is at there.
+	var top := road_y_at(c) + OVERHANG_Y
 	var x := -OVERHANG_HALF.x
 	while x <= OVERHANG_HALF.x:
 		var z := -OVERHANG_HALF.y
 		while z <= OVERHANG_HALF.y:
-			_place_boulder(Vector3(c.x + x, OVERHANG_Y + 0.8 + rng.randf_range(-0.3, 0.3), c.z + z),
+			_place_boulder(Vector3(c.x + x, top + 0.8 + rng.randf_range(-0.3, 0.3), c.z + z),
 					Vector3(5.5, 1.6, 5.5), true)
 			z += 6.0
 		x += 6.0
 	# Pillars of rock on the dome side holding it up.
 	for z in [-14.0, 0.0, 14.0]:
-		var base := Vector3(c.x + OVERHANG_HALF.x - 2.0, 0.0, c.z + z)
+		var base := Vector3(c.x + OVERHANG_HALF.x - 2.0, road_y_at(c), c.z + z)
 		_place_boulder(base + Vector3(0, 4.5, 0), Vector3(3.5, 5.5, 3.5), true)
 
 
@@ -556,7 +567,7 @@ func _forest() -> void:
 		if edge_distance(Vector3(x, 0, z)) < 12.0 or not river_at(x, z).is_empty():
 			continue
 		var y := ground_y(x, z)
-		if y < -0.5:
+		if y < road_y_at(Vector3(x, 0, z)) * SceneryTerrain.SLOPED_FOLLOW - 0.5:
 			continue
 		var kind := "rainforest" if rng.randf() < 0.7 else "palm"
 		var s := rng.randf_range(0.7, 1.15)
@@ -590,7 +601,8 @@ func _river_zone() -> void:
 		for s in range(0, samples.size(), 2):
 			var p: Vector3 = samples[s][0]
 			var dir: Vector3 = samples[s][1]
-			if p.y + 2.5 > -1.5:
+			# Water close to the road's level is a shallow ford, not a hazard.
+			if p.y + 2.5 > road_y_at(p) - 1.5:
 				continue
 			var box := zone.add_box(p + Vector3(0, 0.5, 0), Vector3(w * 2.0, 4.0, 7.0))
 			box.basis = Basis(Vector3.UP, atan2(dir.x, dir.z))

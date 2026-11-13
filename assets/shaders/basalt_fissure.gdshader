@@ -1,36 +1,46 @@
 shader_type spatial;
-// Nyiragongo crater ground (GDD 8.6h). Procedural, no textures: dark basalt
-// with a rough mottle, lighter ashy dust on the flats, banded cliff faces,
-// and molten fissures (cellular cracks) that glow orange. The fissures are
-// everywhere but get denser and hotter toward the lava lake, and the whole
-// crater takes a warm under-glow from the lake. All of it is emission, so it
-// reads the same in Compatibility (no light limits). Works in model space,
-// which for track scenery is track-local metres.
+// Nyiragongo crater rock (GDD 8.6h). Two Poly Haven rock sets mapped
+// triplanar in world space (track-local metres; tracks sit at the origin):
+// stratified, fractured basalt on steep faces, broken rock and grit on the
+// flats, darkened toward black. Ash settles in hollows. Fine molten
+// fissures glow on the flats, denser and hotter toward the lava lake, and
+// the lake throws a warm glow up the walls. Emission carries the glow, so
+// it reads in Compatibility too (no light limits). Normal and roughness
+// maps are optional (the web build leaves them out).
 render_mode cull_disabled;
 
-uniform vec4 rock_dark : source_color = vec4(0.035, 0.032, 0.034, 1.0);
-uniform vec4 rock_light : source_color = vec4(0.13, 0.115, 0.11, 1.0);
-uniform vec4 ash_color : source_color = vec4(0.24, 0.22, 0.21, 1.0);
+uniform sampler2D cliff_albedo : source_color, filter_linear_mipmap_anisotropic, repeat_enable;
+uniform sampler2D cliff_normal : hint_normal, filter_linear_mipmap_anisotropic, repeat_enable;
+uniform sampler2D ground_albedo : source_color, filter_linear_mipmap_anisotropic, repeat_enable;
+uniform sampler2D ground_normal : hint_normal, filter_linear_mipmap_anisotropic, repeat_enable;
+// Metres per texture tile.
+uniform float cliff_tile = 7.0;
+uniform float ground_tile = 4.0;
+// Multiplies the textures toward basalt black.
+uniform vec4 cliff_tint : source_color = vec4(0.42, 0.4, 0.42, 1.0);
+uniform vec4 ground_tint : source_color = vec4(0.3, 0.28, 0.28, 1.0);
+uniform vec4 ash_color : source_color = vec4(0.36, 0.34, 0.33, 1.0);
+uniform float ash_amount = 0.45;
+uniform float normal_strength = 1.0;
 uniform vec4 molten_color : source_color = vec4(1.0, 0.32, 0.04, 1.0);
 uniform vec4 hot_color : source_color = vec4(1.0, 0.78, 0.25, 1.0);
-// Lava lake: xz centre (track-local) and radius (m).
+// Lava lake: centre (track-local) and radius (m).
 uniform vec3 lake_centre = vec3(0.0, -68.0, -20.0);
 uniform float lake_radius = 165.0;
 // How far from the lake edge the fissures fade to their background level (m).
-uniform float molten_reach = 260.0;
-// Fissure density far from the lake (0-1) and its glow strength.
-uniform float background_molten = 0.25;
-uniform float glow = 3.2;
+uniform float molten_reach = 240.0;
+uniform float background_molten = 0.18;
+uniform float glow = 3.0;
 // Warm light thrown up by the lake onto nearby rock.
-uniform float lake_glow = 0.35;
+uniform float lake_glow = 0.3;
 uniform float lake_glow_reach = 220.0;
 
-varying vec3 local_pos;
-varying vec3 local_normal;
+varying vec3 world_pos;
+varying vec3 world_normal;
 
 void vertex() {
-	local_pos = VERTEX;
-	local_normal = NORMAL;
+	world_pos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+	world_normal = normalize((MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz);
 }
 
 float hash1(vec2 p) {
@@ -84,39 +94,67 @@ float cell_edge(vec2 p) {
 	return f2 - f1;
 }
 
-void fragment() {
-	vec2 xz = local_pos.xz;
-	float steep = 1.0 - clamp(local_normal.y, 0.0, 1.0);
-	// Rock: mottled basalt; ash settles on the flats; cliffs show strata.
-	float m = fbm(xz * 0.08);
-	float grain = vnoise(xz * 1.3);
-	vec3 rock = mix(rock_dark.rgb, rock_light.rgb, m * 0.8 + grain * 0.25);
-	float strata = smoothstep(0.35, 0.65, vnoise(vec2(local_pos.y * 0.6, (xz.x + xz.y) * 0.02)));
-	rock = mix(rock, rock_light.rgb * mix(0.7, 1.15, strata), smoothstep(0.35, 0.8, steep) * 0.6);
-	float ash = smoothstep(0.45, 0.75, fbm(xz * 0.03 + 11.0)) * (1.0 - smoothstep(0.15, 0.45, steep));
-	rock = mix(rock, ash_color.rgb, ash * 0.55);
+vec3 triplanar(sampler2D tex, vec3 p, vec3 w, float tile) {
+	return texture(tex, p.zy / tile).rgb * w.x + texture(tex, p.xz / tile).rgb * w.y + texture(tex, p.xy / tile).rgb * w.z;
+}
 
-	// Molten fissures: two scales of cracks, masked into patches.
+// Whiteout-blended triplanar normal (world space).
+vec3 triplanar_normal(sampler2D tex, vec3 p, vec3 n, vec3 w, float tile) {
+	vec3 tx = texture(tex, p.zy / tile).rgb * 2.0 - 1.0;
+	vec3 ty = texture(tex, p.xz / tile).rgb * 2.0 - 1.0;
+	vec3 tz = texture(tex, p.xy / tile).rgb * 2.0 - 1.0;
+	tx.xy *= normal_strength;
+	ty.xy *= normal_strength;
+	tz.xy *= normal_strength;
+	tx = vec3(tx.xy + n.zy, abs(tx.z) * n.x);
+	ty = vec3(ty.xy + n.xz, abs(ty.z) * n.y);
+	tz = vec3(tz.xy + n.xy, abs(tz.z) * n.z);
+	return normalize(tx.zyx * w.x + ty.xzy * w.y + tz.xyz * w.z);
+}
+
+void fragment() {
+	vec3 n = normalize(world_normal);
+	vec3 w = pow(abs(n), vec3(4.0));
+	w /= (w.x + w.y + w.z);
+	float steep = 1.0 - clamp(n.y, 0.0, 1.0);
+	float cliffness = smoothstep(0.25, 0.6, steep);
+	vec2 xz = world_pos.xz;
+
+	vec3 cliff = triplanar(cliff_albedo, world_pos, w, cliff_tile) * cliff_tint.rgb;
+	vec3 ground = triplanar(ground_albedo, world_pos, w, ground_tile) * ground_tint.rgb;
+	// Large-scale variation so tiling doesn't show.
+	float m = fbm(xz * 0.015);
+	ground *= 0.75 + m * 0.5;
+	cliff *= 0.8 + fbm(vec2(world_pos.y * 0.15, (xz.x + xz.y) * 0.01)) * 0.4;
+	vec3 rock = mix(ground, cliff, cliffness);
+	// Ash drifts in the hollows and on ledges.
+	float ash = smoothstep(0.5, 0.8, fbm(xz * 0.04 + 11.0)) * (1.0 - cliffness) * ash_amount;
+	rock = mix(rock, ash_color.rgb, ash);
+
+	vec3 nc = triplanar_normal(cliff_normal, world_pos, n, w, cliff_tile);
+	vec3 ng = triplanar_normal(ground_normal, world_pos, n, w, ground_tile);
+	vec3 nw = normalize(mix(ng, nc, cliffness));
+	NORMAL = normalize((VIEW_MATRIX * vec4(nw, 0.0)).xyz);
+
+	// Molten fissures: fine cracks on the flats, in patches, more near the lake.
 	float to_lake = length(xz - lake_centre.xz) - lake_radius;
 	float near_lake = 1.0 - smoothstep(0.0, molten_reach, to_lake);
 	float amount = mix(background_molten, 1.0, near_lake);
-	float patch = smoothstep(0.62 - amount * 0.45, 0.78 - amount * 0.3, fbm(xz * 0.012 + vec2(4.0, 1.0)));
-	float big = cell_edge(xz * 0.07 + fbm(xz * 0.05) * 0.8);
-	float small = cell_edge(xz * 0.22 + fbm(xz * 0.11 + 3.0) * 0.6);
-	float crack = (1.0 - smoothstep(0.02, 0.09, big)) + (1.0 - smoothstep(0.015, 0.06, small)) * 0.55;
-	crack *= patch * (1.0 - smoothstep(0.5, 0.95, steep) * 0.5);
-	// A slow pulse, out of step from place to place.
+	float patch = smoothstep(0.66 - amount * 0.4, 0.8 - amount * 0.25, fbm(xz * 0.02 + vec2(4.0, 1.0)));
+	float big = cell_edge(xz * 0.22 + fbm(xz * 0.1) * 0.9);
+	float small = cell_edge(xz * 0.6 + fbm(xz * 0.3 + 3.0) * 0.7);
+	float crack = (1.0 - smoothstep(0.015, 0.05, big)) + (1.0 - smoothstep(0.01, 0.04, small)) * 0.5;
+	crack *= patch * (1.0 - cliffness);
 	float pulse = 0.75 + 0.25 * sin(TIME * 0.9 + fbm(xz * 0.02) * 12.0);
 	float heat = clamp(crack, 0.0, 1.0);
-	vec3 molten = mix(molten_color.rgb, hot_color.rgb, smoothstep(0.75, 1.0, heat) * near_lake);
+	vec3 molten = mix(molten_color.rgb, hot_color.rgb, smoothstep(0.7, 1.0, heat) * near_lake);
 
-	ALBEDO = mix(rock, molten * 0.4, heat * 0.6);
-	ROUGHNESS = mix(0.92, 0.6, heat);
-	SPECULAR = 0.25;
+	ALBEDO = mix(rock, molten * 0.3, heat * 0.7);
+	ROUGHNESS = mix(0.9, 0.55, heat);
+	SPECULAR = 0.3;
 	vec3 emission = molten * heat * glow * pulse;
-	// Warm under-glow from the lake, strongest low down and facing it.
 	float lit = 1.0 - smoothstep(0.0, lake_glow_reach, to_lake);
-	float low = 1.0 - smoothstep(-70.0, 10.0, local_pos.y);
-	emission += molten_color.rgb * lake_glow * lit * (0.35 + 0.65 * low) * (0.4 + m * 0.6);
+	float low = 1.0 - smoothstep(-70.0, 20.0, world_pos.y);
+	emission += molten_color.rgb * lake_glow * lit * (0.3 + 0.7 * low) * (0.5 + m * 0.5);
 	EMISSION = emission;
 }

@@ -213,7 +213,8 @@ func build_base() -> bool:
 			if (child as TrackShortcut).is_valid():
 				shortcuts.append(child)
 	_build_ground()
-	if elevated:
+	# A sloped skyway drives on the sloped road collider instead of the flat deck.
+	if elevated and not sloped:
 		_build_deck()
 	_build_road()
 	if sloped:
@@ -820,7 +821,8 @@ func _build_curbs(segments: Array) -> MultiMeshInstance3D:
 		var p0: Vector3 = seg[0]
 		var p1: Vector3 = seg[1]
 		var dir := p1 - p0
-		dir.y = 0.0
+		if not sloped:
+			dir.y = 0.0
 		if dir.length() < 0.01:
 			continue
 		var mid := (p0 + p1) * 0.5 + Vector3(0.0, curb_height * 0.5, 0.0)
@@ -937,7 +939,9 @@ func _build_road_collider() -> void:
 	body.physics_material_override = physics_material
 	var chunk := 20
 	var main := _samples()
-	var reach := road_width * 0.5 + barrier_thickness + ROAD_APRON
+	# No apron on a skyway: past the walls (and the open edges) is a drop.
+	var apron := 0.0 if elevated else ROAD_APRON
+	var reach := road_width * 0.5 + barrier_thickness + apron
 	var faces := PackedVector3Array()
 	for i in main.size():
 		_collider_quad(faces, main[i], main[(i + 1) % main.size()], reach)
@@ -946,7 +950,7 @@ func _build_road_collider() -> void:
 			faces = PackedVector3Array()
 	for sc in shortcuts:
 		var ss := _shortcut_samples(sc)
-		var sreach := sc.road_width * 0.5 + barrier_thickness + ROAD_APRON
+		var sreach := sc.road_width * 0.5 + barrier_thickness + apron
 		for i in ss.size() - 1:
 			if sc.in_gap(ss[i].offset) or sc.in_gap(ss[i + 1].offset):
 				_add_collider_chunk(body, faces)

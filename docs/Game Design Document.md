@@ -731,7 +731,7 @@ A night race along a glass skyway high above the jungle, through the Supertree G
 
 **Identity:** Height and exposure. It is the only track in the air: the road is a narrow glass deck 24 m above the treetops and the bay, and in places there is nothing at the edge.
 
-Built at about 3.4 km with a 12 m road and winding, linked corners (45–90 m radius). The deck is clear glass framed in wood, with wooden beams under the glass, wooden strips across it, and glass side walls topped by amber-lit wooden handrails. Steel pylons hold it up. Below is dense rainforest with palms; a few tall trees break through near the deck. The Supertrees (26–52 m) slowly change colour together, a wave of purple, cyan, green and magenta rolling across the grove. Marina Bay Sands and the city skyline glow beyond. The road is flat (the deck stays level); landmarks in driving order:
+Built at about 3.4 km with a 12 m road and winding, linked corners (45–90 m radius). The deck is clear glass framed in wood, with wooden beams under the glass, wooden strips across it, and glass side walls topped by amber-lit wooden handrails. Steel pylons hold it up. Below is dense rainforest with palms; a few tall trees break through near the deck. The Supertrees (26–52 m) slowly change colour together, a wave of purple, cyan, green and magenta rolling across the grove. Marina Bay Sands and the city skyline glow beyond. The skyway is sloped: it swoops between about 14 m above the jungle past the Bayfront and 38 m round the Great Wrap's tallest Supertree, with gentle 7° banking in the long sweepers; the pylons, Supertrees, dome doorways and the Cloud Forest walk all follow its height. Landmarks in driving order:
 - the Supertree Grove: the start, with the grid between two Supertrees under a GARDENS BY THE BAY sign;
 - the Skyway S-bends: weaving between Supertrees, Marina Bay Sands ahead (boost pad);
 - the Great Wrap: a hairpin round the tallest Supertree (boost ring);
@@ -769,6 +769,8 @@ The shortcut is the **Fern Wing**: through a smashable glass panel into a narrow
 A race through the Valley of the Moon: smooth grey "moon rock" sculpted by a fast river.
 
 **Identity:** Moving water everywhere, and nerve on the open rock shelves.
+
+The road rolls with the rock: it climbs to about 12 m over the eastern headland (the jump) and the north-west, and drops about 8 m into the deep south gorge, with gentle 5° banking in the sweepers. Every river crossing and creek shelf keeps the water at least 5 m below the road, and the land rises and falls with it.
 
 Built at about 3.1 km with a 13 m road and flowing corners (60–100 m radius) around a river system. The rock is smooth, pale-to-dark grey, with rippled erosion lines, dimples and round potholes, darker and glossier toward the water, with green cerrado forest on top. The water moves: a main river and two streams run through slot canyons beside the road. They pass under it at four natural rock bridges, 5–14 m below the road, and drop over six waterfalls with white churn and mist at their feet. The road is elevated (§8.7) with barriers most of the way, but two open rock shelves run right along creek canyons: a bad line drops you into the water, and you are put back on the road. Landmarks in driving order:
 - the start straight, over the first rock bridge (boost pad);
@@ -845,7 +847,7 @@ Overdrive flights stay low under the hall's ceiling and the gallery and swing ro
 
 **Location:** Nyiragongo, D.R. Congo
 
-Inside the crater of Nyiragongo at dusk. Black basalt walls are cut by glowing fissures, and the crater floor holds the world's largest lava lake: plates of black crust split by cracks of orange fire. Gas plumes tower over it and drift off downwind, and ash falls the whole lap.
+Inside the crater of Nyiragongo at dusk. Sheer black walls of stratified basalt rise in ledges to a rim about 70 m above the start, which crosses the rim on a low saddle. The rock is real basalt (Poly Haven textures) with fine molten fissures glowing on the flats, hotter toward the lake. The crater floor holds the world's largest lava lake, sunk in a pit below a black ledge: plates of black crust split by cracks of orange fire, with lava fountains bursting at its vents and steam along its edge. Gas plumes tower over it and drift off downwind, ash falls thickly the whole lap, and the dusk haze is brown and lit orange from below. Jagged boulders, scree at the foot of the walls, basalt columns, spatter cones and glowing pools dress the floor.
 
 **Identity:** The first track with real height. The road drops about 60 m from the rim to the lava shelf by two switchback hairpins and climbs back out on a banked curve.
 
@@ -1652,5 +1654,6 @@ Changes after Version 1.0 should be tracked as revisions rather than silently re
 | 6.8 | 2026-11-12 | See-through light beams removed everywhere (they read as UFO lights): under the Catacombs street grates, the Vatnajökull skylights and the Crazy House roof windows, and the sun shafts through the Arashiyama canopy. The grates, holes and windows still light the road (§8.5, §8.6, §8.6a, Crazy House). |
 | 6.9 | 2026-11-12 | Race HUD closer to the reference: the mode / track line is gone; position and lap read "2/8" and "1/3"; the race time reads 00:23.567, with the coins under it in single player (§11.5). |
 | 7.0 | 2026-11-13 | Africa Cup race 2: Fires of Nyiragongo, about 3.2 km inside the volcano's crater at dusk, the first sloped track. A level rim start, two switchback hairpins down the west wall, a sweep round the lava lake with a ramp jump over a lava channel (shortcut), and a 12°-banked climb back out. Lava recovers cars and burns their items. New engine support for sloped and banked roads and for shortcut gaps (§2.2, §8.6h). |
+| 7.1 | 2026-11-13 | Nyiragongo looks more volcanic: sheer stratified basalt walls up to a high rim, real rock textures, fine fissures, a lake pit with lava fountains and steam, jagged rocks and basalt columns, a darker ashier dusk (§8.6h). Gardens by the Bay's skyway and Vale da Lua's road are now sloped and banked (§8.6c, §8.6e); sloped skyways drive on a road collider with no apron, so open edges stay drops. |
 
 **End of Game Design Document — Version 6.9**

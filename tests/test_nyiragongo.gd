@@ -216,8 +216,12 @@ func _test_layout() -> void:
 	var lower := track.curve.get_closest_point(Vector3(-274.0, -30.0, 120.0)).y
 	var g := scenery.ground_y(between.x, between.y)
 	_check(upper - lower > 10.0 and g < upper and g > lower - 6.0, "a stepped wall between the shelves (%.0f, %.0f, %.0f)" % [upper, g, lower])
-	_check(scenery.ground_y(0.0, -20.0) < NyiragongoScenery.LAKE_Y and scenery.ground_y(0.0, 470.0) > 0.0,
-			"the lake floor is under the lava, the rim stands above the road")
+	_check(scenery.ground_y(0.0, -20.0) < NyiragongoScenery.LAKE_Y, "the lake floor is under the lava")
+	var ledge := scenery.ground_y(NyiragongoScenery.LAKE_CENTRE.x + NyiragongoScenery.LAKE_RADIUS + 8.0, NyiragongoScenery.LAKE_CENTRE.y)
+	_check(ledge > NyiragongoScenery.LAKE_Y + 4.0, "the lake lies in a pit below a black ledge (%.1f m down)" % (ledge - NyiragongoScenery.LAKE_Y))
+	var north_rim := scenery.ground_y(0.0, -470.0)
+	_check(north_rim > -10.0, "sheer walls up to a high rim: %.0f m above the lava shelf" % (north_rim + 60.0))
+	_check(scenery.ground_y(0.0, 470.0) > 0.0 and scenery.ground_y(0.0, 470.0) < north_rim, "the start crosses the rim on a lower saddle")
 
 	# Lava: lake and channel recover cars, never on a road; plumes clear of the roads.
 	var zone := scenery.lava_zone
@@ -241,8 +245,11 @@ func _test_layout() -> void:
 		plumes_clear = plumes_clear and scenery.edge_distance(plume.position) > 100.0
 	_check(plumes_clear, "%d plumes over the lake, 100 m+ from any road" % scenery.plumes.size())
 	_check(scenery.ash != null and scenery.lake_mesh != null, "ash in the air and a lava lake")
-	_check(scenery.spatter_cones >= 8 and scenery.pools >= 15 and scenery.boulders >= 150,
+	_check(scenery.spatter_cones >= 8 and scenery.pools >= 15 and scenery.boulders >= 300,
 			"spatter cones, glowing pools and boulders (%d, %d, %d)" % [scenery.spatter_cones, scenery.pools, scenery.boulders])
+	_check(scenery.scree >= 100 and scenery.columns >= 40, "scree under the walls and basalt columns (%d, %d)" % [scenery.scree, scenery.columns])
+	_check(scenery.fountains.size() == NyiragongoScenery.VENTS.size(), "lava fountains at the vents")
+	_check(track.find_children("Rocks_*", "MultiMeshInstance3D", true, false).size() > 0, "jagged rock meshes")
 	_check(scenery.huts >= 3, "tin huts on the rim (%d)" % scenery.huts)
 
 	# Dusk.
