@@ -86,6 +86,9 @@ func for_stats(stats: VehicleStats) -> RacingLine:
 func point_at(offset: float, extra_lateral: float = 0.0) -> Vector3:
 	var lat := clampf(lateral_at(offset) + extra_lateral, -limit, limit)
 	var o := track.wrap_offset(offset)
+	if track.sloped:
+		# On the banked surface (the line's laterals are measured across it).
+		return track.to_global(track.surface_point(o, lat))
 	var right := track.get_tangent_at(o).cross(Vector3.UP).normalized()
 	return track.get_center_at(o) + right * lat
 

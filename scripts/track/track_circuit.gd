@@ -129,6 +129,23 @@ signal checkpoint_crossed(index: int, body: Node3D)
 @export var open_edges: PackedVector3Array = PackedVector3Array()
 @export var curb_height: float = 0.25
 @export var curb_color: Color = Color(0.55, 0.36, 0.2)
+@export_group("Slopes")
+## Opt-in for tracks that climb and fall (GDD 8.6h): the road follows its
+## control points' heights and banking, cars drive on a collider that
+## follows the road surface (the flat slab drops to ground_depth below the
+## lowest road), walls slope and bank with it, and safe transforms tilt with
+## the road. Off by default: flat tracks are built exactly as before.
+@export var sloped: bool = false:
+	set(value):
+		sloped = value
+		_queue_rebuild()
+## Banked stretches of the main loop: (from offset, to offset, degrees). The
+## road rolls about its direction of travel; positive degrees put the right
+## edge lower. Each eases in and out over BANK_EASE metres. Sloped tracks only.
+@export var banking: PackedVector3Array = PackedVector3Array():
+	set(value):
+		banking = value
+		_queue_rebuild()
 @export_group("Road columns")
 ## Solid columns standing on the road (a hypostyle hall), each
 ## Vector3(x, z, half): track-local centre x and z, then half the square's
@@ -199,6 +216,8 @@ func build_base() -> bool:
 	if elevated:
 		_build_deck()
 	_build_road()
+	if sloped:
+		_build_road_collider()
 	_build_barriers()
 	_build_start_gantry()
 	_build_lights()
@@ -298,15 +317,105 @@ func get_lateral_distance(world_pos: Vector3) -> float:
 
 
 func is_on_road(world_pos: Vector3) -> bool:
-	return get_lateral_distance(world_pos) <= road_width * 0.5
+	if get_lateral_distance(world_pos) > road_width * 0.5:
+		return false
+	# Over a shortcut's jump gap there's no road.
+	var local := to_local(world_pos)
+	for sc in shortcuts:
+		if not sc.gaps.is_empty() and sc.lateral_distance(local) <= sc.road_width * 0.5 \
+				and _main_lateral(local) > road_width * 0.5 and sc.in_gap(sc.local_offset(local)):
+			return false
+	return true
 
 
-## Upright transform facing the driving direction, lateral metres to the right.
+## Transform facing the driving direction, lateral metres to the right and
+## `height` above the road. Upright on flat tracks; on a sloped track it sits
+## on the real (pitched, banked) surface and tilts with the road.
 func get_safe_transform(offset: float, lateral: float = 0.0, height: float = 0.9) -> Transform3D:
+	if sloped:
+		var basis := get_road_basis(offset)
+		return Transform3D(basis, to_global(surface_point(offset, lateral)) + Vector3.UP * height)
 	var tangent := get_tangent_at(offset)
 	var right := tangent.cross(Vector3.UP).normalized()
 	var pos := get_center_at(offset) + right * lateral + Vector3.UP * height
 	return Transform3D(Basis.looking_at(tangent, Vector3.UP), pos)
+
+
+# --- Slopes and banking ------------------------------------------------------
+
+const BANK_EASE := 30.0
+## How far the sloped road's collider reaches past the walls (m).
+const ROAD_APRON := 5.0
+
+
+## Bank angle (radians, positive = right edge lower) at a main-loop offset.
+func bank_at(offset: float) -> float:
+	if not sloped or banking.is_empty() or length <= 0.0:
+		return 0.0
+	var o := wrap_offset(offset)
+	var total := 0.0
+	for b in banking:
+		var span := fposmod(b.y - b.x, length)
+		var into := fposmod(o - b.x, length)
+		if into > span:
+			continue
+		var ramp := minf(span * 0.5, BANK_EASE)
+		var w := smoothstep(0.0, ramp, into) * smoothstep(0.0, ramp, span - into)
+		total += deg_to_rad(b.z) * w
+	return total
+
+
+## Direction of travel along the main loop, pitch included (track local).
+func get_tangent_3d(offset: float) -> Vector3:
+	var a := curve.sample_baked(wrap_offset(offset - 1.0))
+	var b := curve.sample_baked(wrap_offset(offset + 1.0))
+	return (b - a).normalized()
+
+
+## Local road frame at an offset: x = right (across the banked surface),
+## y = surface up, -z = forward (pitched).
+func road_frame(offset: float) -> Basis:
+	var flat := Vector3(0, 0, -1)
+	var a := curve.sample_baked(wrap_offset(offset - 1.0))
+	var b := curve.sample_baked(wrap_offset(offset + 1.0))
+	var d := Vector3(b.x - a.x, 0.0, b.z - a.z)
+	if d.length_squared() > 0.000001:
+		flat = d.normalized()
+	if not sloped:
+		var r0 := flat.cross(Vector3.UP).normalized()
+		return Basis(r0, Vector3.UP, -flat)
+	var fwd := (b - a).normalized() if (b - a).length_squared() > 0.000001 else flat
+	var bank := bank_at(offset)
+	var right := flat.cross(Vector3.UP).normalized() * cos(bank) - Vector3.UP * sin(bank)
+	right = (right - fwd * right.dot(fwd)).normalized()
+	var up := right.cross(fwd).normalized()
+	return Basis(right, up, -fwd)
+
+
+## road_frame() in world space.
+func get_road_basis(offset: float) -> Basis:
+	return (global_transform.basis * road_frame(offset)).orthonormalized()
+
+
+## A point on the road surface (track local), lateral metres to the right.
+func surface_point(offset: float, lateral: float = 0.0) -> Vector3:
+	return curve.sample_baked(wrap_offset(offset)) + road_frame(offset).x * lateral
+
+
+## Height (world y) of the nearest road centre (main loop or shortcut, by
+## horizontal distance). VehicleRecovery measures "out of bounds" from it on
+## sloped tracks.
+func road_floor_y(world_pos: Vector3) -> float:
+	var local := to_local(world_pos)
+	var best := curve.get_closest_point(local)
+	var best_d := Vector2(local.x - best.x, local.z - best.z).length()
+	for sc in shortcuts:
+		var q := sc.curve.get_closest_point(local)
+		var d := Vector2(local.x - q.x, local.z - q.z).length()
+		if d < best_d:
+			best_d = d
+			best = q
+	return to_global(best).y
 
 
 # --- Road columns ----------------------------------------------------------
@@ -468,7 +577,12 @@ func _samples() -> Array[Dictionary]:
 		var b := curve.sample_baked(wrap_offset(offset + 1.0))
 		var tangent := Vector3(b.x - a.x, 0.0, b.z - a.z).normalized()
 		var right := tangent.cross(Vector3.UP).normalized()
-		result.append({"offset": offset, "center": center, "tangent": tangent, "right": right})
+		var up := Vector3.UP
+		if sloped:
+			var frame := road_frame(offset)
+			right = frame.x
+			up = frame.y
+		result.append({"offset": offset, "center": center, "tangent": tangent, "right": right, "up": up})
 	return result
 
 
@@ -510,6 +624,11 @@ func _build_ground() -> void:
 	var extent := (hi - lo) + Vector2.ONE * ground_margin * 2.0
 
 	var floor_y := -ground_depth if elevated else 0.0
+	if sloped:
+		var lowest := INF
+		for p in points:
+			lowest = minf(lowest, p.y)
+		floor_y = lowest - ground_depth
 	var body := StaticBody3D.new()
 	body.collision_layer = 1
 	body.collision_mask = 0
@@ -533,13 +652,14 @@ func _build_ground() -> void:
 
 ## Adds a flat strip quad between lateral offsets [inner, outer] for a sample pair.
 func _strip_quad(st: SurfaceTool, s0: Dictionary, s1: Dictionary, inner: float, outer: float, y: float) -> void:
-	var lift := Vector3(0.0, y, 0.0)
-	var a: Vector3 = s0.center + s0.right * inner + lift
-	var b: Vector3 = s0.center + s0.right * outer + lift
-	var c: Vector3 = s1.center + s1.right * outer + lift
-	var d: Vector3 = s1.center + s1.right * inner + lift
+	var up0: Vector3 = s0.get("up", Vector3.UP)
+	var up1: Vector3 = s1.get("up", Vector3.UP)
+	var a: Vector3 = s0.center + s0.right * inner + up0 * y
+	var b: Vector3 = s0.center + s0.right * outer + up0 * y
+	var c: Vector3 = s1.center + s1.right * outer + up1 * y
+	var d: Vector3 = s1.center + s1.right * inner + up1 * y
 	for v in [a, b, c, a, c, d]:
-		st.set_normal(Vector3.UP)
+		st.set_normal(up0 if v == a or v == b else up1)
 		st.add_vertex(v)
 
 
@@ -569,6 +689,8 @@ func _build_road() -> void:
 		var ss := _shortcut_samples(sc)
 		var sh := sc.road_width * 0.5
 		for i in ss.size() - 1:
+			if sc.in_gap(ss[i].offset) or sc.in_gap(ss[i + 1].offset):
+				continue
 			_strip_quad(road, ss[i], ss[i + 1], -sh, sh, 0.03)
 			_strip_quad(edges, ss[i], ss[i + 1], -sh, -sh + 0.3, 0.05)
 			_strip_quad(edges, ss[i], ss[i + 1], sh - 0.3, sh, 0.05)
@@ -620,7 +742,8 @@ func _build_barriers() -> void:
 			if _in_open_edge(open_edges, s0.offset, side, length):
 				curbs.append([p0, p1])
 				continue
-			_add_wall(body, p0, p1, walls, lengths, left if side < 0.0 else right, left_lengths if side < 0.0 else right_lengths)
+			_add_wall(body, p0, p1, walls, lengths, left if side < 0.0 else right, left_lengths if side < 0.0 else right_lengths,
+					((s0.up as Vector3) + (s1.up as Vector3)).normalized())
 	# Shortcuts: walls are left out inside the main road (the junctions).
 	for sc in shortcuts:
 		var ss := _shortcut_samples(sc)
@@ -635,7 +758,10 @@ func _build_barriers() -> void:
 				if _in_open_edge(sc.open_edges, ss[i].offset, side, 0.0):
 					curbs.append([p0, p1])
 					continue
-				_add_wall(body, p0, p1, walls, lengths, left if side < 0.0 else right, left_lengths if side < 0.0 else right_lengths)
+				if sc.in_gap(ss[i].offset) or sc.in_gap(ss[i + 1].offset):
+					continue
+				_add_wall(body, p0, p1, walls, lengths, left if side < 0.0 else right, left_lengths if side < 0.0 else right_lengths,
+						((ss[i].up as Vector3) + (ss[i + 1].up as Vector3)).normalized())
 
 	var wall_mesh := BoxMesh.new()
 	wall_mesh.size = Vector3(barrier_thickness, barrier_height, 1.0)
@@ -648,10 +774,10 @@ func _build_barriers() -> void:
 	var strip_up := Vector3(0.0, barrier_height * 0.5 + 0.06, 0.0)
 	var lx: Array[Transform3D] = []
 	for xf in left:
-		lx.append(xf.translated(strip_up))
+		lx.append(xf.translated_local(strip_up) if sloped else xf.translated(strip_up))
 	var rx: Array[Transform3D] = []
 	for xf in right:
-		rx.append(xf.translated(strip_up))
+		rx.append(xf.translated_local(strip_up) if sloped else xf.translated(strip_up))
 	var left_strip := _multimesh(strip_mesh, _material(neon_left_color, neon_energy), lx, left_lengths)
 	left_strip.name = "NeonLeft"
 	body.add_child(left_strip)
@@ -742,14 +868,16 @@ func _add_deck_box(body: StaticBody3D, p0: Vector3, p1: Vector3, width: float) -
 
 
 func _add_wall(body: StaticBody3D, p0: Vector3, p1: Vector3, walls: Array[Transform3D], lengths: Array[float],
-		side_walls: Array[Transform3D], side_lengths: Array[float]) -> void:
+		side_walls: Array[Transform3D], side_lengths: Array[float], up: Vector3 = Vector3.UP) -> void:
 	var dir := p1 - p0
-	dir.y = 0.0
+	if not sloped:
+		dir.y = 0.0
+		up = Vector3.UP
 	var seg_length := dir.length()
 	if seg_length < 0.01:
 		return
-	var mid := (p0 + p1) * 0.5 + Vector3(0.0, barrier_height * 0.5, 0.0)
-	var xf := Transform3D(Basis.looking_at(dir / seg_length, Vector3.UP), mid)
+	var mid := (p0 + p1) * 0.5 + up * (barrier_height * 0.5)
+	var xf := Transform3D(Basis.looking_at(dir / seg_length, up), mid)
 	# Overlap neighbours slightly so outer-curve joints have no gaps.
 	var padded := seg_length + barrier_thickness * 0.6
 	walls.append(xf)
@@ -760,7 +888,8 @@ func _add_wall(body: StaticBody3D, p0: Vector3, p1: Vector3, walls: Array[Transf
 	var box := BoxShape3D.new()
 	box.size = Vector3(barrier_thickness, barrier_collision_height, padded)
 	shape.shape = box
-	shape.transform = xf.translated(Vector3(0.0, (barrier_collision_height - barrier_height) * 0.5, 0.0))
+	var lift := Vector3(0.0, (barrier_collision_height - barrier_height) * 0.5, 0.0)
+	shape.transform = xf.translated_local(lift) if sloped else xf.translated(lift)
 	body.add_child(shape)
 
 
@@ -784,9 +913,72 @@ func _shortcut_samples(sc: TrackShortcut) -> Array[Dictionary]:
 	for i in count:
 		var d := sc.length * float(i) / float(count - 1)
 		var tangent := sc.tangent_at(d)
-		result.append({"offset": d, "center": sc.point_at(d), "tangent": tangent,
-				"right": tangent.cross(Vector3.UP).normalized()})
+		var right := tangent.cross(Vector3.UP).normalized()
+		var up := Vector3.UP
+		if sloped:
+			var fwd := (sc.point_at(d + 1.0) - sc.point_at(d - 1.0))
+			if fwd.length_squared() > 0.000001:
+				up = right.cross(fwd.normalized()).normalized()
+		result.append({"offset": d, "center": sc.point_at(d), "tangent": tangent, "right": right, "up": up})
 	return result
+
+
+## Collider that follows the road surface (sloped tracks): the drivable
+## strip plus an apron past the walls (so the wedge between two roads where
+## a shortcut splits off has a floor, as the flat slab gives flat tracks),
+## main loop and shortcuts (not across shortcut gaps), in chunks of about
+## 60 m so the physics broadphase can cull them.
+func _build_road_collider() -> void:
+	var body := StaticBody3D.new()
+	body.collision_layer = 1
+	body.collision_mask = 0
+	var physics_material := PhysicsMaterial.new()
+	physics_material.friction = 1.0
+	body.physics_material_override = physics_material
+	var chunk := 20
+	var main := _samples()
+	var reach := road_width * 0.5 + barrier_thickness + ROAD_APRON
+	var faces := PackedVector3Array()
+	for i in main.size():
+		_collider_quad(faces, main[i], main[(i + 1) % main.size()], reach)
+		if (i + 1) % chunk == 0 or i == main.size() - 1:
+			_add_collider_chunk(body, faces)
+			faces = PackedVector3Array()
+	for sc in shortcuts:
+		var ss := _shortcut_samples(sc)
+		var sreach := sc.road_width * 0.5 + barrier_thickness + ROAD_APRON
+		for i in ss.size() - 1:
+			if sc.in_gap(ss[i].offset) or sc.in_gap(ss[i + 1].offset):
+				_add_collider_chunk(body, faces)
+				faces = PackedVector3Array()
+				continue
+			_collider_quad(faces, ss[i], ss[i + 1], sreach)
+			if (i + 1) % chunk == 0:
+				_add_collider_chunk(body, faces)
+				faces = PackedVector3Array()
+		_add_collider_chunk(body, faces)
+		faces = PackedVector3Array()
+	# Added last: adding shapes to a body already in the tree rebuilds it each time.
+	_add_generated(body, "RoadSurface")
+
+
+func _collider_quad(faces: PackedVector3Array, s0: Dictionary, s1: Dictionary, reach: float) -> void:
+	var a: Vector3 = s0.center - s0.right * reach
+	var b: Vector3 = s0.center + s0.right * reach
+	var c: Vector3 = s1.center + s1.right * reach
+	var d: Vector3 = s1.center - s1.right * reach
+	faces.append_array(PackedVector3Array([a, c, b, a, d, c]))
+
+
+func _add_collider_chunk(body: StaticBody3D, faces: PackedVector3Array) -> void:
+	if faces.is_empty():
+		return
+	var shape := ConcavePolygonShape3D.new()
+	shape.backface_collision = true
+	shape.set_faces(faces)
+	var node := CollisionShape3D.new()
+	node.shape = shape
+	body.add_child(node)
 
 
 func _multimesh(mesh: Mesh, mat: Material, transforms: Array[Transform3D], z_scales: Array) -> MultiMeshInstance3D:
@@ -960,7 +1152,7 @@ func _build_checkpoints() -> void:
 		var shape := CollisionShape3D.new()
 		var box := BoxShape3D.new()
 		# Wider than the road so a car scraping the barrier still registers.
-		box.size = Vector3(road_width + barrier_thickness * 2.0 + 4.0, 6.0, checkpoint_depth)
+		box.size = Vector3(road_width + barrier_thickness * 2.0 + 4.0, 12.0 if sloped else 6.0, checkpoint_depth)
 		shape.shape = box
 		gate.add_child(shape)
 		holder.add_child(gate)
@@ -979,7 +1171,7 @@ func _build_checkpoints() -> void:
 			copy.transform = Transform3D(Basis.looking_at(sc.tangent_at(d), Vector3.UP), sc.point_at(d) + Vector3(0.0, 2.5, 0.0))
 			var copy_shape := CollisionShape3D.new()
 			var copy_box := BoxShape3D.new()
-			copy_box.size = Vector3(sc.road_width + barrier_thickness * 2.0 + 2.0, 6.0, checkpoint_depth)
+			copy_box.size = Vector3(sc.road_width + barrier_thickness * 2.0 + 2.0, 12.0 if sloped else 6.0, checkpoint_depth)
 			copy_shape.shape = copy_box
 			copy.add_child(copy_shape)
 			holder.add_child(copy)
@@ -1019,6 +1211,8 @@ func _build_corner_signs() -> void:
 		for k in [-1, 0, 1]:
 			var d := clampf((mid + k * 3) * step, i * step, j * step)
 			var sign_xf := get_safe_transform(d, outside * (road_width * 0.5 + barrier_thickness + corner_sign_gap), 0.0)
+			if sloped:
+				sign_xf.basis = Basis.looking_at(get_tangent_at(d), Vector3.UP)
 			sign_xf.basis = sign_xf.basis.rotated(Vector3.UP, PI) # face the oncoming cars
 			var board := Node3D.new()
 			board.transform = sign_xf

@@ -24,6 +24,14 @@ extends Node3D
 ## Stretches with no barrier (on an elevated track you can fall off):
 ## (from distance, to distance along the shortcut, side -1 left / +1 right).
 @export var open_edges: PackedVector3Array = PackedVector3Array()
+## Breaks in the road that cars jump (a ramp before each one): (from, to)
+## distances along the shortcut with no road, collider or barriers, and
+## nothing counts as on-road there (Overdrive won't land in one).
+@export var gaps: PackedVector2Array = PackedVector2Array()
+## AI hold at least this speed (m/s) over the 80 m before each gap and
+## across it, so they clear the jump. 0 = no floor.
+@export var min_speed: float = 0.0
+const GAP_RUN_UP := 80.0
 
 var curve: Curve3D
 var length: float = 0.0
@@ -73,6 +81,14 @@ func is_valid() -> bool:
 ## Distance along the shortcut nearest a point (track local space).
 func local_offset(local_pos: Vector3) -> float:
 	return curve.get_closest_offset(local_pos)
+
+
+## True if a distance along the shortcut falls inside a gap.
+func in_gap(distance: float) -> bool:
+	for g in gaps:
+		if distance > g.x and distance < g.y:
+			return true
+	return false
 
 
 func lateral_distance(local_pos: Vector3) -> float:
@@ -135,3 +151,10 @@ func _compute_speeds() -> void:
 	# Brake ahead of slow parts.
 	for i in range(count - 2, -1, -1):
 		_speeds[i] = minf(_speeds[i], sqrt(_speeds[i + 1] * _speeds[i + 1] + 2.0 * 12.0 * 3.0))
+	# Full commitment into a jump.
+	if min_speed > 0.0:
+		for i in count:
+			var d := float(i) * 3.0
+			for g in gaps:
+				if d > g.x - GAP_RUN_UP and d < g.y + 6.0:
+					_speeds[i] = maxf(_speeds[i], min_speed)

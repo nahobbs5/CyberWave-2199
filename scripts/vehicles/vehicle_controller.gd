@@ -90,6 +90,10 @@ static var debug_physics: bool = false
 var forward_speed: float = 0.0
 var lateral_speed: float = 0.0
 var ground_normal: Vector3 = Vector3.UP
+## The road's up direction under the car on a sloped track (pitch and bank),
+## refreshed a few times a second; world up elsewhere.
+var road_up: Vector3 = Vector3.UP
+var _road_up_timer: float = 0.0
 
 var boost_level: int = 0
 var boost_time_left: float = 0.0
@@ -183,7 +187,25 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	if player_controlled:
 		_read_player_input()
+	_update_road_up(delta)
 	_update_wheel_visuals(delta)
+
+
+func _update_road_up(delta: float) -> void:
+	if recovery == null or recovery.track == null or not recovery.track.sloped:
+		road_up = Vector3.UP
+		return
+	_road_up_timer -= delta
+	if _road_up_timer > 0.0:
+		return
+	_road_up_timer = 0.15
+	var track := recovery.track
+	var pos := global_position
+	# A shortcut has no bank of its own: level across, pitched with its road.
+	if track.get_shortcut_at(pos) != null:
+		road_up = Vector3.UP
+		return
+	road_up = track.get_road_basis(track.curve.get_closest_offset(track.to_local(pos))).y
 
 
 ## True when the driver (player or AI) may steer and accelerate.
@@ -744,7 +766,11 @@ func _apply_upright_assist(angular: Vector3, up: Vector3, dt: float, touching: b
 		strength = stats.ground_upright_strength
 	elif airborne:
 		strength = stats.air_upright_strength
-	var tilt_axis := up.cross(Vector3.UP)
+	# On a sloped track settle onto the road's own up (its pitch and bank),
+	# not world-up, so a banked or steep road isn't fought. (Not the wheels'
+	# ground normal: rays touching a wall would roll the car up it.)
+	var target := road_up if grounded_wheels > 0 else Vector3.UP
+	var tilt_axis := up.cross(target)
 	angular += tilt_axis * strength * dt * 10.0
 	if airborne:
 		# Damp tumbling in the air, but keep yaw.

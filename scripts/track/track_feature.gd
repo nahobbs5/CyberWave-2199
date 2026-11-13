@@ -162,7 +162,14 @@ func _place_at(track: TrackCircuit, along: float, p_lateral: float) -> void:
 	if sc != null and sc.is_valid():
 		var tangent := sc.tangent_at(offset)
 		var right := tangent.cross(Vector3.UP).normalized()
-		xf = Transform3D(Basis.looking_at(tangent, Vector3.UP), sc.point_at(offset) + right * p_lateral)
+		var up := Vector3.UP
+		if track.sloped:
+			# Sit flush on a sloped shortcut: pitch with it.
+			var fwd := sc.point_at(offset + 1.0) - sc.point_at(offset - 1.0)
+			if fwd.length_squared() > 0.000001:
+				tangent = fwd.normalized()
+				up = right.cross(tangent).normalized()
+		xf = Transform3D(Basis.looking_at(tangent, up), sc.point_at(offset) + right * p_lateral)
 	else:
 		var d := offset + along
 		if anchor_point != Vector3.ZERO:

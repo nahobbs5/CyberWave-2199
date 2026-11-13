@@ -153,7 +153,13 @@ func _physics_process(delta: float) -> void:
 			* profile.corner_speed_bias * speed_scale
 	if _shortcut != null and sc_distance + lead > -10.0:
 		var on := clampf(sc_distance + lead, 0.0, _shortcut.length)
-		target_speed = minf(target_speed, _shortcut.speed_at(on) * difficulty.speed_factor * speed_scale)
+		var sc_speed := _shortcut.speed_at(on) * difficulty.speed_factor * speed_scale
+		if not _shortcut.gaps.is_empty() and sc_distance > 0.0:
+			# A jump route: its own speeds only (the main line's corner at the
+			# matching offset must not slow the run-up to the ramp).
+			target_speed = maxf(sc_speed, _shortcut.min_speed if _shortcut.speed_at(on) >= _shortcut.min_speed else 0.0)
+		else:
+			target_speed = minf(target_speed, sc_speed)
 	target_speed = minf(target_speed, traffic["max_speed"])
 	# Far off the line (after a bump or recovery): slow down to rejoin.
 	if absf(angle) > 0.9:

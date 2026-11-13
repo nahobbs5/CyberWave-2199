@@ -36,7 +36,7 @@ enum State { NORMAL, DISINTEGRATING, TELEPORTING, RECONSTRUCTING, PROTECTED }
 
 ## Recovery reasons that cost the car its weapons: falling off the track,
 ## and a manual reset (so it can't be used to dodge the penalty).
-const ITEM_LOSS_REASONS: Array[String] = ["out of bounds", "water", "off track", "manual"]
+const ITEM_LOSS_REASONS: Array[String] = ["out of bounds", "water", "lava", "off track", "manual"]
 
 @export var auto_recovery_enabled: bool = true
 @export_group("Sequence")
@@ -63,6 +63,9 @@ const ITEM_LOSS_REASONS: Array[String] = ["out of bounds", "water", "off track",
 @export var no_progress_distance: float = 15.0
 @export_group("Out of bounds")
 @export var kill_height: float = -15.0
+## On a sloped track (TrackCircuit.sloped) "out of bounds" is this far below
+## the nearest road instead of below kill_height.
+@export var fall_depth: float = 15.0
 ## Distance beyond the road edge that counts as out of the playable area.
 ## (The barrier sits just past the road edge, so this means "outside the circuit".)
 @export var off_track_margin: float = 3.0
@@ -270,7 +273,10 @@ func _update_safe_point() -> void:
 
 func _check_automatic(delta: float) -> void:
 	var pos := vehicle.global_position
-	if pos.y < kill_height:
+	var floor_y := kill_height
+	if track.sloped:
+		floor_y = track.road_floor_y(pos) - fall_depth
+	if pos.y < floor_y:
 		request_recovery("out of bounds")
 		return
 

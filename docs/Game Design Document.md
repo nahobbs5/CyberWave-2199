@@ -69,7 +69,7 @@ The race ends for everyone once all but one car have crossed the finish line on 
 
 ## 2.2 Grand Prix
 
-Five cups, each a championship of its tracks raced back to back (three races each; the Africa Cup has one so far). As in Mario Kart, Grand Prix and Versus both pick from the same cup screen: a row of cup cards between gold arrows (each a rounded card in the cup's colours with its white map between gold laurels and its name; the selected one is larger, edged in gold and points down at the panel; a cup locked for Grand Prix is grey with a padlock) above a neon panel that previews the focused cup's races (trophy, name, race count and best finish, then a card per race with a screenshot of the track, its race number, name and location, and in Versus your best time). Opening a cup (click, Enter or A) moves into the panel. In Grand Prix you confirm the cup with START GRAND PRIX (a cup locked for Grand Prix shows "coming soon" and can't be confirmed). In Versus you pick one of its races (§2.1). Back from the panel returns to the badges.
+Five cups, each a championship of its tracks raced back to back (three races each; the Africa Cup has two so far). As in Mario Kart, Grand Prix and Versus both pick from the same cup screen: a row of cup cards between gold arrows (each a rounded card in the cup's colours with its white map between gold laurels and its name; the selected one is larger, edged in gold and points down at the panel; a cup locked for Grand Prix is grey with a padlock) above a neon panel that previews the focused cup's races (trophy, name, race count and best finish, then a card per race with a screenshot of the track, its race number, name and location, and in Versus your best time). Opening a cup (click, Enter or A) moves into the panel. In Grand Prix you confirm the cup with START GRAND PRIX (a cup locked for Grand Prix shows "coming soon" and can't be confirmed). In Versus you pick one of its races (§2.1). Back from the panel returns to the badges.
 
 ### American Cup (trophy: a map of the USA)
 
@@ -110,8 +110,9 @@ All three South America Cup tracks are built, and the cup is open for Grand Prix
 | Race | Track | Location |
 |---|---|---|
 | 1 | Kilwa Kisiwani Ruins | Kilwa Kisiwani, Tanzania |
+| 2 | Fires of Nyiragongo | Nyiragongo, D.R. Congo |
 
-Only race 1 is built so far; more races will be added. Kilwa can be raced in Versus, and the cup stays locked for Grand Prix until its tracks are built.
+Races 1 and 2 are built; race 3 is still to come. Both can be raced in Versus, and the cup stays locked for Grand Prix until all its tracks are built.
 
 The American, Europe and Asia Cups are playable. The Europe Cup was the World Cup; its save id is unchanged, so earlier results still count. The cup-win coin bonus is 100 for a three-race cup, scaled by the number of races (§9.3).
 
@@ -840,6 +841,26 @@ In driving order:
 
 Overdrive flights stay low under the hall's ceiling and the gallery and swing round the columns. Recovery spots, item crates and coins are never placed on a column. No race music yet (§12.1).
 
+## 8.6h Fires of Nyiragongo
+
+**Location:** Nyiragongo, D.R. Congo
+
+Inside the crater of Nyiragongo at dusk. Black basalt walls are cut by glowing fissures, and the crater floor holds the world's largest lava lake: plates of black crust split by cracks of orange fire. Gas plumes tower over it and drift off downwind, and ash falls the whole lap.
+
+**Identity:** The first track with real height. The road drops about 60 m from the rim to the lava shelf by two switchback hairpins and climbs back out on a banked curve.
+
+Built at about 3.2 km on a 15 m road, with no grade steeper than about 9%. The road is dark basalt paving with orange-lit edges and corner chevrons, between rough basalt walls with orange neon tops. In driving order:
+- **Crater rim:** a wide, fast, level start straight along the south rim, past tin shelters and a D.R. Congo flag. The first sweeping right-hander looks down into the crater and reveals the lake.
+- **Switchback descent:** down the west wall on three shelves cut into it, joined by two broad hairpins (right, then left), each with a tight inside line for a drift and an outside line wide enough to pass. The shelves are about 20 m apart in height and never overlap in plan, so you see the racers on the shelf below. The second hairpin turns round a black rock outcrop, and its exit opens up the whole lake and points at the jump.
+- **Lava shelf:** a fast, low sweep round the lake's north side. A lava channel runs from the lake out across the shelf to a glowing vent. The main road swings out round the vent; the shortcut jumps the channel.
+- **Return climb:** a long right-hand curve up the east wall, banked 12°, cresting onto the rim with about 300 m to carry a drift boost to the line.
+
+**Shortcut:** the **Lava channel jump** (12 m) leaves the hairpin's exit straight, takes a ramp and flies an 18 m gap over the channel, saving about 130 m. Miss it and you fall in.
+
+**Lava:** the lake and the channel recover any car that reaches them ("lava": embers, and the car loses its items, as with water). Spatter cones, glowing pools and boulders dress the crater floor, which glows hotter toward the lake. The plumes rise from vents well out in the lake, more than 100 m from any road, so the road edge and the next turn stay readable.
+
+**Sloped roads (engine):** a track can opt in (TrackCircuit `sloped`). Its control points' heights become real climbs and drops, and `banking` ranges roll the road about its direction. Cars drive on a collider that follows the road surface, with a short apron past the walls (the flat ground slab drops far below). Walls slope and bank with the road. Recovery spots, item crates, coins and features sit on the real surface. "Out of bounds" is measured from the nearest road's height. The cars' upright assist settles onto the road's own pitch and bank. A shortcut can have **gaps** (jumps): no road, collider or walls there, nothing counts as on-road (Overdrive won't land in one), and the AI hold a minimum speed into them. Flat tracks are built exactly as before. No race music yet (§12.1).
+
 ## 8.7 Shared Track Features
 
 Tracks may contain:
@@ -888,6 +909,7 @@ The track concept art suggests one signature dynamic event per track. They are r
 | Vale da Lua | Flash Flood: the river rises and floods the low bridges |
 | Choquequirao | Terrace Slide: a terrace wall gives way and rubble narrows a ring |
 | Kilwa Kisiwani Ruins | Falling Masonry: a weakened dome drops rubble between the columns, closing one gap |
+| Fires of Nyiragongo | Lava Surge: the lake overflows down the channel and widens the gap for a lap |
 
 ---
 
@@ -1236,6 +1258,7 @@ One song per screen or track. Moving between menus that share a song doesn't res
 | Vale da Lua | Rise of the Phoenix | restum-anoush |
 | Choquequirao | Epic Victory March for Heroes | DesiFreeMusic |
 | Kilwa Kisiwani Ruins | The Dragon's Lair | vishiv |
+| Fires of Nyiragongo | None yet | — |
 | Test Circuit and Free Drive | The Garden Wakes | stageechoesmusic |
 
 The web build plays smaller 96 kbps .ogg copies (`music/web/`) of every song.
@@ -1628,5 +1651,6 @@ Changes after Version 1.0 should be tracked as revisions rather than silently re
 | 6.7 | 2026-11-12 | Split screen gets the single-player results layout (placement card, neon table, standings page) with player-coloured rows and a line per player (§11.7). A results screen with no podium before it plays alex-morgan's *Background Music*; *Victory* stays with the podium (§12). |
 | 6.8 | 2026-11-12 | See-through light beams removed everywhere (they read as UFO lights): under the Catacombs street grates, the Vatnajökull skylights and the Crazy House roof windows, and the sun shafts through the Arashiyama canopy. The grates, holes and windows still light the road (§8.5, §8.6, §8.6a, Crazy House). |
 | 6.9 | 2026-11-12 | Race HUD closer to the reference: the mode / track line is gone; position and lap read "2/8" and "1/3"; the race time reads 00:23.567, with the coins under it in single player (§11.5). |
+| 7.0 | 2026-11-13 | Africa Cup race 2: Fires of Nyiragongo, about 3.2 km inside the volcano's crater at dusk, the first sloped track. A level rim start, two switchback hairpins down the west wall, a sweep round the lava lake with a ramp jump over a lava channel (shortcut), and a 12°-banked climb back out. Lava recovers cars and burns their items. New engine support for sloped and banked roads and for shortcut gaps (§2.2, §8.6h). |
 
 **End of Game Design Document — Version 6.9**

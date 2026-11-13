@@ -41,6 +41,7 @@ var _shake_time: float = 0.0
 
 
 func _ready() -> void:
+	add_to_group(&"chase_cameras")
 	for profile in [far_chase, close_chase, rear_view]:
 		if profile != null:
 			profiles.append(profile)

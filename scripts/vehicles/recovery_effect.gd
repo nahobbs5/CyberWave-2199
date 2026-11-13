@@ -17,6 +17,7 @@ extends Node3D
 const HOLOGRAM_SHADER := preload("res://assets/shaders/hologram.gdshader")
 const CYAN := Color(0.0, 0.95, 1.0)
 const SPLASH_COLOR := Color(0.75, 0.9, 1.0)
+const EMBER_COLOR := Color(1.0, 0.45, 0.08)
 ## Car-local children that are never hidden (physics and logic).
 const KEEP_VISIBLE := [&"Body", &"RecoveryEffect"]
 
@@ -35,6 +36,8 @@ var _active: bool = false
 var _burst: CPUParticles3D
 var _converge: CPUParticles3D
 var _splash: CPUParticles3D
+## Glowing embers when a car hits lava.
+var _embers: CPUParticles3D
 var _flash: OmniLight3D
 var _flash_tween: Tween
 var _audio: Array[AudioStreamPlayer] = []
@@ -49,6 +52,7 @@ func setup(p_recovery: VehicleRecovery) -> void:
 	_burst = _make_particles(28, 0.45, false)
 	_converge = _make_particles(28, 0.4, true)
 	_splash = _make_splash()
+	_embers = _make_embers()
 	_flash = OmniLight3D.new()
 	_flash.top_level = true
 	_flash.light_color = CYAN
@@ -72,6 +76,9 @@ func _on_state_changed(state: VehicleRecovery.State) -> void:
 			if recovery.last_reason == "water":
 				_emit_at(_splash, vehicle.global_position)
 				_play("splash")
+			elif recovery.last_reason == "lava":
+				_emit_at(_embers, vehicle.global_position)
+				_play("splash") # the same hiss reads as a sizzle
 			_play("warning")
 			_play("breakup")
 		VehicleRecovery.State.TELEPORTING:
@@ -278,6 +285,41 @@ func _make_splash() -> CPUParticles3D:
 	p.initial_velocity_min = 4.0
 	p.initial_velocity_max = 7.0
 	p.gravity = Vector3(0.0, -14.0, 0.0)
+	add_child(p)
+	return p
+
+
+## Lava: a fountain of glowing embers that float up and fade.
+func _make_embers() -> CPUParticles3D:
+	var p := CPUParticles3D.new()
+	p.emitting = false
+	p.one_shot = true
+	p.explosiveness = 0.85
+	p.amount = 40
+	p.lifetime = 1.1
+	p.local_coords = false
+	var spark := SphereMesh.new()
+	spark.radius = 0.07
+	spark.height = 0.14
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.albedo_color = EMBER_COLOR
+	mat.emission_enabled = true
+	mat.emission = EMBER_COLOR
+	mat.emission_energy_multiplier = 4.0
+	spark.material = mat
+	p.mesh = spark
+	p.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
+	p.emission_sphere_radius = 1.4
+	p.direction = Vector3.UP
+	p.spread = 50.0
+	p.initial_velocity_min = 3.0
+	p.initial_velocity_max = 8.0
+	p.gravity = Vector3(0.0, -3.0, 0.0)
+	var fade := Curve.new()
+	fade.add_point(Vector2(0.0, 1.0))
+	fade.add_point(Vector2(1.0, 0.0))
+	p.scale_amount_curve = fade
 	add_child(p)
 	return p
 
