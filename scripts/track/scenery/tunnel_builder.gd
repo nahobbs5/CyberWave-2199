@@ -21,6 +21,9 @@ extends RefCounted
 const STEP := 3.0
 ## Segments across the arch.
 const ARCH_SEGMENTS := 10
+## Vault pieces lower than this over another road are left out (see
+## _low_over_other_road).
+const LOW_OVER_ROAD := 6.0
 const TORCH_COLOR := Color(1.0, 0.55, 0.24)
 const SHAFT_COLOR := Color(0.7, 0.8, 1.0)
 
@@ -123,6 +126,8 @@ func build(from_d: float, to_d: float, opts: Dictionary = {}) -> void:
 			var side := 1.0 if i == 0 else -1.0
 			if is_wall and not (ok[side][k] and ok[side][k + 1]):
 				continue
+			if not is_wall and (_low_over_other_road(f0, a, b, h) or _low_over_other_road(f1, a, b, h)):
+				continue
 			var key := vault_key
 			if is_wall:
 				key = _wall_key(styles[side], wall_key)
@@ -164,7 +169,10 @@ func build(from_d: float, to_d: float, opts: Dictionary = {}) -> void:
 						_prop(f0, side, w, wall_h)
 		if styles[-1.0] == "rock" and styles[1.0] == "rock" and fmod(travelled, bay) < step \
 				and ok[-1.0][k] and ok[1.0][k]:
-			scenery.add_box("wood", Vector3(wl + wr, 0.35, 0.4), f0.translated_local(Vector3((wr - wl) * 0.5, wall_h + 0.1, 0)))
+			# Timber cross-ties, high enough to clear the cars (and jumps): they
+			# meet the vault over the road's edges rather than at the springing.
+			var tie_y := vault_height(wl, wr, wall_h, crown, h) - 0.2
+			scenery.add_box("wood", Vector3(h * 2.0 + 0.6, 0.35, 0.4), f0.translated_local(Vector3(0, tie_y, 0)))
 		# Torches, alternating sides.
 		if torch_every > 0.0 and travelled >= next_torch:
 			if not ok[torch_side][k]:
@@ -298,6 +306,28 @@ func _profile(wl: float, wr: float, wall_h: float, crown: float) -> Array[Vector
 	return out
 
 
+## Where two tunnels meet (a shortcut leaving or joining), a vault strip or
+## rib of one that hangs low over the other's road would cut through the cars
+## (and the chase camera) on it: such pieces are left out (the other
+## tunnel's vault and the junction's ceiling close the roof there). "Low" is
+## under LOW_OVER_ROAD; this includes where the two roads overlap.
+func _low_over_other_road(f: Transform3D, a: Vector2, b: Vector2, _h: float) -> bool:
+	var mid := (a + b) * 0.5
+	if mid.y >= LOW_OVER_ROAD:
+		return false
+	var p := f * Vector3(mid.x, 0.0, 0.0)
+	p.y = 0.0
+	var track := scenery.track
+	if shortcut != null:
+		var q := track.curve.get_closest_point(p)
+		return Vector2(p.x - q.x, p.z - q.z).length() < track.road_width * 0.5 + 0.5
+	for sc in track.shortcuts:
+		var q := sc.curve.get_closest_point(p)
+		if Vector2(p.x - q.x, p.z - q.z).length() < sc.road_width * 0.5 + 0.5:
+			return true
+	return false
+
+
 ## One strip between two profile points, swept from frame f0 to f1, facing the axis.
 func _surface(f0: Transform3D, f1: Transform3D, a: Vector2, b: Vector2, key: String,
 		wl: float, wr: float, wall_h: float) -> void:
@@ -318,6 +348,9 @@ func _rib(f: Transform3D, wl: float, wr: float, wall_h: float, crown: float, key
 		var cur := arch_point(wl - inset, wr - inset, wall_h, crown - inset, PI * i / ARCH_SEGMENTS)
 		var a := f * Vector3(prev.x, prev.y, 0)
 		var b := f * Vector3(cur.x, cur.y, 0)
+		if _low_over_other_road(f, prev, cur, half_width()):
+			prev = cur
+			continue
 		var z := (b - a).normalized()
 		var x := -f.basis.z
 		var y := z.cross(x).normalized()

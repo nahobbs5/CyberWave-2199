@@ -480,7 +480,8 @@ func _flooded_crypt(sc: TrackShortcut) -> void:
 			var s := rng.randf_range(0.4, 1.1)
 			add_box("rock", Vector3(s, s * 0.7, s * 1.2), p.rotated_local(Vector3.UP, rng.randf() * TAU).rotated_local(Vector3.RIGHT, rng.randf_range(-0.4, 0.4)))
 	var hang := tube.frame(rubble - 6.0)
-	add_box("rib", Vector3(0.7, 0.5, 3.4), hang.translated_local(Vector3(2.4, 4.4, 0)).rotated_local(Vector3.FORWARD, 0.7).rotated_local(Vector3.UP, PI * 0.5))
+	# It hangs over the rubble beside the road, clear of the cars and the camera.
+	add_box("rib", Vector3(0.7, 0.5, 3.4), hang.translated_local(Vector3(h + 1.6, 4.6, 0)).rotated_local(Vector3.FORWARD, 0.7).rotated_local(Vector3.UP, PI * 0.5))
 	# Ceiling slabs over the two junctions, so the vaults close up where the tunnels meet.
 	_junction_slab(sc.point_at(28.0), track.curve.sample_baked(track.wrap_offset(sc.start_offset + 28.0)))
 	_junction_slab(sc.point_at(sc.length - 28.0), track.curve.sample_baked(track.wrap_offset(sc.end_offset - 28.0)))

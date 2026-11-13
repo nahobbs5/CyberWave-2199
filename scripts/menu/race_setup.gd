@@ -1,7 +1,8 @@
 class_name RaceSetup
 extends Control
 ## Race setup (GDD 11.3): vehicle (with the license plate on the preview),
-## AI difficulty and race settings. Choices are remembered in the profile.
+## AI difficulty and race settings. Choices last until the app closes (the
+## cup is kept in the profile); each launch starts on the defaults.
 ##   Grand Prix: after picking a cup; Start Grand Prix begins the championship.
 ##   Versus: straight from the main menu (Mario Kart style). Race type
 ##   (Standard or Elimination, always 3 laps), number of races, laps; Next
@@ -17,6 +18,8 @@ const DIFFICULTIES: Array[String] = ["easy", "normal", "hard"]
 const RACE_TYPES: Array[String] = ["Standard", "Elimination"]
 ## Versus: how many races in a set (points add up over the set).
 const RACE_COUNTS: Array[int] = [1, 2, 3, 4, 6, 8, 12, 16]
+## Default Versus set: 3 races (index into RACE_COUNTS).
+const DEFAULT_RACES: int = 2
 
 ## What a mode / race type means, for the setup screens ("NPCs" are the
 ## computer-driven rivals).
@@ -140,29 +143,34 @@ func open_garage() -> void:
 
 
 func _remember() -> void:
+	# Race settings last until the app closes, then go back to the defaults
+	# (GameSession.race_settings). Only the cup is kept in the profile.
+	var settings := GameSession.race_settings
+	settings["difficulty"] = _difficulty.selected
+	settings["laps"] = _laps.selected
+	if mode != RaceConfig.Mode.GRAND_PRIX:
+		settings["race_type"] = 1 if mode == RaceConfig.Mode.ELIMINATION else 0
+	settings["weapons"] = _weapons.button_pressed
+	if not is_grand_prix():
+		settings["races"] = _races.selected
 	var profile := PlayerProfile.get_profile()
 	var setup := profile.last_setup
-	setup["difficulty"] = _difficulty.selected
-	setup["laps"] = _laps.selected
-	if mode != RaceConfig.Mode.GRAND_PRIX:
-		setup["race_type"] = 1 if mode == RaceConfig.Mode.ELIMINATION else 0
-	setup["weapons"] = _weapons.button_pressed
+	for key in ["difficulty", "laps", "race_type", "weapons", "races"]:
+		setup.erase(key)
 	if is_grand_prix():
 		setup["cup"] = cup_path
-	else:
-		setup["races"] = _races.selected
 	profile.last_setup = setup
 	profile.save()
 
 
 func _restore() -> void:
 	var profile := PlayerProfile.get_profile()
-	var setup := profile.last_setup
+	var setup := GameSession.race_settings
 	_difficulty.selected = clampi(int(setup.get("difficulty", 1)), 0, DIFFICULTIES.size() - 1)
 	_laps.selected = clampi(int(setup.get("laps", 2)), 0, 8)
 	_weapons.button_pressed = bool(setup.get("weapons", true))
 	if _races != null:
-		_races.selected = clampi(int(setup.get("races", 0)), 0, RACE_COUNTS.size() - 1)
+		_races.selected = clampi(int(setup.get("races", DEFAULT_RACES)), 0, RACE_COUNTS.size() - 1)
 		_summary.text = summary_text()
 	vehicle_index = VehicleCatalog.index_of(profile.selected_vehicle)
 	select_vehicle(vehicle_index)

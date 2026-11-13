@@ -1,11 +1,11 @@
 {
   "schema": 1,
-  "updated": "2026-11-12",
+  "updated": "2026-11-13",
   "project": {
     "name": "Cyberwave 2199",
-    "pitch": "Retrofuturistic cyberpunk combat kart racing: luxury neon cars, drift boosts, weapons and thirteen real-world circuits, against seven AI rivals or in 2–4 player local split screen.",
+    "pitch": "Retrofuturistic cyberpunk combat kart racing: luxury neon cars, drift boosts, weapons and fourteen real-world circuits, against seven AI rivals or in 2–4 player local split screen.",
     "engine": "Godot 4.7.2 · GDScript · Jolt Physics",
-    "gdd": "v6.9",
+    "gdd": "v7.4",
     "phase": "Phase 6: content and polish (GDD §16)",
     "repo": "https://github.com/nahobbs5/CyberWave-2199",
     "demo": "https://nahobbs5.github.io/CyberWave-2199/web/",
@@ -202,7 +202,7 @@
       "system": "Weapons",
       "current": false,
       "status": "In progress",
-      "summary": "There are 11 data-driven weapons with per-position crate odds. System Override hacks every racer ahead of the user, and the time to recover depends on the victim's position, so racers farther ahead stay hacked longer: 1st 12 s down to 7th 3 s.",
+      "summary": "There are 11 data-driven weapons with crate odds for each position: weak and defensive items at the front, powerful comeback items at the back. System Override hacks every racer ahead of the user, and the time to recover depends on the victim's position, so racers farther ahead stay hacked longer: 1st 12 s down to 7th 3 s.",
       "files": [
         "resources/weapons/*.tres",
         "scripts/combat/weapon_data.gd",
@@ -221,7 +221,7 @@
           "done": true
         },
         {
-          "text": "position_chance per weapon (each position sums to 100); rare items never drop for 1st–2nd",
+          "text": "position_chance per weapon and per position (each sums to 100): Road Spikes 1st–3rd only, Firewalls 1st–5th only, rare items never for 1st–2nd, 7th–8th mostly Overdrive / Override / Triple Nitro (v7.4)",
           "done": true
         },
         {
@@ -239,6 +239,10 @@
         {
           "text": "Weapon SFX with per-clip levels and a master limiter",
           "done": true
+        },
+        {
+          "text": "Find why test_weapons_advanced's System Override top-speed / acceleration checks fail",
+          "done": false
         },
         {
           "text": "Human playtest of Override durations from the leader's seat",
@@ -262,7 +266,7 @@
         "also": "test_recovery_items.gd, test_weapon_sfx.gd, test_phase3.gd",
         "manual": "Versus on Vegas, Items on, start 8th. Fire a System Override from 7th: every car ahead shows red arcs, and the effects timer reads longer the farther ahead that car is (leader 12 s). A repeat Override does nothing."
       },
-      "blockers": "test_phase3 full-race gate check fails (it failed before the latest work; cause not checked).",
+      "blockers": "test_phase3 full-race gate check fails. It fails with the old odds too, so the v7.4 rebalance didn't cause it; the cause hasn't been checked. test_weapons_advanced: 2 System Override speed / acceleration checks also fail, with the old odds as well.",
       "notes": "Override durations are 3× the original spec (your call, GDD v5.1). The 8th-place value (1.5 s) never applies because nobody is behind 8th. Weapons stay usable while hacked.",
       "open_decisions": "12 s for the leader: keep or trim?\nBuild any of the 5 remaining GDD weapons, or drop them from §6.3?\nAI tends to spend Firewalls pre-emptively: fix or accept?",
       "next_steps": "Play 3 Versus races leading, and 3 from the back, then note how often Override decides the race."
@@ -287,7 +291,7 @@
       ],
       "steps": [
         {
-          "text": "13 tracks with their own WorldEnvironment (sky, fog, light)",
+          "text": "14 tracks (plus the Test Circuit) with their own WorldEnvironment (sky, fog, light)",
           "done": true
         },
         {
@@ -325,6 +329,18 @@
         {
           "text": "Fix the Arashiyama shortcut test failures",
           "done": false
+        },
+        {
+          "text": "Fires of Nyiragongo: sloped crater track with lava, basalt walls and a lava-channel jump (v7.0–7.1)",
+          "done": true
+        },
+        {
+          "text": "Sloped and banked roads on Gardens by the Bay and Vale da Lua (v7.1–7.2)",
+          "done": true
+        },
+        {
+          "text": "Poly Haven textures on every track (v7.2)",
+          "done": true
         },
         {
           "text": "Correct GDD §12.1: Kilwa now has music (The Dragon's Lair)",
@@ -391,6 +407,10 @@
         },
         {
           "text": "Split screen uses the single-player results layout with player-coloured rows (v6.7)",
+          "done": true
+        },
+        {
+          "text": "Race setup defaults: Standard, 3 races, 3 laps, Normal, items on; Multiplayer the same with NPCs on; choices last until the game closes (v7.4)",
           "done": true
         },
         {
@@ -524,6 +544,10 @@
           "done": true
         },
         {
+          "text": "Controller vibration on boosts, tricks, hits and crashes, with a Settings toggle (v7.3)",
+          "done": true
+        },
+        {
           "text": "Real-pad pass through every menu with Xbox and PlayStation pads",
           "done": false
         },
@@ -600,7 +624,7 @@
     {
       "id": "b8",
       "system": "Atmosphere",
-      "title": "Africa Cup races 2 and 3",
+      "title": "Africa Cup race 3",
       "priority": "P2",
       "done": false
     },
@@ -644,7 +668,7 @@
       "system": "Controllers",
       "title": "Rumble feedback",
       "priority": "P3",
-      "done": false
+      "done": true
     },
     {
       "id": "b15",
@@ -793,6 +817,42 @@
       "decision": "HUD drops the mode / track line; position and lap as \"2/8\" and \"1/3\", time as 00:23.567",
       "why": "Closer to the HUD reference art",
       "gdd": "v6.9"
+    },
+    {
+      "date": "2026-11-13",
+      "decision": "Africa Cup race 2 is Fires of Nyiragongo, the first sloped track: lava recovers cars and burns their items",
+      "why": "Africa Cup needed its second race; sloped and banked roads open up new layouts",
+      "gdd": "v7.0"
+    },
+    {
+      "date": "2026-11-13",
+      "decision": "Gardens by the Bay and Vale da Lua are sloped and banked; sloped skyways have no apron, so open edges are drops",
+      "why": "Flat roads felt lifeless next to Nyiragongo",
+      "gdd": "v7.1"
+    },
+    {
+      "date": "2026-11-13",
+      "decision": "Steeper hills (grades up to 9–10%) and real Poly Haven textures on every track",
+      "why": "Hills read better, and flat-coloured surfaces looked unfinished",
+      "gdd": "v7.2"
+    },
+    {
+      "date": "2026-11-13",
+      "decision": "Controller vibration on boosts, tricks, hits and crashes, with an on/off toggle (on by default)",
+      "why": "Pads felt dead; rumble makes boosts and hits land",
+      "gdd": "v7.3"
+    },
+    {
+      "date": "2026-11-13",
+      "decision": "Crate odds set per position: Road Spikes only for 1st–3rd, Firewalls only for 1st–5th, 7th–8th get Overdrive / System Override / Triple Nitro 68–81% of the time",
+      "why": "Back markers need powerful items and leaders weaker ones; the old paired table still gave 8th spikes and shields",
+      "gdd": "v7.4"
+    },
+    {
+      "date": "2026-11-13",
+      "decision": "Race setup defaults: Standard, 3 races, 3 laps, Normal, items on (Multiplayer: Versus, NPCs on); choices last until the game closes",
+      "why": "Every launch should start on a sensible set, not the last session's leftovers",
+      "gdd": "v7.4"
     }
   ],
   "playtest": [
@@ -869,6 +929,10 @@
         {
           "text": "Every hit is readable (visual + sound)",
           "done": false
+        },
+        {
+          "text": "From 7th–8th you mostly get Overdrive, System Override or Triple Nitro; never a single spike or a Firewall",
+          "done": false
         }
       ]
     },
@@ -919,6 +983,10 @@
         },
         {
           "text": "Rebinding a pad button sticks after restart",
+          "done": false
+        },
+        {
+          "text": "Rumble is felt on boosts and hits, and the Settings toggle turns it off",
           "done": false
         }
       ]

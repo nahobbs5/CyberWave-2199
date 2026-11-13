@@ -429,6 +429,26 @@ func _ruined_room(p: Vector3, w: float, d: float, h: float, key: String) -> bool
 
 # --- Gereza fort ---------------------------------------------------------------------
 
+## The nearest spot (from `at` toward `toward`, 1 m steps, up to 20 m) where a
+## square tower of half side `half` stands clear of every road, or
+## Vector3.INF if there is none.
+func _clear_tower_spot(at: Vector3, toward: Vector3, half: float) -> Vector3:
+	var dir := (toward - at).normalized()
+	for step in 21:
+		var p := at + dir * step
+		var ok := true
+		var x := -half
+		while ok and x <= half:
+			var z := -half
+			while ok and z <= half:
+				ok = edge_distance(p + Vector3(x, 0, z)) > 1.0
+				z += 1.0
+			x += 1.0
+		if ok:
+			return p
+	return Vector3.INF
+
+
 func _fort() -> void:
 	var h := 8.5
 	var t := 2.2
@@ -449,8 +469,13 @@ func _fort() -> void:
 		add_box("coral", Vector3(1.4, 1.3, 1.2), _facing(round_c + Vector3(cos(a) * 6.5, 14.6, sin(a) * 6.5), round_c + Vector3(0, 14.6, 0)))
 		merlons += 1
 	towers += 1
-	for p in [c[1] + Vector3(-5, 0, 5), c[2] + Vector3(-5, 0, -5), c[3] + Vector3(5, 0, -5)]:
+	for corner in [c[1] + Vector3(-5, 0, 5), c[2] + Vector3(-5, 0, -5), c[3] + Vector3(5, 0, -5)]:
 		var th := rng.randf_range(10.0, 12.5)
+		# A road out through a corner (the yard shortcut's exit): slide the
+		# tower in toward the yard until it's clear of every road.
+		var p := _clear_tower_spot(corner, centre, 5.0)
+		if p == Vector3.INF:
+			continue
 		add_box("coral", Vector3(10, th, 10), xform(p + Vector3(0, th * 0.5, 0)))
 		for e in 4:
 			var a: Vector3 = Vector3(-5, th, -5).rotated(Vector3.UP, e * PI * 0.5) + p

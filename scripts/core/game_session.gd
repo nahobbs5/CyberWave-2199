@@ -42,7 +42,10 @@ static var mp_vehicles: PackedStringArray = PackedStringArray()
 ## Split screen: each player's license plate (set on the car screen).
 static var mp_plates: PackedStringArray = PackedStringArray()
 ## Split screen settings chosen in the lobby.
-static var mp_settings: Dictionary = {"ai": true, "difficulty": 1, "laps": 2, "weapons": true}
+## Single-player race setup choices (difficulty, laps, race type, races,
+## weapons) for this session only: each launch starts on the defaults.
+static var race_settings: Dictionary = {}
+static var mp_settings: Dictionary = {"mode": 1, "race_type": 0, "races": RaceSetup.DEFAULT_RACES, "ai": true, "difficulty": 1, "laps": 2, "weapons": true}
 ## Versus: every setting but the track (set on the race setup screen, or
 ## the split-screen setup screen). The track screen adds the track.
 static var versus_template: RaceConfig
@@ -221,9 +224,10 @@ static func to_credits(tree: SceneTree) -> void:
 	_change(tree, CREDITS_SCENE)
 
 
-## Versus setup opens on the race type (Standard / Elimination) used last.
+## Versus setup opens on the race type (Standard / Elimination) used last
+## this session.
 static func last_versus_mode() -> RaceConfig.Mode:
-	var setup := PlayerProfile.get_profile().last_setup
+	var setup := race_settings
 	return RaceConfig.Mode.ELIMINATION if int(setup.get("race_type", 0)) == 1 else RaceConfig.Mode.VERSUS
 
 

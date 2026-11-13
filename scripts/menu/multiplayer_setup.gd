@@ -152,7 +152,7 @@ func _restore() -> void:
 	var s := GameSession.mp_settings
 	_mode.selected = clampi(int(s.get("mode", 1)), 0, MODES.size() - 1)
 	_race_type.selected = clampi(int(s.get("race_type", 0)), 0, 1)
-	_races.selected = clampi(int(s.get("races", 3)), 0, RaceSetup.RACE_COUNTS.size() - 1)
+	_races.selected = clampi(int(s.get("races", RaceSetup.DEFAULT_RACES)), 0, RaceSetup.RACE_COUNTS.size() - 1)
 	_ai.set_pressed_no_signal(bool(s.get("ai", true)))
 	_difficulty.selected = clampi(int(s.get("difficulty", 1)), 0, 2)
 	_laps.selected = clampi(int(s.get("laps", 2)), 0, 8)

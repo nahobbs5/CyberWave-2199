@@ -56,7 +56,7 @@ The initial release focuses on polished single-player racing. Additional feature
 
 A race, or a set of races, against seven AI opponents. Set up Mario Kart style:
 
-1. Race setup: vehicle, race type (Standard or Elimination), **number of races** (1, 2, 3, 4, 6, 8, 12 or 16), lap count (three by default), Easy / Normal / Hard AI, weapons on or off.
+1. Race setup: vehicle, race type (Standard or Elimination), **number of races** (1, 2, 3, 4, 6, 8, 12 or 16), lap count, Easy / Normal / Hard AI, weapons on or off. Defaults: Standard, 3 races, 3 laps, Normal AI, weapons on; split-screen Multiplayer uses the same defaults (Versus mode) with NPCs on.
 2. Cup screen (Versus): a row of cup badges plus a "?" Random badge. Moving across the badges previews each cup's races; opening a cup moves into its race cards, and picking one races it. The Random badge opens a **RANDOM** card for a random built track from any cup (in a series, one not raced yet while any are left). Built tracks of a cup that's locked for Grand Prix can be raced here.
 
 With more than one race, the track screen comes back before each race (showing "RACE 2 OF 4"; the standings stay on the results screen). Points and the next grid work like a Grand Prix (§2.2). The final results name the series winner. A series isn't saved: quitting part-way ends it. Each race pays its normal coins, with no cup bonus.
@@ -1086,7 +1086,7 @@ Grand Prix: cup screen, then race setup. Versus: race setup first (including the
 - Race settings
 - Start race
 
-Previously selected settings should be remembered.
+Previously selected settings are remembered until the game is closed; every launch starts on the defaults (§2.1). The last cup and track are kept between launches.
 
 The setup, cup and track screens share the Settings look (§11.2): the dimmed street behind them, the screen name along the top, coins at the top right and Back at the bottom left.
 
@@ -1660,6 +1660,6 @@ Changes after Version 1.0 should be tracked as revisions rather than silently re
 | 7.1 | 2026-11-13 | Nyiragongo looks more volcanic: sheer stratified basalt walls up to a high rim, real rock textures, fine fissures, a lake pit with lava fountains and steam, jagged rocks and basalt columns, a darker ashier dusk (§8.6h). Gardens by the Bay's skyway and Vale da Lua's road are now sloped and banked (§8.6c, §8.6e); sloped skyways drive on a road collider with no apron, so open edges stay drops. |
 | 7.2 | 2026-11-13 | Steeper hills: Gardens by the Bay's skyway now rolls over four crests 10–53 m above the jungle and Vale da Lua's road runs from 19 m below the start to 21 m above it, both with grades up to about 9–10% (§8.6c, §8.6e). Every track is textured: Vegas Overdrive and the Test Circuit get asphalt, concrete, marble, palm bark and velvet; the glacier road and walls are packed snow; Vale da Lua's road is worn rock; the procedural moon rock, glacier ice and Crazy House bark shaders blend in real Poly Haven grain and normal maps (§8.6, §8.6a, §8.6e). |
 | 7.3 | 2026-11-13 | Controller vibration: gamepad rumble on drift boosts, boost pads and rings, tricks, other speed boosts, weapon hits and hard crashes, with an on/off toggle in Settings (§11.9). |
-| 7.4 | 2026-11-13 | Crate odds rebalanced per position instead of per pair: weaker items at the front and stronger ones at the back. Road Spikes only for 1st–3rd, Firewalls only for 1st–5th; 7th–8th get Overdrive, System Override or Triple Nitro 68–81% of the time (§6.5). |
+| 7.4 | 2026-11-13 | Crate odds rebalanced per position instead of per pair: weaker items at the front and stronger ones at the back. Road Spikes only for 1st–3rd, Firewalls only for 1st–5th; 7th–8th get Overdrive, System Override or Triple Nitro 68–81% of the time (§6.5). Versus and Multiplayer setup default to 3 races (§2.1), and race settings now reset to the defaults on every launch (§11.3). |
 
 **End of Game Design Document — Version 7.4**

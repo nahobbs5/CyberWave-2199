@@ -33,7 +33,7 @@ All values below are **initial playtesting targets**, not final balance values.
 
 | Parameter | Starting value |
 |---|---|
-| Spawn positions | 3rd–8th |
+| Spawn positions | 4th–8th |
 | Travel speed | 1.8× normal kart top speed |
 | Target | Leader at activation, locked thereafter |
 | Target warning | 1.2 seconds |
@@ -81,7 +81,7 @@ The kart stays recognizably the player's kart; it is **not** replaced by a missi
 
 | Parameter | Starting value |
 |---|---|
-| Spawn positions | 5th–8th |
+| Spawn positions | 4th–8th (mostly 7th–8th) |
 | Nominal active duration | 5–7 seconds |
 | Flight speed | 2.0× normal top speed |
 | Height above track | 3–5 meters, track dependent |
@@ -142,7 +142,7 @@ Sample the desired world-space transform from `PathFollow3D`, then move the kart
 
 | Parameter | Starting value |
 |---|---|
-| Spawn positions | 3rd–8th |
+| Spawn positions | 3rd–8th (mostly 7th–8th) |
 | Targets | All racers ahead at activation |
 | Debuff duration | By victim's position at activation (table below) |
 | Top speed | −25% |
@@ -184,18 +184,20 @@ In multiplayer, use a single authoritative snapshot to avoid position changes du
 
 ## 4. Item Distribution — Eight Racers
 
-These are **per-item probability suggestions when an item is awarded**. They do not add up to 100%; ordinary items occupy the remaining probability.
+These are the in-game odds (GDD §6.5, v7.4): the percent chance of each item when a racer in that position opens a crate. Every weapon has a chance for each position, and each position adds up to 100%. Triple Nitro, the third comeback item, is shown alongside.
 
-| Position | Hunter-Killer Drone | Overdrive Protocol | System Override |
-|---|---:|---:|---:|
-| 1st | 0% | 0% | 0% |
-| 2nd | 0% | 0% | 0% |
-| 3rd | 3% | 0% | 5% |
-| 4th | 6% | 0% | 8% |
-| 5th | 8% | 5% | 10% |
-| 6th | 10% | 10% | 12% |
-| 7th | 8% | 15% | 12% |
-| 8th | 5% | 20% | 10% |
+| Position | Hunter-Killer Drone | Overdrive Protocol | System Override | Triple Nitro |
+|---|---:|---:|---:|---:|
+| 1st | 0% | 0% | 0% | 0% |
+| 2nd | 0% | 0% | 0% | 0% |
+| 3rd | 0% | 0% | 2% | 4% |
+| 4th | 2% | 3% | 5% | 9% |
+| 5th | 4% | 6% | 8% | 14% |
+| 6th | 6% | 10% | 12% | 18% |
+| 7th | 8% | 20% | 26% | 22% |
+| 8th | 8% | 25% | 31% | 25% |
+
+Leaders get weak and defensive items instead: Road Spikes only drop for 1st–3rd and Firewalls only for 1st–5th.
 
 Consider limiting simultaneous global effects and tracking recent item awards to avoid repeated unavoidable disruptions. Measure average positions gained, lap-time impact, and hit frequency in eight-kart playtests.
 

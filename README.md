@@ -1,7 +1,7 @@
 # CyberWave 2199
 
 **Retrofuturistic cyberpunk combat kart racing, built in Godot 4.**
-Luxury neon cars, drift boosts, weapons and thirteen circuits set in real-world places, against seven AI rivals or with up to four players in local split screen.
+Luxury neon cars, drift boosts, weapons and fourteen circuits set in real-world places, against seven AI rivals or with up to four players in local split screen.
 
 **▶ [Play the browser demo](https://nahobbs5.github.io/CyberWave-2199/web/)** · **🛠 [Dev tracker](https://nahobbs5.github.io/CyberWave-2199/dev/)** · **📖 [Full reference](docs/Reference.md)** · **📐 [Game Design Document](docs/Game%20Design%20Document.md)** (v6.9)
 
