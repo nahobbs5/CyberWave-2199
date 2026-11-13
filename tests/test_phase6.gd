@@ -780,7 +780,7 @@ func _test_crazy_house() -> void:
 	track.queue_free()
 
 
-## Gardens by the Bay: Asia Cup race 3. A glass skyway 24 m above the
+## Gardens by the Bay: Asia Cup race 3. A glass skyway 10-53 m above the
 ## jungle: the deck has its own collider, the barriers are left out on the
 ## open edges (main loop and shortcut) so cars can fall, and the Supertree
 ## canopies never hang at road level over a road.
@@ -801,20 +801,23 @@ func _test_gardens() -> void:
 	var ground := track.find_child("*Ground", false, false)
 	var slab := ground.get_child(0) as CollisionShape3D if ground != null else null
 	_check(slab != null and is_equal_approx(slab.position.y + 1.0, GardensScenery.FLOOR_Y), "the ground slab is at the jungle floor")
-	# The skyway swoops: about 14 m up past the Bayfront, 38 m round the Great Wrap.
+	# The skyway rolls over four crests: about 10 m up in the Bayfront dip, 53 m round the Great Wrap.
 	var lo := INF
 	var hi := -INF
 	var max_bank := 0.0
+	var steepest := 0.0
 	var dd := 0.0
 	while dd < track.length:
 		var y := track.get_center_at(dd).y - GardensScenery.FLOOR_Y
 		lo = minf(lo, y)
 		hi = maxf(hi, y)
 		max_bank = maxf(max_bank, rad_to_deg(absf(track.bank_at(dd))))
+		steepest = maxf(steepest, absf(track.get_center_at(dd + 10.0).y - track.get_center_at(dd).y) / 10.0)
 		dd += 5.0
-	_check(lo > 12.0 and lo < 17.0 and hi > 35.0 and hi < 40.0, "the deck is %.0f-%.0f m above the jungle" % [lo, hi])
+	_check(steepest > 0.07 and steepest < 0.11, "real climbs, none steeper than 11%% (%.1f%%)" % (steepest * 100.0))
+	_check(lo > 8.0 and lo < 13.0 and hi > 48.0 and hi < 58.0, "the deck is %.0f-%.0f m above the jungle" % [lo, hi])
 	var wrap_y := track.curve.get_closest_point(GardensScenery.WRAP_TREE).y - GardensScenery.FLOOR_Y
-	_check(wrap_y > 34.0, "highest round the Great Wrap (%.0f m)" % wrap_y)
+	_check(wrap_y > 45.0, "highest round the Great Wrap (%.0f m)" % wrap_y)
 	_check(max_bank > 5.0 and max_bank < 9.0, "banked in the sweepers (%.0f deg)" % max_bank)
 	_check(track.road_material != null and (track.road_material as BaseMaterial3D).transparency != BaseMaterial3D.TRANSPARENCY_DISABLED,
 			"the road is glass")

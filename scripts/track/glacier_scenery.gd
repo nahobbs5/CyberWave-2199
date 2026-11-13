@@ -187,8 +187,9 @@ func _setup_materials() -> void:
 	var tube := _ice_material(0.15, 0.13, 0.9)
 	tube.set_shader_parameter("mid_color", Color(0.2, 0.7, 1.0))
 	register_material("ice_tube", tube)
-	material("snow", Color(0.88, 0.93, 1.0), 0.25, 0.0, 0.9)
-	material("basalt", Color(0.06, 0.065, 0.075), 0.0, 0.0, 0.7)
+	textured("snow", "snow_02", Color(1.35, 1.43, 1.53), 3.0, 0.9)
+	add_glow("snow", Color(0.88, 0.93, 1.0), 0.25)
+	textured("basalt", "dark_rock", Color(0.47, 0.59, 0.82), 2.0, 0.7)
 	material("daylight", Color(0.85, 0.93, 1.0), 2.6)
 	material("sky_hole", Color(0.85, 0.94, 1.0), 6.0)
 	var melt := StandardMaterial3D.new()
@@ -212,6 +213,8 @@ func _ice_material(ash_amount: float, scale: float, base_glow: float) -> ShaderM
 	m.set_shader_parameter("ash_amount", ash_amount)
 	m.set_shader_parameter("scale", scale)
 	m.set_shader_parameter("base_glow", base_glow)
+	# Ice keeps its procedural colour; a rock normal map roughens its surface.
+	shader_detail(m, "rock_face", 5.0, 0.0, 0.07, 0.45)
 	return m
 
 

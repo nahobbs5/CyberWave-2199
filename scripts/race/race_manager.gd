@@ -375,6 +375,8 @@ func _spawn_grid() -> void:
 		if is_player and is_multiplayer():
 			car.input_prefix = StringName(InputSetup.player_prefix(human))
 		add_child(car)
+		if is_player and is_multiplayer():
+			car.haptics.device = config.player_devices[human]
 		car.global_transform = track.get_grid_transform(slot)
 		car.recovery.set_track(track, track.get_grid_offset(slot))
 		car.input_enabled = false

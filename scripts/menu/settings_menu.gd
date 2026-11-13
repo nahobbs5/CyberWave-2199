@@ -252,6 +252,10 @@ func _build_display(panel: Container) -> void:
 			func(v: float) -> void: GameSettings.camera_shake = v / 100.0)
 	NeonWidgets.toggle_row(left, "bolt", "Reduced Flashing", GameSettings.reduced_flashing,
 			func(on: bool) -> void: GameSettings.reduced_flashing = on)
+	NeonWidgets.toggle_row(left, "gamepad", "Controller Vibration", GameSettings.vibration,
+			func(on: bool) -> void:
+				GameSettings.vibration = on
+				VehicleHaptics.preview())
 	left.add_child(NeonWidgets.note("HUD scale and motion blur apply from the next race.", Color.WHITE, true))
 	var gap := Control.new()
 	gap.custom_minimum_size = Vector2(0, 8)

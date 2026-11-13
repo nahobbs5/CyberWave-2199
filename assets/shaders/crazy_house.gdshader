@@ -1,6 +1,7 @@
 shader_type spatial;
 // Crazy House walls: the inside of a hollow tree as Hang Nga built it.
-// Procedural (no textures): grey and dark-brown "melted" bark with knotty
+// Procedural, with optional Poly Haven bark grain (detail_common.gdshaderinc,
+// softer on the plaster): grey and dark-brown "melted" bark with knotty
 // grooves, cream plaster drips running down it, and (lava_amount) the
 // orange-red pitted walls. Glows softly near window light (glow_points), so
 // it reads in the Compatibility renderer too. Model space = track-local.
@@ -21,10 +22,14 @@ uniform vec4 glow_color : source_color = vec4(1.0, 0.82, 0.6, 1.0);
 uniform vec4 glow_points[12];
 uniform int glow_count = 0;
 
+#include "res://assets/shaders/detail_common.gdshaderinc"
+
 varying vec3 local_pos;
+varying vec3 local_normal;
 
 void vertex() {
 	local_pos = VERTEX;
+	local_normal = NORMAL;
 }
 
 float hash(vec3 p) {
@@ -71,6 +76,13 @@ void fragment() {
 	float pits = smoothstep(0.68, 0.74, vnoise(p * 26.0)) * 0.8;
 	vec3 lava = mix(lava_color.rgb * (0.75 + 0.5 * blotch), vec3(0.18, 0.05, 0.02), pits);
 	col = mix(col, lava, lava_amount * (1.0 - drip * 0.6));
+
+	vec3 dn = normalize(local_normal);
+	vec3 dw = detail_weights(dn);
+	col *= mix(detail_shade(local_pos, dw), 1.0, drip * 0.6);
+	if (detail_normal_strength > 0.0) {
+		NORMAL = detail_view_normal(local_pos, dn, dw, MODEL_MATRIX, VIEW_MATRIX, FRONT_FACING);
+	}
 
 	float glow = base_glow;
 	for (int i = 0; i < glow_count; i++) {

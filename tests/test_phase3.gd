@@ -212,7 +212,9 @@ func _test_crate_odds() -> void:
 	for id in [&"hunter_drone", &"nitro_overload"]:
 		_check(counts[1].get(id, 0) * 1.5 < counts[8].get(id, 0), "%s much rarer for the leader (%d vs %d)" % [id, counts[1].get(id, 0), counts[8].get(id, 0)])
 	_check(counts[1].get(&"firewall", 0) > counts[8].get(&"firewall", 0), "leader gets more defensive Firewalls")
-	_check(counts[1].size() == 6 and counts[8].size() == 6, "every weapon can drop anywhere")
+	_check(counts[1].size() == 6, "every one of these weapons can drop for the leader")
+	_check(not counts[8].has(&"road_spike") and not counts[8].has(&"firewall") and not counts[8].has(&"railgun"),
+			"last place never gets spikes, Firewalls or Railguns")
 	wm.free()
 
 

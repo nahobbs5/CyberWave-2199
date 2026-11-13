@@ -1,5 +1,5 @@
 # CYBERWAVE 2199
-## Game Design Document — Version 6.9
+## Game Design Document — Version 7.4
 
 **Status:** Development Baseline  
 **Engine:** Godot 4  
@@ -507,21 +507,21 @@ Once armed, they follow the same collision and effect rules for every racer.
 - Trailing racers may receive better opportunities for recovery and overtaking.
 - A landed Hunter Drone or Railgun hit knocks out the victim's selected weapon. Hits blocked by a Firewall or stun protection cost nothing.
 
-Crate odds by race position (each column adds up to 100%; with fewer than 8 racers, positions are spread over the same rows):
+Crate odds by race position (each column adds up to 100%; with fewer than 8 racers, positions are spread over the same columns). Leaders get weak and defensive items, and the further back you are, the stronger the items get. Single Road Spikes only drop for 1st–3rd and Firewalls only for 1st–5th. 7th and 8th mostly get Overdrive, System Override and Triple Nitro.
 
-| Weapon | 1st–2nd | 3rd–4th | 5th–6th | 7th–8th |
-|---|---:|---:|---:|---:|
-| Railgun | 12% | 12% | 10% | 8% |
-| Hunter Drone | 8% | 12% | 15% | 14% |
-| EMP Pulse | 8% | 9% | 9% | 8% |
-| Road Spike | 24% | 14% | 7% | 3% |
-| Nitro Overload | 12% | 14% | 15% | 15% |
-| Triple Nitro | 3% | 5% | 8% | 12% |
-| Triple Spike | 10% | 6% | 3% | 2% |
-| Firewall | 23% | 18% | 13% | 7% |
-| Hunter-Killer | 0% | 3% | 5% | 5% |
-| Overdrive | 0% | 2% | 6% | 10% |
-| System Override | 0% | 5% | 9% | 16% |
+| Weapon | 1st | 2nd | 3rd | 4th | 5th | 6th | 7th | 8th |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| Road Spike | 30% | 25% | 15% | 0% | 0% | 0% | 0% | 0% |
+| Triple Spike | 12% | 12% | 10% | 6% | 0% | 0% | 0% | 0% |
+| Firewall | 25% | 23% | 18% | 14% | 8% | 0% | 0% | 0% |
+| Railgun | 15% | 15% | 15% | 15% | 12% | 10% | 2% | 0% |
+| EMP Pulse | 8% | 9% | 11% | 13% | 13% | 12% | 4% | 2% |
+| Hunter Drone | 5% | 8% | 13% | 17% | 18% | 16% | 8% | 4% |
+| Nitro Overload | 5% | 8% | 12% | 16% | 17% | 16% | 10% | 5% |
+| Triple Nitro | 0% | 0% | 4% | 9% | 14% | 18% | 22% | 25% |
+| Hunter-Killer | 0% | 0% | 0% | 2% | 4% | 6% | 8% | 8% |
+| Overdrive | 0% | 0% | 0% | 3% | 6% | 10% | 20% | 25% |
+| System Override | 0% | 0% | 2% | 5% | 8% | 12% | 26% | 31% |
 
 **System Override** hacks every racer ahead of the user: −25% top speed, −30% acceleration, drift charge lost and no charging while hacked; steering and weapons still work. Time hacked is fixed from position at activation: 1st 12 s, 2nd 10.5 s, 3rd 9 s, 4th 7.5 s, 5th 6 s, 6th 4.5 s, 7th 3 s. A repeat hit does nothing; Firewall blocks it (shield used up); Overdrive is immune.
 
@@ -731,7 +731,7 @@ A night race along a glass skyway high above the jungle, through the Supertree G
 
 **Identity:** Height and exposure. It is the only track in the air: the road is a narrow glass deck 24 m above the treetops and the bay, and in places there is nothing at the edge.
 
-Built at about 3.4 km with a 12 m road and winding, linked corners (45–90 m radius). The deck is clear glass framed in wood, with wooden beams under the glass, wooden strips across it, and glass side walls topped by amber-lit wooden handrails. Steel pylons hold it up. Below is dense rainforest with palms; a few tall trees break through near the deck. The Supertrees (26–52 m) slowly change colour together, a wave of purple, cyan, green and magenta rolling across the grove. Marina Bay Sands and the city skyline glow beyond. The skyway is sloped: it swoops between about 14 m above the jungle past the Bayfront and 38 m round the Great Wrap's tallest Supertree, with gentle 7° banking in the long sweepers; the pylons, Supertrees, dome doorways and the Cloud Forest walk all follow its height. Landmarks in driving order:
+Built at about 3.4 km with a 12 m road and winding, linked corners (45–90 m radius). The deck is clear glass framed in wood, with wooden beams under the glass, wooden strips across it, and glass side walls topped by amber-lit wooden handrails. Steel pylons hold it up. Below is dense rainforest with palms; a few tall trees break through near the deck. The Supertrees (26–52 m) slowly change colour together, a wave of purple, cyan, green and magenta rolling across the grove. Marina Bay Sands and the city skyline glow beyond. The skyway is sloped and rolls over four crests: it dives to about 10 m above the jungle at the Bayfront dip and climbs to about 53 m round the Great Wrap, whose tallest Supertree (82 m) still towers over it, with grades up to about 9% and gentle 7° banking in the long sweepers; the pylons, Supertrees, dome doorways and the Cloud Forest walk all follow its height. Landmarks in driving order:
 - the Supertree Grove: the start, with the grid between two Supertrees under a GARDENS BY THE BAY sign;
 - the Skyway S-bends: weaving between Supertrees, Marina Bay Sands ahead (boost pad);
 - the Great Wrap: a hairpin round the tallest Supertree (boost ring);
@@ -770,7 +770,7 @@ A race through the Valley of the Moon: smooth grey "moon rock" sculpted by a fas
 
 **Identity:** Moving water everywhere, and nerve on the open rock shelves.
 
-The road rolls with the rock: it climbs to about 12 m over the eastern headland (the jump) and the north-west, and drops about 8 m into the deep south gorge, with gentle 5° banking in the sweepers. Every river crossing and creek shelf keeps the water at least 5 m below the road, and the land rises and falls with it.
+The road rolls with the rock: it climbs to about 21 m over the eastern headland (the jump, on its gentle far side), drops about 19 m into the deep south gorge (the main river below it falls to about 25 m down), and rolls over humps between the shelves and bridges, with grades up to about 10% and gentle 5° banking in the sweepers. Every river crossing and creek shelf keeps the water at least 5 m below the road, and the land rises and falls with it.
 
 Built at about 3.1 km with a 13 m road and flowing corners (60–100 m radius) around a river system. The rock is smooth, pale-to-dark grey, with rippled erosion lines, dimples and round potholes, darker and glossier toward the water, with green cerrado forest on top. The water moves: a main river and two streams run through slot canyons beside the road. They pass under it at four natural rock bridges, 5–14 m below the road, and drop over six waterfalls with white churn and mist at their feet. The road is elevated (§8.7) with barriers most of the way, but two open rock shelves run right along creek canyons: a bad line drops you into the water, and you are put back on the road. Landmarks in driving order:
 - the start straight, over the first rock bridge (boost pad);
@@ -1207,6 +1207,9 @@ Planned settings:
 - Reduced flashing effects
 - Separate audio sliders
 - Remappable controls
+- Controller vibration toggle (on by default)
+
+**Controller vibration.** A human player's gamepad gives a short rumble on drift boosts (stronger for each level), boost pads and rings (rings stronger), tricks (a tick when the trick starts and a bigger pulse on landing), other speed boosts (rocket start, slipstream, Nitro), weapon hits (stun and stagger hardest, EMP heavy on the strong motor, spike and System Override lighter, a soft pulse when a Firewall absorbs a hit) and hard crashes (scaled by the speed lost). A weaker pulse never cuts off a stronger one, and the rumble stops when the game pauses. In single player every connected pad rumbles; in split screen only that player's pad, and keyboard players get none. AI cars, menu cars and the autopilot after the finish never rumble. Turning vibration on in Settings gives a short test buzz. Pulse strengths: `scripts/vehicles/vehicle_haptics.gd`.
 
 An optional first-time tutorial should introduce driving, drifting, weapons, and recovery.
 
@@ -1655,5 +1658,8 @@ Changes after Version 1.0 should be tracked as revisions rather than silently re
 | 6.9 | 2026-11-12 | Race HUD closer to the reference: the mode / track line is gone; position and lap read "2/8" and "1/3"; the race time reads 00:23.567, with the coins under it in single player (§11.5). |
 | 7.0 | 2026-11-13 | Africa Cup race 2: Fires of Nyiragongo, about 3.2 km inside the volcano's crater at dusk, the first sloped track. A level rim start, two switchback hairpins down the west wall, a sweep round the lava lake with a ramp jump over a lava channel (shortcut), and a 12°-banked climb back out. Lava recovers cars and burns their items. New engine support for sloped and banked roads and for shortcut gaps (§2.2, §8.6h). |
 | 7.1 | 2026-11-13 | Nyiragongo looks more volcanic: sheer stratified basalt walls up to a high rim, real rock textures, fine fissures, a lake pit with lava fountains and steam, jagged rocks and basalt columns, a darker ashier dusk (§8.6h). Gardens by the Bay's skyway and Vale da Lua's road are now sloped and banked (§8.6c, §8.6e); sloped skyways drive on a road collider with no apron, so open edges stay drops. |
+| 7.2 | 2026-11-13 | Steeper hills: Gardens by the Bay's skyway now rolls over four crests 10–53 m above the jungle and Vale da Lua's road runs from 19 m below the start to 21 m above it, both with grades up to about 9–10% (§8.6c, §8.6e). Every track is textured: Vegas Overdrive and the Test Circuit get asphalt, concrete, marble, palm bark and velvet; the glacier road and walls are packed snow; Vale da Lua's road is worn rock; the procedural moon rock, glacier ice and Crazy House bark shaders blend in real Poly Haven grain and normal maps (§8.6, §8.6a, §8.6e). |
+| 7.3 | 2026-11-13 | Controller vibration: gamepad rumble on drift boosts, boost pads and rings, tricks, other speed boosts, weapon hits and hard crashes, with an on/off toggle in Settings (§11.9). |
+| 7.4 | 2026-11-13 | Crate odds rebalanced per position instead of per pair: weaker items at the front and stronger ones at the back. Road Spikes only for 1st–3rd, Firewalls only for 1st–5th; 7th–8th get Overdrive, System Override or Triple Nitro 68–81% of the time (§6.5). |
 
-**End of Game Design Document — Version 6.9**
+**End of Game Design Document — Version 7.4**

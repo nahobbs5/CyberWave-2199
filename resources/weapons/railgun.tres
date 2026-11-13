@@ -16,4 +16,4 @@ effect_duration = 0.7
 strips_item = true
 speed = 220.0
 radius = 300.0
-position_chance = PackedFloat32Array(12, 12, 12, 12, 10, 10, 8, 8)
+position_chance = PackedFloat32Array(15, 15, 15, 15, 12, 10, 2, 0)

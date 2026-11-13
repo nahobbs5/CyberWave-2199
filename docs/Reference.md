@@ -138,7 +138,7 @@ The layout is the `control_points` list on `scenes/tracks/test_circuit.tscn`, sa
   - **Click an item's name** to try it on. **Buy** spends coins and equips it; **Equip** puts an item you own on this car. Purchases are permanent and shared by all cars, but **each car has its own equipped look**.
   - The **license plate** is one text for every car: up to 8 characters (letters, digits, spaces, dashes), saved as you type.
 - **Settings** (GDD §11.9): every change applies and saves immediately.
-  - **HUD scale** 75–150%, **motion blur** (off by default; a subtle edge blur at high speed and during boosts, the centre stays sharp), **camera shake** 0–100% (impacts, stuns, boosts), **reduced flashing** (the INCOMING warning stays steady instead of blinking; weapon flashes, status lights and the lock reticle are calmer).
+  - **HUD scale** 75–150%, **motion blur** (off by default; a subtle edge blur at high speed and during boosts, the centre stays sharp), **camera shake** 0–100% (impacts, stuns, boosts), **reduced flashing** (the INCOMING warning stays steady instead of blinking; weapon flashes, status lights and the lock reticle are calmer), **controller vibration** (on by default; gamepad rumble on boosts, boost rings, tricks, drift boosts, hits and crashes; switching it on gives a test buzz).
   - **Audio:** Master, Music and Sound effects. The Music slider controls menu and race music.
   - **Controls:** press a binding, then the new key, gamepad button or stick direction within 5 seconds. A rebind replaces all of that action's keyboard inputs (so W + Up becomes just your new key) or all of its gamepad inputs. If another action already uses that input, you get a note (both keep working). **Reset controls to defaults** undoes all rebinds.
   - HUD scale and motion blur take effect from the next race.
@@ -383,7 +383,7 @@ Europe Cup race 3. A 3.1 km race **through an ice cave under Vatnajökull, Icela
 - **Frozen Lake:** a glassy lake beside the road under ice chandeliers, and a slush puddle (EMP), back to the mouth.
 - **Crystal Tube** (shortcut): a narrow, glowing round tunnel of scalloped ice from the Cathedral to the Gallery, with white light at its far end. About 120 m shorter, but an **ice wall** (smashable) blocks the entrance. Boost ring at the exit, three bonus coins.
 - **Atmosphere:** no sky; a dark blue background, pale blue ambient light and light blue fog thin enough to see far down the cave, strong glow on the daylight, and volumetric fog in Forward+.
-- Built from code: `GlacierScenery` and the new `CaveShellBuilder` (one noise-carved shell along each route, blending between zone shapes). The ice is a procedural shader (`assets/shaders/glacier_ice.gdshader`: swirling flow bands, ash streaks, and a glow strongest near the daylight), so it doesn't come out black in the Compatibility renderer. Icicles are instanced. Poly Haven asphalt_04 (road), marble_01 (barriers) and cobblestone_floor_08 (the dark pebble floor) textures.
+- Built from code: `GlacierScenery` and the new `CaveShellBuilder` (one noise-carved shell along each route, blending between zone shapes). The ice is a procedural shader (`assets/shaders/glacier_ice.gdshader`: swirling flow bands, ash streaks, and a glow strongest near the daylight), so it doesn't come out black in the Compatibility renderer. Icicles are instanced. The ice blends in a Poly Haven rock_face normal map (`assets/shaders/detail_common.gdshaderinc`). Poly Haven snow_floor (packed-snow road), snow_02 (barriers, floor and snow drifts) and dark_rock (basalt) textures.
 
 #### Crazy House (GDD §8.6b)
 
@@ -397,11 +397,11 @@ Asia Cup race 2. A 2.9 km race **inside Hang Nga's Crazy House** in Da Lat, Viet
 - **Rib Tunnel** (shortcut): a narrow passage lined with bone ribs that carries straight on where the road turns into the Gables. About 250 m shorter, but a **bone barricade** (smashable) blocks the entrance. Boost ring at the exit, three bonus coins.
 - About 29 staircases (1,500 steps) in all, daylight through eight oval roof windows (no visible beams).
 - The location is spelled "Da Lat" because the game fonts lack the Vietnamese "ạ".
-- Built from code: `CrazyHouseScenery` on the same `CaveShellBuilder` as the glacier (with slow "bulge" swellings), organic tube and blob helpers for bones, branches, railings and figures, and a procedural bark-and-drips shader (`assets/shaders/crazy_house.gdshader`, with a lava variant). Poly Haven dirty_concrete (road), patterned_plaster_wall (barriers), brown_mud_leaves_01 (floor) and hinoki_planks (the gables).
+- Built from code: `CrazyHouseScenery` on the same `CaveShellBuilder` as the glacier (with slow "bulge" swellings), organic tube and blob helpers for bones, branches, railings and figures, and a procedural bark-and-drips shader (`assets/shaders/crazy_house.gdshader`, with a lava variant). The shader blends in Poly Haven bark_brown_02 grain and normals. Poly Haven dirty_concrete (road), patterned_plaster_wall (barriers), brown_mud_leaves_01 (floor), hinoki_planks (the gables and trim) and white_plaster_rough_01 (bones, steps and caps).
 
 #### Gardens by the Bay (GDD §8.6c)
 
-Asia Cup race 3. A 3.4 km **night race along a glass skyway 24 m above the jungle** in Singapore, through the Supertree Grove during the light show. It's the only track in the air. The road is a flat 12 m glass deck framed in wood, between glass side walls with amber-lit wooden handrails, on steel pylons. Winding, linked corners (45–90 m radius). The Supertrees (26–52 m) change colour together in a wave of purple, cyan, green and magenta, with Marina Bay Sands and the skyline beyond. In driving order:
+Asia Cup race 3. A 3.4 km **night race along a glass skyway 10–53 m above the jungle** in Singapore, through the Supertree Grove during the light show. It's the only track in the air. The road is a 12 m glass deck framed in wood that rolls over four crests (grades up to about 9%, 7° banking in the sweepers), between glass side walls with amber-lit wooden handrails, on steel pylons. Winding, linked corners (45–90 m radius). The Supertrees (26–52 m) change colour together in a wave of purple, cyan, green and magenta, with Marina Bay Sands and the skyline beyond. In driving order:
 - **Supertree Grove** (start): the grid between two Supertrees under a GARDENS BY THE BAY sign.
 - **Skyway S-bends:** weaving between Supertrees, Marina Bay Sands ahead. Boost pad.
 - **The Great Wrap:** a hairpin round the tallest Supertree. Boost ring.
@@ -431,12 +431,12 @@ South America Cup race 2. A 3.1 km race through **Brazil's Valley of the Moon**:
 - **First open rock shelf** (about 90 m): no barrier on the right, with a creek canyon right below the road edge. Run wide and you drop in, splash and are put back on the road.
 - **East stream bridge**, with spray from the falls across the road (water).
 - **The headland loop** (jump), which the shortcut cuts off.
-- **The deep gorge bridge**, 14 m above the main river where it leaves the valley.
+- **The deep gorge bridge**, at the bottom of a long dive (about 19 m below the start), still 5 m+ above the main river, which falls to about 25 m down where it leaves the valley.
 - A **rock hump jump**, then the **second open shelf**.
 - **West stream bridge** and the cerrado (boost ring), back to the start.
 - **Behind the Falls** (shortcut): a ledge under a rock overhang, with a stream pouring off the overhang as a curtain past its outer edge into a pool. About 250 m shorter, but **driftwood logs** (smashable) block the entrance. Boost ring at the exit, three bonus coins.
 - Inside the loop the main river drops over two waterfalls and both streams fall into it: **six waterfalls** in all, with white churn and mist. About **900 smooth boulders** (instanced, water-worn shapes) line the canyons, sit in the water and hold up the bridges and the overhang. Bleached driftwood is jammed in the channels.
-- The road is **elevated** (Gardens by the Bay's skyway mode) so the shelves are real drops. One water `RecoveryZone` runs along every river at the water line.
+- The road is **elevated** (Gardens by the Bay's skyway mode) so the shelves are real drops, and **sloped**: about 21 m up over the headland, 19 m down at the gorge, humps between, grades up to about 10%. One water `RecoveryZone` runs along every river at the water line.
 - Built from code: `ValeDaLuaScenery` (river polylines generated with the layout, slot-canyon meshes with smooth normals, water ribbons, boulder MultiMeshes), `SceneryTerrain` carved by the rivers plus a rock dome, `TreeBuilder` rainforest and palm trees, and two new procedural shaders: `assets/shaders/moon_rock.gdshader` (erosion ripples, potholes, a wet band toward the water) and `assets/shaders/flowing_water.gdshader`.
 
 #### Choquequirao (GDD §8.6f)
@@ -517,6 +517,7 @@ A 3.2 km night circuit (shortened from 4.4 km after your first drive) with 20 m 
 - **Excalibur:** a castle with coloured spires along the south straight.
 - **Luxor shortcut:** a narrower 12 m road that cuts the west corners straight **through the glass pyramid** (under its sky beam). It's about 135 m shorter, but has a smashable barrier at the entrance (costs some speed), tighter turns and three bonus coins. A boost pad waits inside the pyramid.
 - Chevron signs mark every sharp corner; 5 rows of weapon crates and 10 coins per lap.
+- Poly Haven textures: asphalt_track (road), concrete_panels (barriers and towers), brushed_concrete (ground and concrete), marble_01 (white stone), palm_tree_bark (palms) and velour_velvet (the casino carpet). Neon, windows and glass stay plain emissive colours.
 
 #### Track tech
 
@@ -574,7 +575,7 @@ Drive through a "?" crate to collect a random weapon into your first free slot. 
   - A Firewall blocks the next attack of any kind except a Hunter-Killer, which goes straight through it.
   - A landed Railgun or Hunter Drone hit knocks out the victim's selected weapon (or the other one if that slot is empty). Hits blocked by a Firewall or stun protection cost nothing.
 - **Self-effects** (GDD §6.4): only the Road Spike can hit its owner, and only after a 1 s grace period. Everything else ignores its owner.
-- **Crate odds** depend on race position (GDD §6.5). Each weapon has a percent chance per position (`WeaponData.position_chance`, 1st to 8th), and a crate makes one pick from those. Leaders mostly get Road Spikes and Firewalls, while trailing racers get more Hunter Drones, Nitros and rare items.
+- **Crate odds** depend on race position (GDD §6.5). Each weapon has a percent chance per position (`WeaponData.position_chance`, 1st to 8th), and a crate makes one pick from those. Leaders get weak and defensive items: Road Spikes only drop for 1st–3rd and Firewalls only for 1st–5th. Odds climb toward stronger items further back, and 7th–8th mostly get Overdrive, System Override and Triple Nitro.
 - **Advanced weapons** (`docs/Cyberwave_2199_Advanced_Weapons.md`): the three rare items (`WeaponData.rare`) never drop for 1st and 2nd.
 
   | Weapon | 1st–2nd | 3rd–4th | 5th–6th | 7th–8th |
@@ -797,7 +798,7 @@ The exit code is non-zero if anything fails. These checks do **not** judge how t
 
 The in-game Credits screen (`scripts/menu/credits.gd`) shows the same list.
 
-Environment textures and the track skies are from [Poly Haven](https://polyhaven.com) (CC0, public domain): asphalt_04, road_damaged, rust_coarse_01, rusty_metal_02, rusty_corrugated_iron, concrete_moss, dirty_concrete, peeling_painted_wall, wood_peeling_paint_weathered, distressed_painted_planks, brown_mud_leaves_01, bark_willow, dirty_tiles, painted_worn_brick, withered_grass, sparse_grass, marble_01, herringbone_parquet, velour_velvet, monastery_stone_floor, forest_ground_04, forest_leaves_02, pine_bark, red_sandstone_wall, mossy_rock, old_stone_wall, large_sandstone_blocks, cobblestone_floor_08, pavement_01, reed_roof_04, hinoki_planks, dry_decay_leaves, mossy_stone_wall, and the kloofendal_overcast_puresky, kloofendal_48d_partly_cloudy_puresky, qwantani_sunset_puresky and misty_pines HDRIs. They live in `assets/textures/polyhaven/` (colour, normal and roughness at 1K) and `assets/sky/`.
+Environment textures and the track skies are from [Poly Haven](https://polyhaven.com) (CC0, public domain): asphalt_track, concrete_panels, brushed_concrete, metal_plate_02, palm_tree_bark, snow_02, snow_floor, rock_face, worn_rock_natural_01, bark_brown_02, white_plaster_rough_01, dark_rock, dark_rock_02, rock_ground, road_damaged, rust_coarse_01, rusty_metal_02, rusty_corrugated_iron, concrete_moss, dirty_concrete, peeling_painted_wall, wood_peeling_paint_weathered, distressed_painted_planks, brown_mud_leaves_01, bark_willow, dirty_tiles, painted_worn_brick, withered_grass, sparse_grass, marble_01, herringbone_parquet, velour_velvet, monastery_stone_floor, forest_ground_04, forest_leaves_02, pine_bark, red_sandstone_wall, mossy_rock, old_stone_wall, large_sandstone_blocks, cobblestone_floor_08, pavement_01, reed_roof_04, hinoki_planks, dry_decay_leaves, mossy_stone_wall, and the kloofendal_overcast_puresky, kloofendal_48d_partly_cloudy_puresky, qwantani_sunset_puresky and misty_pines HDRIs. They live in `assets/textures/polyhaven/` (colour, normal and roughness at 1K) and `assets/sky/`.
 
 ## Status and known issues
 

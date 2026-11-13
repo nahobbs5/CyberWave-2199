@@ -16,4 +16,4 @@ effect = &"traction"
 lifetime = 12.0
 can_affect_owner = true
 owner_grace = 1.0
-position_chance = PackedFloat32Array(10, 10, 6, 6, 3, 3, 2, 2)
+position_chance = PackedFloat32Array(12, 12, 10, 6, 0, 0, 0, 0)

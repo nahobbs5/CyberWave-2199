@@ -96,7 +96,7 @@ func _materials_setup() -> void:
 	material("flower_red", Color(0.85, 0.12, 0.1))
 	material("flower_yellow", Color(0.98, 0.8, 0.15))
 	material("flower_white", Color(0.95, 0.95, 0.9))
-	material("soil", Color(0.3, 0.2, 0.13))
+	textured("soil", "brown_mud_leaves_01", Color(0.75, 0.6, 0.65), 2.0)
 	material("andes", Color(0.46, 0.47, 0.56), 0.0, 0.0, 1.0)
 	material("snow", Color(0.96, 0.97, 1.0), 0.15, 0.0, 0.9)
 	material("tower", Color(0.24, 0.32, 0.4), 0.0, 0.7, 0.2)

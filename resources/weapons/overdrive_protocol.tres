@@ -13,5 +13,5 @@ kind = 7
 color = Color(0, 0.9, 1, 1)
 effect = &"overdrive"
 effect_duration = 6.5
-position_chance = PackedFloat32Array(0, 0, 2, 2, 6, 6, 10, 10)
+position_chance = PackedFloat32Array(0, 0, 0, 3, 6, 10, 20, 25)
 rare = true

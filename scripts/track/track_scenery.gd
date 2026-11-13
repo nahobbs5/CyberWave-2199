@@ -205,6 +205,17 @@ func textured(key: String, texture_name: String, tint: Color = Color.WHITE, metr
 	_materials[key] = texture_material(texture_name, tint, metres_per_tile, roughness, metallic)
 
 
+## Adds a steady glow to a registered StandardMaterial3D (e.g. a textured
+## material that should still read in the dark, as its plain one did).
+func add_glow(key: String, color: Color, energy: float) -> void:
+	var m := _materials.get(key) as StandardMaterial3D
+	if m == null or energy <= 0.0:
+		return
+	m.emission_enabled = true
+	m.emission = Color(color.r, color.g, color.b)
+	m.emission_energy_multiplier = energy
+
+
 ## Set by the loading screen while it builds a track: texture files then load
 ## on worker threads while the geometry is built, and finish_textures() fills
 ## them into their materials. Off, textures load right away.
@@ -213,16 +224,50 @@ static var async_textures: bool = false
 static var _pending_textures: Dictionary = {}
 
 
-static func _set_texture(m: StandardMaterial3D, property: StringName, path: String) -> void:
+## Puts a texture on a StandardMaterial3D property or a ShaderMaterial
+## uniform (now, or when its threaded load finishes).
+static func _set_texture(m: Material, property: StringName, path: String) -> void:
 	if not async_textures or ResourceLoader.has_cached(path):
-		m.set(property, load(path) as Texture2D)
+		_apply_texture(m, property, load(path) as Texture2D)
 		return
 	if not _pending_textures.has(path):
 		if ResourceLoader.load_threaded_request(path, "", true) != OK:
-			m.set(property, load(path) as Texture2D)
+			_apply_texture(m, property, load(path) as Texture2D)
 			return
 		_pending_textures[path] = []
 	(_pending_textures[path] as Array).append([m, property])
+
+
+static func _apply_texture(m: Material, property: StringName, texture: Texture2D) -> void:
+	if m is ShaderMaterial:
+		(m as ShaderMaterial).set_shader_parameter(property, texture)
+	else:
+		m.set(property, texture)
+
+
+## Sets a shader's "<prefix>_albedo" and "<prefix>_normal" uniforms from a
+## Poly Haven set (the normal map only if present: the web build leaves
+## them out).
+static func shader_textures(m: ShaderMaterial, prefix: String, texture_name: String, albedo: bool = true) -> void:
+	if albedo:
+		_set_texture(m, StringName("%s_albedo" % prefix), TEXTURES % [texture_name, texture_name, "diff"])
+	var nor := TEXTURES % [texture_name, texture_name, "nor"]
+	if ResourceLoader.exists(nor):
+		_set_texture(m, StringName("%s_normal" % prefix), nor)
+
+
+## Turns on a procedural shader's Poly Haven detail (shaders including
+## detail_common.gdshaderinc): grain strength, the texture's average linear
+## brightness (so the grain keeps the colour's overall level), normal-map
+## strength and metres per tile.
+static func shader_detail(m: ShaderMaterial, texture_name: String, tile: float, strength: float,
+		mean: float, normal_strength: float) -> void:
+	# Normal-only detail skips loading the albedo map.
+	shader_textures(m, "detail", texture_name, strength > 0.0)
+	m.set_shader_parameter("detail_tile", tile)
+	m.set_shader_parameter("detail_strength", strength)
+	m.set_shader_parameter("detail_mean", mean)
+	m.set_shader_parameter("detail_normal_strength", normal_strength)
 
 
 ## Share of the queued texture loads that are done (1 when none are queued).
@@ -245,7 +290,7 @@ static func finish_textures() -> void:
 	for path in _pending_textures:
 		var texture := ResourceLoader.load_threaded_get(path) as Texture2D
 		for entry in _pending_textures[path]:
-			(entry[0] as StandardMaterial3D).set(entry[1], texture)
+			_apply_texture(entry[0] as Material, entry[1], texture)
 	_pending_textures.clear()
 
 

@@ -152,6 +152,8 @@ var _recover_left: float = 0.0
 @onready var targeting: TargetingSystem = get_node_or_null("TargetingSystem")
 ## Ramp tricks (created in _ready).
 var trick: VehicleTrick
+## Controller rumble for human players (created in _ready).
+var haptics: VehicleHaptics
 
 
 func is_tricking() -> bool:
@@ -181,6 +183,9 @@ func _ready() -> void:
 	trick = VehicleTrick.new()
 	trick.name = "VehicleTrick"
 	add_child(trick)
+	haptics = VehicleHaptics.new()
+	haptics.name = "VehicleHaptics"
+	add_child(haptics)
 	add_to_group(GROUP)
 
 

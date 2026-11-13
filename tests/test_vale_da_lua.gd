@@ -124,13 +124,16 @@ func _test_layout() -> void:
 	var lo := INF
 	var hi := -INF
 	var max_bank := 0.0
+	var steepest := 0.0
 	var dh := 0.0
 	while dh < track.length:
 		lo = minf(lo, track.get_center_at(dh).y)
 		hi = maxf(hi, track.get_center_at(dh).y)
 		max_bank = maxf(max_bank, rad_to_deg(absf(track.bank_at(dh))))
+		steepest = maxf(steepest, absf(track.get_center_at(dh + 10.0).y - track.get_center_at(dh).y) / 10.0)
 		dh += 5.0
-	_check(track.sloped and lo < -6.0 and hi > 10.0, "the road climbs and drops (%.0f to %.0f m)" % [lo, hi])
+	_check(track.sloped and lo < -15.0 and hi > 17.0, "the road climbs and drops (%.0f to %.0f m)" % [lo, hi])
+	_check(steepest > 0.07 and steepest < 0.11, "real climbs, none steeper than 11%% (%.1f%%)" % (steepest * 100.0))
 	_check(max_bank > 3.0 and max_bank < 7.0, "gently banked sweepers (%.0f deg)" % max_bank)
 	_check(scenery.waterfalls >= 3, "waterfalls (%d)" % scenery.waterfalls)
 	_check(track.find_children("Water_*", "MeshInstance3D", true, false).size() >= 4, "moving water in every river")

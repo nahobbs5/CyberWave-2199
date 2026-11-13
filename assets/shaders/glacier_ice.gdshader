@@ -1,5 +1,6 @@
 shader_type spatial;
-// Glacier ice for the Vatnajokull cave walls. Procedural (no textures):
+// Glacier ice for the Vatnajokull cave walls. Procedural, with an optional
+// Poly Haven normal map for surface roughness (detail_common.gdshaderinc):
 // swirling flow bands from deep blue through cyan to white, dark volcanic
 // ash streaks, a glassy surface and a glow that is strongest near daylight
 // (the cave mouth, skylights, the crystal tube's far end). Works in model
@@ -20,10 +21,14 @@ uniform float source_glow = 2.2;
 uniform vec4 glow_points[12];
 uniform int glow_count = 0;
 
+#include "res://assets/shaders/detail_common.gdshaderinc"
+
 varying vec3 local_pos;
+varying vec3 local_normal;
 
 void vertex() {
 	local_pos = VERTEX;
+	local_normal = NORMAL;
 }
 
 float hash(vec3 p) {
@@ -69,6 +74,13 @@ void fragment() {
 	col = mix(col, pale_color.rgb, smoothstep(0.6, 0.78, fine) * 0.55);
 	col = mix(col, deep_color.rgb * 0.45, smoothstep(0.38, 0.22, fine) * 0.6);
 	col = mix(col, ash_color.rgb, streak);
+
+	vec3 dn = normalize(local_normal);
+	vec3 dw = detail_weights(dn);
+	col *= detail_shade(local_pos, dw);
+	if (detail_normal_strength > 0.0) {
+		NORMAL = detail_view_normal(local_pos, dn, dw, MODEL_MATRIX, VIEW_MATRIX, FRONT_FACING);
+	}
 
 	float glow = base_glow;
 	for (int i = 0; i < glow_count; i++) {

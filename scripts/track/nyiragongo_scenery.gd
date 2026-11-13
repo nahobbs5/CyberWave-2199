@@ -120,22 +120,17 @@ func _setup_materials() -> void:
 	register_material("lava_open", _lava_material(0.55))
 	material("ember", Color(1.0, 0.42, 0.08), 5.0)
 	textured("tin", "rusty_corrugated_iron", Color(0.55, 0.5, 0.48), 2.0, 0.6, 0.4)
-	material("hut_frame", Color(0.12, 0.11, 0.1), 0.0, 0.3, 0.6)
+	textured("hut_frame", "distressed_painted_planks", Color(0.24, 0.23, 0.24), 1.5, 0.6)
 	material("flag_blue", Color(0.0, 0.5, 0.95))
 	material("flag_red", Color(0.85, 0.08, 0.08))
 	material("flag_yellow", Color(1.0, 0.85, 0.1))
 	material("pole", Color(0.6, 0.6, 0.62), 0.0, 0.6, 0.4)
 
 
-## Poly Haven sets (see README): cliff faces and flats. Normal maps only if
-## present (the web build leaves them out).
+## Poly Haven sets (see README): cliff faces and flats.
 static func _set_rock_textures(m: ShaderMaterial, cliff: String, ground: String) -> void:
-	for pair: Array in [["cliff", cliff], ["ground", ground]]:
-		var base := TEXTURES % [pair[1], pair[1], "diff"]
-		m.set_shader_parameter("%s_albedo" % pair[0], load(base) as Texture2D)
-		var nor := TEXTURES % [pair[1], pair[1], "nor"]
-		if ResourceLoader.exists(nor):
-			m.set_shader_parameter("%s_normal" % pair[0], load(nor) as Texture2D)
+	shader_textures(m, "cliff", cliff)
+	shader_textures(m, "ground", ground)
 
 
 func _lava_material(openness: float) -> ShaderMaterial:

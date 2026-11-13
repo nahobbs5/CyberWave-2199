@@ -25,7 +25,8 @@ const SECTIONS := [
 	]],
 	["TEXTURES AND SKY", "layers", [
 		"Poly Haven (polyhaven.com), CC0: asphalt, concrete, rust, metal, brick, wood,",
-		"grass, mud, stone, paving, reed and tile textures, and the kloofendal skies",
+		"bark, grass, mud, rock, snow, plaster, stone, paving, reed and tile textures,",
+		"and the kloofendal skies",
 	]],
 	["ENGINE", "gear", ["Made with Godot Engine (godotengine.org), MIT License"]],
 ]

@@ -2,7 +2,8 @@ shader_type spatial;
 // Vale da Lua rock: smooth, river-sculpted stone, pale to dark grey, with
 // rippled erosion lines, round dimples and potholes, and a darker, glossier
 // wet band with a faint green-brown stain toward the water. Procedural, in
-// model space (track-local metres for scenery).
+// model space (track-local metres for scenery), with optional Poly Haven
+// rock grain on top (detail_common.gdshaderinc).
 
 uniform vec4 pale : source_color = vec4(0.58, 0.57, 0.55, 1.0);
 uniform vec4 dark : source_color = vec4(0.24, 0.24, 0.25, 1.0);
@@ -11,6 +12,8 @@ uniform float scale = 0.18;
 // Below this height the rock starts to look wet; fully wet at wet_bottom.
 uniform float wet_top = -2.0;
 uniform float wet_bottom = -6.0;
+
+#include "res://assets/shaders/detail_common.gdshaderinc"
 
 varying vec3 local_pos;
 varying vec3 local_normal;
@@ -81,6 +84,12 @@ void fragment() {
 	// Wet and stained toward the water.
 	float wet = smoothstep(wet_top, wet_bottom, local_pos.y);
 	col = mix(col, mix(col * 0.55, stain.rgb * 0.7, 0.35), wet);
+	vec3 dn = normalize(local_normal);
+	vec3 dw = detail_weights(dn);
+	col *= detail_shade(local_pos, dw);
+	if (detail_normal_strength > 0.0) {
+		NORMAL = detail_view_normal(local_pos, dn, dw, MODEL_MATRIX, VIEW_MATRIX, FRONT_FACING);
+	}
 	ALBEDO = col;
 	ROUGHNESS = mix(0.7, 0.18, max(wet, hollow * 0.6));
 	SPECULAR = 0.5;

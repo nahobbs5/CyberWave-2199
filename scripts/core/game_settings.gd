@@ -1,8 +1,8 @@
 class_name GameSettings
 extends RefCounted
 ## Settings and accessibility (GDD 11.9, 13.1, 14.2 SettingsManager): HUD
-## scale, motion blur, camera shake, reduced flashing, audio volumes and
-## control rebinds. Stored in user://settings.cfg next to the camera view
+## scale, motion blur, camera shake, reduced flashing, audio volumes,
+## controller vibration and control rebinds. Stored in user://settings.cfg next to the camera view
 ## (which ChaseCamera saves in its own [camera] section).
 ##
 ## Static, loaded on first use (InputSetup.ensure_actions calls ensure_loaded
@@ -22,6 +22,8 @@ static var reduced_flashing: bool = false
 static var master_volume: float = 1.0
 static var music_volume: float = 0.8
 static var sfx_volume: float = 1.0
+## Controller rumble (VehicleHaptics).
+static var vibration: bool = true
 ## { action: { "key": "k:87", "pad": "b:0" } } (InputSetup format).
 static var bindings: Dictionary = {}
 
@@ -45,6 +47,7 @@ static func load_settings() -> void:
 		master_volume = clampf(float(config.get_value("audio", "master", master_volume)), 0.0, 1.0)
 		music_volume = clampf(float(config.get_value("audio", "music", music_volume)), 0.0, 1.0)
 		sfx_volume = clampf(float(config.get_value("audio", "sfx", sfx_volume)), 0.0, 1.0)
+		vibration = bool(config.get_value("controls", "vibration", vibration))
 		var saved: Variant = config.get_value("controls", "bindings", {})
 		if saved is Dictionary:
 			bindings = saved
@@ -60,6 +63,7 @@ static func reset_values() -> void:
 	master_volume = 1.0
 	music_volume = 0.8
 	sfx_volume = 1.0
+	vibration = true
 	bindings = {}
 
 
@@ -73,6 +77,7 @@ static func save_settings() -> bool:
 	config.set_value("audio", "master", master_volume)
 	config.set_value("audio", "music", music_volume)
 	config.set_value("audio", "sfx", sfx_volume)
+	config.set_value("controls", "vibration", vibration)
 	config.set_value("controls", "bindings", bindings)
 	return config.save(path) == OK
 

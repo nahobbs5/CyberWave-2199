@@ -39,21 +39,22 @@ const NEON: Array[Color] = [Color(1.0, 0.15, 0.75), Color(0.0, 0.9, 1.0), Color(
 
 
 func build() -> void:
-	material("tower", Color(0.07, 0.06, 0.1), 0.0, 0.3, 0.5)
-	material("tower_light", Color(0.12, 0.11, 0.16), 0.0, 0.2, 0.6)
-	material("concrete", Color(0.22, 0.21, 0.24), 0.0, 0.0, 0.9)
+	textured("tower", "concrete_panels", Color(0.12, 0.12, 0.23), 4.0, 0.5, 0.3)
+	textured("tower_light", "concrete_panels", Color(0.2, 0.21, 0.37), 4.0, 0.6, 0.2)
+	textured("concrete", "brushed_concrete", Color(0.53, 0.54, 0.7), 3.0, 0.9)
 	material("gold", Color(1.0, 0.75, 0.3), 2.2)
-	material("white_stone", Color(0.75, 0.72, 0.68), 0.0, 0.0, 0.7)
+	textured("white_stone", "marble_01", Color(1.0, 1.0, 1.15), 3.0, 0.7)
 	material("window_warm", Color(1.0, 0.8, 0.45), 1.6)
 	material("window_cool", Color(0.5, 0.75, 1.0), 1.4)
 	for i in NEON.size():
 		material("neon%d" % i, NEON[i], 4.0)
-	material("palm_trunk", Color(0.25, 0.18, 0.12), 0.0, 0.0, 0.9)
+	textured("palm_trunk", "palm_tree_bark", Color(0.41, 0.32, 0.24), 1.5, 0.9)
 	material("palm_leaf", Color(0.08, 0.35, 0.18), 0.3)
 	material("water", Color(0.05, 0.2, 0.35), 0.4, 0.6, 0.05)
 	material("glass", Color(0.06, 0.07, 0.12), 0.0, 0.8, 0.1)
 	material("beam", Color(0.75, 0.9, 1.0, 0.35), 3.0, 0.0, 0.5, true)
-	material("carpet", Color(0.35, 0.05, 0.12), 0.2)
+	textured("carpet", "velour_velvet", Color(0.51, 0.28, 0.43), 1.5, 0.9)
+	add_glow("carpet", Color(0.35, 0.05, 0.12), 0.2)
 	material("red", Color(0.8, 0.1, 0.12), 0.8)
 	material("blue", Color(0.15, 0.3, 0.9), 0.8)
 	_strip()

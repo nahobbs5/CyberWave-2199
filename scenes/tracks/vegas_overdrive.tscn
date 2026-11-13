@@ -39,15 +39,18 @@ crate_row_offsets = PackedFloat32Array(121, 531, 971, 1943, 2483)
 crate_lateral_positions = PackedFloat32Array(-7, -2.5, 2.5, 7)
 coin_offsets = PackedFloat32Array(210, 222, 708, 720, 941, 953, 1597, 1609, 2497, 2509)
 coin_laterals = PackedFloat32Array(3, 3, -3, -3, 3, 3, -3, -3, 3, 3)
-road_color = Color(0.09, 0.08, 0.12, 1)
+road_color = Color(0.67, 0.69, 1, 1)
 edge_line_color = Color(1, 0.2, 0.85, 1)
-ground_color = Color(0.05, 0.03, 0.08, 1)
-barrier_color = Color(0.16, 0.14, 0.22, 1)
+ground_color = Color(0.12, 0.08, 0.23, 1)
+barrier_color = Color(0.27, 0.27, 0.5, 1)
 neon_left_color = Color(1, 0.15, 0.8, 1)
 neon_right_color = Color(0, 0.9, 1, 1)
 light_colors = PackedColorArray(1, 0.2, 0.85, 1, 0, 0.85, 1, 1, 1, 0.7, 0.3, 1)
 light_spacing = 110.0
 ground_margin = 450.0
+road_texture = "asphalt_track"
+barrier_texture = "concrete_panels"
+ground_texture = "brushed_concrete"
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_vegas")

@@ -22,6 +22,12 @@ control_points = PackedVector3Array(0, 0, 200, 0, 0, 180.4, 0, 0, 160.8, 0, 0, 1
 crate_row_offsets = PackedFloat32Array(300, 1050, 1620, 1900, 2360)
 coin_offsets = PackedFloat32Array(470, 482, 750, 762, 1440, 1452, 2110, 2122, 2490, 2502)
 coin_laterals = PackedFloat32Array(3, 3, -3, -3, 3, 3, -3, -3, 3, 3)
+road_color = Color(1, 1.1, 1.4, 1)
+ground_color = Color(0.12, 0.13, 0.23, 1)
+barrier_color = Color(0.53, 0.57, 0.78, 1)
+road_texture = "asphalt_track"
+barrier_texture = "brushed_concrete"
+ground_texture = "brushed_concrete"
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_night")

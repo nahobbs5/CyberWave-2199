@@ -13,13 +13,16 @@ extends TrackScenery
 ## shortcut is the Cloud Forest walk: through a smashable glass panel into
 ## the Cloud Forest dome, round the misty waterfall mountain (two open
 ## edges), and out to rejoin the Bayfront. The skyway is sloped (GDD 8.6c):
-## it swoops between about 14 m (the Bayfront) and 38 m (the Great Wrap)
-## above the ground, which is flat at FLOOR_Y, and banks in the long
+## it rolls over four crests between about 10 m (the Bayfront dip) and
+## 53 m (the Great Wrap) above the ground, which is flat at FLOOR_Y, with
+## grades up to about 9%, and banks in the long
 ## sweepers; anything that meets the deck works from the road's height there.
 ## Positions are layout coordinates matching gardens_by_the_bay.tscn.
 
 ## The tallest Supertree, inside the Great Wrap hairpin.
 const WRAP_TREE := Vector3(517, 0, 150)
+## It towers over the skyway's highest crest beside it.
+const WRAP_TREE_HEIGHT := 82.0
 ## Supertrees: [x, z, height, canopy radius]. Trees too close to a road for
 ## their canopy are left out by _supertrees().
 const SUPERTREES := [
@@ -91,7 +94,7 @@ func build() -> void:
 func _materials_setup() -> void:
 	textured("deck_wood", "hinoki_planks", Color(0.85, 0.6, 0.4), 2.0, 0.6)
 	material("fascia", Color(1.0, 0.62, 0.28), 2.2)
-	material("pylon", Color(0.16, 0.15, 0.2), 0.0, 0.6, 0.4)
+	textured("pylon", "metal_plate_02", Color(0.48, 0.53, 0.83), 2.5, 0.4, 0.6)
 	textured("jungle_bark", "bark_willow", Color(0.45, 0.4, 0.35), 3.0)
 	material("jungle_leaf", Color(0.08, 0.2, 0.09), 0.0, 0.0, 0.9)
 	material("dome_glass", Color(0.55, 0.75, 0.95, 0.12), 0.15, 0.4, 0.05, true)
@@ -103,12 +106,12 @@ func _materials_setup() -> void:
 	material("waterfall", Color(0.75, 0.92, 1.0, 0.8), 2.6, 0.0, 0.2, true)
 	material("mist", Color(0.85, 0.92, 1.0, 0.12), 0.3, 0.0, 1.0, true)
 	textured("dragon_wood", "pine_bark", Color(0.95, 0.82, 0.6), 1.5)
-	material("garden_floor", Color(0.12, 0.22, 0.1))
+	textured("garden_floor", "forest_ground_04", Color(0.29, 0.63, 0.38), 4.0)
 	register_material("water", water_material(Color(0.01, 0.03, 0.07), Color(0.05, 0.14, 0.24), 0.9, 0.0, 0.2))
 	material("mbs_tower", Color(0.75, 0.78, 0.85), 0.0, 0.3, 0.5)
 	material("window_warm", Color(1.0, 0.82, 0.5), 1.6)
 	material("window_cool", Color(0.55, 0.78, 1.0), 1.5)
-	material("building", Color(0.08, 0.09, 0.13), 0.0, 0.3, 0.6)
+	textured("building", "concrete_panels", Color(0.14, 0.18, 0.3), 4.0, 0.6, 0.3)
 	material("skypark", Color(0.85, 0.85, 0.9), 0.4)
 	material("beacon", Color(1.0, 0.25, 0.3), 3.0)
 	material("star", Color(0.9, 0.92, 1.0), 2.5)
@@ -192,7 +195,7 @@ func road_y_near(pos: Vector3) -> float:
 func _supertrees() -> void:
 	supertrees = SupertreeBuilder.new(self)
 	var list := SUPERTREES.duplicate()
-	list.append([WRAP_TREE.x, WRAP_TREE.z, 52.0, 20.0])
+	list.append([WRAP_TREE.x, WRAP_TREE.z, WRAP_TREE_HEIGHT, 20.0])
 	for t in list:
 		var pos := Vector3(t[0], floor_y, t[1])
 		if supertree_fits(Vector3(t[0], 0, t[1]), t[2], t[3]):
@@ -443,7 +446,8 @@ func _jungle() -> void:
 			if _in_water(p) or _in_dome(p) or not clear(p, 1.5):
 				continue
 			var ground := Vector3(p.x, floor_y, p.z)
-			if rng.randf() < 0.18:
+			# Palms (up to about 16 m with fronds) only where they stay under the deck.
+			if rng.randf() < 0.18 and (edge_distance(p) > 8.0 or road_y_near(p) - floor_y > 18.0):
 				trees.place("palm", Transform3D(Basis(Vector3.UP, rng.randf() * TAU), ground))
 				continue
 			var s := rng.randf_range(0.85, 1.1)

@@ -188,14 +188,17 @@ func _setup_materials() -> void:
 	register_material("trunk", _house_material(0.0, 0.18))
 	register_material("lava", _house_material(0.85, 0.1))
 	register_material("bark", _house_material(0.0, 0.1))
-	material("bone", Color(0.92, 0.87, 0.74), 0.06, 0.0, 0.55)
-	material("step", Color(0.62, 0.55, 0.47), 0.0, 0.0, 0.8)
-	material("trim", Color(0.32, 0.19, 0.1), 0.0, 0.0, 0.7)
+	textured("bone", "white_plaster_rough_01", Color(1.6, 1.6, 1.6), 1.5, 0.55)
+	add_glow("bone", Color(0.92, 0.87, 0.74), 0.06)
+	textured("step", "white_plaster_rough_01", Color(1.27, 1.24, 1.37), 2.0, 0.8)
+	textured("trim", "hinoki_planks", Color(0.53, 0.41, 0.31), 2.0, 0.7)
 	textured("planks", "hinoki_planks", Color(1.0, 0.82, 0.48), 2.5, 0.7)
 	material("window", Color(1.0, 0.8, 0.5), 3.0)
 	material("sky_window", Color(0.9, 0.95, 1.0), 4.0)
-	material("cap", Color(0.88, 0.36, 0.16), 0.1, 0.0, 0.6)
-	material("cap_cream", Color(0.95, 0.9, 0.78), 0.1, 0.0, 0.6)
+	textured("cap", "white_plaster_rough_01", Color(1.8, 0.81, 0.47), 2.0, 0.6)
+	add_glow("cap", Color(0.88, 0.36, 0.16), 0.1)
+	textured("cap_cream", "white_plaster_rough_01", Color(1.6, 1.6, 1.6), 2.0, 0.6)
+	add_glow("cap_cream", Color(0.95, 0.9, 0.78), 0.1)
 	material("fur", Color(0.36, 0.24, 0.15), 0.0, 0.0, 0.9)
 	material("giraffe", Color(0.9, 0.72, 0.38), 0.0, 0.0, 0.7)
 	material("eagle", Color(0.42, 0.3, 0.2), 0.0, 0.0, 0.8)
@@ -206,6 +209,8 @@ func _house_material(lava: float, drips: float) -> ShaderMaterial:
 	m.shader = HOUSE_SHADER
 	m.set_shader_parameter("lava_amount", lava)
 	m.set_shader_parameter("drip_amount", drips)
+	# Real bark grain under the melted look (Poly Haven bark_brown_02).
+	shader_detail(m, "bark_brown_02", 2.5, 0.5, 0.1, 0.8)
 	return m
 
 

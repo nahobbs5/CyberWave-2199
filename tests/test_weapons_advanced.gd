@@ -148,13 +148,23 @@ func _test_odds(race: RaceManager) -> void:
 	var wm := race.weapon_manager
 	var specials := {&"hunter_killer": 0, &"overdrive_protocol": 0, &"system_override": 0}
 	var expected := {
-		1: [0, 0, 0], 2: [0, 0, 0], 3: [3, 2, 5], 5: [5, 6, 9], 8: [5, 10, 16],
+		1: [0, 0, 0], 2: [0, 0, 0], 3: [0, 0, 2], 5: [4, 6, 8], 8: [8, 25, 31],
 	}
+	var back_three := {&"overdrive_protocol": 0.0, &"system_override": 0.0, &"triple_nitro": 0.0}
 	for position in range(1, 9):
 		var sum := 0.0
 		for w in wm.weapons:
 			sum += w.chance_for(position, 8)
 		_check(is_equal_approx(sum, 100.0), "P%d crate odds add up to 100%% (%.1f)" % [position, sum])
+		for w in wm.weapons:
+			if w.id == &"road_spike" and position >= 4:
+				_check(w.chance_for(position, 8) == 0.0, "no single Road Spike at P%d (top 3 only)" % position)
+			if w.id == &"firewall" and position >= 6:
+				_check(w.chance_for(position, 8) == 0.0, "no Firewall at P%d (top 5 only)" % position)
+			if w.id in back_three and position >= 7:
+				back_three[w.id] += w.chance_for(position, 8)
+	var back_total: float = back_three.values().reduce(func(a, b): return a + b, 0.0)
+	_check(back_total >= 2.0 * 65.0, "7th-8th mostly get Overdrive / Override / Triple Nitro (%.0f%% over two places)" % back_total)
 	for position: int in expected:
 		var counts := [0, 0, 0]
 		var rolls := 20000
