@@ -31,6 +31,23 @@ extends Node3D
 ## AI hold at least this speed (m/s) over the 80 m before each gap and
 ## across it, so they clear the jump. 0 = no floor.
 @export var min_speed: float = 0.0
+@export_group("Branch")
+## A full alternate route rather than a shortcut (GDD 8.8a, Chefchaouen's
+## forks): AI follow its own racing line (BranchLine) and choose it by
+## traffic as well as by chance, a recovery on it respawns on it, the
+## minimap draws it like the main loop, and it may carry item rows.
+@export var is_branch: bool = false
+## Where its ends meet the main road, metres right (+) or left (-) of the
+## main centre line: each route gets its own lane into and out of a merge.
+@export var start_lateral: float = 0.0
+@export var end_lateral: float = 0.0
+## (from, to) distances where the road surface isn't drawn (the collider
+## still is): stairs drawn by the scenery sit over a smooth ramp there.
+@export var hidden_surface: PackedVector2Array = PackedVector2Array()
+## Weapon crate rows (distances along it) and their laterals.
+@export var crate_distances: PackedFloat32Array = PackedFloat32Array()
+@export var crate_laterals: PackedFloat32Array = PackedFloat32Array([-3.0, 0.0, 3.0])
+@export_group("")
 const GAP_RUN_UP := 80.0
 
 var curve: Curve3D
@@ -53,11 +70,12 @@ func build_route(track: TrackCircuit) -> void:
 		return
 	start_offset = track.curve.get_closest_offset(pts[0])
 	end_offset = track.curve.get_closest_offset(pts[pts.size() - 1])
-	pts[0] = track.curve.sample_baked(start_offset)
-	pts[pts.size() - 1] = track.curve.sample_baked(end_offset)
-	# Leave and rejoin along the main road's direction for smooth junctions.
+	# Leave and rejoin along the main road's direction for smooth junctions,
+	# in a lane start_lateral / end_lateral off the main centre line.
 	var t0 := _main_tangent(track, start_offset)
 	var t1 := _main_tangent(track, end_offset)
+	pts[0] = track.curve.sample_baked(start_offset) + _flat_right(t0) * start_lateral
+	pts[pts.size() - 1] = track.curve.sample_baked(end_offset) + _flat_right(t1) * end_lateral
 	var n := pts.size()
 	for i in n:
 		var p := pts[i]
@@ -72,6 +90,33 @@ func build_route(track: TrackCircuit) -> void:
 	length = curve.get_baked_length()
 	span = fposmod(end_offset - start_offset, track.length)
 	_compute_speeds()
+
+
+static func _flat_right(tangent: Vector3) -> Vector3:
+	return Vector3(tangent.x, 0.0, tangent.z).normalized().cross(Vector3.UP).normalized()
+
+
+## Track-local transform on the route: `distance` along it, `lateral`
+## metres right of its centre, `height` above the road, facing along it and
+## pitched with its slope (no banking on shortcuts).
+func safe_transform(distance: float, lateral: float = 0.0, height: float = 0.9) -> Transform3D:
+	var d := clampf(distance, 0.0, length)
+	var fwd := point_at(minf(d + 1.0, length)) - point_at(maxf(d - 1.0, 0.0))
+	if fwd.length_squared() < 0.000001:
+		fwd = tangent_at(d)
+	fwd = fwd.normalized()
+	var right := _flat_right(fwd)
+	var up := right.cross(fwd).normalized()
+	var basis := Basis(right, up, -fwd)
+	return Transform3D(basis, point_at(d) + right * lateral + up * height)
+
+
+## True if the road surface isn't drawn at this distance (stairs over it).
+func surface_hidden(distance: float) -> bool:
+	for r in hidden_surface:
+		if distance >= r.x and distance <= r.y:
+			return true
+	return false
 
 
 func is_valid() -> bool:

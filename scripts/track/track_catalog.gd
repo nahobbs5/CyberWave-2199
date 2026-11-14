@@ -35,6 +35,7 @@ const TRACKS := [
 			"res://music/vishiv-the-dragons-lair-351312.mp3"],
 	["Fires of Nyiragongo", "res://scenes/tracks/nyiragongo.tscn", "Nyiragongo, D.R. Congo",
 			"res://music/jean-paul-v-danger-imminent-317370.mp3"],
+	["Chefchaouen", "res://scenes/tracks/chefchaouen.tscn", "Chefchaouen, Morocco", ""],
 	["Test Circuit", TEST_CIRCUIT, "Graybox",
 			"res://music/stageechoesmusic-the-garden-wakes-628640.mp3"],
 ]

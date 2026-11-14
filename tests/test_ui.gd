@@ -351,6 +351,9 @@ func _test_cups() -> void:
 	GameSession.setup_mode = RaceConfig.Mode.GRAND_PRIX
 	GameSession.cup_path = ""
 	GameSession.track_name = ""
+	# Every cup is open now: lock the Africa Cup for this test as the example.
+	var example := GrandPrixData.cup_by_path("res://resources/grand_prix/africa_circuit.tres")
+	example.locked = true
 	var cups := (load("res://scenes/menu/cup_select.tscn") as PackedScene).instantiate() as CupSelect
 	root.add_child(cups)
 	await _frames(2)
@@ -419,6 +422,7 @@ func _test_cups() -> void:
 	_check(GameSession.current != null and GameSession.current.track_scene.resource_path.ends_with("vegas_overdrive.tscn"),
 			"and it races that track")
 	tracks.queue_free()
+	example.locked = false
 	GameSession.cup_path = ""
 	GameSession.track_name = ""
 	GameSession.versus_template = null
@@ -472,6 +476,8 @@ func _test_neon_setup() -> void:
 	await process_frame
 	GameSession.cup_path = ""
 
+	var example := GrandPrixData.cup_by_path("res://resources/grand_prix/africa_circuit.tres")
+	example.locked = true
 	var cups := (load("res://scenes/menu/cup_select.tscn") as PackedScene).instantiate() as CupSelect
 	root.add_child(cups)
 	await _frames(2)
@@ -502,6 +508,7 @@ func _test_neon_setup() -> void:
 		var art := cups.cards[shut].find_child("Badge", true, false) as CupBadge
 		_check(art.locked and art.title == "AFRICA CUP", "the locked cup's card is titled and padlocked")
 	cups.queue_free()
+	example.locked = false
 	await process_frame
 
 

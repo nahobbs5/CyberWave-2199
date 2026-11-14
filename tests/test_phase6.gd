@@ -53,6 +53,7 @@ func _run_all() -> void:
 	_test_glacier()
 	_test_crazy_house()
 	await _test_gardens()
+	await _test_bumper_cars()
 	await _test_build_times()
 	await _run("features on Vegas", _test_features, _vegas_config(), false)
 	await _run("item boxes on ramps and boosters (The Stacks)", _test_item_boxes, _config(STACKS, "The Stacks"), false)
@@ -476,6 +477,80 @@ func _test_menus_and_gp() -> void:
 
 
 ## Each track's scenery builds quickly (headless, no rendering).
+## Six Flags' bumper-car pavilion (a Blender .glb merged on load by
+## GlbProp): one mesh, a draw call per material, dead ahead at the end of
+## the Midway straight and clear of the road, on levelled ground, with the Midway's own dressing
+## kept out of it.
+func _test_bumper_cars() -> void:
+	_current = "bumper-car pavilion"
+	print("- bumper-car pavilion (Six Flags)")
+	var track := (load(SIX_FLAGS) as PackedScene).instantiate() as TrackCircuit
+	root.add_child(track)
+	var scenery := track.get_node("Scenery") as SixFlagsScenery
+	var models := scenery.find_children("BumperCars", "MeshInstance3D", true, false)
+	_check(models.size() == 1, "one pavilion mesh on Six Flags")
+	if models.size() != 1:
+		track.queue_free()
+		return
+	var model := models[0] as MeshInstance3D
+	var mesh := model.mesh
+	_check(mesh.get_surface_count() > 10 and mesh.get_surface_count() < 40,
+			"merged into a surface per material (%d)" % mesh.get_surface_count())
+	var white: Array[String] = []
+	for i in mesh.get_surface_count():
+		var m := mesh.surface_get_material(i) as StandardMaterial3D
+		if m != null and m.albedo_texture == null and m.albedo_color.v > 0.95:
+			white.append(m.resource_name)
+	_check(white.is_empty(), "Blender's white procedural materials are all stood in for (%s)" % [white])
+	var tris := GlbProp.triangle_count(mesh)
+	_check(tris > 250000 and tris < 400000, "all of the model is there (%d triangles)" % tris)
+	var aabb := mesh.get_aabb()
+	_check(aabb.size.y > 3.5 and aabb.size.y < 6.0 and aabb.size.x < 25.0 and aabb.size.z < 32.0,
+			"metre scale, ground plane left out (%s)" % aabb.size)
+	var r := SixFlagsScenery.BUMPER_CARS_RECT
+	var clear := true
+	var level := true
+	var noise := SceneryTerrain.make_noise(1)
+	for c in [Vector2(r.position.x, r.position.y), Vector2(r.end.x, r.position.y), Vector2(r.position.x, r.end.y),
+			Vector2(r.end.x, r.end.y), r.get_center()]:
+		var p: Vector3 = model.transform * Vector3(c.x, 0, c.y)
+		clear = clear and scenery.clear(p, 0.5)
+		var ground := SceneryTerrain.height_at(scenery, noise, 2.2, p.x, p.z, scenery._bumper_cars_pad)
+		level = level and absf(ground - SixFlagsScenery.BUMPER_CARS_PAD) < 0.02
+	_check(clear, "the whole footprint is clear of the road and barriers")
+	_check(level, "the ground under it is levelled")
+	# Dead ahead of the cars coming up the Midway straight, open front to them.
+	var a := track.curve.get_closest_offset(SixFlagsScenery.MIDWAY_FROM)
+	var b := track.curve.get_closest_offset(SixFlagsScenery.MIDWAY_TO)
+	var approach := track.curve.get_closest_offset(SixFlagsScenery.BUMPER_CARS)
+	_check(approach > a and approach < b, "on the Midway")
+	var from := track.curve.sample_baked(approach)
+	var heading := (track.curve.sample_baked(approach + 5.0) - track.curve.sample_baked(approach - 5.0)).normalized()
+	var centre: Vector3 = model.transform * Vector3(r.get_center().x, 0, r.get_center().y)
+	var to_centre := (centre - from).normalized()
+	_check(heading.dot(to_centre) > 0.99, "straight ahead of the cars on the approach")
+	var front: Vector3 = model.transform.basis * Vector3.BACK
+	_check(front.dot(heading) < -0.99, "its open front faces them")
+	var edge := scenery.edge_distance(centre)
+	_check(edge > 15.0 and edge < 30.0, "on the outside of the corner, %.1f m off the road" % edge)
+	# Past the corner the road turns to its open railing side (model -x).
+	var later := track.curve.get_closest_offset(centre)
+	var road_after := track.curve.sample_baked(later)
+	var railing_dir: Vector3 = model.transform.basis * Vector3.LEFT
+	_check(railing_dir.dot((road_after - centre).normalized()) > 0.3, "its open railing side faces the road out of the corner")
+	_check(scenery.box_hits_bumper_cars(Transform3D(Basis(), centre), 10.0, 8.0)
+			and scenery.box_hits_bumper_cars(Transform3D(Basis(), centre + heading * 20.0), 38.0, 22.0)
+			and not scenery.box_hits_bumper_cars(Transform3D(Basis(), centre + heading * 60.0), 10.0, 8.0),
+			"Midway stalls and flood water keep out of it")
+	var again := (load(SIX_FLAGS) as PackedScene).instantiate() as TrackCircuit
+	root.add_child(again)
+	var other := again.get_node("Scenery").find_child("BumperCars", true, false) as MeshInstance3D
+	_check(other != null and other.mesh == mesh, "rebuilding the track reuses the merged mesh")
+	track.queue_free()
+	again.queue_free()
+	await process_frame
+
+
 func _test_build_times() -> void:
 	_current = "scenery build times"
 	print("- scenery build times")

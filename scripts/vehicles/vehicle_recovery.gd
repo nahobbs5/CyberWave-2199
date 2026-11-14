@@ -86,6 +86,10 @@ const ITEM_LOSS_REASONS: Array[String] = ["out of bounds", "water", "lava", "off
 
 var track: TrackCircuit
 var last_safe_offset: float = 0.0
+## On a branch route (TrackShortcut.is_branch): the branch and the distance
+## along it of the last safe point, so a recovery respawns on that route.
+var safe_branch: TrackShortcut
+var safe_branch_distance: float = 0.0
 ## Signed distance driven along the circuit since spawn (forward = positive).
 var total_progress: float = 0.0
 var last_reason: String = ""
@@ -156,7 +160,11 @@ func request_recovery(reason: String) -> bool:
 	if track == null or vehicle == null or _cooldown > 0.0 or state != State.NORMAL or vehicle.is_flying():
 		return false
 	var backoff := reset_backoff
-	target_transform = _find_clear_transform(last_safe_offset - backoff)
+	if safe_branch != null and is_instance_valid(safe_branch):
+		target_transform = _find_clear_branch_transform(safe_branch, safe_branch_distance - backoff)
+		safe_branch_distance = maxf(0.0, safe_branch_distance - backoff)
+	else:
+		target_transform = _find_clear_transform(last_safe_offset - backoff)
 	last_safe_offset = track.wrap_offset(last_safe_offset - backoff)
 	total_progress -= backoff
 	_travelled = 0.0
@@ -262,10 +270,20 @@ func _update_safe_point() -> void:
 		return
 	var offset := track.get_offset_at(pos)
 	var step := track.wrapped_delta(last_safe_offset, offset)
+	# On a branch, lap progress moves span / length metres per metre driven.
+	var branch := track.get_shortcut_at(pos)
+	if branch != null and not branch.is_branch:
+		branch = null
+	var progress_scale := maxf(1.0, branch.span / maxf(branch.length, 1.0)) if branch != null else 1.0
 	# Missed updates (airborne, scraping the edge) are fine: the car really
 	# covered that distance. A teleport or shortcut didn't.
-	if step > _travelled + progress_slack or step < -max_backward_step:
+	if step > _travelled * progress_scale + progress_slack or step < -max_backward_step:
 		return
+	if branch != null:
+		safe_branch = branch
+		safe_branch_distance = branch.local_offset(track.to_local(pos))
+	else:
+		safe_branch = null
 	last_safe_offset = offset
 	total_progress += step
 	_travelled = 0.0
@@ -330,6 +348,20 @@ func _find_clear_transform(offset: float) -> Transform3D:
 		if _is_clear(xf):
 			return xf
 	return track.get_safe_transform(offset, track.column_route_lateral(offset), spawn_height + 2.0)
+
+
+## Respawn on a branch route at a distance along it (clear spot nearby).
+func _find_clear_branch_transform(sc: TrackShortcut, distance: float) -> Transform3D:
+	var candidates: Array[Vector2] = [
+		Vector2(0.0, 0.0), Vector2(0.0, -3.0), Vector2(0.0, 3.0),
+		Vector2(-8.0, 0.0), Vector2(-8.0, -3.0), Vector2(-8.0, 3.0),
+		Vector2(-16.0, 0.0),
+	]
+	for candidate in candidates:
+		var xf := track.global_transform * sc.safe_transform(maxf(0.0, distance + candidate.x), candidate.y, spawn_height)
+		if _is_clear(xf):
+			return xf
+	return track.global_transform * sc.safe_transform(maxf(0.0, distance), 0.0, spawn_height + 2.0)
 
 
 func _is_clear(xf: Transform3D) -> bool:

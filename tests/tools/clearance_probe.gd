@@ -1,9 +1,11 @@
 extends SceneTree
 ## Finds scenery geometry inside the space a car drives through: any part of
 ## a scenery mesh over the road (within the road's half width minus a margin)
-## between just above the surface and CLEAR_HEIGHT. Flat tracks only (road at
-## track-local y = 0). Prints clusters by route and offset. Run:
+## between just above the surface and CLEAR_HEIGHT, measured from the
+## nearest route sample's road height (so sloped tracks work too). Prints
+## clusters by route and offset. Run:
 ##   TRACK=res://scenes/tracks/catacombs_descent.tscn godot --headless -s res://tests/tools/clearance_probe.gd
+## (SKIP=step_,Terrain leaves out meshes by name.)
 
 const CLEAR_HEIGHT := 2.8
 ## Headroom report: lowest geometry over the road up to this height.
@@ -17,6 +19,8 @@ const SAMPLE := 0.5
 var _grid := {}
 var _headroom := {}
 var _columns := PackedVector3Array()
+var _route_lo := INF
+var _route_hi := -INF
 
 
 func _initialize() -> void:
@@ -50,9 +54,17 @@ func _run() -> void:
 	var inv := track.global_transform.affine_inverse()
 	var meshes := track.get_node("Scenery").find_children("*", "MeshInstance3D", true, false)
 	var tris := 0
+	# SKIP=a,b: leave out meshes whose names contain any of these (e.g.
+	# step_,Terrain on a track whose stairs sit on the road by design).
+	var skip := OS.get_environment("SKIP").split(",", false)
 	for node in meshes:
 		var mi := node as MeshInstance3D
 		if mi.mesh == null or not mi.visible:
+			continue
+		var skipped := false
+		for k in skip:
+			skipped = skipped or String(mi.name).contains(k)
+		if skipped:
 			continue
 		var xf := inv * mi.global_transform
 		for s in mi.mesh.get_surface_count():
@@ -67,7 +79,7 @@ func _run() -> void:
 				var c := xf * verts[idx[t + 2] if not idx.is_empty() else t + 2]
 				t += 3
 				tris += 1
-				if minf(a.y, minf(b.y, c.y)) > HEADROOM_TOP or maxf(a.y, maxf(b.y, c.y)) < LOW:
+				if minf(a.y, minf(b.y, c.y)) > _route_hi + HEADROOM_TOP or maxf(a.y, maxf(b.y, c.y)) < _route_lo + LOW:
 					continue
 				_test_triangle(a, b, c, mi, hits)
 	print("scanned %d meshes, %d triangles" % [meshes.size(), tris])
@@ -97,6 +109,8 @@ func _in_column(p: Vector3) -> bool:
 
 func _add(sample: Array) -> void:
 	var p: Vector3 = sample[2]
+	_route_lo = minf(_route_lo, p.y)
+	_route_hi = maxf(_route_hi, p.y)
 	var key := Vector2i(floori(p.x / CELL), floori(p.z / CELL))
 	if not _grid.has(key):
 		_grid[key] = []
@@ -126,7 +140,7 @@ func _test_triangle(a: Vector3, b: Vector3, c: Vector3, mi: MeshInstance3D, hits
 			var u := float(i) / n
 			var v := float(j) / n
 			var p := a + (b - a) * u + (c - a) * v
-			if p.y < LOW or p.y > HEADROOM_TOP:
+			if p.y < _route_lo + LOW or p.y > _route_hi + HEADROOM_TOP:
 				continue
 			if _in_column(p):
 				continue
@@ -134,13 +148,16 @@ func _test_triangle(a: Vector3, b: Vector3, c: Vector3, mi: MeshInstance3D, hits
 			if s.is_empty():
 				continue
 			var q: Vector3 = s[2]
+			var h := p.y - q.y
+			if h < LOW or h > HEADROOM_TOP:
+				continue
 			var lateral := Vector2(p.x - q.x, p.z - q.z).length()
 			if lateral > float(s[3]):
 				continue
 			var key := [String(s[0]), int(float(s[1]) / 5.0) * 5]
-			if not _headroom.has(key) or p.y < (_headroom[key] as Array)[0]:
-				_headroom[key] = [p.y, lateral, String(mi.get_path()).get_file()]
-			if p.y > CLEAR_HEIGHT:
+			if not _headroom.has(key) or h < (_headroom[key] as Array)[0]:
+				_headroom[key] = [h, lateral, String(mi.get_path()).get_file()]
+			if h > CLEAR_HEIGHT:
 				continue
-			if not hits.has(key) or p.y < (hits[key] as Array)[0]:
-				hits[key] = [p.y, lateral, String(mi.get_path()).get_file(), p.snapped(Vector3.ONE * 0.1)]
+			if not hits.has(key) or h < (hits[key] as Array)[0]:
+				hits[key] = [h, lateral, String(mi.get_path()).get_file(), p.snapped(Vector3.ONE * 0.1)]

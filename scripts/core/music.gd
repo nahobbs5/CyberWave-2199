@@ -15,8 +15,9 @@ const RESULTS := "res://music/alex-morgan-background-music-591322.mp3"
 
 const FADE := 0.6
 const SILENT_DB := -40.0
-## Playback speed on a race's final lap (pitch rises with it, arcade style).
-const FINAL_LAP_SPEED := 1.15
+## Playback speed on a race's final lap: 5% faster, pitch rising with it (about
+## 0.85 of a semitone). Subtle but noticeable; 15% was far too much.
+const FINAL_LAP_SPEED := 1.05
 const SPEED_RAMP := 0.4
 
 static var _player: AudioStreamPlayer

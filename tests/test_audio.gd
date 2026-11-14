@@ -89,7 +89,7 @@ func _check(condition: bool, message: String) -> void:
 		printerr("  FAIL %s" % message)
 
 
-## Final lap: the race music plays 15% faster (pitch up); not in 1-lap races.
+## Final lap: the race music plays 5% faster (pitch up); not in 1-lap races.
 func _test_final_lap_music() -> void:
 	print("- final-lap music")
 	for laps in [3, 1]:

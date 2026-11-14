@@ -10,8 +10,10 @@ extends TrackScenery
 ## coordinates matching six_flags_new_orleans.tscn.
 ##
 ## Representative section (full detail): the derelict entrance, the flooded
-## Midway and the Coaster Run with a massive wooden coaster alongside and
-## twice over the road. The rest of the lap has a lighter pass for now.
+## Midway (with a derelict bumper-car pavilion modelled in Blender,
+## models/SixFlagsNewOrleansBumperCars.glb) and the Coaster Run with a
+## massive wooden coaster alongside and twice over the road. The rest of the
+## lap has a lighter pass for now.
 
 const WHEEL := Vector3(120, 0, -220)
 const DROP_TOWER := Vector3(-150, 0, 180)
@@ -25,11 +27,31 @@ const BAYOU_TO := Vector3(-150, 0, -130)
 const MIDWAY_FROM := Vector3(150, 0, 20)
 const MIDWAY_TO := Vector3(420, 0, 230)
 const TERRAIN_BOUNDS := Rect2(-820, -470, 1520, 1330)
+## The derelict bumper-car pavilion (a Blender model) on the outside of the
+## right-hander at the end of the Midway straight: a point on the straight,
+## and how far straight on past it the pavilion's centre stands, so it's dead
+## ahead all the way up the straight.
+const BUMPER_CARS := Vector3(150, 0, 123)
+const BUMPER_CARS_AHEAD := 65.0
+const BUMPER_CARS_MODEL := "res://models/SixFlagsNewOrleansBumperCars.glb"
+## Its footprint in model space (x, z), palms and debris included. The model's
+## -x side (railing) and +z front are open; the rear and right are shuttered.
+const BUMPER_CARS_RECT := Rect2(-11.5, -19.3, 20.0, 27.8)
+## Its own ground plane is left out: the track terrain is levelled under it.
+const BUMPER_CARS_SKIP: Array[String] = ["Exterior sunlit ground"]
+## The model's flat Blender colours are for sunlight; dim them for the storm.
+const BUMPER_CARS_TINT := Color(0.8, 0.8, 0.8)
+## Ground height of the levelled pad (just under the road, like the banks).
+const BUMPER_CARS_PAD := -0.05
 
 const STALLS: Array[String] = ["GAMES", "PRIZES", "HOT DOGS", "RING TOSS", "FUNNEL CAKE", "SHOOTING GALLERY", "TICKETS"]
 const SIGNS: Array[String] = ["KEEP OUT", "NO TRESPASSING", "CLOSED", "PRIVATE PROPERTY", "DANGER", "PARK CLOSED"]
 const SPRAY: Array[Color] = [Color(0.7, 0.18, 0.15), Color(0.8, 0.8, 0.75), Color(0.85, 0.55, 0.15), Color(0.3, 0.5, 0.75)]
 const SODIUM := Color(1.0, 0.6, 0.25)
+
+## Where the bumper-car pavilion stands (track-local; model origin and axes).
+var bumper_cars_xf := Transform3D()
+var _terrain_noise: FastNoiseLite
 
 
 func build() -> void:
@@ -74,11 +96,15 @@ func build() -> void:
 	register_material("puddle", water_material(Color(0.03, 0.035, 0.04), Color(0.1, 0.11, 0.12), 0.75, 0.6, 0.3))
 	register_material("chain_link", ChainLinkFence.material())
 
-	SceneryTerrain.build(self, TERRAIN_BOUNDS, 7.0, 2.2, -0.12)
+	_place_bumper_cars()
+	_terrain_noise = SceneryTerrain.make_noise(1)
+	SceneryTerrain.build(self, TERRAIN_BOUNDS, 7.0, 2.2, -0.12, "terrain_grass", "terrain_mud",
+			"terrain_water", 1, _bumper_cars_pad)
 	await step(0.06)
 	_entrance()
 	await step(0.11)
 	_midway()
+	_bumper_cars()
 	await step(0.17)
 	_coaster()
 	await step(0.22)
@@ -224,7 +250,7 @@ func _midway() -> void:
 	while d < b:
 		for side in [-1.0, 1.0]:
 			var wxf := at(d, side * (half + 22.0))
-			if clear_rect(wxf, 38.0, 22.0):
+			if clear_rect(wxf, 38.0, 22.0) and not box_hits_bumper_cars(wxf, 38.0, 22.0):
 				add_box("flood", Vector3(38.0, 0.06, 22.0), wxf.translated_local(Vector3(0, 0.05, 0)))
 		d += 20.0
 	d = a
@@ -232,7 +258,7 @@ func _midway() -> void:
 	while d < b:
 		for side in [-1.0, 1.0]:
 			var xf := at(d, side * (half + 9.0))
-			if not clear_rect(xf, 10.0, 8.0):
+			if not clear_rect(xf, 10.0, 8.0) or box_hits_bumper_cars(xf, 10.0, 8.0):
 				continue
 			xf = xf.rotated_local(Vector3.UP, rng.randf_range(-0.08, 0.08))
 			add_box("wood", Vector3(7.0, 3.2, 6.0), xf.translated_local(Vector3(0, 1.6, 0)))
@@ -256,6 +282,124 @@ func _midway() -> void:
 		d += 26.0
 	_carousel()
 	_jester()
+
+
+# --- the bumper-car pavilion (Blender model) --------------------------------------------
+
+## Stands the pavilion straight on from the Midway straight, past the
+## right-hander at its end: its open front faces the cars coming up the
+## straight, and its open railing side (model -x) faces the road as it
+## turns away to the right.
+func _place_bumper_cars() -> void:
+	var road := at(track.curve.get_closest_offset(BUMPER_CARS))
+	var ahead := -road.basis.z
+	ahead.y = 0.0
+	ahead = ahead.normalized()
+	# Model +z (open front) back toward the cars; -z straight on.
+	var basis := Basis.looking_at(ahead, Vector3.UP)
+	var r := BUMPER_CARS_RECT
+	var centre := road.origin + ahead * BUMPER_CARS_AHEAD
+	centre.y = 0.0
+	bumper_cars_xf = Transform3D(basis, centre - basis * Vector3(r.get_center().x, 0, r.get_center().y))
+
+
+## The model's Blender material (by name) -> this track's material key. Its
+## procedural node materials export as plain white, so the park's own Poly
+## Haven grime and faded paints stand in. Baking those materials to image
+## textures in Blender would let these go.
+const BUMPER_CARS_MATERIALS := {
+	"Rust and faded red paint": "bc_red_rust",
+	"Dirty silver shutter slats": "rust_metal",
+	"Corroded galvanized roof": "corrugated",
+	"Flaking oxidized teal steel": "bc_teal_steel",
+	"Scattered plaster and gravel": "concrete",
+	"Damp earth and accumulated silt": "mud",
+	"Faded coral paint": "bc_coral",
+	"Faded aqua paint": "bc_aqua",
+	"Faded violet paint": "bc_violet",
+	"Faded golden stripe": "bc_gold",
+	"Car01 | Recessed seams and splits": "dark",
+	"Car01 | Weather cracked rubber": "bc_rubber",
+	"Car01 | Chalky violet trim": "bc_violet",
+	"Car01 | Chipped aqua fibreglass": "bc_aqua",
+	"Car01 | Thick grey beige settled dust": "bc_dust",
+	"Car01 | Perished grey green vinyl": "bc_vinyl",
+	"Car01 | Corroded fittings": "rust_metal",
+	"Car01 | Dirty ivory lenses": "bc_ivory",
+}
+
+
+func _bumper_cars() -> void:
+	textured("bc_red_rust", "rust_coarse_01", Color(0.75, 0.42, 0.36), 2.0, 0.8, 0.3)
+	textured("bc_teal_steel", "peeling_painted_wall", Color(0.36, 0.62, 0.6), 2.0, 0.75, 0.3)
+	material("bc_coral", Color(0.58, 0.33, 0.28), 0.0, 0.0, 0.7)
+	material("bc_aqua", Color(0.27, 0.46, 0.45), 0.0, 0.1, 0.7)
+	material("bc_violet", Color(0.36, 0.3, 0.42), 0.0, 0.1, 0.7)
+	material("bc_gold", Color(0.55, 0.45, 0.22), 0.0, 0.0, 0.8)
+	material("bc_rubber", Color(0.05, 0.05, 0.05), 0.0, 0.0, 0.9)
+	material("bc_dust", Color(0.4, 0.37, 0.31), 0.0, 0.0, 0.95)
+	material("bc_vinyl", Color(0.24, 0.28, 0.24), 0.0, 0.0, 0.85)
+	material("bc_ivory", Color(0.55, 0.52, 0.44), 0.0, 0.1, 0.5)
+	var overrides := {}
+	for blender_name in BUMPER_CARS_MATERIALS:
+		overrides[blender_name] = get_material(BUMPER_CARS_MATERIALS[blender_name])
+	var skip := PackedStringArray(BUMPER_CARS_SKIP)
+	var mesh := GlbProp.merged(BUMPER_CARS_MODEL, skip, BUMPER_CARS_TINT, overrides)
+	if mesh == null:
+		return
+	var mi := MeshInstance3D.new()
+	mi.name = "BumperCars"
+	mi.mesh = mesh
+	mi.transform = bumper_cars_xf
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if cast_shadows else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	# 320k triangles of leaves and scrap: drop it once it's a speck behind you
+	# (in races only; the editor camera usually looks at the whole park).
+	if not Engine.is_editor_hint():
+		mi.visibility_range_end = 450.0
+		mi.visibility_range_end_margin = 30.0
+		mi.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF
+	add_node(mi)
+
+
+## True if a track-local point is within margin metres of the pavilion.
+func in_bumper_cars(p: Vector3, margin: float = 1.0) -> bool:
+	var local := bumper_cars_xf.affine_inverse() * p
+	return BUMPER_CARS_RECT.grow(margin).has_point(Vector2(local.x, local.z))
+
+
+## True if a size_x by size_z box at xf (on the ground) overlaps the pavilion.
+func box_hits_bumper_cars(xf: Transform3D, size_x: float, size_z: float) -> bool:
+	var nx := maxi(1, ceili(size_x / 3.0))
+	var nz := maxi(1, ceili(size_z / 3.0))
+	for ix in nx + 1:
+		for iz in nz + 1:
+			var p := xf * Vector3((float(ix) / nx - 0.5) * size_x, 0, (float(iz) / nz - 0.5) * size_z)
+			if in_bumper_cars(p):
+				return true
+	# A box smaller than the pavilion can't hide inside it unseen, but the
+	# pavilion can sit inside a big box: check its corners too.
+	var inv := xf.affine_inverse()
+	var r := BUMPER_CARS_RECT
+	for c in [Vector3(r.position.x, 0, r.position.y), Vector3(r.end.x, 0, r.position.y),
+			Vector3(r.position.x, 0, r.end.y), Vector3(r.end.x, 0, r.end.y)]:
+		var q: Vector3 = inv * (bumper_cars_xf * (c as Vector3))
+		if absf(q.x) <= size_x * 0.5 and absf(q.z) <= size_z * 0.5:
+			return true
+	return false
+
+
+## Terrain carve: levels the ground under the pavilion to a flat pad, easing
+## back into the noise over 12 m.
+func _bumper_cars_pad(x: float, z: float) -> float:
+	var local := bumper_cars_xf.affine_inverse() * Vector3(x, 0, z)
+	var r := BUMPER_CARS_RECT.grow(1.0)
+	var dx := maxf(maxf(r.position.x - local.x, local.x - r.end.x), 0.0)
+	var dz := maxf(maxf(r.position.y - local.z, local.z - r.end.y), 0.0)
+	var w := 1.0 - smoothstep(0.0, 12.0, sqrt(dx * dx + dz * dz))
+	if w <= 0.0:
+		return 0.0
+	var h := SceneryTerrain.height_at(self, _terrain_noise, 2.2, x, z)
+	return w * (BUMPER_CARS_PAD - h)
 
 
 func _carousel() -> void:
@@ -528,14 +672,14 @@ func _dead_woods() -> void:
 		var p := Vector3(rng.randf_range(-760, 640), 0, rng.randf_range(-420, 800))
 		if p.distance_to(CAROUSEL) < 25.0 or p.distance_to(SLIDE_TOWER) < 30.0 or p.distance_to(WHEEL) < 50.0 or p.distance_to(JESTER) < 20.0:
 			continue
-		if clear(p, 3.0):
+		if clear(p, 3.0) and not in_bumper_cars(p, 4.0):
 			_dead_tree(p, rng.randf_range(7, 16))
 
 
 func _debris() -> void:
 	for i in 380:
 		var p := Vector3(rng.randf_range(-760, 640), 0, rng.randf_range(-420, 800))
-		if not clear(p, 2.0):
+		if not clear(p, 2.0) or in_bumper_cars(p, 3.0):
 			continue
 		var roll := rng.randf()
 		if roll < 0.55:
@@ -558,7 +702,7 @@ func _signs_and_codes() -> void:
 	while d < track.length - 40.0:
 		var side := -1.0 if i % 2 == 0 else 1.0
 		var xf := at(d, side * (track.road_width * 0.5 + 9.0))
-		if clear(xf.origin, 1.5):
+		if clear(xf.origin, 1.5) and not box_hits_bumper_cars(xf, 0.6, 10.0):
 			add_box("brick", Vector3(0.6, 3.0, 10.0), xf.translated_local(Vector3(0, 1.5, 0)))
 			_flood_line(xf.translated_local(Vector3(0, 0, 0)), Vector3(0.6, 0, 10.0), 1.4)
 			var face := xf.translated_local(Vector3(-side * 0.35, 1.9, 0))

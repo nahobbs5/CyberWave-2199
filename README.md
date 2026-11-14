@@ -37,9 +37,11 @@ Luxury neon cars, drift boosts, weapons and fourteen circuits set in real-world 
 | **South America** | Parque Quinta Normal | Victorian greenhouse, Santiago | 3.1 km | §8.6d |
 | | Vale da Lua | Valley of the Moon, Brazil | 3.1 km | §8.6e |
 | | Choquequirao | Inca double-spiral village, Peru | 3.3 km | §8.6f |
-| **Africa** *(Grand Prix locked)* | Kilwa Kisiwani Ruins | Swahili ruins, columns in the road, Tanzania | 3.0 km | §8.6g |
+| **Africa** | Kilwa Kisiwani Ruins | Swahili ruins, columns in the road, Tanzania | 3.0 km | §8.6g |
+| | Fires of Nyiragongo | Inside the volcano's crater at dusk, D.R. Congo | 3.2 km | §8.6h |
+| | Chefchaouen | Blue medina with two forks per lap, Morocco | 3.15 km | §8.6i |
 
-The Africa Cup has one race so far. It's open in Versus and locked for Grand Prix. The graybox Test Circuit is the Practice track.
+All five cups are complete and open for Grand Prix and Versus. The graybox Test Circuit is the Practice track.
 
 ## Controls
 

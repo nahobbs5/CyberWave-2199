@@ -244,7 +244,7 @@ func _test_cup() -> void:
 	_check(GrandPrixData.CUPS.has(CUP) and GrandPrixData.CUPS[-1] == CUP, "the Africa Cup is the last cup")
 	_check(cup.display_name == "Africa Cup" and cup.emblem == "africa", "named Africa Cup, with a map of Africa")
 	_check(cup.track_names[0] == "Kilwa Kisiwani Ruins" and cup.is_track_built(0), "race 1 is Kilwa Kisiwani Ruins")
-	_check(not cup.is_open(true) and cup.is_open(false), "locked for Grand Prix, open in Versus")
+	_check(cup.is_open(true) and cup.is_open(false), "open for Grand Prix and Versus (all three races built)")
 	_check(TrackCatalog.scene_path("Kilwa Kisiwani Ruins") == TRACK
 			and TrackCatalog.location("Kilwa Kisiwani Ruins").contains("Tanzania"), "in the track catalogue (Tanzania)")
 	var shapes := TrophyIcon.africa_polygons(Rect2(0, 0, 100, 100))

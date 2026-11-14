@@ -1,7 +1,8 @@
 class_name Minimap
 extends Control
 ## Race minimap (GDD 11.5), bottom-right of the race HUD. Draws the circuit
-## (and any shortcuts, dimmer), the start line, the elimination gate in
+## (and any shortcuts, dimmer; branch routes as strong as the main loop),
+## the start line, the elimination gate in
 ## Elimination, every active racer as a dot in their colour (dark outline so
 ## close dots stay apart; a faint ring when they're near you), and the player
 ## as a larger cyan arrow showing their heading. North-up in layout space.
@@ -19,6 +20,8 @@ var player_car: VehicleController
 
 var _main: PackedVector2Array = PackedVector2Array()
 var _shortcuts: Array[PackedVector2Array] = []
+## Per entry of _shortcuts: drawn like the main loop (a branch route).
+var _strong: Array[bool] = []
 var _bounds_min := Vector2.ZERO
 var _scale: float = 1.0
 var _origin := Vector2.ZERO
@@ -41,8 +44,10 @@ func setup_track(p_track: TrackCircuit, car: VehicleController) -> void:
 	player_car = car
 	_main = _sample(track, track.curve, 8.0, true)
 	_shortcuts.clear()
+	_strong.clear()
 	for sc in track.shortcuts:
 		_shortcuts.append(_sample(track, sc.curve, 6.0, false))
+		_strong.append(sc.is_branch)
 	# Fit everything into the rect, keeping the aspect ratio.
 	var lo := Vector2(INF, INF)
 	var hi := Vector2(-INF, -INF)
@@ -81,6 +86,11 @@ func shortcut_count() -> int:
 	return _shortcuts.size()
 
 
+## Routes drawn at full strength (branch routes), for tests.
+func strong_route_count() -> int:
+	return _strong.count(true)
+
+
 func _sample(track: TrackCircuit, curve: Curve3D, step: float, closed: bool) -> PackedVector2Array:
 	var out := PackedVector2Array()
 	var length := curve.get_baked_length()
@@ -114,13 +124,21 @@ func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, MAP_SIZE), Color(UIStyle.MAGENTA, 0.55), false, 1.0)
 	if track == null or _main.size() < 2:
 		return
-	for line in _shortcuts:
-		var mapped := _to_map(line)
+	for i in _shortcuts.size():
+		if _strong[i]:
+			continue
+		var mapped := _to_map(_shortcuts[i])
 		draw_polyline(mapped, Color(0.35, 0.3, 0.45, 0.9), 5.0, true)
 		draw_polyline(mapped, Color(0.0, 0.9, 1.0, 0.45), 1.5, true)
 	var main := _to_map(_main)
 	draw_polyline(main, Color(0.22, 0.16, 0.32, 0.9), 7.0, true)
+	for i in _shortcuts.size():
+		if _strong[i]:
+			draw_polyline(_to_map(_shortcuts[i]), Color(0.22, 0.16, 0.32, 0.9), 7.0, true)
 	draw_polyline(main, Color(0.62, 0.42, 0.85, 0.85), 2.0, true)
+	for i in _shortcuts.size():
+		if _strong[i]:
+			draw_polyline(_to_map(_shortcuts[i]), Color(0.62, 0.42, 0.85, 0.85), 2.0, true)
 	_draw_tick(track, track.start_line_offset, Color.WHITE, 4.0)
 	if race != null and race.elimination != null:
 		_draw_tick(track, track.get_checkpoint_offset(race.elimination.gate_index), Color(1.0, 0.2, 0.3))

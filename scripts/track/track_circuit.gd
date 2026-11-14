@@ -146,6 +146,13 @@ signal checkpoint_crossed(index: int, body: Node3D)
 	set(value):
 		banking = value
 		_queue_rebuild()
+@export_group("Branches")
+## (from, to) main-loop offsets where the road surface isn't drawn (the
+## collider still is): stairs drawn by the scenery sit over a smooth ramp.
+@export var hidden_surface: PackedVector2Array = PackedVector2Array()
+## Checkpoint index where Elimination knocks cars out; -1 = halfway round
+## (checkpoint_count / 2). Tracks with forks put it on a shared section.
+@export var elimination_gate: int = -1
 @export_group("Road columns")
 ## Solid columns standing on the road (a hypostyle hall), each
 ## Vector3(x, z, half): track-local centre x and z, then half the square's
@@ -679,6 +686,8 @@ func _build_road() -> void:
 	for i in count:
 		var s0 := samples[i]
 		var s1 := samples[(i + 1) % count]
+		if _main_surface_hidden(s0.offset) or _main_surface_hidden(s1.offset):
+			continue
 		_strip_quad(road, s0, s1, -half, half, 0.02)
 		_strip_quad(edges, s0, s1, -half, -half + 0.4, 0.04)
 		_strip_quad(edges, s0, s1, half - 0.4, half, 0.04)
@@ -692,6 +701,8 @@ func _build_road() -> void:
 		for i in ss.size() - 1:
 			if sc.in_gap(ss[i].offset) or sc.in_gap(ss[i + 1].offset):
 				continue
+			if sc.surface_hidden(ss[i].offset) or sc.surface_hidden(ss[i + 1].offset):
+				continue
 			_strip_quad(road, ss[i], ss[i + 1], -sh, sh, 0.03)
 			_strip_quad(edges, ss[i], ss[i + 1], -sh, -sh + 0.3, 0.05)
 			_strip_quad(edges, ss[i], ss[i + 1], sh - 0.3, sh, 0.05)
@@ -704,6 +715,18 @@ func _build_road() -> void:
 		_add_mesh(holder, "CentreDashes", dashes, _material(Color(0.42, 0.41, 0.38), 0.0, 0.9))
 	else:
 		_add_mesh(holder, "CentreDashes", dashes, _material(Color(0.85, 0.85, 0.9), 0.4))
+
+
+func _main_surface_hidden(offset: float) -> bool:
+	for r in hidden_surface:
+		if offset >= r.x and offset <= r.y:
+			return true
+	return false
+
+
+## Checkpoint index of the Elimination gate (see elimination_gate).
+func elimination_gate_index() -> int:
+	return elimination_gate if elimination_gate >= 0 and elimination_gate < checkpoint_count else checkpoint_count / 2
 
 
 func _add_mesh(parent: Node, node_name: String, st: SurfaceTool, mat: Material) -> void:

@@ -53,6 +53,9 @@ var _shortcut: TrackShortcut
 var _decided_for: TrackShortcut
 ## Shortcuts taken (tests / telemetry).
 var shortcuts_taken: int = 0
+## Tests: branch name -> true (always take it) / false (never), overriding
+## the chance-based choice.
+var forced_branches: Dictionary = {}
 
 
 func setup(p_vehicle: VehicleController, p_track: TrackCircuit, p_line: RacingLine,
@@ -151,7 +154,13 @@ func _physics_process(delta: float) -> void:
 	var lead := 3.0 + speed * 0.3
 	var target_speed := line.speed_at(offset + lead) * difficulty.speed_factor \
 			* profile.corner_speed_bias * speed_scale
-	if _shortcut != null and sc_distance + lead > -10.0:
+	if _shortcut != null and _shortcut.is_branch and sc_distance > 0.0:
+		# A branch route: its own racing line's speeds only (the main line's
+		# corner at the matching offset is somewhere else entirely).
+		var bl := BranchLine.for_branch(_shortcut, vehicle.stats)
+		target_speed = bl.speed_at(minf(sc_distance + lead, _shortcut.length)) * difficulty.speed_factor \
+				* profile.corner_speed_bias * speed_scale
+	elif _shortcut != null and sc_distance + lead > -10.0:
 		var on := clampf(sc_distance + lead, 0.0, _shortcut.length)
 		var sc_speed := _shortcut.speed_at(on) * difficulty.speed_factor * speed_scale
 		if not _shortcut.gaps.is_empty() and sc_distance > 0.0:
@@ -186,12 +195,26 @@ func _physics_process(delta: float) -> void:
 func _choose_shortcut(offset: float) -> void:
 	if _shortcut != null:
 		return
+	# Already on a branch route (e.g. respawned on it after a recovery, or
+	# pushed onto it): follow it rather than steering for the main road.
+	var on := track.get_shortcut_at(vehicle.global_position)
+	if on != null and on.is_branch:
+		_shortcut = on
+		_decided_for = on
+		return
 	for sc in track.shortcuts:
 		var ahead := track.wrapped_delta(offset, sc.start_offset)
 		if ahead > 0.0 and ahead < 90.0:
 			if _decided_for != sc:
 				_decided_for = sc
 				var chance := sc.ai_chance * difficulty.shortcut_chance * lerpf(0.7, 1.3, profile.aggression)
+				if sc.is_branch:
+					# A branch is a route choice, not a gamble: about even, less
+					# likely when it's already busy with traffic just ahead.
+					chance = sc.ai_chance * lerpf(0.85, 1.15, profile.aggression)
+					chance *= pow(0.6, maxf(0.0, float(_cars_on_branch_entry(sc)) - 1.0))
+				if forced_branches.has(String(sc.name)):
+					chance = 1.0 if forced_branches[String(sc.name)] else 0.0
 				if _rng.randf() < chance:
 					_shortcut = sc
 					shortcuts_taken += 1
@@ -223,12 +246,27 @@ func _shortcut_distance(pos: Vector3, offset: float) -> float:
 	return d
 
 
+## Rivals in the first stretch of a branch (or about to turn into it).
+func _cars_on_branch_entry(sc: TrackShortcut) -> int:
+	var n := 0
+	for other in racers:
+		if other == vehicle or not is_instance_valid(other):
+			continue
+		if track.get_shortcut_at(other.global_position) == sc \
+				and sc.local_offset(track.to_local(other.global_position)) < 150.0:
+			n += 1
+	return n
+
+
 func _shortcut_target(distance: float, side_offset: float, fallback: Vector3) -> Vector3:
 	var sc := _shortcut
 	if distance <= 0.0:
 		return fallback
 	if distance >= sc.length:
 		return line.point_at(sc.end_offset + (distance - sc.length), profile.line_bias)
+	if sc.is_branch:
+		var bl := BranchLine.for_branch(sc, vehicle.stats)
+		return track.to_global(bl.point_at(distance, clampf(side_offset, -2.0, 2.0)))
 	var right := sc.tangent_at(distance).cross(Vector3.UP).normalized()
 	var lane := clampf(side_offset, -sc.road_width * 0.25, sc.road_width * 0.25)
 	return track.to_global(sc.point_at(distance) + right * lane)

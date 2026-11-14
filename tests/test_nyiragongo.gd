@@ -268,10 +268,10 @@ func _test_cup() -> void:
 	_current = "cup"
 	print("- Africa Cup")
 	var cup := load(CUP) as GrandPrixData
-	_check(cup.race_count() == 2 and cup.track_names[1] == NAME and cup.is_track_built(1), "race 2 is Fires of Nyiragongo")
+	_check(cup.race_count() == 3 and cup.track_names[1] == NAME and cup.is_track_built(1), "race 2 is Fires of Nyiragongo")
 	_check(cup.track_scenes[1] == TRACK, "its scene")
 	_check(TrackCatalog.scene_path(NAME) == TRACK and TrackCatalog.location(NAME).contains("Congo"), "in the track catalogue (D.R. Congo)")
-	_check(not cup.is_open(true) and cup.is_open(false), "still locked for Grand Prix, open in Versus")
+	_check(cup.is_open(true) and cup.is_open(false), "open for Grand Prix and Versus (all three races built)")
 
 
 ## The player's car into the lake: "lava", items gone. Then a straight run

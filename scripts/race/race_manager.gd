@@ -152,7 +152,7 @@ func _ready() -> void:
 	for i in range(1, players.size()):
 		coins.add_collector(players[i].vehicle)
 	if config.is_elimination():
-		elimination = EliminationTracker.new(racers, track.checkpoint_count / 2)
+		elimination = EliminationTracker.new(racers, track.elimination_gate_index())
 		_build_elimination_gate()
 	if weapons_enabled and weapon_manager != null:
 		weapon_manager.setup(self)
@@ -617,7 +617,7 @@ func _on_checkpoint_crossed(index: int, body: Node3D) -> void:
 				_coin_lap = racer.lap
 				coins.respawn()
 				if total_laps > 1 and racer.lap == total_laps:
-					Music.set_speed(get_tree(), Music.FINAL_LAP_SPEED) # final lap: music 15% faster
+					Music.set_speed(get_tree(), Music.FINAL_LAP_SPEED) # final lap: music 5% faster
 		&"finish":
 			lap_completed.emit(racer)
 			_finish_count += 1

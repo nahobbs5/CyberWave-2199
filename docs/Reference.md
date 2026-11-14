@@ -106,10 +106,10 @@ The layout is the `control_points` list on `scenes/tracks/test_circuit.tscn`, sa
 
 ### Game modes
 
-**Cups and tracks (Mario Kart style).** Grand Prix and Versus share one **cup screen** (`CupBoard`, used by `CupSelect` and `TrackSelect`): a row of round **cup badges** (`CupBadge`, drawn in code: a gold-rimmed medallion in the cup's colours with its map: the USA, Europe, Asia, South America, Africa) above a panel that previews the focused cup's races (the cup's trophy, then a card per race with its outline, location and your best time). Moving across the badges previews each cup; opening one (click, Enter or A) moves into the panel, and Back returns to the badges. **Grand Prix** confirms the cup with **START GRAND PRIX**, then goes to the setup screen and races the whole cup (a cup locked for Grand Prix is greyed with a padlock and can't be confirmed). **Versus** starts on the setup screen (car, race type, **number of races**, laps, NPC difficulty, weapons), then the cup screen: open a cup and pick a race, or open the **"?" Random badge** for a RANDOM card. There are five cups: the **American Cup** (Vegas Overdrive, Six Flags New Orleans, The Stacks), the **Europe Cup** (Hoia Baciu Run, Catacombs Descent, Vatnajökull Glacier), the **Asia Cup** (Arashiyama Circuit, Crazy House, Gardens by the Bay), the **South America Cup** (Parque Quinta Normal, Vale da Lua, Choquequirao) and the **Africa Cup** (Kilwa Kisiwani Ruins so far; locked for Grand Prix, open in Versus). The Europe Cup was the World Cup; its resource keeps the old file name and id (`world_circuit`) so saved results carry over. A cup can be greyed out as "coming soon" with `locked = true` on its resource. Each cup is data (`resources/grand_prix/*.tres`, listed in `GrandPrixData.CUPS`); its `emblem` picks the trophy picture. The Test Circuit isn't in a cup: it's the Practice track.
+**Cups and tracks (Mario Kart style).** Grand Prix and Versus share one **cup screen** (`CupBoard`, used by `CupSelect` and `TrackSelect`): a row of round **cup badges** (`CupBadge`, drawn in code: a gold-rimmed medallion in the cup's colours with its map: the USA, Europe, Asia, South America, Africa) above a panel that previews the focused cup's races (the cup's trophy, then a card per race with its outline, location and your best time). Moving across the badges previews each cup; opening one (click, Enter or A) moves into the panel, and Back returns to the badges. **Grand Prix** confirms the cup with **START GRAND PRIX**, then goes to the setup screen and races the whole cup (a cup locked for Grand Prix is greyed with a padlock and can't be confirmed). **Versus** starts on the setup screen (car, race type, **number of races**, laps, NPC difficulty, weapons), then the cup screen: open a cup and pick a race, or open the **"?" Random badge** for a RANDOM card. There are five cups: the **American Cup** (Vegas Overdrive, Six Flags New Orleans, The Stacks), the **Europe Cup** (Hoia Baciu Run, Catacombs Descent, Vatnajökull Glacier), the **Asia Cup** (Arashiyama Circuit, Crazy House, Gardens by the Bay), the **South America Cup** (Parque Quinta Normal, Vale da Lua, Choquequirao) and the **Africa Cup** (Kilwa Kisiwani Ruins, Fires of Nyiragongo, Chefchaouen). The Europe Cup was the World Cup; its resource keeps the old file name and id (`world_circuit`) so saved results carry over. A cup can be greyed out as "coming soon" with `locked = true` on its resource. Each cup is data (`resources/grand_prix/*.tres`, listed in `GrandPrixData.CUPS`); its `emblem` picks the trophy picture. The Test Circuit isn't in a cup: it's the Practice track.
 
 - **Versus** (GDD §2.1): you start eighth. Pick **1, 2, 3, 4, 6, 8, 12 or 16 races**. With one race, the results offer **Race again** or the menu. With more, the track screen comes back before each race ("RACE 2 OF 4"; the standings stay on the results screen), points and grids work like a Grand Prix, and the last results name the series winner. A series isn't saved; each race pays its normal coins.
-- **Grand Prix** (GDD §2.2): the American, Europe, Asia or South America Cup (three races each), three laps per race. The Africa Cup has two races so far (Kilwa Kisiwani, Fires of Nyiragongo) and stays locked for Grand Prix. The cup-win bonus is 100 coins for three races, scaled by the cup's race count.
+- **Grand Prix** (GDD §2.2): any of the five cups (three races each), three laps per race. The cup-win bonus is 100 coins for three races, scaled by the cup's race count.
   - Points are 15-12-10-8-6-4-2-1. Ties are broken by most wins, then most second places, then the order in the most recent race.
   - Race 1 starts the seven rivals in slots 1–7 with you last. Each later grid is the previous race's finishing order, not the points order. Rivals keep their names, colours and personalities all season.
   - **The race result is fixed when you cross the line:** anyone still racing is classified in their current order. That way you never have to wait for the field, and the points always match what the results screen shows.
@@ -291,9 +291,10 @@ One song per screen or track (`scripts/core/music.gd`; race music per track in `
 | Choquequirao | Epic Victory March for Heroes | DesiFreeMusic |
 | Kilwa Kisiwani Ruins | The Dragon's Lair | vishiv |
 | Fires of Nyiragongo | Danger Imminent | Jean-Paul-V |
+| Chefchaouen | none yet | |
 | Test Circuit and Practice | The Garden Wakes | stageechoesmusic |
 
-- **Final lap:** in races of 2+ laps (Elimination included), the race music speeds up 15%, pitch and all, over about 0.4 s. Restarting or leaving the race puts it back.
+- **Final lap:** in races of 2+ laps (Elimination included), the race music speeds up 5%, pitch and all, over about 0.4 s. Restarting or leaving the race puts it back.
 - **Countdown:** the clip has four beeps a second apart, one per start light and word (3, 2, 1, START).
 - **Weapon and track sounds** (`CombatSfx`, GDD §12.2) come from the car or object that makes them, so they fade with distance: Firewall up / down, Railgun, EMP, System Override, Road Spike drop, Hunter-Killer launch / lock warning / hit, and barrier smashes. Each clip has its own level so it sits just above the music, and a hard limiter on the Master bus stops loud moments distorting.
 - **Buses:** music plays on the Music bus and effects on the SFX bus (`default_bus_layout.tres`), so the Settings sliders control each.
@@ -302,7 +303,7 @@ One song per screen or track (`scripts/core/music.gd`; race music per track in `
 
 ### Tracks
 
-Thirteen tracks in five cups, raced in this order in a Grand Prix. The **Test Circuit** is used for Practice.
+Fifteen tracks in five cups, raced in this order in a Grand Prix. The **Test Circuit** is used for Practice.
 
 | Cup | Race 1 | Race 2 | Race 3 |
 |---|---|---|---|
@@ -310,7 +311,7 @@ Thirteen tracks in five cups, raced in this order in a Grand Prix. The **Test Ci
 | Europe | Hoia Baciu Run | Catacombs Descent | Vatnajökull Glacier |
 | Asia | Arashiyama Circuit | Crazy House | Gardens by the Bay |
 | South America | Parque Quinta Normal | Vale da Lua | Choquequirao |
-| Africa (Grand Prix locked) | Kilwa Kisiwani Ruins | — | — |
+| Africa | Kilwa Kisiwani Ruins | Fires of Nyiragongo | Chefchaouen |
 
 Each track below lists its race music in the Audio table above. Best times saved under the old name "The Stacks Grand Prix" carry over to The Stacks.
 
@@ -471,6 +472,26 @@ Africa Cup race 1. A 3 km race through the ruins of the medieval Swahili city on
   - `SwahiliHouseBuilder`.
   The layout comes from a generator script (orthogonal route with filleted corners, columns on the grid). Checks: `tests/test_kilwa_kisiwani.gd`.
 
+#### Chefchaouen (GDD §8.6i)
+
+Africa Cup race 3. A 3.15 km race through **the blue medina in the Rif mountains** on a bright late morning (the kloofendal partly cloudy sky, sun about 48° up). **Two forks per lap, so four ways round.** The main road is 16 m and the branches 12 m. The town climbs about 28 m from the lower square to the upper terrace.
+- **Fork 1, uphill** (a neon gantry 125 m before the split):
+  - the **Blue Stairway** (branch): steep stone steps (up to about 12%) between landings, a switchback of two tight bends, flowerpots and deep-blue doors, a crest above the terrace with a boost ring;
+  - the **Outer Street** (main): a longer, wider sweeping climb, banked 6°, with items.
+  - They meet on the **upper terrace** (Elimination checkpoint, the Galerie tower, the view of the Rif).
+- **Fork 2, downhill:**
+  - the **Market Lane** (branch): a slalom under hanging kilims through a horseshoe arch;
+  - the **Fountain Steps** (main): four flights past a zellige wall fountain, then a long final landing ending in a real drop with a jump ramp in the right lane, landing beside the Market Lane's merge lane.
+  - Separate lanes into the **lower square**, then one shared final corner.
+- **Stairs over a smooth ramp:** the road surface is hidden on the flights (`hidden_surface`) and `StairBuilder` draws irregular treads whose tops meet the ramp mid-tread. The collider stays smooth.
+- **Branch routes (engine):** `TrackShortcut.is_branch` turns a shortcut into a full alternate route:
+  - its own AI line (`BranchLine`), with a traffic-aware choice;
+  - recoveries respawn on the branch (`VehicleRecovery.safe_branch`);
+  - a full-strength minimap line;
+  - merge lanes (`start_lateral` / `end_lateral`) and optional item rows (`crate_distances`).
+  - `TrackCircuit.elimination_gate` puts the Elimination checkpoint on a shared section.
+- Built from code: `ChefchaouenScenery` with the new `MedinaHouseBuilder` (blue and white houses, arched doors, grilles, shutters, awnings, lanterns, flowerpots) and `StairBuilder`, generated kilim and zellige textures, and Poly Haven painted_plaster_wall, rough_plaster_brick, stone_tiles_02, wood_shutter and terracotta_floor_tiles. The layout comes from a generator script (a filleted polygon for the main loop, the two branches as Godot shortcut curves, monotone height keys). Checks: `tests/test_chefchaouen.gd`. No race music yet.
+
 #### Six Flags New Orleans (GDD §8.2)
 
 A 3.1 km circuit through a **realistic, eerie, abandoned amusement park**, after the real park left to rot after Hurricane Katrina. It goes for believable decay, not supernatural effects. The only clean light is the illegal racing neon on the barriers, dimmed to fit the scene. The road is 18 m wide.
@@ -486,6 +507,7 @@ A 3.1 km circuit through a **realistic, eerie, abandoned amusement park**, after
 Representative section (full detail, ready for your review):
 - **Park Entrance:** start/finish under the derelict gate. Peeling sign with missing letters, chained gates pushed open, a smashed ticket booth, toppled turnstiles. A rusted, tilted Ferris wheel on the skyline.
 - **Flooded Midway:** the S-bends between boarded-up game booths with torn awnings, standing in flood water. A wrecked carousel with fallen horses, and the park's faded jester billboard.
+- **Bumper-car pavilion:** on the outside of the right-hander at the end of the Midway straight, dead ahead all the way up it: a derelict, silted-up bumper-car ride under a rusty corrugated roof on teal columns, with seven abandoned cars, shuttered back and right walls, and palms at one corner. Its open front faces the cars coming up the straight, and its open railing side faces the road as it turns away. It's the first Blender model on a track (`models/SixFlagsNewOrleansBumperCars.glb`, placed by `SixFlagsScenery._bumper_cars`). Its rust, paint, floor and roof are the park's own Poly Haven grime and faded colours, matched to the Blender material names, because Blender's procedural materials export as plain white. The terrain is levelled under it, and the Midway's booths, flood water, signs and debris keep out of its footprint. It's visual only, with no collision.
 - **Coaster Run:** a **massive wooden lattice coaster** (about 1 km of track) runs alongside the road, then **crosses over it twice** on steel gantries (17 m clearance). It has a lift hill, a turnaround and a return run with a collapsed section. A jump ramp sits halfway along the straight.
 
 The rest of the lap now has the same treatment:
@@ -494,7 +516,7 @@ The rest of the lap now has the same treatment:
 - **Bayou boardwalk:** planks with gaps (cosmetic; the road stays solid), broken and sagging railings, cypress with Spanish moss over black water, a half-sunk skiff and a LIVE BAIT shack ruin with a fallen tin roof.
 It keeps its jump ramps, water patches, EMP puddle and smashable fence.
 
-**Needed assets.** None were supplied, so every prop is a procedural placeholder. These GLB models (Y-up, metres) would raise the fidelity most:
+**Needed assets.** Apart from the bumper-car pavilion, every prop is a procedural placeholder. These GLB models (Y-up, metres) would raise the fidelity most:
 - a coaster train car
 - a turnstile
 - a ticket booth
@@ -640,7 +662,7 @@ scripts/
   track/scenery/             Reusable builders: SceneryTerrain, TreeBuilder, BambooBuilder, TunnelBuilder, HallBuilder,
                              CaveShellBuilder, GlasshouseBuilder, SupertreeBuilder, TerraceBuilder, IncaBuildingBuilder,
                              IncaGateway, PointedArch, HypostyleHallBuilder, SwahiliHouseBuilder, WoodenCoaster,
-                             ChainLinkFence
+                             ChainLinkFence, GlbProp (merges a Blender .glb into one mesh)
   ui/                        UIStyle, Neon* widgets, StartMenuLayout, MenuStreetScene, CarShowcase, VehiclePreview,
                              CupBadge, TrackCard, Minimap, PauseMenu, LoadingScreen, PhysicsDebugOverlay (F3), ...
   ui/hud/                    RaceHUD parts: race_info_panel, standings_panel, speed_drift_panel, item_slots,
@@ -657,6 +679,7 @@ resources/
   racers/rival_roster.tres   The seven rivals
   ui/cyberwave_theme.tres    Project theme (Rajdhani)
 assets/                      shaders/, fonts/, logo/, ui/ (weapon icons, track pictures), textures/polyhaven/, sky/
+models/                      Blender .glb props for tracks (Y-up, metres), loaded with GlbProp
 music/, sounds/              Audio (music/web/ holds the .ogg copies for the web build)
 tests/                       Headless suites (below) and tools/ (screenshot, car_showroom, track_cards, perf_probe, ...)
 docs/                        GDD, this reference, physics guide, advanced weapons, recovery, drifting notes
@@ -685,6 +708,7 @@ dev/                         The dev tracker site (GitHub Pages)
 - **The track** (`TrackCircuit`, `@tool`) generates everything from a closed loop of control points (a Catmull-Rom curve). It runs in the editor too, so the layout is visible there.
   - Generated nodes are prefixed `_Gen` and are not saved, so edit the exported values instead.
   - It also builds the checkpoint gates (Area3D, emitting `checkpoint_crossed`), defines the grid slots, and exposes `get_offset_at`, `get_safe_transform`, `wrapped_delta` and related helpers.
+- **Blender props** go in `models/` as `.glb` (Y-up, 1 unit = 1 m). A track's scenery loads one with `GlbProp.merged(path, skip, tint)`. That bakes every object in the file into one mesh, with a surface per material, so thousands of leaves and scraps cost one draw call per material. The result is cached, so rebuilding the track reuses it. `skip` leaves out objects by name prefix (e.g. a ground plane the terrain replaces), and `tint` dims the model's colours to suit the track's light. `overrides` swaps materials by their Blender name. Procedural node materials (noise, colour ramps) export to glTF as plain white, so the track stands its own textured materials in for them (`SixFlagsScenery.BUMPER_CARS_MATERIALS`). Baking them to image textures in Blender before export would carry the real look across instead. Re-exporting from Blender is all it takes to update one: keep the file name, and move or rotate it in the track's scenery script.
 - **Collision layers:** 1 = environment, 2 = vehicles. Wheel rays only hit the environment, so cars never "drive" on each other.
 - **Camera choice** is stored in `user://settings.cfg` (`[camera] profile_index`), next to `GameSettings`' own sections.
 - **Static services:** `GameSession`, `GameSettings`, `PlayerProfile`, `CosmeticCatalog` and `VehicleCatalog` are static classes that load on first use, not autoloads. That keeps every scene runnable on its own and works with `godot -s` test scripts.
@@ -807,7 +831,7 @@ Environment textures and the track skies are from [Poly Haven](https://polyhaven
 
 As of 2026-11-13 (GDD v7.4). Phase 6, content and polish, is in progress. The [dev tracker](https://nahobbs5.github.io/CyberWave-2199/dev/) holds the live milestone status.
 
-- **Content built:** 14 tracks in 5 cups (Africa Cup locked for Grand Prix until it has more races), 8 cars, 11 weapons, 7 named rivals, split screen for 2–4 players, podium, music on every track.
+- **Content built:** 15 race tracks in 5 cups (all open for Grand Prix) plus the Test Circuit, 8 cars, 11 weapons, 7 named rivals, split screen for 2–4 players, podium, music on every track.
 - **Weapons:** Railgun, Hunter Drone, EMP Pulse, Road Spike, Nitro Overload, Triple Nitro, Triple Spike, Firewall, Hunter-Killer Drone, Overdrive Protocol and System Override. The GDD §6.3 roster's Holo Decoy, Gravity Mine, System Glitch, Cyber Leech and Swarm Bots are not built.
 - **Known failing checks** (they failed before the latest work):
   - `test_phase3`: "every racer crossed every gate despite weapons" (also fails with the pre-v7.4 crate odds; cause not yet checked);

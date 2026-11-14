@@ -375,6 +375,11 @@ func _spawn_crates() -> void:
 	for row in track.crate_row_offsets:
 		for lateral in track.crate_lateral_positions:
 			_add_crate(track.get_safe_transform(row, lateral, 1.1))
+	# Rows on branch routes (an alternate route's own item row).
+	for sc in track.shortcuts:
+		for d in sc.crate_distances:
+			for lateral in sc.crate_laterals:
+				_add_crate(track.global_transform * sc.safe_transform(d, lateral, 1.1))
 	# Item boxes on ramps and on boosters that ask for them.
 	for child in track.get_children():
 		if child is TrackFeature:

@@ -1,5 +1,5 @@
 # CYBERWAVE 2199
-## Game Design Document — Version 7.5
+## Game Design Document — Version 7.8
 
 **Status:** Development Baseline  
 **Engine:** Godot 4  
@@ -69,7 +69,7 @@ The race ends for everyone once all but one car have crossed the finish line on 
 
 ## 2.2 Grand Prix
 
-Five cups, each a championship of its tracks raced back to back (three races each; the Africa Cup has two so far). As in Mario Kart, Grand Prix and Versus both pick from the same cup screen: a row of cup cards between gold arrows (each a rounded card in the cup's colours with its white map between gold laurels and its name; the selected one is larger, edged in gold and points down at the panel; a cup locked for Grand Prix is grey with a padlock) above a neon panel that previews the focused cup's races (trophy, name, race count and best finish, then a card per race with a screenshot of the track, its race number, name and location, and in Versus your best time). Opening a cup (click, Enter or A) moves into the panel. In Grand Prix you confirm the cup with START GRAND PRIX (a cup locked for Grand Prix shows "coming soon" and can't be confirmed). In Versus you pick one of its races (§2.1). Back from the panel returns to the badges.
+Five cups, each a championship of its tracks raced back to back (three races each). As in Mario Kart, Grand Prix and Versus both pick from the same cup screen: a row of cup cards between gold arrows (each a rounded card in the cup's colours with its white map between gold laurels and its name; the selected one is larger, edged in gold and points down at the panel; a cup locked for Grand Prix is grey with a padlock) above a neon panel that previews the focused cup's races (trophy, name, race count and best finish, then a card per race with a screenshot of the track, its race number, name and location, and in Versus your best time). Opening a cup (click, Enter or A) moves into the panel. In Grand Prix you confirm the cup with START GRAND PRIX (a cup locked for Grand Prix shows "coming soon" and can't be confirmed). In Versus you pick one of its races (§2.1). Back from the panel returns to the badges.
 
 ### American Cup (trophy: a map of the USA)
 
@@ -111,8 +111,9 @@ All three South America Cup tracks are built, and the cup is open for Grand Prix
 |---|---|---|
 | 1 | Kilwa Kisiwani Ruins | Kilwa Kisiwani, Tanzania |
 | 2 | Fires of Nyiragongo | Nyiragongo, D.R. Congo |
+| 3 | Chefchaouen | Chefchaouen, Morocco |
 
-Races 1 and 2 are built; race 3 is still to come. Both can be raced in Versus, and the cup stays locked for Grand Prix until all its tracks are built.
+All three Africa Cup tracks are built, and the cup is open for Grand Prix and Versus.
 
 The American, Europe and Asia Cups are playable. The Europe Cup was the World Cup; its save id is unchanged, so earlier results still count. The cup-win coin bonus is 100 for a three-race cup, scaled by the number of races (§9.3).
 
@@ -626,7 +627,7 @@ An abandoned amusement park with overgrown pathways, flooded sections, roller co
 
 **Identity:** Jumps, environmental hazards, alternate routes.
 
-Built at about 3.1 km as a realistic post-Katrina ruin (stormy overcast, fog, rusted rides, flood lines): two jump ramps on straights, a jump on the water-park shortcut, and standing water that makes cars slightly slower and less grippy while they're in it.
+Built at about 3.1 km as a realistic post-Katrina ruin (stormy overcast, fog, rusted rides, flood lines): two jump ramps on straights, a jump on the water-park shortcut, and standing water that makes cars slightly slower and less grippy while they're in it. A derelict bumper-car pavilion stands on the outside of the corner at the end of the Midway straight, dead ahead all the way up it: seven abandoned cars on a silted floor under a rusty corrugated roof, its open front to the oncoming cars (the first track prop modelled in Blender).
 
 ## 8.3 Vegas Overdrive
 
@@ -863,6 +864,31 @@ Built at about 3.2 km on a 15 m road, with no grade steeper than about 9%. The r
 
 **Sloped roads (engine):** a track can opt in (TrackCircuit `sloped`). Its control points' heights become real climbs and drops, and `banking` ranges roll the road about its direction. Cars drive on a collider that follows the road surface, with a short apron past the walls (the flat ground slab drops far below). Walls slope and bank with the road. Recovery spots, item crates, coins and features sit on the real surface. "Out of bounds" is measured from the nearest road's height. The cars' upright assist settles onto the road's own pitch and bank. A shortcut can have **gaps** (jumps): no road, collider or walls there, nothing counts as on-road (Overdrive won't land in one), and the AI hold a minimum speed into them. Flat tracks are built exactly as before. Race music: *Danger Imminent* (§12).
 
+## 8.6i Chefchaouen
+
+**Location:** Chefchaouen, Morocco
+
+The blue medina in the Rif mountains on a bright late morning. Streets of washed blue and white plaster with a deeper blue band along the foot of every wall, patches of bare stone, arched doors painted deep blue, iron grilles, blue shutters, little green and red tiled awnings and wall lanterns. Cables and lanterns cross the streets high overhead, and patches of deep blue sky show between the walls. The Rif rises behind the town. Neon is kept for race cues only: the fork signs, the boost surfaces and the start line.
+
+**Identity:** Two forks every lap, so there are four ways round. Each fork splits the field by height: one route climbs or drops through tight stepped alleys while the other sweeps round the same block on a wider street, and each pair meets again at a landmark.
+
+Built at about 3.15 km. The main road (the wide routes, the start and the shared sections) is 16 m, room for the eight-car field; the branch routes are 12 m, two cars side by side. The town climbs about 28 m from the lower square to the upper terrace. In driving order:
+- **Lower square and start plaza** (shared): a wide, level start straight with a boost pad.
+- **Fork 1, uphill.** A neon gantry about 125 m before the split shows both choices: the **Blue Stairway** straight ahead in the left lane, the **Outer Street** bearing right.
+  - **Blue Stairway** (branch, about 1,045 m): a steep climb (pitches up to about 12%) of irregular blue stone steps between flat landings, with a switchback of two tight bends (about 21-29 m radius). The walls are lined with flowerpots (on the walls and along the low wall tops) and deep-blue doorways. Near the top it runs beside and about 4 m above the Outer Street, so you can see the cars coming up below. It crests above the terrace (a boost ring on the crest), so a clean drift exit carries speed onto the terrace. No item boxes.
+  - **Outer Street** (main, about 1,200 m): a longer, gentler climb (under 6%) with a long sweeping bend, banked 6°, room to pass, a boost pad with item boxes and an item row before the final turn onto the terrace.
+- **Upper terrace** (shared): both routes arrive on their own lanes. The north side is open to the view over the Rif, with the white Galerie tower at the terrace corner. The Elimination checkpoint is here. Boost pad.
+- **Fork 2, downhill.** Another gantry about 125 m before the split: the **Market Lane** carries straight on in the left lane, the **Fountain Steps** bear right.
+  - **Market Lane** (branch, about 860 m): a descending slalom (bends of 21-28 m radius) under kilims and rugs hung along the walls, through a whitewashed horseshoe arch with a deep-blue ring. The inside line is quick if you take the first turn cleanly. Boost pad.
+  - **Fountain Steps** (main, about 1,030 m): a wider stepped descent, four flights of steps between landings, past a tiled wall fountain (zellige, a carved hood and a basin) on the third landing. A long final landing ends in a real drop with a jump ramp in the right lane, so cars land beside the Market Lane traffic merging in the left lane.
+- **Lower square:** both routes come in on separate lanes, then funnel into one shared final corner back to the start.
+
+**Stairs:** the steps are drawn, but cars drive a smooth ramp under them: the road surface is hidden on the stair flights and the collider stays. Each tread meets the ramp at its middle, so the wheels sit within a few centimetres of the stone. Only the big drop at the end of the Fountain Steps is a real jump.
+
+**Balance:** in headless testing, with the field forced onto each route, the Blue Stairway and the Outer Street take about the same time from the shared approach to the shared exit (about 32.5 s and 32.1 s). The Market Lane is about 6% quicker than the Fountain Steps (25.0 s and 26.4 s) but narrow, with no item boxes. The AI pick routes about evenly, and less often into a branch that already has traffic in its first stretch.
+
+Race music: none yet (§12.1).
+
 ## 8.7 Shared Track Features
 
 Tracks may contain:
@@ -893,6 +919,17 @@ Shortcuts should offer meaningful tradeoffs:
 - Alternative overtaking opportunities
 
 All routes must maintain valid checkpoint and lap progression.
+
+**Branch routes** (Chefchaouen, §8.6i): a shortcut can be marked as a full alternate route (TrackShortcut `is_branch`) instead of a shortcut. Either route's checkpoints count (the bypassed gates are copied onto it), and lap progress maps both routes onto the same stretch of the lap, so positions stay right while the field is split. A branch also:
+- has its own AI racing line (BranchLine) instead of following its centre line;
+- is chosen by traffic as well as by chance;
+- respawns a recovered car on the branch, not on the main road;
+- is drawn on the minimap as strongly as the main loop;
+- can carry item rows;
+- meets the main road in its own lane at each end (`start_lateral` / `end_lateral`);
+- can hide its road surface over stair flights (`hidden_surface`), as the main loop can.
+
+A track can put the Elimination checkpoint on a shared section (TrackCircuit `elimination_gate`).
 
 ## 8.9 Proposed Track Specials (not scheduled)
 
@@ -1221,7 +1258,7 @@ The soundtrack should blend synthwave, electronic racing music, and darker indus
 
 Each track should have its own musical identity.
 
-On the final lap (races of two or more laps) the race music plays 15% faster, pitch and all.
+On the final lap (races of two or more laps) the race music plays 5% faster, pitch and all: a subtle lift (under a semitone) rather than an obvious speed-up.
 
 Sound categories include:
 - Vehicle engines
@@ -1662,5 +1699,8 @@ Changes after Version 1.0 should be tracked as revisions rather than silently re
 | 7.3 | 2026-11-13 | Controller vibration: gamepad rumble on drift boosts, boost pads and rings, tricks, other speed boosts, weapon hits and hard crashes, with an on/off toggle in Settings (§11.9). |
 | 7.4 | 2026-11-13 | Crate odds rebalanced per position instead of per pair: weaker items at the front and stronger ones at the back. Road Spikes only for 1st–3rd, Firewalls only for 1st–5th; 7th–8th get Overdrive, System Override or Triple Nitro 68–81% of the time (§6.5). Versus and Multiplayer setup default to 3 races (§2.1), and race settings now reset to the defaults on every launch (§11.3). |
 | 7.5 | 2026-11-14 | Fires of Nyiragongo race music: Jean-Paul-V's *Danger Imminent* (§8.6h, §12.1). Every track has music again. |
+| 7.6 | 2026-11-14 | Six Flags New Orleans: a derelict bumper-car pavilion at the corner ending the Midway straight, the first track prop modelled in Blender (§8.2). |
+| 7.7 | 2026-11-14 | Final-lap music speed-up cut from 15% to 5% (pitch and tempo), so it's a subtle lift rather than an obvious change (§12). |
+| 7.8 | 2026-11-14 | Africa Cup race 3: Chefchaouen, about 3.15 km through the blue medina on a bright late morning, with two forks per lap (four ways round). Uphill, the Blue Stairway (steep stone steps, flowerpots) or the wider Outer Street (items, room to pass) meet on the upper terrace. Downhill, the Market Lane (rugs, a horseshoe arch) or the Fountain Steps (a tiled fountain, a jump off the final landing) meet in the lower square. New engine support for branch routes (their own AI line, respawns and minimap line, merge lanes, stairs over a smooth ramp) and for an Elimination checkpoint on a shared section. The Africa Cup is complete and open for Grand Prix (§2.2, §8.6i, §8.8). |
 
-**End of Game Design Document — Version 7.5**
+**End of Game Design Document — Version 7.8**
