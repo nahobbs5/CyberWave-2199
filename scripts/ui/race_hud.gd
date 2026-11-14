@@ -355,15 +355,15 @@ func _on_hit_resolved(target: VehicleController, weapon: WeaponData, shooter: Ve
 	var target_name := race.progress_of(target).display_name
 	if target == player:
 		if blocked_by == &"shield":
-			items.show_notice("FIREWALL BLOCKED %s" % weapon.display_name.to_upper(), UIStyle.WARN)
+			items.show_notice("FIREWALL BLOCKED %s" % weapon.use_name().to_upper(), UIStyle.WARN)
 			_play("blocked")
 		elif blocked_by == &"overdrive":
-			items.show_notice("OVERDRIVE IGNORED %s" % weapon.display_name.to_upper(), UIStyle.CYAN)
+			items.show_notice("OVERDRIVE IGNORED %s" % weapon.use_name().to_upper(), UIStyle.CYAN)
 		elif blocked_by == &"dodge":
-			items.show_notice("DODGED %s" % weapon.display_name.to_upper(), UIStyle.CYAN)
+			items.show_notice("DODGED %s" % weapon.use_name().to_upper(), UIStyle.CYAN)
 			_play("blocked")
 		elif blocked_by == &"":
-			items.show_notice("%s!" % weapon.display_name.to_upper(), UIStyle.DANGER)
+			items.show_notice("%s!" % weapon.use_name().to_upper(), UIStyle.DANGER)
 			_play("hurt")
 			if weapon.kind == WeaponData.Kind.OVERRIDE:
 				announcer.announce("SYSTEM OVERRIDE", 1.4, weapon.color, "speed down · drift charge lost")
@@ -381,7 +381,7 @@ func _on_item_lost(target: VehicleController, lost: WeaponData, by_weapon: Weapo
 		shooter: VehicleController) -> void:
 	var player := racer.vehicle
 	if target == player:
-		items.show_notice("%s!  LOST %s" % [by_weapon.display_name.to_upper(), lost.display_name], lost.color)
+		items.show_notice("%s!  LOST %s" % [by_weapon.use_name().to_upper(), lost.display_name], lost.color)
 	elif shooter == player:
 		items.show_notice("HIT  %s  -  stripped %s" % [race.progress_of(target).display_name, lost.display_name],
 				by_weapon.color)

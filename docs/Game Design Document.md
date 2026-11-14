@@ -1,5 +1,5 @@
 # CYBERWAVE 2199
-## Game Design Document — Version 7.9
+## Game Design Document — Version 8.4
 
 **Status:** Development Baseline  
 **Engine:** Godot 4  
@@ -69,7 +69,7 @@ The race ends for everyone once all but one car have crossed the finish line on 
 
 ## 2.2 Grand Prix
 
-Five cups, each a championship of its tracks raced back to back (three races each). As in Mario Kart, Grand Prix and Versus both pick from the same cup screen: a row of cup cards between gold arrows (each a rounded card in the cup's colours with its white map between gold laurels and its name; the selected one is larger, edged in gold and points down at the panel; a cup locked for Grand Prix is grey with a padlock) above a neon panel that previews the focused cup's races (trophy, name, race count and best finish, then a card per race with a screenshot of the track, its race number, name and location, and in Versus your best time). Opening a cup (click, Enter or A) moves into the panel. In Grand Prix you confirm the cup with START GRAND PRIX (a cup locked for Grand Prix shows "coming soon" and can't be confirmed). In Versus you pick one of its races (§2.1). Back from the panel returns to the badges.
+Five cups, each a championship of its tracks raced back to back (three races each). As in Mario Kart, Grand Prix and Versus both pick from the same cup screen: a row of cup cards between gold arrows (each a rounded card in the cup's colours with its white map between gold laurels and its name; the selected one is larger, edged in gold and points down at the panel; a cup locked for Grand Prix is grey with a padlock) above a neon panel that previews the focused cup's races (trophy, name and, in Grand Prix, your best finish, then a card per race with a screenshot of the track, its race number, name and location, and in Versus your best time). Opening a cup (click, Enter or A) moves into the panel. In Grand Prix you confirm the cup with START GRAND PRIX (a cup locked for Grand Prix shows "coming soon" and can't be confirmed). In Versus you pick one of its races (§2.1). Back from the panel returns to the badges.
 
 ### American Cup (trophy: a map of the USA)
 
@@ -461,6 +461,7 @@ Automatic targeting with lock-on is the standard system.
 | System Glitch | Interferes with HUD and steering | 2s |
 | Cyber Leech | Drains or steals boost energy | 2s |
 | Railgun | Fires a fast projectile | 0.7s stagger |
+| Triple Railgun | Three Railgun shots in one slot, fired one at a time | 0.7s stagger per shot |
 | Swarm Bots | Pursue and disrupt an opponent | 5s pursuit |
 
 The Firewall shows as an orange force field around the car: a glowing rim and a drifting hex energy grid. It fades in, dissolves away when it runs out, and bursts with a flash when it blocks a hit (`assets/shaders/force_field.gdshader`).
@@ -508,17 +509,18 @@ Once armed, they follow the same collision and effect rules for every racer.
 - Trailing racers may receive better opportunities for recovery and overtaking.
 - A landed Hunter Drone or Railgun hit knocks out the victim's selected weapon. Hits blocked by a Firewall or stun protection cost nothing.
 
-Crate odds by race position (each column adds up to 100%; with fewer than 8 racers, positions are spread over the same columns). Leaders get weak and defensive items, and the further back you are, the stronger the items get. Single Road Spikes only drop for 1st–3rd and Firewalls only for 1st–5th. 7th and 8th mostly get Overdrive, System Override and Triple Nitro.
+Crate odds by race position (each column adds up to 100%; with fewer than 8 racers, positions are spread over the same columns). Leaders get weak and defensive items, and the further back you are, the stronger the items get. Single Road Spikes only drop for 1st–3rd and Firewalls only for 1st–5th. 7th and 8th mostly get Overdrive, System Override and Triple Nitro. Messages name what actually hit you: one spike from a Triple Spike reads "ROAD SPIKE!", one Triple Railgun shot reads "RAILGUN!".
 
 | Weapon | 1st | 2nd | 3rd | 4th | 5th | 6th | 7th | 8th |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | Road Spike | 30% | 25% | 15% | 0% | 0% | 0% | 0% | 0% |
 | Triple Spike | 12% | 12% | 10% | 6% | 0% | 0% | 0% | 0% |
 | Firewall | 25% | 23% | 18% | 14% | 8% | 0% | 0% | 0% |
-| Railgun | 15% | 15% | 15% | 15% | 12% | 10% | 2% | 0% |
-| EMP Pulse | 8% | 9% | 11% | 13% | 13% | 12% | 4% | 2% |
-| Hunter Drone | 5% | 8% | 13% | 17% | 18% | 16% | 8% | 4% |
-| Nitro Overload | 5% | 8% | 12% | 16% | 17% | 16% | 10% | 5% |
+| Railgun | 15% | 15% | 13% | 12% | 9% | 7% | 0% | 0% |
+| Triple Railgun | 0% | 0% | 4% | 6% | 8% | 8% | 4% | 0% |
+| EMP Pulse | 8% | 9% | 11% | 13% | 12% | 11% | 4% | 2% |
+| Hunter Drone | 5% | 8% | 12% | 15% | 16% | 14% | 7% | 4% |
+| Nitro Overload | 5% | 8% | 11% | 15% | 15% | 14% | 9% | 5% |
 | Triple Nitro | 0% | 0% | 4% | 9% | 14% | 18% | 22% | 25% |
 | Hunter-Killer | 0% | 0% | 0% | 2% | 4% | 6% | 8% | 8% |
 | Overdrive | 0% | 0% | 0% | 3% | 6% | 10% | 20% | 25% |
@@ -887,7 +889,7 @@ Built at about 3.15 km. The main road (the wide routes, the start and the shared
 
 **Balance:** in headless testing, with the field forced onto each route, the Blue Stairway and the Outer Street take about the same time from the shared approach to the shared exit (about 32.5 s and 32.1 s). The Market Lane is about 6% quicker than the Fountain Steps (25.0 s and 26.4 s) but narrow, with no item boxes. The AI pick routes about evenly, and less often into a branch that already has traffic in its first stretch.
 
-Race music: none yet (§12.1).
+Race music: *Atlas Morocco* (§12.1).
 
 ## 8.7 Shared Track Features
 
@@ -1114,11 +1116,12 @@ Settings and Credits use the same street, dimmed, behind rounded neon panels. Th
 
 ## 11.3 Race Setup
 
-Grand Prix: cup screen, then race setup. Versus: race setup first (including the number of races), then the cup screen to pick a race (§2.1).
+Grand Prix: cup screen, then race setup. Versus: race setup first (including the number of races), then the cup screen to pick a race (§2.1). The race setup, cup and track screens (and Settings and the Garage, §11.4, §11.9) share the Race Results header: the logo top left, a slanted title bar between two checker flags centred at the top (GRAND PRIX or VERSUS), and a neon rule under it. There's no "CHOOSE A CUP" or "CHOOSE A TRACK" subtitle; mid-series the track screen shows "RACE 2 OF 3" under the title. On race setup, Grand Prix also shows the cup's gold banner at the top of the settings; Versus has none (the Races row shows the count). The last row is **Name**, just above the gold button: your name in races (standings, results, championship tables), up to 12 characters, kept between launches. Left empty, you race as "You". Esc leaves the field without leaving the screen; split screen still names players P1–P4.
 
 - Championship (Grand Prix) or number of races (Versus)
 - Vehicle selection
 - License plate preview
+- Your name
 - AI difficulty
 - Race settings
 - Start race
@@ -1301,7 +1304,7 @@ One song per screen or track. Moving between menus that share a song doesn't res
 | Choquequirao | Epic Victory March for Heroes | DesiFreeMusic |
 | Kilwa Kisiwani Ruins | The Dragon's Lair | vishiv |
 | Fires of Nyiragongo | Danger Imminent | Jean-Paul-V |
-| Chefchaouen | None yet | — |
+| Chefchaouen | Atlas Morocco | vadim_makes_sound |
 | Test Circuit and Free Drive | The Garden Wakes | stageechoesmusic |
 
 The web build plays smaller 96 kbps .ogg copies (`music/web/`) of every song.
@@ -1314,7 +1317,7 @@ Weapon sounds come from the car (or object) that makes them, so they are loud cl
 |---|---|---|
 | Firewall raised (not again while already up) | Sci-fi energy shield activation | User |
 | Firewall gone (ran out or blocked a hit) | Shield drop | Shielded car |
-| Railgun fired | Sci-fi weapon firing pulse | Shooter |
+| Railgun fired (each Triple Railgun shot too) | Sci-fi weapon firing pulse | Shooter |
 | EMP Pulse | Electric zap | User |
 | System Override | Electrical current | User and each hacked human player (hacked AI cars add no copy, so it doesn't stack) |
 | Road Spike dropped (each Triple Spike charge too) | Crowbar drop | The strip |
@@ -1336,6 +1339,7 @@ Save:
 - Purchased cosmetics
 - Equipped cosmetics
 - Global license plate text
+- Your name (single player)
 - Selected vehicle
 - Camera preference
 - Control bindings
@@ -1704,5 +1708,11 @@ Changes after Version 1.0 should be tracked as revisions rather than silently re
 | 7.7 | 2026-11-14 | Final-lap music speed-up cut from 15% to 5% (pitch and tempo), so it's a subtle lift rather than an obvious change (§12). |
 | 7.8 | 2026-11-14 | Africa Cup race 3: Chefchaouen, about 3.15 km through the blue medina on a bright late morning, with two forks per lap (four ways round). Uphill, the Blue Stairway (steep stone steps, flowerpots) or the wider Outer Street (items, room to pass) meet on the upper terrace. Downhill, the Market Lane (rugs, a horseshoe arch) or the Fountain Steps (a tiled fountain, a jump off the final landing) meet in the lower square. New engine support for branch routes (their own AI line, respawns and minimap line, merge lanes, stairs over a smooth ramp) and for an Elimination checkpoint on a shared section. The Africa Cup is complete and open for Grand Prix (§2.2, §8.6i, §8.8). |
 | 7.9 | 2026-11-14 | Docs brought up to date: fifteen tracks (§8); Chefchaouen listed in the music table with no song yet (§12.1). |
+| 7.10 | 2026-11-14 | Versus race setup screen gets a VERSUS title at the top (§11.3). |
+| 8.0 | 2026-11-14 | Triple Railgun: three Railgun shots in one slot (0.7 s stagger and item strip per shot), a mid-pack item for 3rd–7th that never drops for the leaders; Railgun, Hunter Drone, Nitro Overload and EMP odds trimmed to make room (§6.3, §6.5). Hit and boost messages name the single item: a Triple Spike hit reads "ROAD SPIKE!", a Triple Railgun hit "RAILGUN!", each Triple Nitro burst "Nitro Overload" (§6.5). |
+| 8.1 | 2026-11-14 | Race setup: a Name field (up to 12 characters, saved in the profile) just above the gold button; you race under that name, or "You" when empty. The screen title is gone, and Versus drops the gold "VERSUS · N RACES" banner since the Races row shows the count; Grand Prix keeps its cup banner (§11.3, §13.1). |
+| 8.2 | 2026-11-14 | Race setup, cup and track screens use the Race Results style title, centred (GRAND PRIX or VERSUS; Grand Prix race setup gets a title again). The cup screen drops the "CHOOSE A CUP" subtitle and the race count from the cup panel; the track screen shows only "RACE x OF y" mid-series (§2.2, §11.3). |
+| 8.3 | 2026-11-14 | Settings and the Garage use the same Race Results style header as the setup screens: logo, centred SETTINGS / GARAGE title bar with checker flags, neon rule (§11.4, §11.9). |
+| 8.4 | 2026-11-14 | Chefchaouen race music: vadim_makes_sound's *Atlas Morocco* (§8.6i, §12.1). Every track has music again. |
 
-**End of Game Design Document — Version 7.9**
+**End of Game Design Document — Version 8.3**

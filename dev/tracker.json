@@ -5,7 +5,7 @@
     "name": "Cyberwave 2199",
     "pitch": "Retrofuturistic cyberpunk combat kart racing: luxury neon cars, drift boosts, weapons and fifteen real-world circuits, against seven AI rivals or in 2–4 player local split screen.",
     "engine": "Godot 4.7.2 · GDScript · Jolt Physics",
-    "gdd": "v7.9",
+    "gdd": "v8.1",
     "phase": "Phase 6: content and polish (GDD §16)",
     "repo": "https://github.com/nahobbs5/CyberWave-2199",
     "demo": "https://nahobbs5.github.io/CyberWave-2199/web/",
@@ -221,7 +221,7 @@
       ],
       "steps": [
         {
-          "text": "11 weapons as WeaponData resources",
+          "text": "12 weapons as WeaponData resources (Triple Railgun added in v8.0)",
           "done": true
         },
         {
@@ -242,6 +242,10 @@
         },
         {
           "text": "Weapon SFX with per-clip levels and a master limiter",
+          "done": true
+        },
+        {
+          "text": "Triple Railgun (3 shots, AI spaces them 1.2 s apart); hit messages use WeaponData.use_name() (v8.0)",
           "done": true
         },
         {
@@ -441,6 +445,10 @@
         },
         {
           "text": "Web: track screen no longer freezes (baked outlines); black instead of gray while loading",
+          "done": true
+        },
+        {
+          "text": "Race setup Name field above the gold button; no title; Versus banner removed (v8.1)",
           "done": true
         },
         {
@@ -928,6 +936,18 @@
       "decision": "Six Flags bumper-car pavilion sits dead ahead on the outside of the corner ending the Midway straight, open front to the oncoming cars",
       "why": "Beside the straight it was side-on and very hard to spot",
       "gdd": "v7.6"
+    },
+    {
+      "date": "2026-11-14",
+      "decision": "Triple Railgun added (three Railgun shots, 3rd–7th only); hit and boost messages name the single item (\"ROAD SPIKE!\", not \"TRIPLE SPIKE!\")",
+      "why": "Mid-pack needed a stronger attack; one spike or shot shouldn't be announced as three",
+      "gdd": "v8.0"
+    },
+    {
+      "date": "2026-11-14",
+      "decision": "Name field on the single-player race setup screen (saved in the profile, \"You\" when empty); screen title and the Versus gold banner removed",
+      "why": "Players want their own name in the standings; the title and banner repeated what the rows already say",
+      "gdd": "v8.1"
     }
   ],
   "playtest": [
@@ -1008,6 +1028,10 @@
         {
           "text": "From 7th–8th you mostly get Overdrive, System Override or Triple Nitro; never a single spike or a Firewall",
           "done": false
+        },
+        {
+          "text": "Triple Railgun's three shots feel distinct; hits read \"RAILGUN!\" and Triple Spike hits \"ROAD SPIKE!\"",
+          "done": false
         }
       ]
     },
@@ -1045,6 +1069,10 @@
         },
         {
           "text": "Garage try-on / Apply is clear without instructions",
+          "done": false
+        },
+        {
+          "text": "Name field: type, Enter, Esc and the pad all behave; the name shows in standings and results",
           "done": false
         }
       ]

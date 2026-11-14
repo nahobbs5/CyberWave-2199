@@ -16,10 +16,10 @@ Luxury neon cars, drift boosts, weapons and fifteen circuits set in real-world p
 - **Drifting:** hold drift and steer to charge **Cyan → Magenta → Gold** boosts. Steering into the slide charges faster.
 - **Rocket start:** hold accelerate as the "2" fades to launch, but too early and you burn out. A four-lamp start-light board on the gantry counts you in.
 - **Slipstream, ramp tricks and boost pads / rings,** plus shortcuts with smashable barriers on every track.
-- **11 weapons** with position-based crate odds. System Override hacks everyone ahead of you, and the leader stays hacked longest.
+- **12 weapons** with position-based crate odds. System Override hacks everyone ahead of you, and the leader stays hacked longest.
 - **Holographic recovery** that never moves you forward.
 - **8 cars** with distinct stats, a neon garage with 8 cosmetic categories, coins and license plates.
-- **Presentation:** a podium ceremony, neon results, music for every track but Chefchaouen (5% faster on the final lap), rebindable controls and accessibility settings.
+- **Presentation:** a podium ceremony, neon results, music for every track (5% faster on the final lap), rebindable controls and accessibility settings.
 
 ## Cups and tracks
 
@@ -76,5 +76,5 @@ Every action can be rebound in **Settings → Controls**.
 ## Credits
 
 **Cyberwave 2199** by Nathan Hobbs.
-Music by ikoliks_aj, ikoliks, alex-morgan, Lilex, TheBoysBeats, SPmusic, kulakovka, Ob-Lix, ed-musicproductions, sonican, elisaveta_stoycheva, theorienvibes, restum-anoush, DesiFreeMusic, vishiv, Jean-Paul-V and stageechoesmusic. Sound effects by freesound_community, vadim_makes_sound, rescopicsound, fronbondi_skegs, voicebosch and 49053354. Textures and skies from [Poly Haven](https://polyhaven.com) (CC0). Fonts Oxanium and Rajdhani (SIL OFL 1.1). Made with [Godot Engine](https://godotengine.org) (MIT).
+Music by ikoliks_aj, ikoliks, alex-morgan, Lilex, TheBoysBeats, SPmusic, kulakovka, Ob-Lix, ed-musicproductions, sonican, elisaveta_stoycheva, theorienvibes, restum-anoush, DesiFreeMusic, vishiv, Jean-Paul-V, vadim_makes_sound and stageechoesmusic. Sound effects by freesound_community, vadim_makes_sound, rescopicsound, fronbondi_skegs, voicebosch and 49053354. Textures and skies from [Poly Haven](https://polyhaven.com) (CC0). Fonts Oxanium and Rajdhani (SIL OFL 1.1). Made with [Godot Engine](https://godotengine.org) (MIT).
 The full list is on the in-game Credits screen and in [docs/Reference.md](docs/Reference.md#credits).

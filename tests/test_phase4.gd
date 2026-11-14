@@ -273,6 +273,20 @@ func _test_triple_nitro_inventory() -> void:
 	inv.add(tspike)
 	inv.take_selected()
 	_check(inv.lose_item() == tspike and inv.is_empty(), "a hit knocks out the remaining spikes")
+	var single := load("res://resources/weapons/railgun.tres") as WeaponData
+	var trail := load("res://resources/weapons/triple_railgun.tres") as WeaponData
+	_check(trail.kind == single.kind and trail.targeted and trail.charges == 3 and trail.effect == single.effect
+			and is_equal_approx(trail.effect_duration, single.effect_duration) and trail.strips_item
+			and is_equal_approx(trail.speed, single.speed) and is_equal_approx(trail.radius, single.radius),
+			"Triple Railgun: three Railgun shots")
+	_check(trail.chance_for(1, 8) == 0.0 and trail.chance_for(2, 8) == 0.0, "Triple Railgun never drops for the leaders")
+	inv.add(trail)
+	for i in 3:
+		inv.take_selected()
+	_check(inv.is_empty(), "three shots empty the slot")
+	_check(trail.use_name() == "Railgun" and tspike.use_name() == "Road Spike" and single.use_name() == "Railgun"
+			and trail.display_name == "Triple Railgun" and tspike.display_name == "Triple Spike",
+			"one use is named for the single item; the pickup keeps the Triple name")
 	inv.free()
 
 
@@ -305,7 +319,7 @@ func _test_mode_select() -> void:
 	setup = await _open_setup(RaceConfig.Mode.VERSUS)
 	_check(setup._race_type != null and setup._race_type.selected == 0, "Versus setup has a Race type, Standard first")
 	setup.set_race_type(1)
-	_check(not setup._laps_row.visible and setup._title.text.begins_with("ELIMINATION"), "picking Elimination hides laps and retitles")
+	_check(not setup._laps_row.visible, "picking Elimination hides laps")
 	_start_versus(setup)
 	_check(GameSession.current.is_elimination(), "Race type Elimination starts an Elimination race")
 	_check(GameSession.last_versus_mode() == RaceConfig.Mode.ELIMINATION, "Versus reopens on the race type used last")
@@ -328,7 +342,7 @@ func _test_mode_select() -> void:
 	var open_cups := 0
 	for cup in cups.cups:
 		open_cups += 1 if cup.is_open(true) else 0
-	_check(cups.cards.size() == GrandPrixData.CUPS.size() and open_cups == 4, "a badge per cup, four open for Grand Prix (%d)" % open_cups)
+	_check(cups.cards.size() == GrandPrixData.CUPS.size() and open_cups == GrandPrixData.CUPS.size(), "a badge per cup, all open for Grand Prix (%d)" % open_cups)
 	cups.pick(1)
 	_check(GameSession.cup_path == GrandPrixData.CUPS[1], "picking the Europe Cup")
 	GameSession.cup_path = ""
@@ -396,7 +410,7 @@ func _test_triple_nitro_race(race: RaceManager) -> void:
 	_check(race.race_hud.get_slot_text(0).contains("x3"), "HUD shows the charges (%s)" % race.race_hud.get_slot_text(0))
 	var kicks := 0
 	for i in 3:
-		if wm.use_weapon(me) and me.is_boosting() and me.boost_label == "Triple Nitro":
+		if wm.use_weapon(me) and me.is_boosting() and me.boost_label == "Nitro Overload":
 			kicks += 1
 		await _frames(20)
 	_check(kicks == 3, "three separate boosts (%d)" % kicks)
@@ -421,6 +435,7 @@ func _test_triple_nitro_race(race: RaceManager) -> void:
 	wm.child_entered_tree.disconnect(on_child)
 	_check(dropped[0] == 3, "one spike per press (%d)" % dropped[0])
 	_check(wm.weapons.any(func(w: WeaponData) -> bool: return w.id == &"triple_spike"), "Triple Spike is in the crate pool")
+	_check(wm.weapons.any(func(w: WeaponData) -> bool: return w.id == &"triple_railgun"), "Triple Railgun is in the crate pool")
 
 
 func _test_versus(race: RaceManager) -> void:

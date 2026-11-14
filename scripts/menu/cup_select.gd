@@ -86,10 +86,10 @@ func _unhandled_input(event: InputEvent) -> void:
 func _build() -> void:
 	var title := "GRAND PRIX" if is_grand_prix() else RaceConfig.MODE_NAMES[mode].to_upper()
 	layout = NeonScreenLayout.new(title, "trophy")
+	layout.use_results_header()
 	add_child(layout)
 	layout.back_button.pressed.connect(back)
 	layout.back_button.focus_mode = Control.FOCUS_NONE
-	CupSelect.add_subtitle(layout, "CHOOSE A CUP")
 	if not GameSession.split_screen:
 		SetupWidgets.add_coin_pill(self, PlayerProfile.get_profile().coins)
 	# START GRAND PRIX sits bottom right, level with Back.
@@ -111,8 +111,8 @@ func _build() -> void:
 	cards.assign(board.badges)
 
 
-## A spaced-out magenta subtitle tucked under the screen title ("CHOOSE A
-## CUP"), like the Grand Prix mockup.
+## A spaced-out magenta subtitle tucked under the screen title ("RACE 2 OF
+## 3" on the track screen mid-series), like the Grand Prix mockup.
 static func add_subtitle(p_layout: NeonScreenLayout, text: String) -> Label:
 	var spaced := ""
 	for ch in text:
@@ -128,10 +128,18 @@ static func add_subtitle(p_layout: NeonScreenLayout, text: String) -> Label:
 	sub.add_theme_stylebox_override("normal", bar)
 	sub.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	p_layout.add_child(sub)
-	# Under the title text, once the title row has its size.
+	# Under the title text, once the title row has its size (results header:
+	# centred on the rule under the title bar).
 	var place := func() -> void:
+		var origin := p_layout.get_global_rect().position
+		if p_layout.results_header:
+			var row := p_layout.title_bar_row.get_global_rect()
+			sub.position = Vector2(row.get_center().x - origin.x - sub.size.x * 0.5,
+					NeonScreenLayout.RESULTS_RULE_Y - sub.size.y * 0.5)
+			return
 		var t := p_layout.title_label
-		sub.position = t.get_global_rect().position - p_layout.get_global_rect().position + Vector2(6, t.size.y - 2)
+		sub.position = t.get_global_rect().position - origin + Vector2(6, t.size.y - 2)
 	p_layout.title_label.resized.connect(place)
+	sub.resized.connect(place)
 	place.call_deferred()
 	return sub

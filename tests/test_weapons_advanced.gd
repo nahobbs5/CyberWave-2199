@@ -37,6 +37,7 @@ func _run_all() -> void:
 	await _run("overdrive protocol", _test_overdrive, {})
 	await _run("overdrive: cancel and elimination", _test_overdrive_cancel, {})
 	await _run("AI uses the advanced items", _test_ai_use, {"autopilot": true, "frozen": false})
+	await _run("AI fires a Triple Railgun one shot at a time", _test_ai_triple_railgun, {"autopilot": true, "frozen": false})
 	print("\n%d checks passed, %d failed" % [_passed, _failed])
 	quit(1 if _failed > 0 else 0)
 
@@ -466,3 +467,30 @@ func _test_ai_use(race: RaceManager) -> void:
 	_check(used.get(&"hunter_killer", 0) > 0 and used.get(&"overdrive_protocol", 0) > 0 and used.get(&"system_override", 0) > 0,
 			"rivals use all three (%s)" % [used])
 	_check(recoveries[0] <= 6, "no recovery storm (%d recoveries)" % recoveries[0])
+
+
+func _test_ai_triple_railgun(race: RaceManager) -> void:
+	var triple := load("res://resources/weapons/triple_railgun.tres") as WeaponData
+	var frame := [0]
+	var shots := {} # car -> frames it fired on
+	race.weapon_manager.weapon_used.connect(func(car: VehicleController, w: WeaponData) -> void:
+		if w.id == &"triple_railgun":
+			if not shots.has(car):
+				shots[car] = []
+			shots[car].append(frame[0]))
+	for racer in race.racers:
+		if not racer.is_player and racer.vehicle.inventory != null:
+			racer.vehicle.inventory.clear()
+			racer.vehicle.inventory.add(triple)
+	for t in 1800:
+		frame[0] = t
+		await physics_frame
+	var total := 0
+	var min_gap := 1 << 30
+	for car in shots:
+		var times: Array = shots[car]
+		total += times.size()
+		for i in range(1, times.size()):
+			min_gap = mini(min_gap, int(times[i]) - int(times[i - 1]))
+	_check(total >= 6, "rivals fire their Triple Railguns (%d shots by %d cars)" % [total, shots.size()])
+	_check(min_gap >= int(AICombat.SHOT_GAP * 60.0) - 1, "shots are spaced out, not all at once (closest %d frames)" % min_gap)

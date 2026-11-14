@@ -471,7 +471,7 @@ func _build() -> void:
 		flag.position = Vector2(640 if side == 0 else 1196, 40)
 		flag.size = Vector2(54, 28)
 		_canvas.add_child(flag)
-	var rule := _Rule.new()
+	var rule := NeonWidgets.NeonRule.new()
 	rule.position = Vector2(0, 98)
 	rule.size = Vector2(DESIGN.x, 6)
 	_canvas.add_child(rule)
@@ -685,7 +685,7 @@ func _build_table() -> void:
 		cell.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT if k < 3 else HORIZONTAL_ALIGNMENT_RIGHT
 		header.add_child(cell)
 		_header_cells.append(cell)
-	var under := _Rule.new()
+	var under := NeonWidgets.NeonRule.new()
 	under.custom_minimum_size = Vector2(0, 3)
 	box.add_child(under)
 	_row_box = Control.new()
@@ -880,19 +880,3 @@ class _StatBar extends Control:
 				Color(0.05, 0.04, 0.12, 0.9), Color(0.1, 0.08, 0.22, 0.9)]))
 		draw_line(Vector2(s, 0.5), Vector2(size.x, 0.5), Color(0.6, 0.7, 1.0, 0.35), 1.0)
 
-
-## A thin neon line fading out at both ends.
-class _Rule extends Control:
-	func _init() -> void:
-		mouse_filter = Control.MOUSE_FILTER_IGNORE
-		resized.connect(queue_redraw)
-
-	func _draw() -> void:
-		var y := size.y * 0.5
-		var n := 24
-		for i in n:
-			var t0 := float(i) / n
-			var t1 := float(i + 1) / n
-			var a := sin(PI * (t0 + t1) * 0.5)
-			draw_line(Vector2(size.x * t0, y), Vector2(size.x * t1, y),
-					Color(UIStyle.CYAN.lerp(UIStyle.MAGENTA, t0), 0.8 * a), 2.0)

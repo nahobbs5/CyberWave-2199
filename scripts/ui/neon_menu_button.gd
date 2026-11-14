@@ -108,7 +108,11 @@ func _draw() -> void:
 	var ink := DARK_TEXT if lit else Color.WHITE
 	var ix := x0 + slant + 18.0
 	var icon_size := int(h * 0.6)
-	if icon_kind != "":
+	if icon_kind == "flags" and lit:
+		# On gold: real white-and-black checkered flags, not a grey tint.
+		var flags := UIStyle.flags_two_tone(icon_size)
+		draw_texture_rect(flags, Rect2(Vector2(ix, (h - icon_size) * 0.5), Vector2(icon_size, icon_size)), false)
+	elif icon_kind != "":
 		var tex := UIStyle.cached_icon(icon_kind, icon_size)
 		draw_texture_rect(tex, Rect2(Vector2(ix, (h - icon_size) * 0.5), Vector2(icon_size, icon_size)), false, ink)
 	var tx := ix + icon_size + 22.0

@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="WeaponData" format=3]
+
+[ext_resource type="Script" path="res://scripts/combat/weapon_data.gd" id="1_3rail"]
+
+[ext_resource type="Texture2D" path="res://assets/ui/weapons/railgun.png" id="2_icon"]
+
+[resource]
+script = ExtResource("1_3rail")
+id = &"triple_railgun"
+display_name = "Triple Railgun"
+icon = ExtResource("2_icon")
+color = Color(0.2, 0.95, 1, 1)
+targeted = true
+charges = 3
+single_name = "Railgun"
+effect = &"stagger"
+effect_duration = 0.7
+strips_item = true
+speed = 220.0
+radius = 300.0
+position_chance = PackedFloat32Array(0, 0, 4, 6, 8, 8, 4, 0)

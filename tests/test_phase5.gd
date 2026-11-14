@@ -146,12 +146,14 @@ func _test_profile() -> void:
 	_check(newly.size() > 0 and newly.all(func(i: CosmeticItem) -> bool: return i.price > 50 and i.price <= 110),
 			"newly affordable items (%d)" % newly.size())
 	p.last_setup = {"laps": 4}
+	p.set_player_name("  Nova_9 ")
 	p.set_selected_vehicle("orbiter")
 	# "Restart the game": drop the in-memory profile and read the file again.
 	var q := PlayerProfile.reload_from_disk()
 	_check(q != p and q.coins == 110 and q.owns("paint_crimson"), "coins and purchases survive a restart")
 	_check(q.equipped_item("v8_specter", CosmeticItem.Category.PAINT).id == "paint_crimson", "equipped items survive")
 	_check(q.plate_text == "NEO-77" and q.selected_vehicle == "orbiter", "plate and selected vehicle survive")
+	_check(q.player_name == "Nova_9 " and q.race_name() == "Nova_9", "your name survives (%s)" % q.player_name)
 	_check(float(q.best_for("Test Circuit", 3).race) == 200.0 and float(q.best_for("Test Circuit", 3).lap) == 64.0,
 			"personal bests survive")
 	_check(int(q.last_setup.laps) == 4, "race setup choices survive")

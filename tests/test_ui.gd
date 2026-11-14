@@ -361,6 +361,10 @@ func _test_cups() -> void:
 	_check(cups.cards.size() == GrandPrixData.CUPS.size() and badge != null and badge.emblem == "usa" and badge.selected,
 			"a badge per cup, the American one selected")
 	_check(cups.cards[0].has_focus(), "first cup focused")
+	_check(cups.layout.results_header and cups.layout.title_label.text == "GRAND PRIX"
+			and cups.layout.find_child("Subtitle", false, false) == null,
+			"cup select: results-style GRAND PRIX title, no CHOOSE A CUP")
+	_check(not cups.board._cup_info.text.contains("Races"), "cup info has no race count (%s)" % cups.board._cup_info.text)
 	var trophy := cups.board.find_child("Trophy", true, false) as TrophyIcon
 	_check(trophy != null and trophy.emblem == "usa", "its trophy and races show below")
 	cups.cards[2].grab_focus()
@@ -382,7 +386,45 @@ func _test_cups() -> void:
 	root.add_child(setup)
 	await _frames(2)
 	setup._races.selected = RaceSetup.RACE_COUNTS.find(1)
-	_check(setup.summary_text() == "VERSUS  ·  1 RACE", "Versus setup shows the race count (%s)" % setup.summary_text())
+	_check(setup._races.value_text() == "1 Race" and setup._summary == null,
+			"Versus: the Races row shows the count, no banner (%s)" % setup._races.value_text())
+	_check(setup.layout.results_header and setup.layout.title_label.is_visible_in_tree()
+			and setup.layout.title_label.text == "VERSUS", "Versus: results-style VERSUS title")
+	# Name: the last row of the panel, just above the gold button.
+	var field := setup.name_field
+	var panel_rows := field.get_parent().get_parent().get_parent()
+	_check(field != null and panel_rows.get_child(panel_rows.get_child_count() - 1) == field.get_parent().get_parent()
+			and field.get_global_rect().end.y < setup._start.get_global_rect().position.y,
+			"a Name field is the last setting, above the Track Selection button")
+	field.text = ""
+	setup.set_player_name("")
+	_check(PlayerProfile.get_profile().race_name() == "You" and field.placeholder_text == "You", "no name races as You")
+	setup.set_player_name("  Ace!@ Racer-7 long name")
+	_check(PlayerProfile.get_profile().player_name == "Ace Racer-7 " and field.text == "Ace Racer-7 "
+			and PlayerProfile.get_profile().race_name() == "Ace Racer-7",
+			"the name is cleaned up, 12 characters max, and saved (%s)" % PlayerProfile.get_profile().player_name)
+	field.grab_focus()
+	var esc := InputEventAction.new()
+	esc.action = &"ui_cancel"
+	esc.pressed = true
+	setup._unhandled_input(esc)
+	_check(setup.is_inside_tree() and setup._start.has_focus(), "Esc in the Name field moves on to the button, not off the screen")
+	var g := InputEventKey.new()
+	g.keycode = KEY_G
+	g.unicode = "g".unicode_at(0)
+	g.pressed = true
+	setup.set_player_name("Ace")
+	field.grab_focus()
+	field.edit()
+	field.caret_column = field.text.length()
+	GameSession.garage_return = ""
+	setup.get_viewport().push_input(g)
+	await _frames(2)
+	_check(field.text == "Aceg" and GameSession.garage_return == "",
+			"typing G in the Name field types it and doesn't open the garage (%s)" % field.text)
+	setup.set_player_name("Ace")
+	field.text = "Ace"
+	field.release_focus()
 	setup.start()
 	_check(GameSession.versus_template != null and GameSession.series == null, "one race: no series")
 	setup.queue_free()
@@ -393,6 +435,9 @@ func _test_cups() -> void:
 	for cup in GrandPrixData.all_cups():
 		all_tracks += cup.track_names.size()
 	_check(tracks.cards.size() == all_tracks, "every cup's tracks on one screen (%d of %d)" % [tracks.cards.size(), all_tracks])
+	_check(tracks.layout.results_header and tracks.layout.title_label.text == "VERSUS"
+			and tracks.layout.find_child("Subtitle", false, false) == null,
+			"track select: VERSUS title, no CHOOSE A TRACK outside a series")
 	var outlines_ok := true
 	for card in tracks.cards:
 		if card.disabled:
@@ -452,10 +497,9 @@ func _test_neon_setup() -> void:
 	setup._races.selected = 0
 	setup._races.grab_focus()
 	setup._races._gui_input(right)
-	_check(setup._races.selected == 1 and setup._summary.text == "VERSUS  ·  2 RACES", "right on a focused row steps it (%s)" % setup._summary.text)
+	_check(setup._races.selected == 1 and setup._races.value_text() == "2 Races", "right on a focused row steps it (%s)" % setup._races.value_text())
 	setup._weapons.button_pressed = false
 	_check(not setup.make_config().weapons_enabled, "Items OFF turns weapons off")
-	_check(setup.layout.title_label.text == "VERSUS - RACE SETUP", "titled VERSUS - RACE SETUP")
 	setup._weapons.button_pressed = true
 	setup.queue_free()
 	await process_frame
@@ -467,6 +511,7 @@ func _test_neon_setup() -> void:
 	_check(setup._race_type == null and setup._races == null and not setup._laps_row.visible
 			and setup._summary.text == "EUROPE CUP", "Grand Prix setup: the cup's banner, no race type, races or laps")
 	_check((setup._start as NeonMenuButton).text == "Start Grand Prix", "and a Start Grand Prix button")
+	_check(setup.layout.results_header and setup.layout.title_label.text == "GRAND PRIX", "Grand Prix setup: GRAND PRIX title")
 	setup.open_garage()
 	_check(GameSession.garage_return == GameSession.RACE_SETUP_SCENE, "Y / G opens the garage and remembers to come back")
 	GameSession.back_from_garage(self)
@@ -821,6 +866,8 @@ func _test_results(race: RaceManager) -> void:
 	while not hud.is_results_visible() and frames < 60 * 150:
 		await physics_frame
 		frames += 1
+	_check(race.player.display_name == PlayerProfile.get_profile().race_name(),
+			"you race under your profile name (%s)" % race.player.display_name)
 	_check(hud.is_results_visible(), "results shown after one lap")
 	if not hud.is_results_visible():
 		return

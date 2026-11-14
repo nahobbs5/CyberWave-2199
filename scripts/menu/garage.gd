@@ -6,6 +6,7 @@ extends Control
 ## left, gold arrows and a dot per car over it; the car's name, stats and the
 ## license plate below; on the right COSMETICS / INFO tabs over a neon panel
 ## (category list + items, or the car's specs); Back and Apply at the bottom.
+## The header is the Race Results one (NeonScreenLayout.add_results_header).
 ## Clicking an item's name tries it on in the preview; Buy spends coins
 ## (permanently, GDD 9.4) and equips; Equip puts an owned item on this
 ## vehicle; Apply equips every owned item being tried on.
@@ -366,20 +367,9 @@ func _build() -> void:
 	_preview.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(_preview)
 	add_child(_Shade.new())
-	add_child(_TopLine.new())
 
-	# Title and coins.
-	var title_row := HBoxContainer.new()
-	title_row.add_theme_constant_override("separation", 18)
-	title_row.position = Vector2(28, 4)
-	title_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(title_row)
-	title_row.add_child(UIStyle.logo(Vector2(210, 66)))
-	for text in ["/", "GARAGE"]:
-		var l := UIStyle.stat(text, 50 if text != "/" else 52, Color.WHITE if text != "/" else Color(1, 1, 1, 0.75))
-		l.add_theme_font_override("font", UIStyle.slanted_font(true))
-		l.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		title_row.add_child(l)
+	# Title (the Race Results header, as on the setup screens) and coins.
+	NeonScreenLayout.add_results_header(self, "GARAGE")
 	_coin_pill = UIStyle.coin_pill(26)
 	_coin_pill.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
 	_coin_pill.grow_horizontal = Control.GROW_DIRECTION_BEGIN
@@ -414,7 +404,7 @@ func _build() -> void:
 	right.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	right.offset_left = 664
 	right.offset_right = -26
-	right.offset_top = 80
+	right.offset_top = 94
 	right.offset_bottom = -14
 	add_child(right)
 	var tabs := HBoxContainer.new()
@@ -642,31 +632,6 @@ class _Shade extends Control:
 				PackedColorArray([Color(dark, 0.0), Color(dark, 0.0), Color(dark, 0.7), Color(dark, 0.7)]))
 		draw_rect(Rect2(0, y1, x0, size.y - y1), Color(dark, 0.7))
 		draw_rect(Rect2(0, 0, size.x, 80), Color(dark, 0.45))
-
-
-## The magenta-to-cyan line sweeping up under the title, like the mockup.
-class _TopLine extends Control:
-	func _init() -> void:
-		mouse_filter = Control.MOUSE_FILTER_IGNORE
-		set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		resized.connect(queue_redraw)
-
-	func _draw() -> void:
-		var pts := PackedVector2Array()
-		var a := Vector2(-10, 102)
-		var c := Vector2(size.x * 0.44, 70)
-		var b := Vector2(size.x + 10, 0)
-		for i in 33:
-			var t := i / 32.0
-			pts.append(a.lerp(c, t).lerp(c.lerp(b, t), t))
-		var cols := PackedColorArray()
-		var glow := PackedColorArray()
-		for p in pts:
-			var col := UIStyle.MAGENTA.lerp(UIStyle.CYAN, p.x / size.x)
-			cols.append(col)
-			glow.append(Color(col, 0.25))
-		draw_polyline_colors(pts, glow, 8.0, true)
-		draw_polyline_colors(pts, cols, 2.5, true)
 
 
 ## Back / Apply: a slanted bar with a pad glyph (B / A) or keycap, and slanted

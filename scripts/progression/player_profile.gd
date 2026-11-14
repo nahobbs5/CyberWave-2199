@@ -10,6 +10,7 @@ extends RefCounted
 
 const SAVE_VERSION := 1
 const PLATE_MAX := 8
+const NAME_MAX := 12
 const DEFAULT_PLATE := "CW-2199"
 const DEFAULT_VEHICLE := "v8_specter"
 
@@ -22,6 +23,8 @@ var owned: Array[String] = []
 ## vehicle id -> { category name: item id }
 var equipped: Dictionary = {}
 var plate_text: String = DEFAULT_PLATE
+## Your name in races (single player); "" races as "You". Kept between launches.
+var player_name: String = ""
 var selected_vehicle: String = DEFAULT_VEHICLE
 ## "track|laps" -> { "race": seconds, "lap": seconds }
 var personal_bests: Dictionary = {}
@@ -140,6 +143,26 @@ func set_plate(text: String) -> void:
 	save()
 
 
+## Letters, digits, space, - _ ' and .; no leading spaces; NAME_MAX long.
+static func sanitize_name(text: String) -> String:
+	var out := ""
+	for ch in text.strip_edges(true, false):
+		if ch.to_upper() != ch.to_lower() or (ch >= "0" and ch <= "9") or ch in [" ", "-", "_", "'", "."]:
+			out += ch
+	return out.substr(0, NAME_MAX)
+
+
+func set_player_name(text: String) -> void:
+	player_name = sanitize_name(text)
+	save()
+
+
+## What the standings and results call you.
+func race_name() -> String:
+	var n := player_name.strip_edges()
+	return n if n != "" else "You"
+
+
 func set_selected_vehicle(id: String) -> void:
 	selected_vehicle = id
 	save()
@@ -216,6 +239,7 @@ func _to_dict() -> Dictionary:
 		"owned": owned,
 		"equipped": equipped,
 		"plate": plate_text,
+		"name": player_name,
 		"vehicle": selected_vehicle,
 		"personal_bests": personal_bests,
 		"grand_prix_results": gp_results,
@@ -232,6 +256,7 @@ func _read(data: Dictionary) -> void:
 	if eq is Dictionary:
 		equipped = eq
 	plate_text = sanitize_plate(str(data.get("plate", DEFAULT_PLATE)))
+	player_name = sanitize_name(str(data.get("name", "")))
 	selected_vehicle = str(data.get("vehicle", DEFAULT_VEHICLE))
 	var pb: Variant = data.get("personal_bests", {})
 	if pb is Dictionary:

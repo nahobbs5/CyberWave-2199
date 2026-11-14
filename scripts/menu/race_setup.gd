@@ -8,8 +8,12 @@ extends Control
 ##   (Standard or Elimination, always 3 laps), number of races, laps; Next
 ##   goes to the track screen, which lists every cup's tracks.
 ## Opened directly (tests), Grand Prix uses the remembered or first cup.
+## Your Name (kept in the profile, used in the standings and results) is the
+## last row, just above the gold button. A Race Results style title across
+## the top (VERSUS or GRAND PRIX); Grand Prix also has the cup's gold banner,
+## Versus has none (the Races row shows the count).
 ## Laid out after "reference files/Neon Versus Race Setup UI.png": settings
-## rows with < value > steppers on the left under a gold banner, the car on
+## rows with < value > steppers on the left, the car on
 ## the right (CarShowcase, neon style), on the dimmed 3D street
 ## (NeonScreenLayout). Y / G opens the garage and comes back here.
 
@@ -58,6 +62,8 @@ var _race_type: NeonStepper
 var _races: NeonStepper
 var _title: Label
 var _weapons: NeonToggle
+## Your name in races (saved in the profile; empty races as "You").
+var name_field: LineEdit
 var showcase: CarShowcase
 ## The showcase's 3D preview.
 var _preview: VehiclePreview
@@ -171,7 +177,6 @@ func _restore() -> void:
 	_weapons.button_pressed = bool(setup.get("weapons", true))
 	if _races != null:
 		_races.selected = clampi(int(setup.get("races", DEFAULT_RACES)), 0, RACE_COUNTS.size() - 1)
-		_summary.text = summary_text()
 	vehicle_index = VehicleCatalog.index_of(profile.selected_vehicle)
 	select_vehicle(vehicle_index)
 	_update_note()
@@ -199,13 +204,12 @@ func _update_note() -> void:
 
 
 func _build() -> void:
-	layout = NeonScreenLayout.new(_title_text(), "flags")
+	# The Race Results style title, centred: GRAND PRIX or VERSUS (Grand
+	# Prix also keeps the cup's gold banner in the panel).
+	layout = NeonScreenLayout.new("GRAND PRIX" if is_grand_prix() else "VERSUS", "flags")
 	add_child(layout)
+	layout.use_results_header()
 	_title = layout.title_label
-	# No logo here (like the mockup): the long titles need the room.
-	var title_row := _title.get_parent()
-	for i in 2:
-		(title_row.get_child(i) as CanvasItem).visible = false
 	layout.back_button.pressed.connect(back)
 	SetupWidgets.add_coin_pill(self, PlayerProfile.get_profile().coins)
 
@@ -225,10 +229,11 @@ func _build() -> void:
 	var inner := VBoxContainer.new()
 	inner.add_theme_constant_override("separation", 8)
 	panel.add_child(inner)
-	var art: Control = TrophyIcon.new(cup.emblem, false, 54.0) if is_grand_prix() else null
-	var banner := SetupWidgets.gold_banner(summary_text(), art)
-	inner.add_child(banner)
-	_summary = banner.label
+	# Grand Prix: the cup's banner. Versus has none (the Races row shows the count).
+	if is_grand_prix():
+		var banner := SetupWidgets.gold_banner(summary_text(), TrophyIcon.new(cup.emblem, false, 54.0))
+		inner.add_child(banner)
+		_summary = banner.label
 	var rows := VBoxContainer.new()
 	rows.add_theme_constant_override("separation", 8)
 	var rows_margin := MarginContainer.new()
@@ -247,9 +252,7 @@ func _build() -> void:
 		_races = NeonStepper.new()
 		for n in RACE_COUNTS:
 			_races.add_item("%d Race%s" % [n, "" if n == 1 else "s"])
-		_races.item_selected.connect(func(_i: int) -> void:
-			_summary.text = summary_text()
-			_update_note())
+		_races.item_selected.connect(func(_i: int) -> void: _update_note())
 		rows.add_child(SetupWidgets.setting_row("checker", "Races", _races))
 	_difficulty = NeonStepper.new()
 	for d in DIFFICULTIES:
@@ -267,6 +270,7 @@ func _build() -> void:
 	weapons_row.add_theme_constant_override("margin_right", 14)
 	rows.add_child(weapons_row)
 	rows.add_child(_note_box())
+	rows.add_child(_name_row())
 	_start = SetupWidgets.gold_action("Start Grand Prix" if is_grand_prix() else "Track Selection", start)
 	left.add_child(_start)
 
@@ -304,6 +308,40 @@ func _build() -> void:
 	_link_focus()
 
 
+## Name: a text field styled like the Garage's plate. Saved as you type.
+func _name_row() -> Control:
+	name_field = LineEdit.new()
+	name_field.max_length = PlayerProfile.NAME_MAX
+	name_field.text = PlayerProfile.get_profile().player_name
+	name_field.placeholder_text = "You"
+	name_field.custom_minimum_size = Vector2(230, 40)
+	name_field.add_theme_font_size_override("font_size", 22)
+	name_field.add_theme_font_override("font", UIStyle.slanted_font(true))
+	name_field.add_theme_color_override("font_placeholder_color", Color(1, 1, 1, 0.4))
+	for state in ["normal", "focus"]:
+		var style := UIStyle.box_style(Color(0.02, 0.01, 0.05, 0.95),
+				UIStyle.MAGENTA if state == "focus" else Color(1, 1, 1, 0.6), 8, 2)
+		style.set_corner_radius_all(20)
+		style.content_margin_left = 16
+		name_field.add_theme_stylebox_override(state, style)
+	name_field.right_icon = RaceIcons.texture("pencil", 20)
+	name_field.text_changed.connect(set_player_name)
+	name_field.text_submitted.connect(func(_t: String) -> void: _start.grab_focus())
+	var row := SetupWidgets.setting_row("pencil", "Name", name_field)
+	row.add_theme_constant_override("margin_right", 14)
+	return row
+
+
+## Saves the name (cleaned up) and keeps the field showing the clean text.
+func set_player_name(text: String) -> void:
+	var clean := PlayerProfile.sanitize_name(text)
+	PlayerProfile.get_profile().set_player_name(clean)
+	if name_field.text != clean:
+		var caret := name_field.caret_column
+		name_field.text = clean
+		name_field.caret_column = mini(caret, clean.length())
+
+
 ## The (i) note under the settings, with the mode's name in gold.
 func _note_box() -> Control:
 	var box := PanelContainer.new()
@@ -336,7 +374,7 @@ func _note_box() -> Control:
 ## Up / down through the visible settings, then the gold button and Back.
 func _link_focus() -> void:
 	var chain: Array[Control] = []
-	for c: Control in [_race_type, _races, _difficulty, _laps, _weapons, _start, layout.back_button]:
+	for c: Control in [_race_type, _races, _difficulty, _laps, _weapons, name_field, _start, layout.back_button]:
 		if c != null and (c != _laps or _laps_row.visible):
 			chain.append(c)
 	for i in chain.size():
@@ -350,7 +388,10 @@ func _link_focus() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
 		get_viewport().set_input_as_handled()
-		back()
+		if name_field.has_focus():
+			_start.grab_focus() # Esc leaves the Name field, not the screen
+		else:
+			back()
 		return
 	var garage := false
 	if event is InputEventJoypadButton:
@@ -396,12 +437,7 @@ func set_race_type(index: int) -> void:
 	mode = RaceConfig.Mode.ELIMINATION if index == 1 else RaceConfig.Mode.VERSUS
 	if _race_type.selected != index:
 		_race_type.selected = index
-	_title.text = _title_text()
-	_summary.text = summary_text()
 	_laps_row.visible = mode == RaceConfig.Mode.VERSUS
 	_link_focus()
 	_update_note()
 
-
-func _title_text() -> String:
-	return RaceConfig.MODE_NAMES[mode].to_upper() + " - RACE SETUP"

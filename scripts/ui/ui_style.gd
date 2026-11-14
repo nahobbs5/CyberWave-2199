@@ -436,6 +436,60 @@ static func _segment_distance(p: Vector2, a: Vector2, b: Vector2) -> float:
 static var _icon_cache: Dictionary = {}
 
 
+static var _flags_two_tone: Dictionary = {}
+
+
+## The crossed checkered flags in real colours (white and black squares,
+## black poles and outline), for gold buttons where a single dark tint reads
+## as grey. Draw it untinted. Cached per size.
+static func flags_two_tone(size: int) -> Texture2D:
+	if _flags_two_tone.has(size):
+		return _flags_two_tone[size]
+	var img := Image.create(size, size, false, Image.FORMAT_RGBA8)
+	var s := float(size)
+	var w := maxf(0.09, 1.6 / s) # pole thickness, in icon widths
+	const OUTLINE := 0.035
+	const INK := Color(0.04, 0.02, 0.06)
+	const SUB := 3 # supersamples per axis
+	for y in size:
+		for x in size:
+			var sum := Color(0, 0, 0, 0)
+			for sy in SUB:
+				for sx in SUB:
+					var q := Vector2((x + (sx + 0.5) / SUB) / s, (y + (sy + 0.5) / SUB) / s)
+					sum += _flags_two_tone_sample(q, w, OUTLINE, INK)
+			var c := sum / float(SUB * SUB)
+			# Un-premultiply so edges keep their colour.
+			if c.a > 0.0:
+				c = Color(c.r / c.a, c.g / c.a, c.b / c.a, c.a)
+			img.set_pixel(x, y, c)
+	var tex := ImageTexture.create_from_image(img)
+	_flags_two_tone[size] = tex
+	return tex
+
+
+## One premultiplied sample of flags_two_tone at q (0..1).
+static func _flags_two_tone_sample(q: Vector2, w: float, outline: float, ink: Color) -> Color:
+	# Poles on top: black.
+	var pole := minf(_segment_distance(q, Vector2(0.18, 0.92), Vector2(0.56, 0.08)),
+			_segment_distance(q, Vector2(0.82, 0.92), Vector2(0.44, 0.08)))
+	if pole <= w * 0.5:
+		return Color(ink.r, ink.g, ink.b, 1.0)
+	for side in [-1.0, 1.0]:
+		var local := Vector2((q.x - 0.5) * side, q.y)
+		var y0 := 0.1 + local.x * 0.15
+		var y1 := 0.44 + local.x * 0.15
+		if local.x > -outline and local.x < 0.46 + outline and local.y > y0 - outline and local.y < y1 + outline:
+			var inner := local.x > 0.0 and local.x < 0.46 and local.y > y0 and local.y < y1
+			if not inner:
+				return Color(ink.r, ink.g, ink.b, 1.0)
+			var cell := Vector2i(floori(local.x / 0.115), floori((local.y - local.x * 0.15) / 0.11))
+			if (cell.x + cell.y) % 2 == 0:
+				return Color(1, 1, 1, 1)
+			return Color(ink.r, ink.g, ink.b, 1.0)
+	return Color(0, 0, 0, 0)
+
+
 ## icon_texture, made once per kind and size, in white (tint it with modulate).
 static func cached_icon(kind: String, size: int) -> Texture2D:
 	var key := "%s/%d" % [kind, size]

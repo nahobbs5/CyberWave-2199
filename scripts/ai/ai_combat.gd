@@ -19,6 +19,10 @@ var _held: Array[float] = [0.0, 0.0]
 var _since_hazard: float = 99.0
 ## Minimum gap between hazard drops.
 const HAZARD_GAP := 1.5
+## Seconds since this car last fired a projectile (spaces out a Triple Railgun).
+var _since_shot: float = 99.0
+## Minimum gap between projectile shots.
+const SHOT_GAP := 1.2
 var _rng := RandomNumberGenerator.new()
 
 
@@ -39,6 +43,7 @@ func _physics_process(delta: float) -> void:
 	for i in ItemInventory.SLOT_COUNT:
 		_held[i] = _held[i] + delta if inventory.slots[i] != null else 0.0
 	_since_hazard += delta
+	_since_shot += delta
 	if not manager.can_fight(vehicle) or inventory.is_empty():
 		return
 	_think -= delta
@@ -63,6 +68,8 @@ func _physics_process(delta: float) -> void:
 		inventory.select(best_slot)
 		if inventory.slots[best_slot].kind == WeaponData.Kind.HAZARD:
 			_since_hazard = 0.0
+		elif inventory.slots[best_slot].kind == WeaponData.Kind.PROJECTILE:
+			_since_shot = 0.0
 		inventory.request_use()
 		return
 	# Nothing to fire yet: keep a targeted weapon selected so a lock can build.
@@ -80,6 +87,8 @@ func _score(weapon: WeaponData, selected: bool, held: float) -> float:
 	var patience := lerpf(1.5, 0.6, profile.aggression)
 	match weapon.kind:
 		WeaponData.Kind.PROJECTILE:
+			if _since_shot < SHOT_GAP:
+				return 0.0
 			if selected and vehicle.targeting != null and vehicle.targeting.locked:
 				return 1.5
 			return 1.0 if held > 18.0 * patience else 0.0

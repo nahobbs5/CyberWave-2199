@@ -3,7 +3,7 @@ extends VBoxContainer
 ## The cup screen's body, Mario Kart style, shared by Grand Prix and Versus,
 ## laid out after "reference files/Cyberwave 2199_ Europe Cup Grand
 ## Prix.png": a row of cup cards between gold < > arrows, with a neon panel
-## below that previews the focused cup's races (trophy, name, race count and
+## below that previews the focused cup's races (trophy, name and
 ## best finish, then a TrackCard per race). Opening a cup (click, Enter or A
 ## on its card) moves into the panel:
 ## - Grand Prix: the races are shown, and START GRAND PRIX confirms the cup
@@ -113,10 +113,10 @@ func preview(index: int) -> void:
 			_cup_info.text = "[color=#%s]COMING SOON[/color]   |   More tracks to build" % cyan
 		elif grand_prix:
 			var best := PlayerProfile.get_profile().best_grand_prix(cup.id)
-			_cup_info.text = "%d Races   |   Best Finish: [color=#%s]%s[/color]" % [cup.race_count(), cyan,
+			_cup_info.text = "Best Finish: [color=#%s]%s[/color]" % [cyan,
 					ResultsScreen.ordinal(best) if best > 0 else "Not Won Yet"]
 		elif cup.locked:
-			_cup_info.text = "%d Races   |   [color=#%s]More tracks coming soon[/color]" % [cup.race_count(), cyan]
+			_cup_info.text = "[color=#%s]More tracks coming soon[/color]" % cyan
 		else:
 			# Versus, open cup: the race cards say it all.
 			_cup_info.text = ""

@@ -331,3 +331,21 @@ class Banner extends MarginContainer:
 		outline.append(pts[0])
 		draw_polyline(outline, Color(UIStyle.CYAN, 0.18), 7.0, true)
 		draw_polyline(outline, Color(0.4, 0.75, 1.0), 2.0, true)
+
+
+## A thin neon line, cyan to magenta, fading out at both ends (the Race
+## Results header rule; NeonScreenLayout.use_results_header).
+class NeonRule extends Control:
+	func _init() -> void:
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+		resized.connect(queue_redraw)
+
+	func _draw() -> void:
+		var y := size.y * 0.5
+		var n := 24
+		for i in n:
+			var t0 := float(i) / n
+			var t1 := float(i + 1) / n
+			var a := sin(PI * (t0 + t1) * 0.5)
+			draw_line(Vector2(size.x * t0, y), Vector2(size.x * t1, y),
+					Color(UIStyle.CYAN.lerp(UIStyle.MAGENTA, t0), 0.8 * a), 2.0)

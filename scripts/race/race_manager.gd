@@ -386,7 +386,7 @@ func _spawn_grid() -> void:
 		apply_look(car, racer_look(id, color))
 		# Bigger on track than in the menus, so cars are easy to tell apart.
 		car.set_visual_scale(VehicleController.TRACK_VISUAL_SCALE)
-		var racer_name := profile.display_name if not is_player else ("You" if not is_multiplayer() else "P%d" % (human + 1))
+		var racer_name := profile.display_name if not is_player else (PlayerProfile.get_profile().race_name() if not is_multiplayer() else "P%d" % (human + 1))
 		var progress := RaceProgress.new(car, racer_name, color, is_player, slot,
 				track.checkpoint_count, total_laps)
 		progress.racer_id = id

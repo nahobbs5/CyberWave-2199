@@ -107,7 +107,7 @@ The layout is the `control_points` list on `scenes/tracks/test_circuit.tscn`, sa
 
 ### Game modes
 
-**Cups and tracks (Mario Kart style).** Grand Prix and Versus share one **cup screen** (`CupBoard`, used by `CupSelect` and `TrackSelect`): a row of round **cup badges** (`CupBadge`, drawn in code: a gold-rimmed medallion in the cup's colours with its map: the USA, Europe, Asia, South America, Africa) above a panel that previews the focused cup's races (the cup's trophy, then a card per race with its outline, location and your best time). Moving across the badges previews each cup; opening one (click, Enter or A) moves into the panel, and Back returns to the badges. **Grand Prix** confirms the cup with **START GRAND PRIX**, then goes to the setup screen and races the whole cup (a cup locked for Grand Prix is greyed with a padlock and can't be confirmed). **Versus** starts on the setup screen (car, race type, **number of races**, laps, NPC difficulty, weapons), then the cup screen: open a cup and pick a race, or open the **"?" Random badge** for a RANDOM card. There are five cups: the **American Cup** (Vegas Overdrive, Six Flags New Orleans, The Stacks), the **Europe Cup** (Hoia Baciu Run, Catacombs Descent, Vatnajökull Glacier), the **Asia Cup** (Arashiyama Circuit, Crazy House, Gardens by the Bay), the **South America Cup** (Parque Quinta Normal, Vale da Lua, Choquequirao) and the **Africa Cup** (Kilwa Kisiwani Ruins, Fires of Nyiragongo, Chefchaouen). The Europe Cup was the World Cup; its resource keeps the old file name and id (`world_circuit`) so saved results carry over. A cup can be greyed out as "coming soon" with `locked = true` on its resource. Each cup is data (`resources/grand_prix/*.tres`, listed in `GrandPrixData.CUPS`); its `emblem` picks the trophy picture. The Test Circuit isn't in a cup: it's the Practice track.
+**Cups and tracks (Mario Kart style).** Grand Prix and Versus share one **cup screen** (`CupBoard`, used by `CupSelect` and `TrackSelect`): a row of round **cup badges** (`CupBadge`, drawn in code: a gold-rimmed medallion in the cup's colours with its map: the USA, Europe, Asia, South America, Africa) above a panel that previews the focused cup's races (the cup's trophy, then a card per race with its outline, location and your best time). The panel header shows no race count (Grand Prix adds your best finish), and there's no "CHOOSE A CUP" subtitle (the track screen shows "RACE x OF y" only mid-series). Moving across the badges previews each cup; opening one (click, Enter or A) moves into the panel, and Back returns to the badges. **Grand Prix** confirms the cup with **START GRAND PRIX**, then goes to the setup screen and races the whole cup (a cup locked for Grand Prix is greyed with a padlock and can't be confirmed). **Versus** starts on the setup screen (car, race type, **number of races**, laps, NPC difficulty, weapons), then the cup screen: open a cup and pick a race, or open the **"?" Random badge** for a RANDOM card. There are five cups: the **American Cup** (Vegas Overdrive, Six Flags New Orleans, The Stacks), the **Europe Cup** (Hoia Baciu Run, Catacombs Descent, Vatnajökull Glacier), the **Asia Cup** (Arashiyama Circuit, Crazy House, Gardens by the Bay), the **South America Cup** (Parque Quinta Normal, Vale da Lua, Choquequirao) and the **Africa Cup** (Kilwa Kisiwani Ruins, Fires of Nyiragongo, Chefchaouen). The Europe Cup was the World Cup; its resource keeps the old file name and id (`world_circuit`) so saved results carry over. A cup can be greyed out as "coming soon" with `locked = true` on its resource. Each cup is data (`resources/grand_prix/*.tres`, listed in `GrandPrixData.CUPS`); its `emblem` picks the trophy picture. The Test Circuit isn't in a cup: it's the Practice track.
 
 - **Versus** (GDD §2.1): you start eighth. Pick **1, 2, 3, 4, 6, 8, 12 or 16 races**. With one race, the results offer **Race again** or the menu. With more, the track screen comes back before each race ("RACE 2 OF 4"; the standings stay on the results screen), points and grids work like a Grand Prix, and the last results name the series winner. A series isn't saved; each race pays its normal coins.
 - **Grand Prix** (GDD §2.2): any of the five cups (three races each), three laps per race. The cup-win bonus is 100 coins for three races, scaled by the cup's race count.
@@ -133,7 +133,7 @@ The layout is the `control_points` list on `scenes/tracks/test_circuit.tscn`, sa
 - **Boot splash:** the logo's skyline and sun (`assets/logo/splash_skyline.png`) on black while the game loads. The engine shows it first, then the boot scene (`scenes/boot.tscn`, the main scene) keeps the same picture in the same place and adds a cyan progress bar while the title menu loads in the background.
 - **Loading card:** races and Practice open behind a card with the track name, location, mode, outline and a **progress bar with a percentage**. The game files load in the background, then the track is built in steps (road, each feature, and each scenery set in several parts) while its textures load in the background. Last comes race setup (cars, racing line, HUD). Each step still pauses the game, so the bar moves in small jumps. Race setup is one step at the end (about 1–4 s headless). The menu underneath is frozen and ignores input while loading. Scenery `build()` functions call `await step(share)` between big parts so the bar can redraw; outside the loading card `step()` returns at once and the build runs in one go. The app/window icon is a square crop of the same skyline (`assets/logo/app_icon.png`). A Windows .exe icon (.ico) gets set in the export preset when you export.
 - **Credits:** the game, music, sound, fonts, textures and sky, weapon art and engine, with a Back button (Esc / B also goes back).
-- **Race setup** (GDD §11.3): the cup (Grand Prix) or race type and number of races (Versus), vehicle picker with a rotating preview of your car (paint, cosmetics and plate), stats, NPC difficulty, laps (Versus), weapons on/off, and a short explanation of the chosen mode (how Elimination knocks cars out, how points work). Grand Prix starts the race; Versus goes on to the track screen. It keeps your choices until the game closes (each launch starts on the defaults: Standard, 3 races, 3 laps, Normal, weapons on; the last cup is kept) and shows your personal best (Versus) or best championship finish (Grand Prix).
+- **Race setup** (GDD §11.3): a Race Results style title, centred (GRAND PRIX or VERSUS; `NeonScreenLayout.use_results_header`, also used by the cup and track screens, Settings and the Garage via `add_results_header`); Grand Prix also shows the cup's gold banner, Versus none. The cup (Grand Prix) or race type and number of races (Versus), vehicle picker with a rotating preview of your car (paint, cosmetics and plate), stats, NPC difficulty, laps (Versus), weapons on/off, a short explanation of the chosen mode (how Elimination knocks cars out, how points work), and a **Name** field just above the gold button (`RaceSetup.name_field`; `PlayerProfile.player_name`, 12 characters, cleaned by `sanitize_name`; `race_name()` gives "You" when empty; Enter or Esc moves on to the button). Grand Prix starts the race; Versus goes on to the track screen. It keeps your choices until the game closes (each launch starts on the defaults: Standard, 3 races, 3 laps, Normal, weapons on; the last cup is kept) and shows your personal best (Versus) or best championship finish (Grand Prix).
   - **A Grand Prix keeps the car you started it with** for all three races (the GDD saves the player vehicle with the championship).
 - **Garage** (GDD §11.4): your car on a turntable in a full-screen neon garage room (auto-spin; drag or the right stick turns it), COSMETICS and INFO tabs, the license plate editor, the 8 cosmetic categories and your coin balance, with B Back / A Apply.
   - **Click an item's name** to try it on. **Buy** spends coins and equips it; **Equip** puts an item you own on this car. Purchases are permanent and shared by all cars, but **each car has its own equipped look**.
@@ -223,7 +223,7 @@ The GDD prices basic paint (100), plate frames (250), wheels (500) and premium f
 
 ### Saving
 
-- **Profile** (`user://profile.json`, GDD §13.1): coins, owned and equipped cosmetics, license plate, selected car, personal bests, completed Grand Prix results and the last race setup. It's versioned JSON written atomically (to a temporary file, then swapped in). A damaged or unknown-version file falls back to a fresh profile instead of crashing; an interrupted swap is recovered from the temporary file.
+- **Profile** (`user://profile.json`, GDD §13.1): coins, owned and equipped cosmetics, license plate, your name, selected car, personal bests, completed Grand Prix results and the last race setup. It's versioned JSON written atomically (to a temporary file, then swapped in). A damaged or unknown-version file falls back to a fresh profile instead of crashing; an interrupted swap is recovered from the temporary file.
 - **Settings** (`user://settings.cfg`): display, audio, control rebinds and the camera view.
 - **Grand Prix** (`user://grand_prix_save.json`): as in Phase 4, now also written atomically, with the coins already awarded.
 - To start over, delete those files (on Windows they're in `%APPDATA%\Godot\app_userdata\Cyberwave 2199\`).
@@ -292,7 +292,7 @@ One song per screen or track (`scripts/core/music.gd`; race music per track in `
 | Choquequirao | Epic Victory March for Heroes | DesiFreeMusic |
 | Kilwa Kisiwani Ruins | The Dragon's Lair | vishiv |
 | Fires of Nyiragongo | Danger Imminent | Jean-Paul-V |
-| Chefchaouen | none yet | |
+| Chefchaouen | Atlas Morocco | vadim_makes_sound |
 | Test Circuit and Practice | The Garden Wakes | stageechoesmusic |
 
 - **Final lap:** in races of 2+ laps (Elimination included), the race music speeds up 5%, pitch and all, over about 0.4 s. Restarting or leaving the race puts it back.
@@ -504,7 +504,7 @@ Africa Cup race 3. A 3.15 km race through **the blue medina in the Rif mountains
   - a full-strength minimap line;
   - merge lanes (`start_lateral` / `end_lateral`) and optional item rows (`crate_distances`).
   - `TrackCircuit.elimination_gate` puts the Elimination checkpoint on a shared section.
-- Built from code: `ChefchaouenScenery` with the new `MedinaHouseBuilder` (blue and white houses, arched doors, grilles, shutters, awnings, lanterns, flowerpots) and `StairBuilder`, generated kilim and zellige textures, and Poly Haven painted_plaster_wall, rough_plaster_brick, stone_tiles_02, wood_shutter and terracotta_floor_tiles. The layout comes from a generator script (a filleted polygon for the main loop, the two branches as Godot shortcut curves, monotone height keys). Checks: `tests/test_chefchaouen.gd`. No race music yet.
+- Built from code: `ChefchaouenScenery` with the new `MedinaHouseBuilder` (blue and white houses, arched doors, grilles, shutters, awnings, lanterns, flowerpots) and `StairBuilder`, generated kilim and zellige textures, and Poly Haven painted_plaster_wall, rough_plaster_brick, stone_tiles_02, wood_shutter and terracotta_floor_tiles. The layout comes from a generator script (a filleted polygon for the main loop, the two branches as Godot shortcut curves, monotone height keys). Checks: `tests/test_chefchaouen.gd`. Race music: *Atlas Morocco* (vadim_makes_sound).
 
 #### Six Flags New Orleans (GDD §8.2)
 
@@ -594,15 +594,16 @@ Drive through a "?" crate to collect a random weapon into your first free slot. 
 | EMP Pulse | Instant 22 m pulse around you | 1.5 s: no drift charging, −15% top speed; weapons jammed (unusable, but kept) for 5 s |
 | Road Spike | Strip dropped behind you; lasts 12 s; single use | 1 s traction loss |
 | Nitro Overload | Self boost | 3 s, +10 m/s top speed |
-| Triple Nitro | Three Nitro charges in one slot (HUD shows ×3, ×2, ×1). Each press is a separate boost; the slot empties after the third | Rare. Mostly for trailing racers. A Railgun or drone hit knocks out all remaining charges |
-| Triple Spike | Three Road Spikes in one slot (HUD shows ×3, ×2, ×1). Each press drops one spike behind you; the slot empties after the third. The AI space their drops at least 1.5 s apart | Uncommon, mostly for leaders (front 0.6, back 0.15). A Railgun or drone hit knocks out all remaining spikes |
+| Triple Nitro | Three Nitro charges in one slot (HUD shows ×3, ×2, ×1). Each press is a separate boost labelled "Nitro Overload"; the slot empties after the third | Mostly for trailing racers (22–25% at 7th–8th). A Railgun or drone hit knocks out all remaining charges |
+| Triple Spike | Three Road Spikes in one slot (HUD shows ×3, ×2, ×1). Each press drops one spike behind you; the slot empties after the third. The AI space their drops at least 1.5 s apart | A front-runner item (1st–4th). Each spike is a normal Road Spike: a hit reads "ROAD SPIKE!". A Railgun or drone hit knocks out all remaining spikes |
+| Triple Railgun | Three Railgun shots in one slot (HUD shows ×3, ×2, ×1), each aimed at your lock like a Railgun. The AI space their shots at least 1.2 s apart | Each shot is a normal Railgun hit (0.7 s stagger, knocks out the selected weapon) and reads "RAILGUN!". Mid-pack only (3rd–7th) |
 | Firewall | Shield | Blocks the next attack, up to 10 s |
-| Hunter-Killer Drone | Rare (3rd–8th). Locks on to the **leader** at launch and keeps that racer even if they lose the lead. Flies along the road at 1.8× their top speed, passing everyone else. Close behind, it holds a red reticle and beam over them for 1.2 s, then dives in | 1.5 s spin-out (hard stun). Goes straight through a Firewall. **Dodge** it with a Nitro in the last 0.4 s of the warning or during the dive: it misses (DODGED). Waits while the target is recovering or in Overdrive, and burns out after 12 s or when the target finishes |
-| Overdrive Protocol | Rare (5th–8th). Your kart lifts 3.5 m off the road (2.2 m under the catacomb vaults), grows cyan thruster pods and flies itself along the road centre at 2× top speed for about 5 s. It then lands on the next clear stretch of road (not near a jump ramp or another car) and hands back control at top speed | You can't be hit, steered or recovered while flying, and cars under your path are nudged aside. Every checkpoint gate still counts. Starting it shrugs off a System Override |
-| System Override | Rare (3rd–8th). A red hacking pulse hits **every racer ahead of you** at that moment. Nobody behind you is touched | Hacked for a time set by **their** position when it fires: 1st 12 s, 2nd 10.5 s, 3rd 9 s, 4th 7.5 s, 5th 6 s, 6th 4.5 s, 7th 3 s (`duration_by_position` in `resources/weapons/system_override.tres`), so the leader suffers most. −25% top speed, −30% acceleration, drift charge lost and no charging while hacked; steering and weapons still work. Red arcs crawl over the car. A repeat hit does nothing |
+| Hunter-Killer Drone | Rare (4th–8th). Locks on to the **leader** at launch and keeps that racer even if they lose the lead. Flies along the road at 1.8× their top speed, passing everyone else. Close behind, it holds a red reticle and beam over them for 1.2 s, then dives in | 1.5 s spin-out (hard stun). Goes straight through a Firewall. **Dodge** it with a Nitro in the last 0.4 s of the warning or during the dive: it misses (DODGED). Waits while the target is recovering or in Overdrive, and burns out after 12 s or when the target finishes |
+| Overdrive Protocol | Rare (4th–8th, mostly 7th–8th). Your kart lifts 3.5 m off the road (2.2 m under the catacomb vaults), grows cyan thruster pods and flies itself along the road centre at 2× top speed for about 5 s. It then lands on the next clear stretch of road (not near a jump ramp or another car) and hands back control at top speed | You can't be hit, steered or recovered while flying, and cars under your path are nudged aside. Every checkpoint gate still counts. Starting it shrugs off a System Override |
+| System Override | Rare (3rd–8th, mostly 7th–8th). A red hacking pulse hits **every racer ahead of you** at that moment. Nobody behind you is touched | Hacked for a time set by **their** position when it fires: 1st 12 s, 2nd 10.5 s, 3rd 9 s, 4th 7.5 s, 5th 6 s, 6th 4.5 s, 7th 3 s (`duration_by_position` in `resources/weapons/system_override.tres`), so the leader suffers most. −25% top speed, −30% acceleration, drift charge lost and no charging while hacked; steering and weapons still work. Red arcs crawl over the car. A repeat hit does nothing |
 
 - **Targeting** (GDD §6.2):
-  - With a Railgun or Hunter Drone selected, the nearest eligible opponent in a 40° cone ahead is targeted, preferring racers ahead of you in the race.
+  - With a Railgun, Triple Railgun or Hunter Drone selected, the nearest eligible opponent in a 40° cone ahead is targeted, preferring racers ahead of you in the race.
   - A reticle shrinks onto them and locks after 0.4 s.
   - A lock survives 0.6 s without line of sight.
   - You never target yourself, and finished racers can't be targeted.
@@ -615,21 +616,22 @@ Drive through a "?" crate to collect a random weapon into your first free slot. 
 - **Crate odds** depend on race position (GDD §6.5). Each weapon has a percent chance per position (`WeaponData.position_chance`, 1st to 8th), and a crate makes one pick from those. Leaders get weak and defensive items: Road Spikes only drop for 1st–3rd and Firewalls only for 1st–5th. Odds climb toward stronger items further back, and 7th–8th mostly get Overdrive, System Override and Triple Nitro.
 - **Advanced weapons** (`docs/Cyberwave_2199_Advanced_Weapons.md`): the three rare items (`WeaponData.rare`) never drop for 1st and 2nd.
 
-  | Weapon | 1st–2nd | 3rd–4th | 5th–6th | 7th–8th |
-  |---|---:|---:|---:|---:|
-  | Railgun | 12% | 12% | 10% | 8% |
-  | Hunter Drone | 8% | 12% | 15% | 14% |
-  | EMP Pulse | 8% | 9% | 9% | 8% |
-  | Road Spike | 24% | 14% | 7% | 3% |
-  | Nitro Overload | 12% | 14% | 15% | 15% |
-  | Triple Nitro | 3% | 5% | 8% | 12% |
-  | Triple Spike | 10% | 6% | 3% | 2% |
-  | Firewall | 23% | 18% | 13% | 7% |
-  | Hunter-Killer | 0% | 3% | 5% | 5% |
-  | Overdrive | 0% | 2% | 6% | 10% |
-  | System Override | 0% | 5% | 9% | 16% |
+  | Weapon | 1st | 2nd | 3rd | 4th | 5th | 6th | 7th | 8th |
+  |---|---:|---:|---:|---:|---:|---:|---:|---:|
+  | Road Spike | 30% | 25% | 15% | 0% | 0% | 0% | 0% | 0% |
+  | Triple Spike | 12% | 12% | 10% | 6% | 0% | 0% | 0% | 0% |
+  | Firewall | 25% | 23% | 18% | 14% | 8% | 0% | 0% | 0% |
+  | Railgun | 15% | 15% | 13% | 12% | 9% | 7% | 0% | 0% |
+  | Triple Railgun | 0% | 0% | 4% | 6% | 8% | 8% | 4% | 0% |
+  | EMP Pulse | 8% | 9% | 11% | 13% | 12% | 11% | 4% | 2% |
+  | Hunter Drone | 5% | 8% | 12% | 15% | 16% | 14% | 7% | 4% |
+  | Nitro Overload | 5% | 8% | 11% | 15% | 15% | 14% | 9% | 5% |
+  | Triple Nitro | 0% | 0% | 4% | 9% | 14% | 18% | 22% | 25% |
+  | Hunter-Killer | 0% | 0% | 0% | 2% | 4% | 6% | 8% | 8% |
+  | Overdrive | 0% | 0% | 0% | 3% | 6% | 10% | 20% | 25% |
+  | System Override | 0% | 0% | 2% | 5% | 8% | 12% | 26% | 31% |
 
-  With fewer than 8 racers, positions are spread over the same rows. **Counters:**
+  With fewer than 8 racers, positions are spread over the same columns. **Counters:**
   - A Firewall soaks a System Override (and is used up). It does nothing against a Hunter-Killer.
   - An active Overdrive ignores every attack.
   - The Hunter-Killer joins the INCOMING warning. AI rivals try the Nitro dodge against it.
@@ -686,7 +688,7 @@ scripts/
   progression/               PlayerProfile, CosmeticCatalog, CosmeticItem, RaceRewards, TrackCoins
 resources/
   vehicles/                  The eight cars (+ stats/)
-  weapons/*.tres             The eleven weapons: durations, speeds, position_chance odds
+  weapons/*.tres             The twelve weapons: durations, speeds, position_chance odds
   ai/easy|normal|hard.tres   AI difficulty (speed, drift, shortcut, trick and rocket-start odds)
   grand_prix/*.tres          The five cups (listed in GrandPrixData.CUPS)
   cameras/                   Far chase, close chase, rear view
@@ -832,7 +834,7 @@ The exit code is non-zero if anything fails. These checks do **not** judge how t
 ## Credits
 
 - **Game:** Cyberwave 2199 by Nathan Hobbs.
-- **Music:** see the Audio table above (ikoliks_aj, ikoliks, alex-morgan, Lilex, TheBoysBeats, SPmusic, kulakovka, Ob-Lix, ed-musicproductions, sonican, elisaveta_stoycheva, theorienvibes, restum-anoush, DesiFreeMusic, vishiv, Jean-Paul-V, stageechoesmusic).
+- **Music:** see the Audio table above (ikoliks_aj, ikoliks, alex-morgan, Lilex, TheBoysBeats, SPmusic, kulakovka, Ob-Lix, ed-musicproductions, sonican, elisaveta_stoycheva, theorienvibes, restum-anoush, DesiFreeMusic, vishiv, Jean-Paul-V, vadim_makes_sound, stageechoesmusic).
 - **Sound:** Short beep countdown, Shield drop, Electric zap 001, Crowbar drop 1 (rear), Planks clattering and Missile lock detected by freesound_community; Sci-fi energy shield activation by vadim_makes_sound; Electrical current 2 by 49053354; Sci-fi weapon shoot firing pulse TM 05 by rescopicsound; Field: launching a small model rocket by fronbondi_skegs; Missile explosion by voicebosch.
 - **Fonts:** Oxanium and Rajdhani, SIL Open Font License 1.1 (`assets/fonts/`).
 - **Engine:** Godot Engine, MIT License.
@@ -845,8 +847,8 @@ Environment textures and the track skies are from [Poly Haven](https://polyhaven
 
 As of 2026-11-14 (GDD v7.9). Phase 6, content and polish, is in progress. The [dev tracker](https://nahobbs5.github.io/CyberWave-2199/dev/) holds the live milestone status.
 
-- **Content built:** 15 race tracks in 5 cups (all open for Grand Prix) plus the Test Circuit, 8 cars, 11 weapons, 7 named rivals, split screen for 2–4 players, podium, music on every track but Chefchaouen.
-- **Weapons:** Railgun, Hunter Drone, EMP Pulse, Road Spike, Nitro Overload, Triple Nitro, Triple Spike, Firewall, Hunter-Killer Drone, Overdrive Protocol and System Override. The GDD §6.3 roster's Holo Decoy, Gravity Mine, System Glitch, Cyber Leech and Swarm Bots are not built.
+- **Content built:** 15 race tracks in 5 cups (all open for Grand Prix) plus the Test Circuit, 8 cars, 12 weapons, 7 named rivals, split screen for 2–4 players, podium, music on every track.
+- **Weapons:** Railgun, Hunter Drone, EMP Pulse, Road Spike, Nitro Overload, Triple Nitro, Triple Spike, Triple Railgun, Firewall, Hunter-Killer Drone, Overdrive Protocol and System Override. The GDD §6.3 roster's Holo Decoy, Gravity Mine, System Glitch, Cyber Leech and Swarm Bots are not built.
 - **Known failing checks** (they failed before the latest work):
   - `test_phase3`: "every racer crossed every gate despite weapons" (also fails with the pre-v7.4 crate odds; cause not yet checked);
   - `test_weapons_advanced`: System Override "victim's top speed is cut by 25%" and "hacked car accelerates slower" (also fail with the pre-v7.4 odds);

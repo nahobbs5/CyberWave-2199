@@ -200,6 +200,7 @@ func _build() -> void:
 	UIStyle.background(self)
 	layout = NeonScreenLayout.new("SETTINGS", "gear")
 	add_child(layout)
+	layout.use_results_header()
 	layout.back_button.pressed.connect(back)
 	var page := VBoxContainer.new()
 	page.add_theme_constant_override("separation", 10)

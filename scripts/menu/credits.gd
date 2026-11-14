@@ -49,6 +49,7 @@ const MUSIC := [
 	["Epic Victory March for Heroes", "DesiFreeMusic", "Choquequirao"],
 	["The Dragon's Lair", "vishiv", "Kilwa Kisiwani Ruins"],
 	["Danger Imminent", "Jean-Paul-V", "Fires of Nyiragongo"],
+	["Atlas Morocco", "vadim_makes_sound", "Chefchaouen"],
 	["The Garden Wakes", "stageechoesmusic", "Test Circuit and free drive"],
 	["Background Music", "alex-morgan", "other results screens"],
 	["Victory", "alex-morgan", "podium and the results after it"],

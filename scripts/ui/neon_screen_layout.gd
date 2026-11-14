@@ -8,14 +8,23 @@ extends Control
 ##
 ## Usage: new(title, icon_kind), add_child, fill `content`, connect
 ## `back_button.pressed`.
+## The setup screens, Settings and the Garage use the results header instead:
+## the Race Results look (logo, a slanted title bar with checker flags each
+## side, centred, and a neon rule under the header).
 
 var street: MenuStreetScene
 ## Fill this with the screen's panels.
 var content: MarginContainer
 var back_button: NeonMenuButton
 var title_label: Label
+## True after use_results_header().
+var results_header: bool = false
+## Results header: the flags + title bar row (centred), and the rule's y.
+var title_bar_row: HBoxContainer
+const RESULTS_RULE_Y := 84.0
 
 var _title: String
+var _title_row: HBoxContainer
 var _icon_kind: String
 
 
@@ -42,6 +51,7 @@ func _build() -> void:
 	title_row.position = Vector2(30, 4)
 	title_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(title_row)
+	_title_row = title_row
 	title_row.add_child(UIStyle.logo(Vector2(210, 66)))
 	var slash := UIStyle.stat("/", 52, Color(1, 1, 1, 0.75))
 	slash.add_theme_font_override("font", UIStyle.slanted_font(true))
@@ -79,3 +89,51 @@ func _build() -> void:
 	back_button.offset_top = -80
 	back_button.offset_bottom = -26
 	add_child(back_button)
+
+
+## Swaps the classic title row for the Race Results header (see
+## add_results_header). title_label becomes the bar's label.
+func use_results_header() -> void:
+	if results_header:
+		return
+	results_header = true
+	_title_row.visible = false
+	title_bar_row = add_results_header(self, _title)
+	title_label = (title_bar_row.find_child("Text", true, false) as Label)
+	content.offset_top = 94
+
+
+## The Race Results header on any full-screen Control (setup screens,
+## Settings, Garage): logo top left, a slanted title bar between two checker
+## flags centred at the top, and a neon rule across the screen at
+## RESULTS_RULE_Y. Returns the centred flags + bar row (the bar's label is
+## its "Text" child). Keep content below about y = 92.
+static func add_results_header(parent: Control, title: String) -> HBoxContainer:
+	var logo := UIStyle.logo(Vector2(210, 70))
+	logo.position = Vector2(30, 8)
+	logo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parent.add_child(logo)
+	var row := HBoxContainer.new()
+	row.name = "ResultsTitle"
+	row.add_theme_constant_override("separation", -4)
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+	row.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	row.offset_top = 16
+	row.offset_bottom = 74
+	parent.add_child(row)
+	var bar := SetupWidgets.title_bar(title, 42)
+	bar.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	for side in [0, 1]:
+		var flag := NeonWidgets.Checker.new(Color(UIStyle.MAGENTA, 0.9), 2, side == 0)
+		flag.custom_minimum_size = Vector2(54, 28)
+		flag.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(flag)
+		if side == 0:
+			row.add_child(bar)
+	var rule := NeonWidgets.NeonRule.new()
+	rule.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+	rule.offset_top = RESULTS_RULE_Y - 3.0
+	rule.offset_bottom = RESULTS_RULE_Y + 3.0
+	parent.add_child(rule)
+	return row

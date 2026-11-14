@@ -243,7 +243,7 @@ func _deploy(user: VehicleController, weapon: WeaponData) -> void:
 			CombatSfx.play_on(spike, CombatSfx.SPIKE_DROP, "SpikeDrop")
 		WeaponData.Kind.SELF_BOOST:
 			user.start_external_boost(weapon.boost_extra_speed, weapon.effect_duration,
-					weapon.boost_kick, weapon.display_name, weapon.color)
+					weapon.boost_kick, weapon.use_name(), weapon.color)
 		WeaponData.Kind.SHIELD:
 			if user.status != null:
 				user.status.apply_buff(weapon.effect, weapon.effect_duration)

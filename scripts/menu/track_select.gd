@@ -33,13 +33,13 @@ func _ready() -> void:
 	board.badges[cup].grab_focus.call_deferred()
 
 
-## "VERSUS  -  RACE 2 OF 4" in a series, else "VERSUS  -  CHOOSE A TRACK".
+## "VERSUS  -  RACE 2 OF 4" in a series, else just "VERSUS".
 func title_text() -> String:
 	var mode := RaceConfig.MODE_NAMES[_mode()].to_upper()
 	var s := GameSession.series
 	if s != null:
 		return "%s  -  RACE %d OF %d" % [mode, s.race_index + 1, s.race_count()]
-	return "%s  -  CHOOSE A TRACK" % mode
+	return mode
 
 
 ## Races card `index` (ignored for tracks that aren't built).
@@ -115,13 +115,16 @@ func _build() -> void:
 	var parts := title_text().split("  -  ")
 	layout = NeonScreenLayout.new(parts[0], "flags")
 	add_child(layout)
+	layout.use_results_header()
 	_title = layout.title_label
 	layout.back_button.pressed.connect(back)
 	layout.back_button.focus_mode = Control.FOCUS_NONE
 	var s := GameSession.series
 	if s != null and s.race_index > 0:
 		layout.back_button.text = "Quit series"
-	CupSelect.add_subtitle(layout, parts[1] if parts.size() > 1 else "CHOOSE A TRACK")
+	# Mid-series only: "RACE 2 OF 3" under the title.
+	if s != null:
+		CupSelect.add_subtitle(layout, parts[1])
 	if not GameSession.split_screen:
 		SetupWidgets.add_coin_pill(self, PlayerProfile.get_profile().coins)
 

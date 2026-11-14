@@ -18,6 +18,9 @@ enum Kind { PROJECTILE, GUIDED, AREA, HAZARD, SELF_BOOST, SHIELD, LEADER_DRONE, 
 @export var targeted: bool = false
 ## Uses per pickup; the slot empties after the last one (e.g. Triple Nitro).
 @export_range(1, 9) var charges: int = 1
+## What one charge is called (Triple Spike -> "Road Spike"): hit messages and
+## boost labels describe the single spike / shot / burst. Empty = display_name.
+@export var single_name: String = ""
 
 @export_group("Effect")
 ## Status applied to the victim (stun, stagger, emp, traction) or to the
@@ -57,6 +60,11 @@ enum Kind { PROJECTILE, GUIDED, AREA, HAZARD, SELF_BOOST, SHIELD, LEADER_DRONE, 
 ## Rare comeback item (Advanced Weapons doc): Hunter-Killer, Overdrive,
 ## System Override.
 @export var rare: bool = false
+
+
+## Name for one use of this weapon (one spike, one shot, one burst).
+func use_name() -> String:
+	return single_name if single_name != "" else display_name
 
 
 ## True for the rare comeback items.
