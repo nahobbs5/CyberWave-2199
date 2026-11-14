@@ -54,6 +54,7 @@ Recovery is a quick **holographic teleport** (`docs/Recovery System.md`).
   - stuck (pressing throttle or brake while barely moving forward or back; sliding sideways along a wall counts as stuck) for 4 s,
   - below the world,
   - over **deep water** (a splash, then the recovery). Tracks whose terrain has a flood plane (Six Flags, Arashiyama) get a `RecoveryZone` over every hollow more than 0.6 m deep, except within a few metres of a road, so bridges and road edges never trigger it,
+  - in **lava** (embers, then the recovery): a `RecoveryZone` with reason "lava" over Fires of Nyiragongo's lake and channel,
   - outside the circuit (more than 3 m past the road edge, i.e. beyond the barrier) for 1 s, or
   - making no progress: trying to drive but gaining less than 15 m along the track in 8 s (catches a car rocking back and forth against a wall, which never looks "stuck").
 - **The sequence** (1.6 s; every time is an export on `VehicleRecovery`):
@@ -72,7 +73,7 @@ Recovery is a quick **holographic teleport** (`docs/Recovery System.md`).
   - It can't be targeted or hit by weapons, drafted, or fire weapons.
 - **Checkpoints are never paused.** Gates only count in order, so coming back behind one can't skip it.
 - **One recovery per incident.** No new recovery starts until the whole sequence (protection included) is over.
-- **Items:** a recovery for going out of bounds, into deep water, off track, or a manual reset (R) empties your item slots. Overturned, stuck, no-progress and Overdrive recoveries keep them (`VehicleRecovery.ITEM_LOSS_REASONS`).
+- **Items:** a recovery for going out of bounds, into deep water or lava, off track, or a manual reset (R) empties your item slots. Overturned, stuck, no-progress and Overdrive recoveries keep them (`VehicleRecovery.ITEM_LOSS_REASONS`).
 - **Elimination** cancels a recovery in progress.
 - **Reduced flashing** dims the flash and flicker.
 - **The respawn spot** is checked for other vehicles, and for cars that are re-forming there. It shifts sideways or back if it's occupied.
@@ -472,6 +473,19 @@ Africa Cup race 1. A 3 km race through the ruins of the medieval Swahili city on
   - `SwahiliHouseBuilder`.
   The layout comes from a generator script (orthogonal route with filleted corners, columns on the grid). Checks: `tests/test_kilwa_kisiwani.gd`.
 
+#### Fires of Nyiragongo (GDD §8.6h)
+
+Africa Cup race 2, and the **first sloped track**. A 3.2 km race inside the crater of Nyiragongo **at dusk** (the qwantani sunset sky with a brown, orange-lit haze). The road is 15 m of dark basalt paving with orange-lit edges and corner chevrons, between rough basalt walls with orange neon tops. It drops about 60 m from the rim to the lava shelf and climbs back out, with no grade steeper than about 9%.
+- **Crater rim:** a wide, level start straight on a low saddle of the south rim, past tin shelters and a D.R. Congo flag. The first sweeping right-hander looks down into the crater and reveals the lake.
+- **Switchback descent:** down the west wall on three shelves joined by two broad hairpins (right, then left), each with a tight inside line for a drift and room to pass outside. The shelves never overlap in plan, so you see the racers below. The second hairpin turns round a black rock outcrop and points at the jump.
+- **Lava shelf:** a fast sweep round the lake's north side. A lava channel runs from the lake to a glowing vent; the main road swings round the vent.
+- **Return climb:** a long right-hander up the east wall, **banked 12°**, cresting onto the rim with about 300 m to carry a drift boost to the line.
+- **Shortcut:** the **Lava channel jump** (12 m): a ramp off the second hairpin's exit and an 18 m gap over the channel, saving about 130 m. Fall short and you burn up.
+- **Lava:** a `RecoveryZone` (reason "lava") covers the lake and the channel. It recovers the car with embers, and the car loses its items, as with water.
+- **Look:** sheer stratified basalt walls stepped in ledges up to a rim 70 m above the start, real Poly Haven rock (dark_rock, dark_rock_02, rock_ground) with fine molten fissures glowing on the flats (`basalt_fissure.gdshader`). The lake is plates of black crust split by orange cracks (`lava_lake.gdshader`), with lava fountains at its vents and steam round its edge. Gas plumes tower over it and drift downwind (`VolcanicPlume`), ash falls round every camera (`AshFall`, one particle box per split-screen view), and boulders, scree, basalt columns, spatter cones and glowing pools dress the floor (`RockScatter`).
+- **Sloped roads (engine):** `TrackCircuit.sloped` makes the control points' heights real climbs and drops, and `banking` ranges roll the road. Cars drive on a road collider with a short apron, walls follow the slope, and recovery spots, crates, coins and features sit on the real surface. A shortcut can have **gaps** (jumps) with no road, collider or walls; the AI hold a minimum speed into them and Overdrive never lands in one. Gardens by the Bay's skyway and Vale da Lua now use it too.
+- Built from code: `NyiragongoScenery`. Checks: `tests/test_nyiragongo.gd`. Race music: *Danger Imminent* (Jean-Paul-V).
+
 #### Chefchaouen (GDD §8.6i)
 
 Africa Cup race 3. A 3.15 km race through **the blue medina in the Rif mountains** on a bright late morning (the kloofendal partly cloudy sky, sun about 48° up). **Two forks per lap, so four ways round.** The main road is 16 m and the branches 12 m. The town climbs about 28 m from the lower square to the upper terrace.
@@ -644,7 +658,7 @@ scenes/
                              settings_menu, credits, multiplayer_connect / _cars / _setup
   race/race.tscn             The race (RaceManager + track + cameras + HUDs); F6 runs a Versus race
   free_drive.tscn            Practice sandbox (one car, no race rules)
-  tracks/*.tscn              13 race tracks + test_circuit.tscn (layout, shortcuts, features, scenery, environment)
+  tracks/*.tscn              15 race tracks + test_circuit.tscn (layout, shortcuts, features, scenery, environment)
   vehicles/placeholder_car.tscn  The shared car: body, 4 raycast wheels, drift / recovery / feedback
 scripts/
   core/                      Static services: GameSession, GameSettings, InputSetup, Music, SaveUtil, boot
@@ -729,7 +743,7 @@ Swap in any suite:
 | `test_phase3.gd` | Combat: inventory, crates, targeting, status rules, a full race with weapons |
 | `test_phase4.gd` | Versus, Grand Prix save / resume, Elimination (~6–10 min; run alone) |
 | `test_phase5.gd` | Menus, garage, shop, coins, rewards, saving, settings, rebinding |
-| `test_phase6.gd` | Car models, track layouts / shortcuts / features, full track races (run alone) |
+| `test_phase6.gd` | Car models, track layouts / shortcuts / features, the Six Flags bumper-car pavilion (`GlbProp`), full track races (run alone) |
 | `test_vehicle_physics.gd` | Raycast suspension, wheel cache, landing stabiliser, jumps |
 | `test_drift.gd` | Drift charge rates, hop, grip recovery |
 | `test_start_boost.gd` | Rocket start: timing window, boost, burnout, revving, AI odds |
@@ -744,7 +758,7 @@ Swap in any suite:
 | `test_pad_menus.gd` | Gamepad navigation in menus, pause, podium, results |
 | `test_ui.gd` | Fonts, HUD panels, results, layout at two HUD scales, credits coverage |
 | `test_audio.gd` | Music per screen / track, crossfades, countdown, web copies |
-| `test_quinta_normal.gd`, `test_vale_da_lua.gd`, `test_choquequirao.gd`, `test_kilwa_kisiwani.gd` | Per-track layout, shortcut and scenery checks |
+| `test_quinta_normal.gd`, `test_vale_da_lua.gd`, `test_choquequirao.gd`, `test_kilwa_kisiwani.gd`, `test_nyiragongo.gd`, `test_chefchaouen.gd` | Per-track layout, shortcut and scenery checks |
 
 **Track outlines:** menu cards, the loading screen and results draw each track's outline from `resources/ui/track_outlines.tres` (`TrackOutlines`). This way the menus never load whole track scenes; loading them froze the track screen on the web build. After moving a track's control points or adding a track, rebake with `godot --headless --path . -s res://tests/tools/bake_track_outlines.gd`. `test_ui.gd` fails while the baked copy is out of date.
 
@@ -829,14 +843,14 @@ Environment textures and the track skies are from [Poly Haven](https://polyhaven
 
 ## Status and known issues
 
-As of 2026-11-13 (GDD v7.4). Phase 6, content and polish, is in progress. The [dev tracker](https://nahobbs5.github.io/CyberWave-2199/dev/) holds the live milestone status.
+As of 2026-11-14 (GDD v7.9). Phase 6, content and polish, is in progress. The [dev tracker](https://nahobbs5.github.io/CyberWave-2199/dev/) holds the live milestone status.
 
-- **Content built:** 15 race tracks in 5 cups (all open for Grand Prix) plus the Test Circuit, 8 cars, 11 weapons, 7 named rivals, split screen for 2–4 players, podium, music on every track.
+- **Content built:** 15 race tracks in 5 cups (all open for Grand Prix) plus the Test Circuit, 8 cars, 11 weapons, 7 named rivals, split screen for 2–4 players, podium, music on every track but Chefchaouen.
 - **Weapons:** Railgun, Hunter Drone, EMP Pulse, Road Spike, Nitro Overload, Triple Nitro, Triple Spike, Firewall, Hunter-Killer Drone, Overdrive Protocol and System Override. The GDD §6.3 roster's Holo Decoy, Gravity Mine, System Glitch, Cyber Leech and Swarm Bots are not built.
 - **Known failing checks** (they failed before the latest work):
   - `test_phase3`: "every racer crossed every gate despite weapons" (also fails with the pre-v7.4 crate odds; cause not yet checked);
   - `test_weapons_advanced`: System Override "victim's top speed is cut by 25%" and "hacked car accelerates slower" (also fail with the pre-v7.4 odds);
-  - `test_phase6`: Arashiyama "shortcut is shorter" and "every gate counted on the shortcut".
+  - `test_phase6`: Arashiyama "shortcut is shorter" and "every gate counted on the shortcut"; Six Flags "the ramp's item boxes gave the car a weapon", and "every gate counted" on the forced-shortcut lap and in the full race (all three also fail at e57fcde, before the bumper-car pavilion).
 - **Running tests:** run `test_phase4` and `test_phase6` on their own. Parallel runs slow the track builds past the build-time limit, and suites that share a save file can clash.
 - **Screenshots from the dev container are software-rendered** (Compatibility / lavapipe). Forward+ on Windows shows stronger glow, fog and reflections.
 - **Split screen hasn't been played with real gamepads** on the heaviest tracks (the Hoia forest, Arashiyama bamboo); four views there may be slow.

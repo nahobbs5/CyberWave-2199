@@ -29,6 +29,7 @@ Recovery begins when a kart:
 - Falls below a predefined height.
 - Enters a designated hazard volume.
 - Falls into deep water.
+- Falls into lava (Fires of Nyiragongo's lake and channel).
 - Becomes stuck or overturned for an extended period.
 - Activates a manual recovery command, if supported.
 
@@ -505,6 +506,7 @@ Avoid long voice announcements or excessively loud effects.
 |---|---|
 | Kart falls off a cliff | Trigger recovery after crossing a fall boundary |
 | Kart enters deep water | Play a brief splash, then reconstruct |
+| Kart falls into lava | A fountain of glowing embers, then reconstruct |
 | Kart gets stuck | Recover after validated immobility |
 | Kart flips upside down | Allow self-righting, then recover |
 | Kart misses a jump | Return to a safe point before the jump |
@@ -513,7 +515,7 @@ Avoid long voice announcements or excessively loud effects.
 | Two karts respawn together | Temporarily disable kart-to-kart collision |
 | Kart falls during a boost | Cancel the boost |
 | Kart falls while drifting | Cancel drift and accumulated charge |
-| Kart falls while holding an item | Lose all held items (out of bounds, water, off track); a manual reset also empties them, automatic resets on the road (overturned, stuck) keep them |
+| Kart falls while holding an item | Lose all held items (out of bounds, water, lava, off track); a manual reset also empties them, automatic resets on the road (overturned, stuck) keep them |
 | AI kart falls | Use the same recovery logic as human players |
 
 ---

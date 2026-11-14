@@ -1,11 +1,11 @@
 # CyberWave 2199
 
 **Retrofuturistic cyberpunk combat kart racing, built in Godot 4.**
-Luxury neon cars, drift boosts, weapons and fourteen circuits set in real-world places, against seven AI rivals or with up to four players in local split screen.
+Luxury neon cars, drift boosts, weapons and fifteen circuits set in real-world places, against seven AI rivals or with up to four players in local split screen.
 
 **▶ [Play the browser demo](https://nahobbs5.github.io/CyberWave-2199/web/)** · **🛠 [Dev tracker](https://nahobbs5.github.io/CyberWave-2199/dev/)** · **📖 [Full reference](docs/Reference.md)** · **📐 [Game Design Document](docs/Game%20Design%20Document.md)** (v6.9)
 
-> **Status (2026-11-12):** Phase 6, content and polish, is in progress (GDD §16). Every track, car and mode below is playable. Handling, drift timing, weapon balance, atmosphere, UI and controller support are still being tuned; the dev tracker has the details.
+> **Status (2026-11-14):** Phase 6, content and polish, is in progress (GDD §16). Every track, car and mode below is playable. Handling, drift timing, weapon balance, atmosphere, UI and controller support are still being tuned; the dev tracker has the details.
 
 ---
 
@@ -19,14 +19,14 @@ Luxury neon cars, drift boosts, weapons and fourteen circuits set in real-world 
 - **11 weapons** with position-based crate odds. System Override hacks everyone ahead of you, and the leader stays hacked longest.
 - **Holographic recovery** that never moves you forward.
 - **8 cars** with distinct stats, a neon garage with 8 cosmetic categories, coins and license plates.
-- **Presentation:** a podium ceremony, neon results, music for every track (15% faster on the final lap), rebindable controls and accessibility settings.
+- **Presentation:** a podium ceremony, neon results, music for every track but Chefchaouen (5% faster on the final lap), rebindable controls and accessibility settings.
 
 ## Cups and tracks
 
 | Cup | Track | Setting | Length | GDD |
 |---|---|---|---:|---|
 | **American** | Vegas Overdrive | The Strip at night, Luxor pyramid shortcut | 3.2 km | §8.3 |
-| | Six Flags New Orleans | Abandoned, flooded amusement park | 3.1 km | §8.2 |
+| | Six Flags New Orleans | Abandoned, flooded amusement park and its derelict bumper-car ride | 3.1 km | §8.2 |
 | | The Stacks | Library of Congress at sunset | 2.9 km | §8.1 |
 | **Europe** | Hoia Baciu Run | Romania's haunted forest, foggy night | 3.2 km | §8.4 |
 | | Catacombs Descent | Torch-lit tunnels under Paris | 2.8 km | §8.5 |

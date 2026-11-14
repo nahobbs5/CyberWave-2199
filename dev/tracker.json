@@ -1,11 +1,11 @@
 {
   "schema": 1,
-  "updated": "2026-11-13",
+  "updated": "2026-11-14",
   "project": {
     "name": "Cyberwave 2199",
-    "pitch": "Retrofuturistic cyberpunk combat kart racing: luxury neon cars, drift boosts, weapons and fourteen real-world circuits, against seven AI rivals or in 2–4 player local split screen.",
+    "pitch": "Retrofuturistic cyberpunk combat kart racing: luxury neon cars, drift boosts, weapons and fifteen real-world circuits, against seven AI rivals or in 2–4 player local split screen.",
     "engine": "Godot 4.7.2 · GDScript · Jolt Physics",
-    "gdd": "v7.4",
+    "gdd": "v7.9",
     "phase": "Phase 6: content and polish (GDD §16)",
     "repo": "https://github.com/nahobbs5/CyberWave-2199",
     "demo": "https://nahobbs5.github.io/CyberWave-2199/web/",
@@ -32,7 +32,7 @@
       },
       {
         "path": "scripts/track/",
-        "what": "TrackCircuit, TrackFeature, per-track scenery and reusable builders"
+        "what": "TrackCircuit, TrackFeature, per-track scenery and reusable builders (GlbProp loads Blender props)"
       },
       {
         "path": "scripts/ui/",
@@ -45,6 +45,10 @@
       {
         "path": "resources/",
         "what": "Vehicle stats, weapon .tres (odds, durations), AI difficulty, cups"
+      },
+      {
+        "path": "models/",
+        "what": "Blender .glb track props (Y-up, metres), merged on load by GlbProp"
       },
       {
         "path": "tests/",
@@ -277,13 +281,15 @@
       "system": "Atmosphere",
       "current": false,
       "status": "In progress",
-      "summary": "Each track has its own sky, fog, lighting and procedural scenery. Current work covers textured standing water, the redesigned EMP puddles and the Arashiyama bamboo rework.",
+      "summary": "Each track has its own sky, fog, lighting and scenery, mostly procedural. The Africa Cup is complete (Kilwa Kisiwani, Fires of Nyiragongo, Chefchaouen), and Six Flags has the first Blender-modelled prop, a derelict bumper-car pavilion.",
       "files": [
         "scripts/track/*_scenery.gd",
         "scripts/track/scenery/",
         "assets/shaders/standing_water.gdshader",
         "assets/shaders/emp_puddle.gdshader",
-        "scenes/tracks/"
+        "scenes/tracks/",
+        "scripts/track/scenery/glb_prop.gd",
+        "models/"
       ],
       "prerequisites": [
         "Judge looks on Windows Forward+ (container screenshots are software-rendered)",
@@ -291,11 +297,11 @@
       ],
       "steps": [
         {
-          "text": "14 tracks (plus the Test Circuit) with their own WorldEnvironment (sky, fog, light)",
+          "text": "15 tracks (plus the Test Circuit) with their own WorldEnvironment (sky, fog, light)",
           "done": true
         },
         {
-          "text": "Music on every track, faster on the final lap",
+          "text": "Music on every track but Chefchaouen, 5% faster on the final lap (v7.7)",
           "done": true
         },
         {
@@ -345,16 +351,36 @@
         {
           "text": "Correct GDD §12.1: Kilwa now has music (The Dragon's Lair)",
           "done": true
+        },
+        {
+          "text": "Fires of Nyiragongo race music: Danger Imminent by Jean-Paul-V, with web .ogg and credit (v7.5)",
+          "done": true
+        },
+        {
+          "text": "Chefchaouen: blue medina with two forks per lap, Africa Cup race 3 (v7.8)",
+          "done": true
+        },
+        {
+          "text": "Six Flags bumper-car pavilion from Blender (models/), merged into one mesh, dead ahead at the end of the Midway straight (v7.6)",
+          "done": true
+        },
+        {
+          "text": "Bake the bumper-car pavilion's procedural Blender materials to textures, re-export, then drop BUMPER_CARS_MATERIALS",
+          "done": false
+        },
+        {
+          "text": "Pick and add Chefchaouen race music",
+          "done": false
         }
       ],
       "test": {
         "headless": "godot --headless --fixed-fps 60 -s res://tests/test_phase6.gd",
-        "also": "test_boost_patterns.gd, test_quinta_normal.gd, test_vale_da_lua.gd, test_choquequirao.gd, test_kilwa_kisiwani.gd",
-        "manual": "Versus → each cup's tracks at 1080p with Debug → Monitors open (FPS). Check that water and EMP puddles read at full speed and fog never hides a corner."
+        "also": "test_boost_patterns.gd, test_quinta_normal.gd, test_vale_da_lua.gd, test_choquequirao.gd, test_kilwa_kisiwani.gd, test_nyiragongo.gd, test_chefchaouen.gd",
+        "manual": "Versus → each cup's tracks at 1080p with Debug → Monitors open (FPS). Check that water and EMP puddles read at full speed and fog never hides a corner. On Six Flags, the bumper-car pavilion should be clear dead ahead coming up the Midway straight."
       },
-      "blockers": "Arashiyama: 'shortcut is shorter (350 vs 470)' and 'every gate counted on the shortcut' fail.",
+      "blockers": "Arashiyama: 'shortcut is shorter (350 vs 470)' and 'every gate counted on the shortcut' fail. Six Flags: 'ramp item boxes gave a weapon' and 'every gate counted' (shortcut lap and full race) fail, also at e57fcde.",
       "notes": "Track build timing on the Windows bind mount is about 3× slower than on a local copy. Volumetric fog only shows in Forward+.",
-      "open_decisions": "Africa Cup races 2–3: which locations?\nIs the web demo (Compatibility, no volumetric fog) acceptable as is?",
+      "open_decisions": "Is the web demo (Compatibility, no volumetric fog) acceptable as is?\nBumper-car pavilion: add a faded BUMPER CARS roof sign and flickering lamps if it still doesn't stand out?\nChefchaouen race music: which song?",
       "next_steps": "Do the Windows Forward+ pass on the Europe Cup first (the darkest tracks)."
     },
     {
@@ -630,7 +656,7 @@
       "system": "Atmosphere",
       "title": "Africa Cup race 3",
       "priority": "P2",
-      "done": false
+      "done": true
     },
     {
       "id": "b9",
@@ -687,6 +713,27 @@
       "title": "Web build: make a 96 kbps .ogg copy of alex-morgan Background Music in music/web/",
       "priority": "P2",
       "done": true
+    },
+    {
+      "id": "b17",
+      "system": "Atmosphere",
+      "title": "Chefchaouen race music (song, web .ogg, credit)",
+      "priority": "P2",
+      "done": false
+    },
+    {
+      "id": "b18",
+      "system": "Atmosphere",
+      "title": "Bake the bumper-car pavilion's Blender materials to textures and remove the material overrides",
+      "priority": "P3",
+      "done": false
+    },
+    {
+      "id": "b19",
+      "system": "Tests",
+      "title": "Investigate Six Flags test_phase6 failures: ramp item boxes, 'every gate counted' (shortcut lap and full race)",
+      "priority": "P1",
+      "done": false
     }
   ],
   "decisions": [
@@ -863,6 +910,24 @@
       "decision": "Track outlines are baked into resources/ui/track_outlines.tres (rebake with tests/tools/bake_track_outlines.gd); menus never load track scenes. Default clear colour is black",
       "why": "Loading every track scene for the card outlines froze the web build's track screen and left a gray background",
       "gdd": ""
+    },
+    {
+      "date": "2026-11-14",
+      "decision": "Fires of Nyiragongo race music: Danger Imminent (Jean-Paul-V)",
+      "why": "Tense, driving track for the volcano; every track gets its own song",
+      "gdd": "v7.5"
+    },
+    {
+      "date": "2026-11-14",
+      "decision": "Blender props live in models/ as .glb and are merged on load (GlbProp: one mesh, a surface per material, cached); procedural Blender materials are stood in for by the track's own materials until baked",
+      "why": "The first model had 5,300 objects; merging keeps draw calls low for the web build, and glTF can't carry procedural materials",
+      "gdd": "v7.6"
+    },
+    {
+      "date": "2026-11-14",
+      "decision": "Six Flags bumper-car pavilion sits dead ahead on the outside of the corner ending the Midway straight, open front to the oncoming cars",
+      "why": "Beside the straight it was side-on and very hard to spot",
+      "gdd": "v7.6"
     }
   ],
   "playtest": [
@@ -959,6 +1024,10 @@
         },
         {
           "text": "Frame rate holds on the heaviest tracks",
+          "done": false
+        },
+        {
+          "text": "Six Flags bumper-car pavilion is easy to spot from the Midway straight and holds the frame rate",
           "done": false
         }
       ]

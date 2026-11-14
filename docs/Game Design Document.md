@@ -1,5 +1,5 @@
 # CYBERWAVE 2199
-## Game Design Document — Version 7.8
+## Game Design Document — Version 7.9
 
 **Status:** Development Baseline  
 **Engine:** Godot 4  
@@ -607,7 +607,7 @@ AI must support:
 
 # 8. Tracks and Environments
 
-Thirteen tracks are included at launch.
+Fifteen tracks are included at launch, three in each of the five cups (§2.2).
 
 ## 8.1 The Stacks
 
@@ -1301,6 +1301,7 @@ One song per screen or track. Moving between menus that share a song doesn't res
 | Choquequirao | Epic Victory March for Heroes | DesiFreeMusic |
 | Kilwa Kisiwani Ruins | The Dragon's Lair | vishiv |
 | Fires of Nyiragongo | Danger Imminent | Jean-Paul-V |
+| Chefchaouen | None yet | — |
 | Test Circuit and Free Drive | The Garden Wakes | stageechoesmusic |
 
 The web build plays smaller 96 kbps .ogg copies (`music/web/`) of every song.
@@ -1702,5 +1703,6 @@ Changes after Version 1.0 should be tracked as revisions rather than silently re
 | 7.6 | 2026-11-14 | Six Flags New Orleans: a derelict bumper-car pavilion at the corner ending the Midway straight, the first track prop modelled in Blender (§8.2). |
 | 7.7 | 2026-11-14 | Final-lap music speed-up cut from 15% to 5% (pitch and tempo), so it's a subtle lift rather than an obvious change (§12). |
 | 7.8 | 2026-11-14 | Africa Cup race 3: Chefchaouen, about 3.15 km through the blue medina on a bright late morning, with two forks per lap (four ways round). Uphill, the Blue Stairway (steep stone steps, flowerpots) or the wider Outer Street (items, room to pass) meet on the upper terrace. Downhill, the Market Lane (rugs, a horseshoe arch) or the Fountain Steps (a tiled fountain, a jump off the final landing) meet in the lower square. New engine support for branch routes (their own AI line, respawns and minimap line, merge lanes, stairs over a smooth ramp) and for an Elimination checkpoint on a shared section. The Africa Cup is complete and open for Grand Prix (§2.2, §8.6i, §8.8). |
+| 7.9 | 2026-11-14 | Docs brought up to date: fifteen tracks (§8); Chefchaouen listed in the music table with no song yet (§12.1). |
 
-**End of Game Design Document — Version 7.8**
+**End of Game Design Document — Version 7.9**
