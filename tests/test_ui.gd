@@ -397,6 +397,12 @@ func _test_cups() -> void:
 		var thumb := card.find_child("Thumbnail", true, false) as TrackThumbnail
 		outlines_ok = outlines_ok and thumb != null and thumb.outline.size() >= 3
 	_check(outlines_ok, "every built track's card has its outline")
+	var baked := TrackOutlines.baked()
+	var stale: PackedStringArray = []
+	for path in TrackOutlines.scene_paths():
+		if baked == null or not baked.outlines.has(path) or baked.outlines[path] != TrackOutlines.read_from_scene(path):
+			stale.append(path.get_file())
+	_check(stale.is_empty(), "baked track outlines match the scenes (rebake with tests/tools/bake_track_outlines.gd: %s)" % ", ".join(stale))
 	_check(tracks.board.badges.size() == GrandPrixData.CUPS.size() + 1 and tracks.board.is_random(GrandPrixData.CUPS.size()),
 			"a badge per cup, then the Random badge")
 	tracks.board.open(1)

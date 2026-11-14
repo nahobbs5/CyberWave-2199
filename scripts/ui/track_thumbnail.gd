@@ -1,10 +1,11 @@
 class_name TrackThumbnail
 extends Control
 ## A track's outline for menu cards, from its TrackCircuit control points.
-## The scene is instantiated without entering the tree (so none of its
-## building runs), read, and freed; outlines are cached per scene.
+## Read from the baked TrackOutlines (no scene loading); a scene missing from
+## it is read from the scene itself. Outlines are cached per scene.
 
 static var _cache: Dictionary = {}
+static var _baked: TrackOutlines
 
 var outline: PackedVector2Array = PackedVector2Array()
 
@@ -20,17 +21,14 @@ func _init(scene_path: String = "", side: Vector2 = Vector2(220, 150)) -> void:
 static func control_points_2d(scene_path: String) -> PackedVector2Array:
 	if _cache.has(scene_path):
 		return _cache[scene_path]
-	var out := PackedVector2Array()
-	var packed := load(scene_path) as PackedScene
-	if packed != null:
-		var node := packed.instantiate()
-		var track := node as TrackCircuit
-		if track == null:
-			track = node.find_children("*", "TrackCircuit", true, false).front() if not node.find_children("*", "TrackCircuit", true, false).is_empty() else null
-		if track != null:
-			for p in track.control_points:
-				out.append(Vector2(p.x, p.z))
-		node.free()
+	if _baked == null:
+		_baked = TrackOutlines.baked()
+	var out: PackedVector2Array
+	if _baked != null and _baked.outlines.has(scene_path):
+		out = _baked.outlines[scene_path]
+	else:
+		push_warning("TrackThumbnail: %s isn't in %s; loading the scene (rebake outlines)" % [scene_path, TrackOutlines.PATH])
+		out = TrackOutlines.read_from_scene(scene_path)
 	_cache[scene_path] = out
 	return out
 

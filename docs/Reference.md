@@ -290,6 +290,7 @@ One song per screen or track (`scripts/core/music.gd`; race music per track in `
 | Vale da Lua | Rise of the Phoenix | restum-anoush |
 | Choquequirao | Epic Victory March for Heroes | DesiFreeMusic |
 | Kilwa Kisiwani Ruins | The Dragon's Lair | vishiv |
+| Fires of Nyiragongo | Danger Imminent | Jean-Paul-V |
 | Test Circuit and Practice | The Garden Wakes | stageechoesmusic |
 
 - **Final lap:** in races of 2+ laps (Elimination included), the race music speeds up 15%, pitch and all, over about 0.4 s. Restarting or leaving the race puts it back.
@@ -721,6 +722,8 @@ Swap in any suite:
 | `test_audio.gd` | Music per screen / track, crossfades, countdown, web copies |
 | `test_quinta_normal.gd`, `test_vale_da_lua.gd`, `test_choquequirao.gd`, `test_kilwa_kisiwani.gd` | Per-track layout, shortcut and scenery checks |
 
+**Track outlines:** menu cards, the loading screen and results draw each track's outline from `resources/ui/track_outlines.tres` (`TrackOutlines`). This way the menus never load whole track scenes; loading them froze the track screen on the web build. After moving a track's control points or adding a track, rebake with `godot --headless --path . -s res://tests/tools/bake_track_outlines.gd`. `test_ui.gd` fails while the baked copy is out of date.
+
 The render scripts in `tests/tools/` take real screenshots, so they need a display (run them without `--headless`). For example, `godot --path . -s res://tests/tools/car_showroom.gd -- user://cars front` renders every car, and `SHOT_TRACK=res://scenes/tracks/vegas_overdrive.tscn SHOT_AUTOPILOT=1 SHOT_EVERY=600 godot --path . --fixed-fps 60 -s res://tests/tools/screenshot.gd -- res://scenes/race/race.tscn user://lap.png 6000` saves a screenshot every 10 s of an autopilot lap.
 
 Every suite uses its own `user://test_*` save files, so running them never touches your profile, settings or Grand Prix.
@@ -791,7 +794,7 @@ The exit code is non-zero if anything fails. These checks do **not** judge how t
 ## Credits
 
 - **Game:** Cyberwave 2199 by Nathan Hobbs.
-- **Music:** see the Audio table above (ikoliks_aj, ikoliks, alex-morgan, Lilex, TheBoysBeats, SPmusic, kulakovka, Ob-Lix, ed-musicproductions, sonican, elisaveta_stoycheva, theorienvibes, restum-anoush, DesiFreeMusic, vishiv, stageechoesmusic).
+- **Music:** see the Audio table above (ikoliks_aj, ikoliks, alex-morgan, Lilex, TheBoysBeats, SPmusic, kulakovka, Ob-Lix, ed-musicproductions, sonican, elisaveta_stoycheva, theorienvibes, restum-anoush, DesiFreeMusic, vishiv, Jean-Paul-V, stageechoesmusic).
 - **Sound:** Short beep countdown, Shield drop, Electric zap 001, Crowbar drop 1 (rear), Planks clattering and Missile lock detected by freesound_community; Sci-fi energy shield activation by vadim_makes_sound; Electrical current 2 by 49053354; Sci-fi weapon shoot firing pulse TM 05 by rescopicsound; Field: launching a small model rocket by fronbondi_skegs; Missile explosion by voicebosch.
 - **Fonts:** Oxanium and Rajdhani, SIL Open Font License 1.1 (`assets/fonts/`).
 - **Engine:** Godot Engine, MIT License.
@@ -809,7 +812,6 @@ As of 2026-11-13 (GDD v7.4). Phase 6, content and polish, is in progress. The [d
 - **Known failing checks** (they failed before the latest work):
   - `test_phase3`: "every racer crossed every gate despite weapons" (also fails with the pre-v7.4 crate odds; cause not yet checked);
   - `test_weapons_advanced`: System Override "victim's top speed is cut by 25%" and "hacked car accelerates slower" (also fail with the pre-v7.4 odds);
-  - `test_phase5`: personal-best checks;
   - `test_phase6`: Arashiyama "shortcut is shorter" and "every gate counted on the shortcut".
 - **Running tests:** run `test_phase4` and `test_phase6` on their own. Parallel runs slow the track builds past the build-time limit, and suites that share a save file can clash.
 - **Screenshots from the dev container are software-rendered** (Compatibility / lavapipe). Forward+ on Windows shows stronger glow, fog and reflections.

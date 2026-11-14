@@ -414,6 +414,10 @@
           "done": true
         },
         {
+          "text": "Web: track screen no longer freezes (baked outlines); black instead of gray while loading",
+          "done": true
+        },
+        {
           "text": "On-screen check of the HUD at 75% and 150% scale in 1P and 3–4P split screen",
           "done": false
         },
@@ -675,7 +679,7 @@
       "system": "Tests",
       "title": "test_phase5 personal-best checks failing",
       "priority": "P2",
-      "done": false
+      "done": true
     },
     {
       "id": "b16",
@@ -853,6 +857,12 @@
       "decision": "Race setup defaults: Standard, 3 races, 3 laps, Normal, items on (Multiplayer: Versus, NPCs on); choices last until the game closes",
       "why": "Every launch should start on a sensible set, not the last session's leftovers",
       "gdd": "v7.4"
+    },
+    {
+      "date": "2026-11-14",
+      "decision": "Track outlines are baked into resources/ui/track_outlines.tres (rebake with tests/tools/bake_track_outlines.gd); menus never load track scenes. Default clear colour is black",
+      "why": "Loading every track scene for the card outlines froze the web build's track screen and left a gray background",
+      "gdd": ""
     }
   ],
   "playtest": [

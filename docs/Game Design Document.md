@@ -1,5 +1,5 @@
 # CYBERWAVE 2199
-## Game Design Document — Version 7.4
+## Game Design Document — Version 7.5
 
 **Status:** Development Baseline  
 **Engine:** Godot 4  
@@ -803,7 +803,7 @@ In driving order:
 - the plaza gateway, the plaza S-bend through two more gateways past the great hall and the stepped usnu platform, and the plaza exit gateway (boost ring);
 - the outbound rings, through a gateway on the outer ring, and the village gate back out to the start.
 
-The shortcut is the **Qolqa storehouses**: a narrower lane along a row of storehouses on the hill spur, with a wooden QOLQAS sign at its mouth. It's about 130 m shorter, but stacked baskets (smashable) block the entrance. No race music yet (§12.1).
+The shortcut is the **Qolqa storehouses**: a narrower lane along a row of storehouses on the hill spur, with a wooden QOLQAS sign at its mouth. It's about 130 m shorter, but stacked baskets (smashable) block the entrance. Race music: *Epic Victory March for Heroes* (§12).
 
 ## 8.6g Kilwa Kisiwani Ruins
 
@@ -841,7 +841,7 @@ In driving order:
   - it saves about 130 m.
 - **Small Domed Mosque aisle** (10 m): a tight U-turn under a row of small domes, cutting off the bottom of the second aisle and saving about 80 m. Coins line it.
 
-Overdrive flights stay low under the hall's ceiling and the gallery and swing round the columns. Recovery spots, item crates and coins are never placed on a column. No race music yet (§12.1).
+Overdrive flights stay low under the hall's ceiling and the gallery and swing round the columns. Recovery spots, item crates and coins are never placed on a column. Race music: *The Dragon's Lair* (§12).
 
 ## 8.6h Fires of Nyiragongo
 
@@ -861,7 +861,7 @@ Built at about 3.2 km on a 15 m road, with no grade steeper than about 9%. The r
 
 **Lava:** the lake and the channel recover any car that reaches them ("lava": embers, and the car loses its items, as with water). Spatter cones, glowing pools and boulders dress the crater floor, which glows hotter toward the lake. The plumes rise from vents well out in the lake, more than 100 m from any road, so the road edge and the next turn stay readable.
 
-**Sloped roads (engine):** a track can opt in (TrackCircuit `sloped`). Its control points' heights become real climbs and drops, and `banking` ranges roll the road about its direction. Cars drive on a collider that follows the road surface, with a short apron past the walls (the flat ground slab drops far below). Walls slope and bank with the road. Recovery spots, item crates, coins and features sit on the real surface. "Out of bounds" is measured from the nearest road's height. The cars' upright assist settles onto the road's own pitch and bank. A shortcut can have **gaps** (jumps): no road, collider or walls there, nothing counts as on-road (Overdrive won't land in one), and the AI hold a minimum speed into them. Flat tracks are built exactly as before. No race music yet (§12.1).
+**Sloped roads (engine):** a track can opt in (TrackCircuit `sloped`). Its control points' heights become real climbs and drops, and `banking` ranges roll the road about its direction. Cars drive on a collider that follows the road surface, with a short apron past the walls (the flat ground slab drops far below). Walls slope and bank with the road. Recovery spots, item crates, coins and features sit on the real surface. "Out of bounds" is measured from the nearest road's height. The cars' upright assist settles onto the road's own pitch and bank. A shortcut can have **gaps** (jumps): no road, collider or walls there, nothing counts as on-road (Overdrive won't land in one), and the AI hold a minimum speed into them. Flat tracks are built exactly as before. Race music: *Danger Imminent* (§12).
 
 ## 8.7 Shared Track Features
 
@@ -1263,7 +1263,7 @@ One song per screen or track. Moving between menus that share a song doesn't res
 | Vale da Lua | Rise of the Phoenix | restum-anoush |
 | Choquequirao | Epic Victory March for Heroes | DesiFreeMusic |
 | Kilwa Kisiwani Ruins | The Dragon's Lair | vishiv |
-| Fires of Nyiragongo | None yet | — |
+| Fires of Nyiragongo | Danger Imminent | Jean-Paul-V |
 | Test Circuit and Free Drive | The Garden Wakes | stageechoesmusic |
 
 The web build plays smaller 96 kbps .ogg copies (`music/web/`) of every song.
@@ -1661,5 +1661,6 @@ Changes after Version 1.0 should be tracked as revisions rather than silently re
 | 7.2 | 2026-11-13 | Steeper hills: Gardens by the Bay's skyway now rolls over four crests 10–53 m above the jungle and Vale da Lua's road runs from 19 m below the start to 21 m above it, both with grades up to about 9–10% (§8.6c, §8.6e). Every track is textured: Vegas Overdrive and the Test Circuit get asphalt, concrete, marble, palm bark and velvet; the glacier road and walls are packed snow; Vale da Lua's road is worn rock; the procedural moon rock, glacier ice and Crazy House bark shaders blend in real Poly Haven grain and normal maps (§8.6, §8.6a, §8.6e). |
 | 7.3 | 2026-11-13 | Controller vibration: gamepad rumble on drift boosts, boost pads and rings, tricks, other speed boosts, weapon hits and hard crashes, with an on/off toggle in Settings (§11.9). |
 | 7.4 | 2026-11-13 | Crate odds rebalanced per position instead of per pair: weaker items at the front and stronger ones at the back. Road Spikes only for 1st–3rd, Firewalls only for 1st–5th; 7th–8th get Overdrive, System Override or Triple Nitro 68–81% of the time (§6.5). Versus and Multiplayer setup default to 3 races (§2.1), and race settings now reset to the defaults on every launch (§11.3). |
+| 7.5 | 2026-11-14 | Fires of Nyiragongo race music: Jean-Paul-V's *Danger Imminent* (§8.6h, §12.1). Every track has music again. |
 
-**End of Game Design Document — Version 7.4**
+**End of Game Design Document — Version 7.5**

@@ -74,5 +74,5 @@ Every action can be rebound in **Settings → Controls**.
 ## Credits
 
 **Cyberwave 2199** by Nathan Hobbs.
-Music by ikoliks_aj, ikoliks, alex-morgan, Lilex, TheBoysBeats, SPmusic, kulakovka, Ob-Lix, ed-musicproductions, sonican, elisaveta_stoycheva, theorienvibes, restum-anoush, DesiFreeMusic, vishiv and stageechoesmusic. Sound effects by freesound_community, vadim_makes_sound, rescopicsound, fronbondi_skegs, voicebosch and 49053354. Textures and skies from [Poly Haven](https://polyhaven.com) (CC0). Fonts Oxanium and Rajdhani (SIL OFL 1.1). Made with [Godot Engine](https://godotengine.org) (MIT).
+Music by ikoliks_aj, ikoliks, alex-morgan, Lilex, TheBoysBeats, SPmusic, kulakovka, Ob-Lix, ed-musicproductions, sonican, elisaveta_stoycheva, theorienvibes, restum-anoush, DesiFreeMusic, vishiv, Jean-Paul-V and stageechoesmusic. Sound effects by freesound_community, vadim_makes_sound, rescopicsound, fronbondi_skegs, voicebosch and 49053354. Textures and skies from [Poly Haven](https://polyhaven.com) (CC0). Fonts Oxanium and Rajdhani (SIL OFL 1.1). Made with [Godot Engine](https://godotengine.org) (MIT).
 The full list is on the in-game Credits screen and in [docs/Reference.md](docs/Reference.md#credits).

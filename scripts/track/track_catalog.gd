@@ -33,7 +33,8 @@ const TRACKS := [
 			"res://music/desifreemusic-epic-victory-march-for-heroes-triumph-amp-celebration-462007.mp3"],
 	["Kilwa Kisiwani Ruins", "res://scenes/tracks/kilwa_kisiwani.tscn", "Kilwa Kisiwani, Tanzania",
 			"res://music/vishiv-the-dragons-lair-351312.mp3"],
-	["Fires of Nyiragongo", "res://scenes/tracks/nyiragongo.tscn", "Nyiragongo, D.R. Congo", ""],
+	["Fires of Nyiragongo", "res://scenes/tracks/nyiragongo.tscn", "Nyiragongo, D.R. Congo",
+			"res://music/jean-paul-v-danger-imminent-317370.mp3"],
 	["Test Circuit", TEST_CIRCUIT, "Graybox",
 			"res://music/stageechoesmusic-the-garden-wakes-628640.mp3"],
 ]
