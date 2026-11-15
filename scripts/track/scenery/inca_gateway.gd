@@ -8,9 +8,9 @@ extends RefCounted
 ## jambs stand outside the barriers and the lintel is above Overdrive flight.
 
 ## Opening half-width at the road and under the lintel, and lintel height.
-const BOTTOM_HALF := 8.8
-const TOP_HALF := 7.3
-const HEIGHT := 7.6
+const BOTTOM_HALF := 10.3
+const TOP_HALF := 8.6
+const HEIGHT := 8.4
 const JAMB := 2.6
 const DEPTH := 2.4
 ## The recessed outer frame on each face: this much wider and taller.

@@ -21,7 +21,7 @@ extends TrackScenery
 ## the courtyard between them.
 const WING_Z := -40.0
 const WINGS := [[-190.0, 25.0], [90.0, 295.0]]
-const WING_HALF := 11.0
+const WING_HALF := 12.0
 const WING_WALL := 5.0
 ## The Rotunda (picture 2): the plinth's centre, dome radius / wall / rise.
 const ROTUNDA := Vector3(600, 0, 230)

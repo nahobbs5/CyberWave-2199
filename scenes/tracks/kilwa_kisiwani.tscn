@@ -45,7 +45,6 @@ crate_row_offsets = PackedFloat32Array(389, 736, 1445, 1699, 2387)
 crate_lateral_positions = PackedFloat32Array(-6, -2, 2, 6)
 coin_offsets = PackedFloat32Array(102, 112, 561, 571, 896, 908, 1719, 1729, 2238, 2248, 2712, 2722)
 coin_laterals = PackedFloat32Array(3.0, 3.0, -4.0, -4.0, 5.0, 5.0, -3.0, -3.0, 4.0, 4.0, -4.0, -4.0)
-grid_lateral = 5.0
 road_color = Color(1, 0.9, 0.76, 1)
 edge_line_color = Color(1, 0.8, 0.45, 1)
 ground_color = Color(0.6, 0.62, 0.38, 1)

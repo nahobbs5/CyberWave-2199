@@ -70,10 +70,14 @@ signal checkpoint_crossed(index: int, body: Node3D)
 @export_group("Starting Grid")
 ## Distance from the start line back to the pole position slot.
 @export var grid_first_row_gap: float = 8.0
-@export var grid_row_spacing: float = 9.0
+@export var grid_row_spacing: float = 12.0
 ## Extra setback of the right-hand slot in each row (staggered grid).
-@export var grid_stagger: float = 4.5
-@export var grid_lateral: float = 4.0
+@export var grid_stagger: float = 6.0
+## Metres either side of the centre line; 0 = from the road width
+## (grid_lateral_m()).
+@export var grid_lateral: float = 0.0
+## Painted slots (bracket + number) on the road, one per possible racer.
+@export var grid_slots: int = 8
 @export_group("Overdrive flight")
 ## Height (m) an Overdrive flies above the road centre (Advanced Weapons §2).
 ## Keep it under ~4 m so the car's body stays inside the 6 m checkpoint gates.
@@ -228,6 +232,7 @@ func build_base() -> bool:
 		_build_road_collider()
 	_build_barriers()
 	_build_start_gantry()
+	_build_grid_markers()
 	_build_lights()
 	_build_corner_signs()
 	_build_checkpoints()
@@ -551,9 +556,32 @@ func get_grid_offset(slot: int) -> float:
 	return wrap_offset(start_line_offset - setback)
 
 
+## Metres either side of the centre line the grid's two columns sit.
+func grid_lateral_m() -> float:
+	if grid_lateral > 0.0:
+		return grid_lateral
+	return clampf(road_width * 0.5 - 2.2, 3.5, 6.0)
+
+
+func get_grid_lateral(slot: int) -> float:
+	return grid_lateral_m() if slot % 2 == 1 else -grid_lateral_m()
+
+
 func get_grid_transform(slot: int) -> Transform3D:
-	var lateral := grid_lateral if slot % 2 == 1 else -grid_lateral
-	return get_safe_transform(get_grid_offset(slot), lateral)
+	return get_safe_transform(get_grid_offset(slot), get_grid_lateral(slot))
+
+
+## A grid slot's frame on the road surface, in track-local space (-Z forward).
+func _grid_slot_local(slot: int) -> Transform3D:
+	var offset := get_grid_offset(slot)
+	var lateral := get_grid_lateral(slot)
+	if sloped:
+		return Transform3D(road_frame(offset), surface_point(offset, lateral))
+	var a := curve.sample_baked(wrap_offset(offset - 1.0))
+	var b := curve.sample_baked(wrap_offset(offset + 1.0))
+	var tangent := Vector3(b.x - a.x, 0.0, b.z - a.z).normalized()
+	var right := tangent.cross(Vector3.UP).normalized()
+	return Transform3D(Basis.looking_at(tangent, Vector3.UP), curve.sample_baked(offset) + right * lateral)
 
 
 # --- Generation ------------------------------------------------------------
@@ -1054,6 +1082,60 @@ func set_start_lights(count: int) -> void:
 
 func start_lights() -> int:
 	return _start_lights
+
+
+const GRID_BOX_WIDTH := 3.6
+const GRID_BOX_LENGTH := 6.8
+const GRID_LINE := 0.25
+const GRID_FRONT_STUB := 0.9
+
+
+## A painted slot per grid position: a bracket open at the front and the
+## slot number at the back, flat on the road.
+func _build_grid_markers() -> void:
+	var holder := Node3D.new()
+	_add_generated(holder, "GridMarkers")
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.albedo_color = Color(0.92, 0.95, 1.0)
+	var hw := GRID_BOX_WIDTH * 0.5
+	var hl := GRID_BOX_LENGTH * 0.5
+	# (centre x, centre z, size x, size z) in the slot's frame; -Z is forward.
+	var strips := [
+		Vector4(-hw, 0.0, GRID_LINE, GRID_BOX_LENGTH),
+		Vector4(hw, 0.0, GRID_LINE, GRID_BOX_LENGTH),
+		Vector4(0.0, hl, GRID_BOX_WIDTH + GRID_LINE, GRID_LINE),
+		Vector4(-hw + GRID_FRONT_STUB * 0.5, -hl, GRID_FRONT_STUB, GRID_LINE),
+		Vector4(hw - GRID_FRONT_STUB * 0.5, -hl, GRID_FRONT_STUB, GRID_LINE),
+	]
+	for slot in grid_slots:
+		var marker := Node3D.new()
+		marker.name = "Slot%d" % (slot + 1)
+		marker.transform = _grid_slot_local(slot)
+		holder.add_child(marker)
+		for st: Vector4 in strips:
+			var strip := MeshInstance3D.new()
+			var box := BoxMesh.new()
+			box.size = Vector3(st.z, 0.02, st.w)
+			strip.mesh = box
+			strip.material_override = mat
+			strip.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			strip.position = Vector3(st.x, 0.04, st.y)
+			marker.add_child(strip)
+		var number := Label3D.new()
+		number.name = "Number"
+		number.text = str(slot + 1)
+		number.font_size = 160
+		number.pixel_size = 0.008
+		number.outline_size = 24
+		number.modulate = Color(0.92, 0.95, 1.0)
+		number.outline_modulate = Color(0.02, 0.02, 0.05)
+		number.double_sided = false
+		number.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		# Flat on the road, readable from behind (the chase camera).
+		number.rotation = Vector3(-PI * 0.5, 0.0, 0.0)
+		number.position = Vector3(0.0, 0.06, hl + 0.9)
+		marker.add_child(number)
 
 
 func _build_start_gantry() -> void:

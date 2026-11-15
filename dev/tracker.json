@@ -1,11 +1,11 @@
 {
   "schema": 1,
-  "updated": "2026-11-14",
+  "updated": "2026-11-15",
   "project": {
     "name": "Cyberwave 2199",
     "pitch": "Retrofuturistic cyberpunk combat kart racing: luxury neon cars, drift boosts, weapons and fifteen real-world circuits, against seven AI rivals or in 2–4 player local split screen.",
     "engine": "Godot 4.7.2 · GDScript · Jolt Physics",
-    "gdd": "v8.1",
+    "gdd": "v8.7",
     "phase": "Phase 6: content and polish (GDD §16)",
     "repo": "https://github.com/nahobbs5/CyberWave-2199",
     "demo": "https://nahobbs5.github.io/CyberWave-2199/web/",
@@ -305,7 +305,7 @@
           "done": true
         },
         {
-          "text": "Music on every track but Chefchaouen, 5% faster on the final lap (v7.7)",
+          "text": "Music on every track, 5% faster on the final lap (v7.7, v8.4)",
           "done": true
         },
         {
@@ -373,8 +373,12 @@
           "done": false
         },
         {
-          "text": "Pick and add Chefchaouen race music",
-          "done": false
+          "text": "Chefchaouen race music: Atlas Morocco by vadim_makes_sound, with web .ogg and credit (v8.4)",
+          "done": true
+        },
+        {
+          "text": "Widen the 12–13 m tracks (Catacombs, Arashiyama, Crazy House, Gardens, Quinta Normal, Vale da Lua, Choquequirao) to 15 m (v8.5)",
+          "done": true
         }
       ],
       "test": {
@@ -384,7 +388,7 @@
       },
       "blockers": "Arashiyama: 'shortcut is shorter (350 vs 470)' and 'every gate counted on the shortcut' fail. Six Flags: 'ramp item boxes gave a weapon' and 'every gate counted' (shortcut lap and full race) fail, also at e57fcde.",
       "notes": "Track build timing on the Windows bind mount is about 3× slower than on a local copy. Volumetric fog only shows in Forward+.",
-      "open_decisions": "Is the web demo (Compatibility, no volumetric fog) acceptable as is?\nBumper-car pavilion: add a faded BUMPER CARS roof sign and flickering lamps if it still doesn't stand out?\nChefchaouen race music: which song?",
+      "open_decisions": "Is the web demo (Compatibility, no volumetric fog) acceptable as is?\nBumper-car pavilion: add a faded BUMPER CARS roof sign and flickering lamps if it still doesn't stand out?",
       "next_steps": "Do the Windows Forward+ pass on the Europe Cup first (the darkest tracks)."
     },
     {
@@ -462,6 +466,10 @@
         {
           "text": "Decide on the GDD §11.8 pre-race camera sweep and the §11.9 first-time tutorial",
           "done": false
+        },
+        {
+          "text": "Garage room restyled after 'Neon Garage New.png': sign plate instead of the CW-2199 stencil, lockers and crates, stacked turntable (v8.7)",
+          "done": true
         }
       ],
       "test": {
@@ -529,6 +537,10 @@
         },
         {
           "text": "Commit start_launch.gd and test_start_boost.gd (done in cf3fb49)",
+          "done": true
+        },
+        {
+          "text": "Roomier grid: 6 m between cars, columns set from road width, painted slot brackets and numbers; test_start_grid.gd checks every track (v8.5)",
           "done": true
         }
       ],
@@ -727,7 +739,7 @@
       "system": "Atmosphere",
       "title": "Chefchaouen race music (song, web .ogg, credit)",
       "priority": "P2",
-      "done": false
+      "done": true
     },
     {
       "id": "b18",
@@ -948,6 +960,24 @@
       "decision": "Name field on the single-player race setup screen (saved in the profile, \"You\" when empty); screen title and the Versus gold banner removed",
       "why": "Players want their own name in the standings; the title and banner repeated what the rows already say",
       "gdd": "v8.1"
+    },
+    {
+      "date": "2026-11-14",
+      "decision": "Chefchaouen race music: Atlas Morocco (vadim_makes_sound)",
+      "why": "A Moroccan-flavoured song for the blue medina; every track gets its own song",
+      "gdd": "v8.4"
+    },
+    {
+      "date": "2026-11-15",
+      "decision": "Spread the start grid (6 m car to car, 12 m rows, columns from road width), paint kart-style slot markers, and widen every 12–13 m main road to 15 m",
+      "why": "The start felt cramped and several tracks felt narrow; painted slots show each car its own place",
+      "gdd": "v8.5"
+    },
+    {
+      "date": "2026-11-15",
+      "decision": "Garage room follows 'Cyberwave 2199 Neon Garage New.png': small framed CYBERWAVE 2199 plate, lockers and crates, stacked turntable",
+      "why": "The big CW-2199 stencil on the wall was too loud; the new reference is cleaner",
+      "gdd": "v8.7"
     }
   ],
   "playtest": [
@@ -1002,6 +1032,10 @@
         },
         {
           "text": "Burnout is clearly your fault, not the game's",
+          "done": false
+        },
+        {
+          "text": "Start feels roomy, slot markers and numbers read well, and the widened tracks feel better (scenery still meets the walls)",
           "done": false
         }
       ]
@@ -1073,6 +1107,10 @@
         },
         {
           "text": "Name field: type, Enter, Esc and the pad all behave; the name shows in standings and results",
+          "done": false
+        },
+        {
+          "text": "Garage: sign plate reads above the car, corners and turntable look like the new reference",
           "done": false
         }
       ]

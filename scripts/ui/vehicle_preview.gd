@@ -4,9 +4,9 @@ extends SubViewportContainer
 ## car select (GDD 11.3, 11.4). Shows the placeholder car with a vehicle's
 ## proportions, a cosmetic loadout and the license plate on a glowing
 ## turntable inside a neon garage ("reference files/Cyberwave 2199 Neon
-## Garage.png"): a roll-up door with a big CW-2199 stencil, neon tubes, a
-## checkered floor, ceiling lights and (detail FULL) tool chests, tyre stacks
-## and a flags banner. The car spins slowly by itself; drag it with the mouse
+## Garage New.png"): a paneled back wall with a framed CYBERWAVE 2199 sign
+## plate, angled corner struts, a checkered floor, ceiling lights and (detail
+## FULL) lockers, crates and a magenta / cyan glow in the back corners. The car spins slowly by itself; drag it with the mouse
 ## (or the right stick) to turn it by hand, and the spin resumes shortly after.
 
 const CAR_SCENE := "res://scenes/vehicles/placeholder_car.tscn"
@@ -26,8 +26,8 @@ const TABLE_RADIUS := 3.0
 const CAMERA_POS := Vector3(5.6, 1.7, 5.6)
 const LOOK_AT := Vector3(0.0, -0.2, 0.0)
 
-## FULL: the whole garage. LITE (small split-screen cards): no props or
-## banner and fewer lights.
+## FULL: the whole garage. LITE (small split-screen cards): no props, no
+## game name or neon dashes on the sign plate, and fewer lights.
 enum Detail { FULL, LITE }
 ## Opening angle: a front three-quarter view, like the reference art.
 const START_YAW := 4.45
@@ -242,62 +242,62 @@ func _build_showroom() -> void:
 	floor_mesh.position.y = ROOM_FLOOR
 	_room.add_child(floor_mesh)
 
-	var wall_mat := WeaponManager.glow_material(Color(0.15, 0.1, 0.27), 0.0)
+	# Paneled back wall with a header band, angled side walls and a ceiling.
+	var wall_mat := WeaponManager.glow_material(Color(0.13, 0.09, 0.24), 0.0)
+	var seam_mat := WeaponManager.glow_material(Color(0.07, 0.05, 0.14), 0.0)
+	var trim_mat := StandardMaterial3D.new()
+	trim_mat.albedo_color = Color(0.2, 0.15, 0.34)
+	trim_mat.metallic = 0.55
+	trim_mat.roughness = 0.4
 	_box(Vector3(0, ROOM_FLOOR + 5.0, -6.1), Vector3(30, 10, 0.1), wall_mat)
 	for side in [-1.0, 1.0]:
 		var wall := _box(Vector3(side * 9.0, ROOM_FLOOR + 5.0, -1.0), Vector3(0.1, 10, 14), wall_mat)
 		wall.rotation_degrees.y = side * 25.0
 	_box(Vector3(0, ROOM_FLOOR + 5.6, -1.0), Vector3(30, 0.1, 14), WeaponManager.glow_material(Color(0.03, 0.02, 0.06), 0.0))
-	# Ceiling light panels.
 	for x in ([-3.2, 3.2] if full else [0.0]):
 		_box(Vector3(x, ROOM_FLOOR + 5.5, -2.6), Vector3(2.2, 0.06, 0.7), WeaponManager.glow_material(Color(0.85, 0.82, 1.0), 2.5))
+	# Horizontal panel seams and vertical joints on the back wall.
+	for y in [0.6, 1.2]:
+		_box(Vector3(0, ROOM_FLOOR + y, -6.02), Vector3(11.0, 0.05, 0.04), seam_mat)
+	for x in [-3.7, 3.7]:
+		_box(Vector3(x, ROOM_FLOOR + 0.9, -6.02), Vector3(0.05, 1.8, 0.04), seam_mat)
+	# Header band across the top, with a lip under it.
+	_box(Vector3(0, ROOM_FLOOR + 2.45, -5.95), Vector3(12.0, 1.1, 0.2), trim_mat)
+	_box(Vector3(0, ROOM_FLOOR + 1.85, -5.85), Vector3(12.0, 0.1, 0.35), seam_mat)
+	_sign_plate(Vector3(0, ROOM_FLOOR + 2.4, -5.82))
 
-	# Roll-up door: ribs, a glowing frame and the CW-2199 stencil.
-	var rib_mat := StandardMaterial3D.new()
-	rib_mat.albedo_color = Color(0.2, 0.15, 0.32)
-	rib_mat.metallic = 0.6
-	rib_mat.roughness = 0.45
-	for i in 11:
-		_box(Vector3(0, ROOM_FLOOR + 0.22 + i * 0.4, -5.98), Vector3(7.0, 0.34, 0.08), rib_mat)
+	# Corner pillars with struts angled up into the ceiling.
 	for side in [-1.0, 1.0]:
-		_box(Vector3(side * 3.65, ROOM_FLOOR + 2.3, -5.95), Vector3(0.1, 4.6, 0.1), WeaponManager.glow_material(UIStyle.MAGENTA, 3.0))
-	_box(Vector3(0, ROOM_FLOOR + 4.65, -5.95), Vector3(7.4, 0.1, 0.1), WeaponManager.glow_material(Color(0.6, 0.3, 1.0), 3.0))
-	var stencil := Label3D.new()
-	stencil.text = "CW-2199"
-	stencil.font = UIStyle.heading_font()
-	stencil.font_size = 240
-	stencil.pixel_size = 0.011
-	stencil.modulate = Color(0.62, 0.58, 0.85, 0.32)
-	stencil.outline_size = 0
-	stencil.shaded = false
-	stencil.position = Vector3(0, ROOM_FLOOR + 2.7, -5.9)
-	_room.add_child(stencil)
-
-	# Neon tubes and strips on the back and side walls.
-	for spec in [[-5.2, UIStyle.MAGENTA], [5.2, UIStyle.CYAN], [-7.4, UIStyle.CYAN], [7.4, UIStyle.MAGENTA]]:
-		_box(Vector3(spec[0], ROOM_FLOOR + 2.6, -6.0), Vector3(0.12, 3.4, 0.12), WeaponManager.glow_material(spec[1], 3.0))
-	for spec in [[-6.3, 4.4, UIStyle.MAGENTA], [6.3, 4.1, UIStyle.CYAN]]:
-		_box(Vector3(spec[0], ROOM_FLOOR + spec[1], -6.0), Vector3(1.6, 0.08, 0.08), WeaponManager.glow_material(spec[2], 4.0))
+		_box(Vector3(side * 6.1, ROOM_FLOOR + 2.6, -5.8), Vector3(0.5, 5.2, 0.5), trim_mat)
+		var strut := _box(Vector3(side * 5.2, ROOM_FLOOR + 4.6, -5.7), Vector3(0.35, 2.6, 0.35), trim_mat)
+		strut.rotation_degrees.z = side * 40.0
 
 	if full:
-		_tool_chest(Vector3(-6.2, 0, -4.9), UIStyle.MAGENTA)
-		_tool_chest(Vector3(6.3, 0, -4.8), UIStyle.CYAN)
-		_tyres(Vector3(-4.6, 0, -4.9), 4)
-		_tyres(Vector3(4.5, 0, -5.0), 3)
-		_tyres(Vector3(5.3, 0, -4.4), 2)
-		_banner(Vector3(-2.3, ROOM_FLOOR + 3.4, -5.85))
+		_locker(Vector3(-7.1, 0, -5.2), UIStyle.MAGENTA)
+		_locker(Vector3(7.1, 0, -5.2), UIStyle.CYAN)
+		_crates(Vector3(-5.0, 0, -5.0), UIStyle.MAGENTA)
+		_crates(Vector3(5.0, 0, -5.0), UIStyle.CYAN)
+		# Coloured glow washing each back corner.
+		for side in [-1.0, 1.0]:
+			var glow := OmniLight3D.new()
+			glow.position = Vector3(side * 6.4, ROOM_FLOOR + 3.6, -4.8)
+			glow.light_color = UIStyle.MAGENTA if side < 0.0 else UIStyle.CYAN
+			glow.light_energy = 2.2
+			glow.omni_range = 5.5
+			_room.add_child(glow)
 
-	# Turntable: dark base, glowing magenta side band, dark top with rings.
+	# Turntable: a glowing magenta foot, a thick magenta band and a dark top
+	# with a white rim ring and an inner glow ring; a magenta ring on the floor.
 	var base_mat := StandardMaterial3D.new()
 	base_mat.albedo_color = Color(0.06, 0.04, 0.1)
 	base_mat.metallic = 0.5
 	base_mat.roughness = 0.3
-	_disc(TABLE_RADIUS + 0.12, 0.08, ROOM_FLOOR + 0.04, base_mat)
-	_disc(TABLE_RADIUS + 0.03, 0.1, ROOM_FLOOR + 0.13, WeaponManager.glow_material(UIStyle.MAGENTA, 3.2))
-	_disc(TABLE_RADIUS, 0.06, FLOOR_Y - 0.03, base_mat)
-	_ring(TABLE_RADIUS - 0.12, 0.025, Color(0.9, 0.85, 1.0), 1.6, FLOOR_Y + 0.005)
-	_ring(TABLE_RADIUS - 0.55, 0.035, ring_color, 2.0, FLOOR_Y + 0.005)
-	_ring(TABLE_RADIUS + 0.55, 0.02, UIStyle.MAGENTA.darkened(0.2), 1.2, ROOM_FLOOR + 0.01)
+	_disc(TABLE_RADIUS + 0.3, 0.05, ROOM_FLOOR + 0.025, WeaponManager.glow_material(UIStyle.MAGENTA.darkened(0.15), 2.0))
+	_disc(TABLE_RADIUS + 0.06, 0.15, ROOM_FLOOR + 0.125, WeaponManager.glow_material(UIStyle.MAGENTA, 3.4))
+	_disc(TABLE_RADIUS, 0.05, FLOOR_Y - 0.025, base_mat)
+	_ring(TABLE_RADIUS - 0.14, 0.045, Color(0.95, 0.92, 1.0), 2.2, FLOOR_Y + 0.005)
+	_ring(TABLE_RADIUS - 0.75, 0.05, ring_color, 2.4, FLOOR_Y + 0.005)
+	_ring(TABLE_RADIUS + 1.0, 0.035, UIStyle.MAGENTA, 2.0, ROOM_FLOOR + 0.01)
 
 
 func _box(pos: Vector3, box_size: Vector3, mat: Material) -> MeshInstance3D:
@@ -339,59 +339,64 @@ func _ring(radius: float, thickness: float, color: Color, energy: float, y: floa
 	_room.add_child(ring)
 
 
-## Two stacked roller chests with glowing drawer lines (pos.y is ignored).
-func _tool_chest(pos: Vector3, accent: Color) -> void:
+## The game's name on a framed plate with pointed ends, a magenta dash on
+## the left and a cyan one on the right (name and dashes in the full garage only).
+func _sign_plate(pos: Vector3) -> void:
+	var frame := StandardMaterial3D.new()
+	frame.albedo_color = Color(0.17, 0.12, 0.3)
+	frame.metallic = 0.6
+	frame.roughness = 0.35
+	var face := WeaponManager.glow_material(Color(0.08, 0.06, 0.15), 0.0)
+	_box(pos, Vector3(6.6, 0.62, 0.08), frame)
+	for side in [-1.0, 1.0]:
+		var tip := _box(pos + Vector3(side * 3.3, 0, 0), Vector3(0.44, 0.44, 0.08), frame)
+		tip.rotation_degrees.z = 45.0
+		if detail == Detail.LITE:
+			continue
+		_box(pos + Vector3(side * 2.75, 0, 0.06), Vector3(0.55, 0.05, 0.02),
+				WeaponManager.glow_material(UIStyle.MAGENTA if side < 0.0 else UIStyle.CYAN, 4.0))
+	_box(pos + Vector3(0, 0, 0.05), Vector3(4.2, 0.78, 0.08), frame)
+	_box(pos + Vector3(0, 0, 0.1), Vector3(4.0, 0.64, 0.02), face)
+	if detail == Detail.LITE:
+		return
+	var title := Label3D.new()
+	title.text = "CYBERWAVE 2199"
+	title.font = UIStyle.heading_font()
+	title.font_size = 64
+	title.pixel_size = 0.0055
+	title.modulate = Color(0.95, 0.93, 1.0)
+	title.outline_size = 0
+	title.shaded = false
+	title.position = pos + Vector3(0, 0, 0.12)
+	_room.add_child(title)
+
+
+## A double locker with vents and handles (pos.y is ignored).
+func _locker(pos: Vector3, accent: Color) -> void:
 	var body := StandardMaterial3D.new()
-	body.albedo_color = Color(0.1, 0.07, 0.16)
+	body.albedo_color = Color(0.09, 0.07, 0.15)
 	body.metallic = 0.5
-	body.roughness = 0.4
-	var line := WeaponManager.glow_material(accent, 3.5)
-	_box(Vector3(pos.x, ROOM_FLOOR + 0.6, pos.z), Vector3(1.8, 1.2, 0.8), body)
-	_box(Vector3(pos.x, ROOM_FLOOR + 1.55, pos.z - 0.05), Vector3(1.6, 0.7, 0.65), body)
-	for i in 4:
-		var y := ROOM_FLOOR + 0.25 + i * 0.3 + (0.25 if i == 3 else 0.0)
-		_box(Vector3(pos.x, y, pos.z + 0.41), Vector3(1.5, 0.04, 0.02), line)
+	body.roughness = 0.45
+	var dark := WeaponManager.glow_material(Color(0.03, 0.02, 0.06), 0.0)
+	_box(Vector3(pos.x, ROOM_FLOOR + 1.15, pos.z), Vector3(1.7, 2.3, 0.7), body)
+	_box(Vector3(pos.x, ROOM_FLOOR + 1.15, pos.z + 0.36), Vector3(0.03, 2.2, 0.02), dark)
+	for door in [-1.0, 1.0]:
+		var x: float = pos.x + door * 0.42
+		for i in 3:
+			_box(Vector3(x, ROOM_FLOOR + 2.0 + i * 0.09, pos.z + 0.36), Vector3(0.55, 0.035, 0.02), dark)
+		_box(Vector3(pos.x + door * 0.1, ROOM_FLOOR + 1.2, pos.z + 0.37), Vector3(0.04, 0.22, 0.03), dark)
+	_box(Vector3(pos.x, ROOM_FLOOR + 2.32, pos.z + 0.36), Vector3(1.5, 0.03, 0.02), WeaponManager.glow_material(accent, 2.0))
 
 
-## A stack of tyres (pos.y is ignored).
-func _tyres(pos: Vector3, count: int) -> void:
-	var rubber := StandardMaterial3D.new()
-	rubber.albedo_color = Color(0.05, 0.045, 0.06)
-	rubber.roughness = 0.75
-	for i in count:
-		var m := MeshInstance3D.new()
-		var tyre := CylinderMesh.new()
-		tyre.top_radius = 0.42
-		tyre.bottom_radius = 0.42
-		tyre.height = 0.3
-		tyre.radial_segments = 20
-		m.mesh = tyre
-		m.material_override = rubber
-		m.position = Vector3(pos.x + (0.04 if i % 2 == 1 else 0.0), ROOM_FLOOR + 0.15 + i * 0.31, pos.z)
-		_room.add_child(m)
-
-
-## A purple hanging banner with crossed checkered flags.
-func _banner(pos: Vector3) -> void:
-	var cloth := MeshInstance3D.new()
-	var quad := QuadMesh.new()
-	quad.size = Vector2(1.7, 2.2)
-	cloth.mesh = quad
-	cloth.material_override = WeaponManager.glow_material(Color(0.32, 0.12, 0.5), 0.6)
-	cloth.position = pos
-	_room.add_child(cloth)
-	var flags := MeshInstance3D.new()
-	var face := QuadMesh.new()
-	face.size = Vector2(1.2, 1.2)
-	flags.mesh = face
-	var mat := StandardMaterial3D.new()
-	mat.albedo_texture = UIStyle.icon_texture("flags", 128, Color(0.85, 0.8, 1.0))
-	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	flags.material_override = mat
-	flags.position = pos + Vector3(0, 0.25, 0.02)
-	_room.add_child(flags)
-	_box(pos + Vector3(0, 1.12, 0.02), Vector3(1.8, 0.05, 0.05), WeaponManager.glow_material(UIStyle.MAGENTA, 3.0))
+## Two stacked crates, the lower one with a neon dash (pos.y is ignored).
+func _crates(pos: Vector3, accent: Color) -> void:
+	var body := StandardMaterial3D.new()
+	body.albedo_color = Color(0.11, 0.08, 0.18)
+	body.metallic = 0.4
+	body.roughness = 0.5
+	_box(Vector3(pos.x, ROOM_FLOOR + 0.3, pos.z), Vector3(1.1, 0.6, 0.8), body)
+	_box(Vector3(pos.x - 0.1, ROOM_FLOOR + 0.82, pos.z - 0.05), Vector3(0.9, 0.44, 0.7), body)
+	_box(Vector3(pos.x, ROOM_FLOOR + 0.3, pos.z + 0.41), Vector3(0.45, 0.04, 0.02), WeaponManager.glow_material(accent, 4.0))
 
 
 static var _checker: Texture2D

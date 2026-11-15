@@ -132,7 +132,7 @@ func _test_in_race() -> void:
 	var shown_early := false
 	var charged := 0.0
 	var boosted := false
-	for i in 60 * 4:
+	for i in 60 * 7:
 		me.global_transform = leader.global_transform.translated_local(Vector3(0, 0, 7.0))
 		me.linear_velocity = leader.linear_velocity
 		await physics_frame

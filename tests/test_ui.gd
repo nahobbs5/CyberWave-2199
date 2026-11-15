@@ -278,6 +278,9 @@ func _test_garage_screen() -> void:
 	_check(lite.light_count() < full.light_count() and lite.room_mesh_count() < full.room_mesh_count(),
 			"LITE garage has fewer lights (%d < %d) and meshes (%d < %d)" % [lite.light_count(), full.light_count(),
 			lite.room_mesh_count(), full.room_mesh_count()])
+	var titled := func(p: VehiclePreview) -> bool:
+		return p.find_children("*", "Label3D", true, false).any(func(l: Label3D) -> bool: return l.text == "CYBERWAVE 2199")
+	_check(titled.call(full) and not titled.call(lite), "the game name is on the garage sign, not on the split-screen cards")
 	full.queue_free()
 	lite.queue_free()
 	GameSession.mp_devices = PackedInt32Array([-1, 0])
@@ -627,7 +630,7 @@ func _test_slipstream_race(race: RaceManager) -> void:
 	me.slipstream_boost.connect(func() -> void: boosts[0] += 1)
 	var saw_label := false
 	var saw_charge := 0.0
-	for i in 60 * 4:
+	for i in 60 * 7:
 		me.global_transform = leader.global_transform.translated_local(Vector3(0, 0, 7.0))
 		me.linear_velocity = leader.linear_velocity
 		await physics_frame

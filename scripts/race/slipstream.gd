@@ -16,10 +16,10 @@ const SAME_WAY := 0.866
 const MIN_SPEED := 20.0
 ## Seconds to fill the meter at CLOSE_GAP, and at MAX_GAP.
 const CLOSE_GAP := 6.0
-const FILL_CLOSE := 1.4
-const FILL_FAR := 2.2
+const FILL_CLOSE := 3.0
+const FILL_FAR := 4.5
 ## Out of the tow, the meter drains this many times faster than it filled.
-const DRAIN_FACTOR := 2.0
+const DRAIN_FACTOR := 4.0
 ## The boost when the meter is full: milder than a Cyan drift boost.
 const BOOST_EXTRA := 4.5
 const BOOST_TIME := 1.2

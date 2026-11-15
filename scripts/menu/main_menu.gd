@@ -73,10 +73,17 @@ func _build() -> void:
 				func() -> void: GameSession.to_settings(tree)),
 		layout.add_entry("Credits", "info", "The people, music and assets behind Cyberwave 2199.",
 				func() -> void: GameSession.to_credits(tree)),
-		layout.add_entry("Back", "back", "Return to the title screen.",
-				func() -> void: GameSession.to_title(tree)),
+		_back_entry(layout, tree),
 	]
 	layout.finish()
 	for b in entries:
 		if b.visible:
 			_buttons.append(b)
+
+
+## Back steps out of the menu rather than forward, so it gets no » chevrons.
+func _back_entry(layout: StartMenuLayout, tree: SceneTree) -> NeonMenuButton:
+	var b := layout.add_entry("Back", "back", "Return to the title screen.",
+			func() -> void: GameSession.to_title(tree))
+	b.chevrons = false
+	return b

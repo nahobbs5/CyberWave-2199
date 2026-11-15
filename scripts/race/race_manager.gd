@@ -107,6 +107,10 @@ var _finish_count: int = 0
 var _wrong_way_time: float = 0.0
 ## The neon sign hung over the road while the player drives the wrong way.
 var wrong_way_sign: WrongWaySign
+## Esc / Start pause screen.
+var pause_menu: PauseMenu
+## Pauses the race when a player's gamepad disconnects (ControllerDisconnect).
+var controller_disconnect: ControllerDisconnect
 ## One sign per human (split screen: each on that player's private layer).
 var wrong_way_signs: Array[WrongWaySign] = []
 ## Wrong-way state per human, by player slot.
@@ -183,10 +187,13 @@ func _ready() -> void:
 		blur.name = "SpeedBlur"
 		blur.vehicle = player.vehicle
 		add_child(blur)
-	var pause_menu := PauseMenu.new()
+	pause_menu = PauseMenu.new()
 	pause_menu.name = "PauseMenu"
 	add_child(pause_menu)
 	pause_menu.setup(self)
+	controller_disconnect = ControllerDisconnect.new()
+	add_child(controller_disconnect)
+	controller_disconnect.setup(self)
 	if auto_start:
 		# Don't count down behind the loading card.
 		if LoadingScreen.active != null:

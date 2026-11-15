@@ -1,5 +1,5 @@
 # CYBERWAVE 2199
-## Game Design Document — Version 8.4
+## Game Design Document — Version 8.8
 
 **Status:** Development Baseline  
 **Engine:** Godot 4  
@@ -125,6 +125,8 @@ The American, Europe and Asia Cups are playable. The Europe Cup was the World Cu
 - Race 3: Starting grid follows Race 2 finishing order.
 - AI identities remain consistent across the championship.
 - Grid positions are based on the immediately preceding race, not cumulative points.
+- **Layout:** two staggered columns, each car 6 m behind the one before (12 m between rows, about 50 m from pole to last). The columns sit from the road width, up to 6 m either side of the centre line, leaving at least 2 m to the walls. Every main road is at least 14 m wide.
+- **Grid slots:** each place is painted on the road like a kart racer's: a white bracket around the car, open at the front, with its number (1–8) just behind it.
 - A race's result is fixed when the player finishes: racers still on track are classified in their current race order.
 
 ### Championship Points
@@ -332,9 +334,9 @@ Proposed behavior:
 
 ## 4.5 Slipstream
 
-Tuck in 2–16 m behind another car, going the same way at speed, and a slipstream meter fills (faster the closer you are). When it's full you get a short boost; out of the tow the meter drains. Every racer can draft, AI included.
+Tuck in 2–16 m behind another car, going the same way at speed, and a slipstream meter fills: about 3 s close up, up to 4.5 s at the back of the tow, so it takes a deliberate tuck rather than a passing brush. When it's full you get a short boost; out of the tow the meter drains. Every racer can draft, AI included.
 
-Feedback while the meter fills: "SLIPSTREAM nn%" under the speed gauge (its charge cells fill too) and faint wind streaks at the screen edges. Once the meter is full and the boost fires: two glowing cyan arches stand around the car, rising from the road on each side and over the roof (after the reference art *Cyberpunk Slipstream Under the Neon Moon*), and a SLIPSTREAM banner shows at the bottom centre of the HUD. The arches snap in, ripple backward for as long as the boost lasts, then fade. Other players see them on any car with a slipstream boost running. With Reduced flashing the arches hold a steady glow with no snap or ripple.
+Feedback while the meter fills: "SLIPSTREAM nn%" under the speed gauge (its charge cells fill too) and faint wind streaks at the screen edges. Once the meter is full and the boost fires: a slim, softly glowing cyan arch stands around the car, rising from the road on each side and over the roof (after the reference art *Cyberpunk Slipstream Under the Neon Moon*), and a SLIPSTREAM banner shows at the bottom centre of the HUD. The arch eases in, drifts gently backward for as long as the boost lasts, then fades. Other players see it on any car with a slipstream boost running. With Reduced flashing the arch holds a steady glow with no snap or ripple.
 
 ---
 
@@ -659,7 +661,7 @@ A fictionalized underground circuit through skull-lined tunnels, flooded chamber
 
 **Identity:** Constrained racing, precision, claustrophobic atmosphere.
 
-Built at about 2.8 km, fully underground: a vaulted stone ceiling covers every metre of both routes, and no sky is visible. The 12 m road is the narrowest in the game, with tight corners (30–45 m radius) and short straights. It's lit by wall torches, candles and pale light falling through a few street grates (no visible beams), and the tunnels fade to black ahead. Landmarks in driving order:
+Built at about 2.8 km, fully underground: a vaulted stone ceiling covers every metre of both routes, and no sky is visible. The 15 m road is among the narrowest in the game, with tight corners (30–45 m radius) and short straights. It's lit by wall torches, candles and pale light falling through a few street grates (no visible beams), and the tunnels fade to black ahead. Landmarks in driving order:
 - the tall Barrière d'Enfer start chamber;
 - the "Arrête ! C'est ici l'Empire de la Mort" lintel into the ossuary galleries (walls of stacked bones set with skulls);
 - a crypt of burial niches and sarcophagi;
@@ -679,7 +681,7 @@ A racing circuit through dense bamboo forests, mountain roads, bridges, and rain
 
 **Identity:** Technical cornering, drifting, natural scenery.
 
-Built at about 3.1 km on a soft, sunny day. It should feel like an indoor garden out of doors, after the Sagano grove photos in the reference files. Tall, nearly straight culms (16–23 m) in deep green, blue-grey and olive, with white-ringed nodes, stand in dense clumps. Their trunks are bare; leaves grow only in the top third. Beside the road the culms lean in so their crowns meet high overhead like a green ceiling, with the sun coming through in dapples, and the grove goes dark green into the distance. The canopy covers about three quarters of the lap and opens only at the start plaza, the bridge and the temple garden. Ferns and sasa grow underfoot, among a few fallen culms. The 13 m road is paved stone between golden brushwood (shibagaki) fences, about 2 m tall with a bristly crest above two thick bamboo rails. It has medium-radius drift corners (35–60 m), one hairpin and short straights. Landmarks in driving order:
+Built at about 3.1 km on a soft, sunny day. It should feel like an indoor garden out of doors, after the Sagano grove photos in the reference files. Tall, nearly straight culms (16–23 m) in deep green, blue-grey and olive, with white-ringed nodes, stand in dense clumps. Their trunks are bare; leaves grow only in the top third. Beside the road the culms lean in so their crowns meet high overhead like a green ceiling, with the sun coming through in dapples, and the grove goes dark green into the distance. The canopy covers about three quarters of the lap and opens only at the start plaza, the bridge and the temple garden. Ferns and sasa grow underfoot, among a few fallen culms. The 15 m road is paved stone between golden brushwood (shibagaki) fences, about 2 m tall with a bristly crest above two thick bamboo rails. It has medium-radius drift corners (35–60 m), one hairpin and short straights. Landmarks in driving order:
 - an open start plaza with stone lanterns and banners;
 - a timber gate marked ARASHIYAMA into the grove's S-bends;
 - a long wooden bridge over the Katsura river, with the mountains behind;
@@ -716,7 +718,7 @@ A race inside Hang Nga's Crazy House, the guesthouse built to look like a hollow
 
 **Identity:** Twists, turns and the bizarre. It's a fantasy on a giant scale: the whole lap runs inside one enormous hollow trunk, and nothing has a straight line or a right angle.
 
-Built at about 2.9 km with a 13 m road and constant linked corners (40–70 m radius, no straight longer than about 220 m). The inside of the trunk is melted grey and dark-brown bark dripping with cream plaster, with roofs from about 19 m to 46 m. Daylight comes through oval windows in the roof, and warm light glows from oval windows in the walls. The road is flat; the stairs are scenery (real elevation is a later engine upgrade). Landmarks in driving order:
+Built at about 2.9 km with a 15 m road and constant linked corners (40–70 m radius, no straight longer than about 220 m). The inside of the trunk is melted grey and dark-brown bark dripping with cream plaster, with roofs from about 19 m to 46 m. Daylight comes through oval windows in the roof, and warm light glows from oval windows in the walls. The road is flat; the stairs are scenery (real elevation is a later engine upgrade). Landmarks in driving order:
 - the Root Hall: the start, between gnarled root columns, with knotted bone railings beyond the barriers;
 - the Spiral Stair Well: a tall well ringed with helical staircases (rounded steps, bone banisters, lit doorways at the top) (boost pad);
 - the Animal Rooms: warm-lit alcoves with a bear, an eagle and a giraffe, after the house's themed rooms (stair-step jump);
@@ -734,7 +736,7 @@ A night race along a glass skyway high above the jungle, through the Supertree G
 
 **Identity:** Height and exposure. It is the only track in the air: the road is a narrow glass deck 24 m above the treetops and the bay, and in places there is nothing at the edge.
 
-Built at about 3.4 km with a 12 m road and winding, linked corners (45–90 m radius). The deck is clear glass framed in wood, with wooden beams under the glass, wooden strips across it, and glass side walls topped by amber-lit wooden handrails. Steel pylons hold it up. Below is dense rainforest with palms; a few tall trees break through near the deck. The Supertrees (26–52 m) slowly change colour together, a wave of purple, cyan, green and magenta rolling across the grove. Marina Bay Sands and the city skyline glow beyond. The skyway is sloped and rolls over four crests: it dives to about 10 m above the jungle at the Bayfront dip and climbs to about 53 m round the Great Wrap, whose tallest Supertree (82 m) still towers over it, with grades up to about 9% and gentle 7° banking in the long sweepers; the pylons, Supertrees, dome doorways and the Cloud Forest walk all follow its height. Landmarks in driving order:
+Built at about 3.4 km with a 15 m road and winding, linked corners (45–90 m radius). The deck is clear glass framed in wood, with wooden beams under the glass, wooden strips across it, and glass side walls topped by amber-lit wooden handrails. Steel pylons hold it up. Below is dense rainforest with palms; a few tall trees break through near the deck. The Supertrees (26–52 m) slowly change colour together, a wave of purple, cyan, green and magenta rolling across the grove. Marina Bay Sands and the city skyline glow beyond. The skyway is sloped and rolls over four crests: it dives to about 10 m above the jungle at the Bayfront dip and climbs to about 53 m round the Great Wrap, whose tallest Supertree (82 m) still towers over it, with grades up to about 9% and gentle 7° banking in the long sweepers; the pylons, Supertrees, dome doorways and the Cloud Forest walk all follow its height. Landmarks in driving order:
 - the Supertree Grove: the start, with the grid between two Supertrees under a GARDENS BY THE BAY sign;
 - the Skyway S-bends: weaving between Supertrees, Marina Bay Sands ahead (boost pad);
 - the Great Wrap: a hairpin round the tallest Supertree (boost ring);
@@ -754,7 +756,7 @@ A bright summer race through and around the park's old Victorian greenhouse: iro
 
 **Identity:** An iron-and-glass cage. Every road edge outside the glasshouses has a tall welded-mesh fence on iron posts above a low brick wall, and the glasshouses themselves have mesh walls below their glass vaults, so the whole lap reads as one big enclosure. The sun is high in the north-west (southern hemisphere), and the iron ribs throw striped shadows across the road.
 
-Built at about 3.1 km with a 13 m road. Landmarks in driving order:
+Built at about 3.1 km with a 15 m road. Landmarks in driving order:
 - **the main wing** (start / finish): the grid and start lights under a long barrel-vaulted glasshouse with mesh walls and a railed catwalk on the ridge, in two spans with a sunny courtyard of flower beds between them (boost pad near the end);
 - **the avenue**: south between hedges and plane trees, mesh fences both sides;
 - **the Rotunda**: the road turns off along a short stalk into the domed pavilion and sweeps about 310° round the round checkerboard plinth (garden of palms, flowering shrubs and graffiti-covered low walls inside, more graffiti walls outside), then leaves along a parallel stalk beside the way in, with a mesh-fenced divider between them (boost ring);
@@ -775,7 +777,7 @@ A race through the Valley of the Moon: smooth grey "moon rock" sculpted by a fas
 
 The road rolls with the rock: it climbs to about 21 m over the eastern headland (the jump, on its gentle far side), drops about 19 m into the deep south gorge (the main river below it falls to about 25 m down), and rolls over humps between the shelves and bridges, with grades up to about 10% and gentle 5° banking in the sweepers. Every river crossing and creek shelf keeps the water at least 5 m below the road, and the land rises and falls with it.
 
-Built at about 3.1 km with a 13 m road and flowing corners (60–100 m radius) around a river system. The rock is smooth, pale-to-dark grey, with rippled erosion lines, dimples and round potholes, darker and glossier toward the water, with green cerrado forest on top. The water moves: a main river and two streams run through slot canyons beside the road. They pass under it at four natural rock bridges, 5–14 m below the road, and drop over six waterfalls with white churn and mist at their feet. The road is elevated (§8.7) with barriers most of the way, but two open rock shelves run right along creek canyons: a bad line drops you into the water, and you are put back on the road. Landmarks in driving order:
+Built at about 3.1 km with a 15 m road and flowing corners (60–100 m radius) around a river system. The rock is smooth, pale-to-dark grey, with rippled erosion lines, dimples and round potholes, darker and glossier toward the water, with green cerrado forest on top. The water moves: a main river and two streams run through slot canyons beside the road. They pass under it at four natural rock bridges, 5–14 m below the road, and drop over six waterfalls with white churn and mist at their feet. The road is elevated (§8.7) with barriers most of the way, but two open rock shelves run right along creek canyons: a bad line drops you into the water, and you are put back on the road. Landmarks in driving order:
 - the start straight, over the first rock bridge (boost pad);
 - the first open shelf above a creek;
 - the east stream's bridge, with spray from the falls across the road (water);
@@ -794,7 +796,7 @@ A race through an Inca village in a green Andean valley, on a bright sunny day.
 
 **Identity:** A labyrinth of stone rings. You start outside on the valley floor and wind your way in to the plaza at the heart of the village, then back out.
 
-Built at about 3.3 km with a 12 m road. The village is a **double spiral**: the road spirals in, crosses the central plaza on an S-bend, and spirals back out between the inbound rings. Inbound and outbound lanes alternate ring by ring, about 27 m apart, so the rings look almost concentric and the cars on the next ring are going the other way. Each lane is sunk between grass terraces with stone retaining walls, and the houses stand on the terraces, so you can't see across the rings.
+Built at about 3.3 km with a 15 m road. The village is a **double spiral**: the road spirals in, crosses the central plaza on an S-bend, and spirals back out between the inbound rings. Inbound and outbound lanes alternate ring by ring, about 27 m apart, so the rings look almost concentric and the cars on the next ring are going the other way. Each lane is sunk between grass terraces with stone retaining walls, and the houses stand on the terraces, so you can't see across the rings.
 
 Everything is built of flat, irregular fieldstone set in mortar, like the real site: old but sturdy. Most houses are roofless ruins with tall gable ends, rows of small trapezoidal windows under stone lintels and trapezoidal doorways, some partly collapsed with fallen stones beside them. About one house in six has a steep thatched roof, so it still reads as a village. The road drives through **eight Inca gateways**: trapezoidal openings with leaning jambs, a flat stone lintel and a recessed second frame on each face (the double-jamb of an important doorway). Outside the village, terraces step up the valley sides to cloud forest and jagged peaks.
 
@@ -1145,7 +1147,7 @@ The setup, cup and track screens share the Settings look (§11.2): the dimmed st
 
 The layout follows the "Cyberwave 2199 Neon Garage" reference art.
 
-- **The garage room** fills the screen. The car sits on a thick turntable with a glowing magenta band and cyan rings. Behind it is a roll-up door with a big "CW-2199" stencil, with neon tubes, tool chests, tyre stacks, a banner with crossed checkered flags, ceiling lights and a checkered floor. The same room appears behind the car everywhere a car is picked: race setup shows it in a framed stage, and the split-screen car cards use a lighter version with no props and fewer lights.
+- **The garage room** fills the screen (after "reference files/Cyberwave 2199 Neon Garage New.png"). The car sits on a stacked turntable: a glowing magenta foot and a thick magenta band, a dark top with a white rim ring and a cyan inner ring, and a magenta ring on the floor around it. Behind it is a paneled back wall with a header band carrying a framed CYBERWAVE 2199 sign plate (pointed ends, a magenta dash left and a cyan dash right), angled corner struts, lockers and stacked crates in each back corner with a magenta (left) or cyan (right) glow, ceiling lights and a checkered floor. The same room appears behind the car everywhere a car is picked: race setup shows it in a framed stage, and the split-screen car cards use a lighter version with no lockers, crates or plate lettering and fewer lights.
 - **Top:** the logo and GARAGE at the top left, the coin balance at the top right.
 - **Left:** the car with gold previous / next arrows and a dot per car. Below it are the name on a magenta banner, a cyan type tag, segmented stat bars with icons, a top-speed card, and the license plate.
 - **Right:** COSMETICS and INFO tabs over a neon panel.
@@ -1230,6 +1232,7 @@ Timeline (Grand Prix / Versus): cars drive onto the lowered platforms (0–3.5 s
 
 - Loading card while a track builds (races and free drive): logo, track name, location, mode (and "Race N of M" in a set), track outline, LOADING. The countdown starts only after it fades out.
 - Pause menu (after the "Cyberwave 2199 Neon Pause Menu" reference art): the race dims behind the logo and a slanted PAUSED title. On the left are Resume / Restart Race / Quit to Main Menu (neon buttons, focused one gold with ">>"), a VOLUME panel with Master / Music / Sound Effects sliders (saved straight away, shared with Settings), and a picture of your car. On the right a Controls panel lists every action with its icon, keyboard keys as magenta keycaps and gamepad inputs as cyan ones, read from your current bindings. The mockup's Race Info tab is left out. Hints along the bottom: A / Enter Select, B / Esc Resume.
+- Controller disconnected (after the "Cyberwave Race Controller Disconnected" reference art): if a player's gamepad drops out during the countdown or the race, the race pauses at once under a cut-corner dark plate with an amber edge: a pad and broken-link icon, CONTROLLER DISCONNECTED (DISCONNECTED in amber), and an [Enter] Continue with keyboard row. Solo, it only triggers for a pad that has been driving this race (unplugging an idle pad while you play on keyboard does nothing); any gamepad button or Enter carries on. In split screen it pauses everyone and reads PLAYER n CONTROLLER DISCONNECTED; that player takes over any pad no other player is using by pressing a button on it, or the keyboard with Enter, offered only when nobody else is on it. If two pads drop together, each player is asked in turn. Then a 3-2-1 counts back in before the race resumes; if the pause menu was open, it comes back instead. A swapped controller stays with that player for the rest of a Grand Prix or Versus series.
 - Brief pre-race camera sweep
 - 3 / 2 / 1 / START countdown, with a four-lamp start-light board on the start gantry (three reds, then green), one lamp per beep
 - Rocket start (Mario Kart style): hold accelerate from the moment the "2" fades (until just after it's gone) through START for a boost off the line, the size of a level-2 drift boost. Holding from earlier is a burnout: tyre smoke, a lazy spin and no control for 1 s. Pressing later is a normal start. While you hold before START, the engine revs: exhaust pops, a rear squat and a body shudder. AI rivals try it too, with odds set by difficulty: rocket start / burnout about 15% / 20% on Easy, 40% / 8% on Normal, 80% / 2% on Hard.
@@ -1714,5 +1717,9 @@ Changes after Version 1.0 should be tracked as revisions rather than silently re
 | 8.2 | 2026-11-14 | Race setup, cup and track screens use the Race Results style title, centred (GRAND PRIX or VERSUS; Grand Prix race setup gets a title again). The cup screen drops the "CHOOSE A CUP" subtitle and the race count from the cup panel; the track screen shows only "RACE x OF y" mid-series (§2.2, §11.3). |
 | 8.3 | 2026-11-14 | Settings and the Garage use the same Race Results style header as the setup screens: logo, centred SETTINGS / GARAGE title bar with checker flags, neon rule (§11.4, §11.9). |
 | 8.4 | 2026-11-14 | Chefchaouen race music: vadim_makes_sound's *Atlas Morocco* (§8.6i, §12.1). Every track has music again. |
+| 8.5 | 2026-11-15 | Roomier start: the grid spreads to 6 m between cars (12 m rows) with columns set from the road width, and each slot is painted on the road (white bracket, slot number). Catacombs, Arashiyama, Crazy House, Gardens by the Bay, Quinta Normal, Vale da Lua and Choquequirao widened from 12–13 m to 15 m, their crates, coins and full-width jumps and puddles widened to match (§2.2, §8.6). |
+| 8.6 | 2026-11-15 | Slipstream made subtler and slower to trigger: the meter takes about 3 s to fill close up (4.5 s at the back of the tow, was 1.4–2.2 s), and the boost shows one slim, softer cyan arch instead of two bright ones, with a gentler snap-in and drift (§4.5). |
+| 8.7 | 2026-11-15 | Garage room restyled after "Cyberwave 2199 Neon Garage New.png": the roll-up door and big CW-2199 stencil, tool chests, tyres and banner are gone; a paneled wall with a small framed CYBERWAVE 2199 sign plate, corner struts, lockers and crates with magenta / cyan corner glow, and a chunkier stacked turntable take their place (§11.9). |
+| 8.8 | 2026-11-15 | Controller disconnected screen after its reference art: the race pauses when a player's gamepad drops out, solo resumes on any pad button or Enter (keyboard), split screen names the player and lets them claim any free pad or the free keyboard, then a 3-2-1 resumes the race (§11.8). |
 
-**End of Game Design Document — Version 8.3**
+**End of Game Design Document — Version 8.7**

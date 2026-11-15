@@ -87,7 +87,7 @@ func _test_layout() -> void:
 	print("    built in %d ms" % build_ms)
 	_check(build_ms < 8000, "builds in under 8 s headless (%d ms)" % build_ms)
 	_check(track.length > 2900.0 and track.length < 3200.0, "about 3.1 km (%.0f m)" % track.length)
-	_check(track.road_width == 13.0, "13 m road")
+	_check(track.road_width == 15.0, "15 m road")
 	_check(track.shortcuts.size() == 1, "one shortcut")
 	var sc := track.shortcuts[0]
 	_check(sc.display_name == "Behind the falls" and sc.road_width == 9.0, "Behind the Falls, 9 m wide")

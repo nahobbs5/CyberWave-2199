@@ -1,31 +1,30 @@
 class_name SlipstreamRing
 extends Node3D
-## Neon arches standing around the car while its slipstream boost runs
-## (see Slipstream): a bright inner ring and a fainter outer one. They don't
+## A slim neon arch standing around the car while its slipstream boost runs
+## (see Slipstream), kept subtle. It doesn't
 ## show while the meter is still filling behind a car (the screen-edge wind
 ## lines and the gauge's SLIPSTREAM n% cover that); when the boost fires
-## they snap in from wider, ripple backward like rushing air for the boost,
-## then fade out. Reduced flashing: no snap or ripple, just a steady glow.
+## it eases in from a touch wider, drifts gently backward for the boost,
+## then fades out. Reduced flashing: no snap or ripple, just a steady glow.
 ## Lives under the car's Feedback node, so it follows the car's visual scale.
 
 const SHADER := preload("res://assets/shaders/slipstream_ring.gdshader")
 const COLOR := Color(0.2, 0.9, 1.0)
-## Inner and outer ring: radius (m), band width (m), z offset (m, + = back), brightness.
+## Each ring: radius (m), band width (m), z offset (m, + = back), brightness.
 const RINGS := [
-	[1.75, 0.4, 0.4, 1.0],
-	[2.15, 0.48, 1.1, 0.55],
+	[1.45, 0.2, 0.4, 0.6],
 ]
 ## Ring centre height relative to the car origin (m): about road level,
 ## so the arches rise from the road beside the car.
 const CENTRE_Y := -0.45
 ## Ripple: how far back each ring slides (m) and grows per loop, and loops/s.
-const RIPPLE_DIST := 0.8
-const RIPPLE_GROW := 0.12
+const RIPPLE_DIST := 0.4
+const RIPPLE_GROW := 0.05
 const RIPPLE_RATE := 1.2
 ## Snap-in when the boost fires: duration (s), and how much wider the rings
 ## start before closing in.
 const BURST_TIME := 0.25
-const BURST_GROW := 0.5
+const BURST_GROW := 0.15
 ## Fade in / out times (s).
 const FADE_IN := 0.12
 const FADE_OUT := 0.3
@@ -99,14 +98,14 @@ func _process(delta: float) -> void:
 			var phase := fposmod(_time * RIPPLE_RATE + 0.5 * i, 1.0)
 			z += RIPPLE_DIST * phase
 			grow += RIPPLE_GROW * phase
-			bright *= strength * (0.6 + 0.4 * sin(phase * PI))
+			bright *= strength * (0.75 + 0.25 * sin(phase * PI))
 		else:
 			bright *= strength
 		mesh.position = Vector3(0.0, CENTRE_Y, z)
 		mesh.scale = Vector3(grow, grow, 1.0)
 		var material := _materials[i]
 		material.set_shader_parameter("strength", clampf(bright, 0.0, 1.0))
-		material.set_shader_parameter("flash", burst)
+		material.set_shader_parameter("flash", burst * 0.5)
 		material.set_shader_parameter("flow_speed", 0.0 if calm else 1.6)
 
 

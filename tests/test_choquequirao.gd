@@ -106,7 +106,7 @@ func _test_layout() -> void:
 	print("    built in %d ms (first build %d ms)" % [build_ms, cold_ms])
 	_check(build_ms < 8000, "builds in under 8 s headless (%d ms)" % build_ms)
 	_check(track.length > 3000.0 and track.length < 3350.0, "about 3.2 km (%.0f m)" % track.length)
-	_check(track.road_width == 12.0, "12 m road")
+	_check(track.road_width == 15.0, "15 m road")
 	var flat := true
 	for p in track.control_points:
 		flat = flat and p.y == 0.0

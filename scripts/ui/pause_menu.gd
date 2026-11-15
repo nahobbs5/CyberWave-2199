@@ -64,7 +64,21 @@ func close() -> void:
 	get_tree().paused = false
 
 
+## Hides the screen but keeps the race paused (ControllerDisconnect).
+func hide_panel() -> void:
+	_panel.visible = false
+
+
+## Shows the screen again over the still-paused race.
+func show_panel() -> void:
+	_panel.visible = true
+	UIStyle.fade_in(_panel, 0.15)
+	_resume.grab_focus()
+
+
 func _unhandled_input(event: InputEvent) -> void:
+	if race != null and race.controller_disconnect != null and race.controller_disconnect.is_open():
+		return
 	if event.is_action_pressed("pause"):
 		get_viewport().set_input_as_handled()
 		if is_open():
