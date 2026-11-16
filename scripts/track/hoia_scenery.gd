@@ -29,6 +29,10 @@ const CLEARING := Vector3(-225, 0, 235)
 const CLEARING_RADIUS := 72.0
 const BOG := Vector3(300, 0, 585)
 const MOON_DIR := Vector3(-2500, 900, -300)
+const TERRAIN_AMPLITUDE := 3.0
+const TERRAIN_SEED := 3
+
+var _noise: FastNoiseLite
 
 
 func build() -> void:
@@ -53,7 +57,12 @@ func build() -> void:
 	stream.roughness = 0.06
 	register_material("stream", stream)
 
-	SceneryTerrain.build(self, TERRAIN_BOUNDS, 8.0, 3.0, -100.0, "terrain_grass", "terrain_mud", "", 3, _carve)
+	# The road climbs and falls over the hills (GDD 8.4): the land follows a
+	# smooth blend of the road heights, so it has no seams between legs.
+	_noise = SceneryTerrain.make_noise(TERRAIN_SEED)
+	if track.sloped:
+		build_smooth_road_y(TERRAIN_BOUNDS)
+	SceneryTerrain.build(self, TERRAIN_BOUNDS, 8.0, TERRAIN_AMPLITUDE, -100.0, "terrain_grass", "terrain_mud", "", TERRAIN_SEED, _carve)
 	await step(0.08)
 	_forest()
 	await step(0.17)
@@ -89,6 +98,16 @@ func _carve(x: float, z: float) -> float:
 	var fade := clampf((x - RAVINE_FROM_X + 20.0) / 40.0, 0.0, 1.0)
 	var shape := 1.0 - across * across
 	return -RAVINE_DEPTH * shape * fade
+
+
+## Terrain height at (x, z), as the terrain mesh is built.
+func ground_y(x: float, z: float) -> float:
+	return SceneryTerrain.height_at(self, _noise, TERRAIN_AMPLITUDE, x, z, _carve)
+
+
+## A layout point stood on the terrain.
+func on_ground(p: Vector3, height: float = 0.0) -> Vector3:
+	return Vector3(p.x, ground_y(p.x, p.z) + height, p.z)
 
 
 func _in_clearing(p: Vector3, margin: float = 0.0) -> bool:
@@ -142,7 +161,7 @@ func _forest() -> void:
 			elif roll < 0.24:
 				kind = "crooked"
 			var s := rng.randf_range(0.85, 1.15)
-			trees.place(kind, Transform3D(Basis(Vector3.UP, yaw).scaled(Vector3(s, s, s)), p + Vector3(0, -0.1, 0)))
+			trees.place(kind, Transform3D(Basis(Vector3.UP, yaw).scaled(Vector3(s, s, s)), on_ground(p, -0.1)))
 		x += step
 	trees.commit()
 
@@ -156,6 +175,7 @@ func _undergrowth() -> void:
 			continue
 		if edge_distance(p) > 36.0 and rng.randf() < 0.7:
 			continue
+		p = on_ground(p)
 		var roll := rng.randf()
 		if roll < 0.5:
 			# Fern clump.
@@ -178,7 +198,7 @@ func _undergrowth() -> void:
 func _start_arch() -> void:
 	var o := track.start_line_offset - 6.0
 	var half := track.road_width * 0.5 + track.barrier_thickness + 1.2
-	var c := at(o)
+	var c := upright(o)
 	for side: float in [-1.0, 1.0]:
 		var post := c.translated_local(Vector3(side * half, 0, 0))
 		add_box("wood", Vector3(0.9, 8.0, 0.9), post.translated_local(Vector3(0, 4.0, 0)))
@@ -190,7 +210,7 @@ func _start_arch() -> void:
 		add_flicker_light((post.translated_local(Vector3(-side * 0.9, 5.2, 0))).origin, Color(1.0, 0.62, 0.3), 1.6, 18.0, 0.15)
 		# Banners on poles before the arch.
 		for b in 3:
-			var pole := at(o - 20.0 - b * 22.0, side * (half + 1.5))
+			var pole := upright(o - 20.0 - b * 22.0, side * (half + 1.5))
 			if clear(pole.origin, 0.4):
 				add_box("wood", Vector3(0.18, 7.0, 0.18), pole.translated_local(Vector3(0, 3.5, 0)))
 				add_box("banner", Vector3(0.06, 3.2, 1.2), pole.translated_local(Vector3(0, 4.8, 0.65)))
@@ -216,12 +236,14 @@ func _graveyard() -> void:
 	# Iron railing round the plot, a few panels fallen.
 	var corners := [Vector3(r.position.x, 0, r.position.y), Vector3(r.end.x, 0, r.position.y), Vector3(r.end.x, 0, r.end.y), Vector3(r.position.x, 0, r.end.y)]
 	for i in 4:
+		corners[i] = on_ground(corners[i])
+	for i in 4:
 		var a: Vector3 = corners[i]
 		var b: Vector3 = corners[(i + 1) % 4]
 		var d := 0.0
 		var length := a.distance_to(b)
 		while d < length:
-			var p := a.lerp(b, d / length)
+			var p := on_ground(a.lerp(b, d / length))
 			if clear(p, 0.3) and rng.randf() > 0.12:
 				add_box("iron", Vector3(0.06, 1.6, 0.06), xform(p + Vector3(0, 0.8, 0)))
 				add_box("iron", Vector3(0.05, 0.05, 2.0), Transform3D(Basis.looking_at((b - a).normalized(), Vector3.UP), p + Vector3(0, 1.45, 0) + (b - a).normalized()))
@@ -233,6 +255,7 @@ func _graveyard() -> void:
 		while z < r.end.y - 4.0:
 			var p := Vector3(x + rng.randf_range(-0.6, 0.6), 0, z + rng.randf_range(-0.6, 0.6))
 			if rng.randf() < 0.85 and clear(p, 1.0):
+				p = on_ground(p)
 				var lean := xform(p, PI * 0.5 + rng.randf_range(-0.2, 0.2)).rotated_local(Vector3.FORWARD, rng.randf_range(-0.25, 0.25)).rotated_local(Vector3.RIGHT, rng.randf_range(-0.15, 0.15))
 				if rng.randf() < 0.6:
 					var h := rng.randf_range(1.4, 2.3)
@@ -245,12 +268,14 @@ func _graveyard() -> void:
 			z += 4.0
 		x += 4.0
 	for k in 3:
-		add_flicker_light(Vector3(r.position.x + 20 + k * 22, 0.6, r.get_center().y + rng.randf_range(-40, 40)), Color(1.0, 0.7, 0.4), 0.9, 10.0, 0.2)
+		add_flicker_light(on_ground(Vector3(r.position.x + 20 + k * 22, 0, r.get_center().y + rng.randf_range(-40, 40)), 0.6), Color(1.0, 0.7, 0.4), 0.9, 10.0, 0.2)
 	_chapel()
 
 
 func _chapel() -> void:
-	var c := xform(CHAPEL, PI * 0.5)
+	# Sunk a little so the walls meet the sloping ground everywhere.
+	var c := xform(on_ground(CHAPEL, -0.6), PI * 0.5).translated_local(Vector3(0, 0.6, 0))
+	add_box("stone", Vector3(10.0, 1.6, 15.0), c.translated_local(Vector3(0, -1.0, -0.5)))
 	add_box("stone", Vector3(9.0, 6.0, 0.8), c.translated_local(Vector3(0, 3.0, -7.0)))
 	add_box("stone", Vector3(0.8, 4.5, 14.0), c.translated_local(Vector3(-4.5, 2.25, 0)))
 	add_box("stone", Vector3(0.8, 2.6, 8.0), c.translated_local(Vector3(4.5, 1.3, -3.0)))
@@ -269,8 +294,8 @@ func _chapel() -> void:
 # --- Viaduct -------------------------------------------------------------------------
 
 func _viaduct() -> void:
-	var a := track.curve.get_closest_offset(VIADUCT_FROM)
-	var b := track.curve.get_closest_offset(VIADUCT_TO)
+	var a := track.curve.get_closest_offset(on_road_level(VIADUCT_FROM))
+	var b := track.curve.get_closest_offset(on_road_level(VIADUCT_TO))
 	var half := track.road_width * 0.5 + track.barrier_thickness
 	var span := 18.0
 	var d := a
@@ -304,11 +329,12 @@ func _viaduct() -> void:
 		var z := RAVINE_Z + sin(x / 45.0) * 10.0
 		var z2 := RAVINE_Z + sin((x + 10.0) / 45.0) * 10.0
 		var fade := clampf((x - RAVINE_FROM_X + 20.0) / 40.0, 0.0, 1.0)
-		var y := -RAVINE_DEPTH * fade + 1.0
+		var y := ground_y(x + 5.0, (z + z2) * 0.5) + 0.6 if track.sloped else -RAVINE_DEPTH * fade + 1.0
 		add_box("stream", Vector3(10.4, 0.1, 6.0), Transform3D(Basis.looking_at(Vector3(10.0, 0, z2 - z).normalized(), Vector3.UP).rotated(Vector3.UP, PI * 0.5), Vector3(x + 5.0, y, (z + z2) * 0.5)))
 		if rng.randf() < 0.35:
 			var r := rng.randf_range(0.8, 2.0)
-			add_sphere("rock", r, xform(Vector3(x, y, z + rng.randf_range(-6, 6))).scaled_local(Vector3(1.2, 0.6, 1)), 4, 6)
+			var rz := z + rng.randf_range(-6, 6)
+			add_sphere("rock", r, xform(Vector3(x, ground_y(x, rz) if track.sloped else y, rz)).scaled_local(Vector3(1.2, 0.6, 1)), 4, 6)
 		x += 10.0
 
 
@@ -343,7 +369,9 @@ func _castle() -> void:
 			var broken := sin(p.x * 0.07 + p.z * 0.05) > 0.55
 			if broken:
 				h = rng.randf_range(2.0, 5.0)
-			add_box("stone", Vector3(2.2, h, 3.05), Transform3D(basis, p + Vector3(0, h * 0.5, 0)))
+			# Footed a metre into the (sloping) ground.
+			p = on_ground(p)
+			add_box("stone", Vector3(2.2, h + 1.0, 3.05), Transform3D(basis, p + Vector3(0, h * 0.5 - 0.5, 0)))
 			if not broken and k % 2 == 0:
 				add_box("stone", Vector3(2.4, 1.2, 1.5), Transform3D(basis, p + Vector3(0, h + 0.6, 0)))
 	# Round corner towers, one collapsed.
@@ -352,6 +380,7 @@ func _castle() -> void:
 		var t: Vector3 = towers[i]
 		if not clear(t, 6.0):
 			continue
+		t = on_ground(t, -1.0)
 		var h := 18.0 if i != 2 else 7.0
 		add_cyl("stone", 5.0, h, xform(t), 14)
 		if i != 2:
@@ -361,7 +390,7 @@ func _castle() -> void:
 	if sc != null:
 		for gate_x in [r.end.x, r.position.x]:
 			var g := Vector3(gate_x, 0, 465.0)
-			var d_sc := sc.local_offset(g)
+			var d_sc := sc.local_offset(on_road_level(g))
 			var gxf := Transform3D(Basis.looking_at(sc.tangent_at(d_sc), Vector3.UP), sc.point_at(d_sc))
 			var half := sc.road_width * 0.5 + 2.5
 			for side: float in [-1.0, 1.0]:
@@ -376,16 +405,18 @@ func _castle() -> void:
 	for i in 14:
 		var p := Vector3(rng.randf_range(r.position.x + 6, r.end.x - 6), 0, rng.randf_range(r.position.y + 6, r.end.y - 6))
 		if clear(p, 2.0):
+			p = on_ground(p)
 			add_box("stone", Vector3(rng.randf_range(1, 3), rng.randf_range(0.5, 1.5), rng.randf_range(1, 3)), xform(p, rng.randf() * TAU).rotated_local(Vector3.RIGHT, rng.randf_range(-0.3, 0.3)))
 	var well := Vector3(r.get_center().x, 0, r.end.y - 20.0)
 	if clear(well, 3.0):
+		well = on_ground(well)
 		add_cyl("stone", 2.0, 1.0, xform(well), 12)
 		add_cyl("iron", 1.6, 1.02, xform(well), 12)
 
 
 ## Ruined keep on a rocky rise, the landmark seen across the lap.
 func _keep() -> void:
-	var k := KEEP
+	var k := on_ground(KEEP, -1.0)
 	add_cone("rock", 26.0, 9.0, xform(k), 12)
 	add_box("stone", Vector3(16.0, 30.0, 14.0), xform(k + Vector3(0, 9.0 + 15.0, 0), 0.3))
 	add_box("stone", Vector3(9.0, 10.0, 9.0), xform(k + Vector3(4.0, 39.0 + 5.0, -2.0), 0.3))
@@ -407,12 +438,14 @@ func _clearing() -> void:
 		var dist := sqrt(rng.randf()) * CLEARING_RADIUS
 		var p := CLEARING + Vector3(cos(ang) * dist, 0, sin(ang) * dist)
 		if clear(p, 0.5):
+			p = on_ground(p)
 			var h := rng.randf_range(0.2, 0.5)
 			add_box("fern", Vector3(0.06, h, 0.5), xform(p + Vector3(0, h * 0.4, 0), rng.randf() * TAU))
 	for i in 12:
 		var ang := TAU * i / 12.0
 		var p := CLEARING + Vector3(cos(ang), 0, sin(ang)) * (CLEARING_RADIUS - 4.0)
 		if clear(p, 1.5) and i % 4 != 3:
+			p = on_ground(p)
 			add_box("rock", Vector3(1.2, rng.randf_range(1.2, 2.2), 0.7), xform(p + Vector3(0, 0.6, 0), ang).rotated_local(Vector3.FORWARD, rng.randf_range(-0.2, 0.2)))
 
 
@@ -423,10 +456,11 @@ func _bog() -> void:
 	for i in 8:
 		var p := BOG + Vector3(rng.randf_range(-40, 40), 0, rng.randf_range(-14, 30))
 		if clear(p, 4.0):
-			add_cyl("stream", rng.randf_range(3.0, 7.0), 0.06, xform(p + Vector3(0, -0.02, 0)), 12)
+			add_cyl("stream", rng.randf_range(3.0, 7.0), 0.06, xform(on_ground(p, -0.02)), 12)
 	for i in 4:
-		var p := BOG + Vector3(rng.randf_range(-35, 35), 1.0, rng.randf_range(10, 30))
+		var p := BOG + Vector3(rng.randf_range(-35, 35), 0, rng.randf_range(10, 30))
 		if clear(p, 1.0):
+			p = on_ground(p, 1.0)
 			add_sphere("wisp", 0.15, xform(p), 3, 5)
 			add_flicker_light(p, Color(0.5, 0.9, 0.85), 0.5, 7.0, 0.3)
 
@@ -438,7 +472,7 @@ func _lanterns() -> void:
 	var i := 0
 	while d < track.length:
 		var side := 1.0 if i % 2 == 0 else -1.0
-		var post := at(d, side * (track.road_width * 0.5 + track.barrier_thickness + 2.0))
+		var post := upright(d, side * (track.road_width * 0.5 + track.barrier_thickness + 2.0))
 		if clear(post.origin, 0.5) and not _in_ravine(post.origin):
 			add_box("wood", Vector3(0.22, 3.4, 0.22), post.translated_local(Vector3(0, 1.7, 0)))
 			add_box("wood", Vector3(0.9, 0.12, 0.12), post.translated_local(Vector3(-side * 0.4, 3.3, 0)))

@@ -71,7 +71,7 @@ func commit() -> void:
 		# The node sits at the chunk centre so its visibility range (measured
 		# from the node origin) works; instances are relative to it.
 		var cell := (key as String).get_slice("@", 1)
-		var centre := Vector3((int(cell.get_slice(",", 0)) + 0.5) * CHUNK, 0, (int(cell.get_slice(",", 1)) + 0.5) * CHUNK)
+		var centre := Vector3((int(cell.get_slice(",", 0)) + 0.5) * CHUNK, TrackScenery.mean_y(list), (int(cell.get_slice(",", 1)) + 0.5) * CHUNK)
 		var mm := MultiMesh.new()
 		mm.transform_format = MultiMesh.TRANSFORM_3D
 		mm.mesh = (_meshes[kind] as Array)[v]

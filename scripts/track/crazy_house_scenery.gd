@@ -13,8 +13,9 @@ extends TrackScenery
 ## built into the trunk); the Lava Grotto (orange-red pitted walls and giant
 ## mushrooms); and the Bone Gallery (bone arches over the road, knotted
 ## branch railings and a giant spider web). The shortcut is the Rib Tunnel:
-## a narrow passage lined with bone ribs. The road is flat (the stairs are
-## scenery); positions are layout coordinates matching crazy_house.tscn.
+## a narrow passage lined with bone ribs. The road climbs up through the
+## house to the Gables and winds back down to the Root Hall (sloped, GDD
+## 8.6b); positions are layout coordinates matching crazy_house.tscn.
 
 const HOUSE_SHADER := preload("res://assets/shaders/crazy_house.gdshader")
 
@@ -101,8 +102,10 @@ func build() -> void:
 	_apply_glow()
 
 
+## Main-loop offset of a layout point (raised to the road's height first, so
+## the nearest point is found on the right stretch of the sloped road).
 func _off(p: Vector3) -> float:
-	return track.curve.get_closest_offset(p)
+	return track.curve.get_closest_offset(on_road_level(p))
 
 
 # --- shape --------------------------------------------------------------------------------
@@ -487,7 +490,7 @@ func _animal_rooms() -> void:
 				add_blob("giraffe", neck[2] + Vector3(0, 0.3, 0) + f.basis.z * 0.4, Vector3(0.4, 0.4, 0.8))
 				for leg: Vector3 in [Vector3(0.6, 0, 1.2), Vector3(-0.6, 0, 1.2), Vector3(0.6, 0, -1.2), Vector3(-0.6, 0, -1.2)]:
 					var top := body + f.basis * leg * 0.8
-					add_tube("giraffe", PackedVector3Array([top, Vector3(top.x, 0.0, top.z)]), 0.18, 0.14, 5)
+					add_tube("giraffe", PackedVector3Array([top, Vector3(top.x, base.y, top.z)]), 0.18, 0.14, 5)
 		add_sphere("window", 1.0, Transform3D(Basis().scaled(Vector3(1.6, 2.4, 1.6)), f * Vector3(side * (wall - 1.0), 4.5, 0)), 5, 9)
 		add_light(base + Vector3(0, 5.0, 0) - f.basis.x * side * 3.0, Color(1.0, 0.72, 0.42), 2.2, 18.0)
 
@@ -503,7 +506,7 @@ func _gables() -> void:
 		var wall := float(_dims(o)["right_wall"])
 		var f := at(o)
 		var lat := minf(h + 14.0, wall - 4.0)
-		var base := f.translated_local(Vector3(lat, 0, 0))
+		var base := TrackScenery.level(f.translated_local(Vector3(lat, 0, 0)))
 		if clear(base.origin, 5.0):
 			var xf := Transform3D(base.basis * Basis(Vector3.UP, PI * 0.5), base.origin)
 			var w := 11.0
@@ -569,7 +572,8 @@ func _bone_gallery() -> void:
 			var dd := 0.0
 			while dd <= zs[1]:
 				var o := track.wrap_offset(zs[0] + dd)
-				var p := at(o) * Vector3(side * (h + 1.8), 1.3 + 0.45 * sin(dd * 0.21 + side), 0)
+				var rf := at(o)
+				var p := rf * Vector3(side * (h + 1.8), 1.3 + 0.45 * sin(dd * 0.21 + side), 0)
 				if edge_distance(Vector3(p.x, 0, p.z)) < 1.2:
 					if run.size() > 2:
 						add_tube("bone", run, 0.11, 0.11, 5, true)
@@ -577,7 +581,7 @@ func _bone_gallery() -> void:
 				else:
 					run.append(p)
 					if fmod(dd, 6.0) < 2.0:
-						var post := PackedVector3Array([Vector3(p.x, 0.0, p.z), p + Vector3(0.25, -0.6, 0.0), p])
+						var post := PackedVector3Array([rf * Vector3(side * (h + 1.8), 0.0, 0), p + Vector3(0.25, -0.6, 0.0), p])
 						add_tube("bone", smooth(post, 3), 0.09, 0.07, 5)
 				dd += 2.0
 				if run.size() >= 16:
@@ -630,7 +634,8 @@ func bone_arch(f: Transform3D, h: float, roof: float) -> void:
 func _note_clearance(pts: PackedVector3Array, radius: float, _h: float) -> void:
 	for p in pts:
 		if edge_distance(Vector3(p.x, 0, p.z)) < 0.0:
-			bone_arch_clearance = minf(bone_arch_clearance, p.y - radius)
+			# Above the road under it (the road climbs and falls).
+			bone_arch_clearance = minf(bone_arch_clearance, p.y - radius - road_y_at(p))
 
 
 ## The Rib Tunnel: a narrow passage lined with bone ribs.

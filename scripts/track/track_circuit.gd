@@ -150,6 +150,10 @@ signal checkpoint_crossed(index: int, body: Node3D)
 	set(value):
 		banking = value
 		_queue_rebuild()
+## Stacked switchback terraces (Marble Canyon): a car that drops onto road it
+## didn't drive to (another terrace) is recovered to its last safe point
+## ("off route", keeps its items), so a fall can't skip part of the lap.
+@export var terrace_guard: bool = false
 @export_group("Branches")
 ## (from, to) main-loop offsets where the road surface isn't drawn (the
 ## collider still is): stairs drawn by the scenery sit over a smooth ramp.

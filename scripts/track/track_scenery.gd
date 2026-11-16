@@ -74,6 +74,135 @@ func at(offset: float, lateral: float = 0.0, height: float = 0.0) -> Transform3D
 	return track.global_transform.affine_inverse() * track.get_safe_transform(offset, lateral, height)
 
 
+## Like at(), but always upright (no pitch or bank): for things that stand
+## on the ground beside a sloped road (columns, posts, statues). The origin
+## is on the road surface at that lateral, `height` above it. Same as at()
+## on flat tracks.
+func upright(offset: float, lateral: float = 0.0, height: float = 0.0) -> Transform3D:
+	if not track.sloped:
+		return at(offset, lateral, height)
+	var fwd := track.get_tangent_at(offset)
+	fwd = Vector3(fwd.x, 0.0, fwd.z).normalized()
+	return Transform3D(Basis.looking_at(fwd, Vector3.UP), track.surface_point(offset, lateral) + Vector3.UP * height)
+
+
+## Mean height of a list of Transform3D (centres for instanced chunks, so
+## their visibility range is measured from the right height on a slope).
+static func mean_y(list: Array) -> float:
+	if list.is_empty():
+		return 0.0
+	var total := 0.0
+	for xf in list:
+		total += (xf as Transform3D).origin.y
+	return total / list.size()
+
+
+## A frame made upright in place (same origin and heading, no pitch or bank).
+static func level(f: Transform3D) -> Transform3D:
+	var fwd := -f.basis.z
+	fwd = Vector3(fwd.x, 0.0, fwd.z)
+	if fwd.length_squared() < 0.000001:
+		return f
+	return Transform3D(Basis.looking_at(fwd.normalized(), Vector3.UP), f.origin)
+
+
+## Optional smooth road-height field (see build_smooth_road_y): a coarse
+## grid of distance-weighted road heights over the layout.
+var _smooth_rect := Rect2()
+var _smooth_cell := 25.0
+var _smooth_nx := 0
+var _smooth_grid := PackedFloat32Array()
+
+
+## Builds a smooth field of road heights over `bounds` (opt-in, sloped
+## tracks): every grid node takes a distance-weighted blend of the road
+## samples, so open land far from the road rises and falls gently instead of
+## jumping where the nearest road switches between legs at different
+## heights. SceneryTerrain uses it for land away from the roads once built.
+func build_smooth_road_y(bounds: Rect2, cell: float = 25.0) -> void:
+	var pts := PackedVector3Array()
+	for curve: Curve3D in [track.curve] + track.shortcuts.map(func(sc: TrackShortcut) -> Curve3D: return sc.curve):
+		var length := curve.get_baked_length()
+		var d := 0.0
+		while d <= length:
+			pts.append(curve.sample_baked(d))
+			d += 12.0
+	_smooth_rect = bounds
+	_smooth_cell = cell
+	_smooth_nx = int(ceil(bounds.size.x / cell)) + 1
+	var nz := int(ceil(bounds.size.y / cell)) + 1
+	_smooth_grid.resize(_smooth_nx * nz)
+	for iz in nz:
+		for ix in _smooth_nx:
+			var x := bounds.position.x + ix * cell
+			var z := bounds.position.y + iz * cell
+			var wsum := 0.0
+			var ysum := 0.0
+			for p in pts:
+				var dd := (p.x - x) * (p.x - x) + (p.z - z) * (p.z - z) + 900.0
+				var w := 1.0 / (dd * dd)
+				wsum += w
+				ysum += w * p.y
+			_smooth_grid[iz * _smooth_nx + ix] = ysum / wsum
+
+
+func has_smooth_road_y() -> bool:
+	return not _smooth_grid.is_empty()
+
+
+## The smooth road-height field at a point (bilinear; nearest road's height
+## when the field wasn't built).
+func smooth_road_y(local_pos: Vector3) -> float:
+	if _smooth_grid.is_empty():
+		return road_y_at(local_pos)
+	var nz := _smooth_grid.size() / _smooth_nx
+	var fx := clampf((local_pos.x - _smooth_rect.position.x) / _smooth_cell, 0.0, _smooth_nx - 1.001)
+	var fz := clampf((local_pos.z - _smooth_rect.position.y) / _smooth_cell, 0.0, nz - 1.001)
+	var ix := int(fx)
+	var iz := int(fz)
+	var tx := fx - ix
+	var tz := fz - iz
+	var a := lerpf(_smooth_grid[iz * _smooth_nx + ix], _smooth_grid[iz * _smooth_nx + ix + 1], tx)
+	var b := lerpf(_smooth_grid[(iz + 1) * _smooth_nx + ix], _smooth_grid[(iz + 1) * _smooth_nx + ix + 1], tx)
+	return lerpf(a, b, tz)
+
+
+## A track-local point dropped (or raised) to the nearest road's height.
+func on_road_level(p: Vector3, height: float = 0.0) -> Vector3:
+	return Vector3(p.x, road_y_at(p) + height, p.z)
+
+
+## Material key for floor strips (the track's own ground look).
+const FLOOR_KEY := "road_floor"
+
+
+## Floor between a sloped road and the scenery's walls (enclosed tracks used
+## the flat ground slab for this, which drops away on a sloped track). Swept
+## in the route frames f0 -> f1 (x = lateral) from lateral `inner` out to
+## `outer` (signed: negative = left), just under the road surface. Cells
+## over another road are left out. Does nothing on a flat track.
+func add_floor_strip(f0: Transform3D, f1: Transform3D, inner: float, outer: float) -> void:
+	if not track.sloped:
+		return
+	if not _materials.has(FLOOR_KEY):
+		_materials[FLOOR_KEY] = track._surface_material(track.ground_texture, track.ground_color, 6.0, 0.95)
+	var side := signf(outer - inner)
+	var span := absf(outer - inner)
+	var cells := maxi(1, int(ceil(span / 4.0)))
+	for c in cells:
+		var x0 := inner + side * span * c / cells
+		var x1 := inner + side * span * (c + 1) / cells
+		var a := f0 * Vector3(x0, -0.08, 0)
+		var b := f0 * Vector3(x1, -0.08, 0)
+		var e := f1 * Vector3(x1, -0.08, 0)
+		var d := f1 * Vector3(x0, -0.08, 0)
+		var own := absf(x1) - absf(inner) - 0.6
+		if edge_distance(b) < own or edge_distance(e) < own:
+			continue
+		var centroid := (a + b + e + d) * 0.25
+		_quad(_st(FLOOR_KEY, centroid), a, b, e, d, centroid - f0.basis.y)
+
+
 ## True if a disc at a track-local point is clear of every road and barrier.
 func clear(local_pos: Vector3, radius: float) -> bool:
 	return edge_distance(local_pos) > track.barrier_thickness + 1.0 + radius

@@ -1,5 +1,5 @@
 # CYBERWAVE 2199
-## Game Design Document — Version 8.8
+## Game Design Document — Version 8.9
 
 **Status:** Development Baseline  
 **Engine:** Godot 4  
@@ -653,6 +653,8 @@ An eerie forest with twisted trees, heavy fog, abandoned structures, and unsettl
 
 Built at about 3.2 km on a foggy, moonlit night (no rain) along a dirt road. Dense pines and Hoia Baciu's crooked, S-bent trees close in on the road. Landmarks: a carved wooden start arch, a forest graveyard with a chapel ruin, a stone viaduct over a ravine, two hairpins past a bog, a ruined red-stone castle whose gatehouse and courtyard are the shortcut, a ruined keep on a rise, and the Round Clearing (the treeless meadow of the legend) as a wide, fast sweep.
 
+The road rolls over forest hills, about 32 m from top to bottom (−12 to +20 m, grades up to about 8%). It climbs through the S-bends to the graveyard ridge, crosses the viaduct level 14 m up with the ravine below, drops to the bog hairpins at the lowest point, and climbs again over the castle ridge, with the keep at the crest. It then runs down through the Round Clearing to the start. The castle shortcut rises over its own small crest. The sweeps after the castle are banked 5°. The land follows a smooth blend of the road heights, so the forest floor rises and falls with the road without steps between legs.
+
 ## 8.5 Catacombs Descent
 
 **Location:** Paris, France
@@ -671,7 +673,9 @@ Built at about 2.8 km, fully underground: a vaulted stone ceiling covers every m
 - a quarry propped with timber (EMP puddle from a fallen cable);
 - a tomb gallery back to the start.
 
-The shortcut is a low, half-flooded crypt passage across the middle of the lap. It's about 300 m shorter, but slowed by water and a smashable rubble barricade. The Tunnel Collapse special (§8.9) is still a proposal.
+The lap really descends. From the start chamber near street level it drops in stages through the ossuary and the crypt to the flooded cistern and the chapel, about 32 m down (the deepest point and level, so the water lies flat). It then climbs back up through the second ossuary and the quarry to the start. Grades reach about 8%, and the bends stay unbanked because the tunnels are tight. A stone floor follows the road out to the walls.
+
+The shortcut is a low, half-flooded crypt passage across the middle of the lap. It's about 300 m shorter, but slowed by water and a smashable rubble barricade. It leaves the main road 26 m down and climbs gently to rejoin it 12 m down. The Tunnel Collapse special (§8.9) is still a proposal.
 
 ## 8.6 Arashiyama Circuit
 
@@ -708,6 +712,14 @@ Built at about 3.1 km with a 14 m road and long flowing corners (55–115 m radi
 - the Ash Canyon: a tall gorge striped with black volcanic ash (snow-drift jump);
 - the Frozen Lake: a glassy lake under ice chandeliers (slush EMP puddle), back to the mouth.
 
+The road climbs and falls about 34 m:
+- up from the mouth onto an ice ridge, with the Blue Cathedral at the top (+16 m);
+- down through the Icicle Gallery and over a rise;
+- diving through Moulin Hall into the Ash Canyon, 18 m below the mouth;
+- back up past the Frozen Lake to the mouth.
+
+The mouth and the lake are level. Grades reach about 8%, and the long bends are banked 5° (not at the lake). Snow-covered floor follows the road out to the ice walls. Icicles keep 7.5 m clear above the road under them, wherever the road is.
+
 The shortcut is the Crystal Tube: a narrow, glowing round tunnel of scalloped ice with white light at its far end. It cuts from the Cathedral to the Icicle Gallery, about 120 m shorter, but an ice wall (smashable) blocks its entrance. The Ice Cave Collapse special (§8.9) is still a proposal. Race music: *Besieged Castle* (§12).
 
 ## 8.6b Crazy House
@@ -718,7 +730,12 @@ A race inside Hang Nga's Crazy House, the guesthouse built to look like a hollow
 
 **Identity:** Twists, turns and the bizarre. It's a fantasy on a giant scale: the whole lap runs inside one enormous hollow trunk, and nothing has a straight line or a right angle.
 
-Built at about 2.9 km with a 15 m road and constant linked corners (40–70 m radius, no straight longer than about 220 m). The inside of the trunk is melted grey and dark-brown bark dripping with cream plaster, with roofs from about 19 m to 46 m. Daylight comes through oval windows in the roof, and warm light glows from oval windows in the walls. The road is flat; the stairs are scenery (real elevation is a later engine upgrade). Landmarks in driving order:
+Built at about 2.9 km with a 15 m road and constant linked corners (40–70 m radius, no straight longer than about 220 m). The inside of the trunk is melted grey and dark-brown bark dripping with cream plaster, with roofs from about 19 m to 46 m. Daylight comes through oval windows in the roof, and warm light glows from oval windows in the walls. The road climbs up through the house:
+- from the Root Hall it rises through the Spiral Stair Well and the Animal Rooms to the Gingerbread Gables, 26 m up;
+- it winds back down through the Lava Grotto and the Bone Gallery to 12 m below the start;
+- it climbs back to the Root Hall.
+
+Grades reach about 9%, and several bends are banked 5°. The Rib Tunnel drops steadily from the Gables to the Bone Gallery. Landmarks in driving order:
 - the Root Hall: the start, between gnarled root columns, with knotted bone railings beyond the barriers;
 - the Spiral Stair Well: a tall well ringed with helical staircases (rounded steps, bone banisters, lit doorways at the top) (boost pad);
 - the Animal Rooms: warm-lit alcoves with a bear, an eagle and a giraffe, after the house's themed rooms (stair-step jump);
@@ -1721,5 +1738,6 @@ Changes after Version 1.0 should be tracked as revisions rather than silently re
 | 8.6 | 2026-11-15 | Slipstream made subtler and slower to trigger: the meter takes about 3 s to fill close up (4.5 s at the back of the tow, was 1.4–2.2 s), and the boost shows one slim, softer cyan arch instead of two bright ones, with a gentler snap-in and drift (§4.5). |
 | 8.7 | 2026-11-15 | Garage room restyled after "Cyberwave 2199 Neon Garage New.png": the roll-up door and big CW-2199 stencil, tool chests, tyres and banner are gone; a paneled wall with a small framed CYBERWAVE 2199 sign plate, corner struts, lockers and crates with magenta / cyan corner glow, and a chunkier stacked turntable take their place (§11.9). |
 | 8.8 | 2026-11-15 | Controller disconnected screen after its reference art: the race pauses when a player's gamepad drops out, solo resumes on any pad button or Enter (keyboard), split screen names the player and lets them claim any free pad or the free keyboard, then a 3-2-1 resumes the race (§11.8). |
+| 8.9 | 2026-11-16 | Elevation pass for the three Europe Cup tracks and the Crazy House: each now climbs and falls 32–38 m with grades up to about 9%, shaped to its setting (Hoia over forest hills and a castle ridge, the Catacombs truly descending 32 m and climbing out, the Glacier over an ice ridge and down into the Ash Canyon, the Crazy House up through the house to the Gables and back down). Long bends are banked 5° on all but the Catacombs. A floor follows the road out to the walls in the three enclosed tracks, and features and the start grid sit on level ground (§8.4, §8.5, §8.6a, §8.6b). |
 
-**End of Game Design Document — Version 8.7**
+**End of Game Design Document — Version 8.9**

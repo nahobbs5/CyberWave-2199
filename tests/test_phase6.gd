@@ -451,14 +451,14 @@ func _test_deep_water(race: RaceManager) -> void:
 
 func _test_menus_and_gp() -> void:
 	_current = "menus and Grand Prix"
-	print("- race setup and Grand Prix use Vegas")
+	print("- race setup and Grand Prix (Vegas is a practice track)")
 	_check(TrackCatalog.names().has("Vegas Overdrive") and TrackCatalog.scene_path("Vegas Overdrive") == VEGAS, "Vegas is in the track list")
 	var gp := load("res://resources/grand_prix/american_circuit.tres") as GrandPrixData
 	var c := Championship.create(gp, "normal", true, load("res://resources/racers/rival_roster.tres"))
 	c.race_index = 0
 	var config := c.make_race_config()
-	_check(config.track_name == "Vegas Overdrive" and config.track_scene.resource_path == VEGAS,
-			"American Cup race 1 runs on Vegas Overdrive")
+	_check(config.track_name == "Marble Canyon" and config.track_scene.resource_path == "res://scenes/tracks/marble_canyon.tscn",
+			"American Cup race 1 runs on Marble Canyon (Vegas moved to Practice)")
 	c.race_index = 1
 	config = c.make_race_config()
 	_check(config.track_name == "Six Flags New Orleans" and config.track_scene.resource_path == SIX_FLAGS,
@@ -602,6 +602,7 @@ func _test_forest() -> void:
 	_check(total > 3000 and chunks.size() < 400, "a forest of instanced trees (%d trees in %d chunks)" % [total, chunks.size()])
 	_check(on_road == 0, "no tree stands on the main road (%d)" % on_road)
 	_check(in_clearing == 0, "the Round Clearing stays treeless (%d)" % in_clearing)
+	_check_hills(track, "Hoia Baciu")
 	track.free()
 
 
@@ -649,6 +650,8 @@ func _test_catacombs() -> void:
 	_check(water.size() == 2 and water.any(func(f: Node) -> bool: return (f as TrackFeature).on_shortcut == "")
 			and water.any(func(f: Node) -> bool: return (f as TrackFeature).on_shortcut == sc.name),
 			"standing water in the cistern and the flooded crypt")
+	_check_hills(track, "Catacombs Descent")
+	_check(not track.find_children("Batch_road_floor*", "MeshInstance3D", true, false).is_empty(), "Catacombs: a floor follows the road down")
 	track.free()
 
 
@@ -806,7 +809,9 @@ func _test_glacier() -> void:
 	_check(scenery.start_roof_height >= 20.0, "a roomy start hall: roof %.1f m over the grid" % scenery.start_roof_height)
 	var low := 0
 	for p in scenery.icicle_tips:
-		if track.get_lateral_distance(track.to_global(p)) < track.road_width * 0.5 + 1.0 and p.y < 7.0:
+		# Measured from the road under the tip (the road climbs and falls).
+		var above := track.to_global(p).y - track.road_floor_y(track.to_global(p))
+		if track.get_lateral_distance(track.to_global(p)) < track.road_width * 0.5 + 1.0 and above < 7.0:
 			low += 1
 	var chunks := track.find_children("Icicles_*", "MultiMeshInstance3D", true, false)
 	_check(scenery.icicle_count() > 5000 and chunks.size() > 10, "icicles everywhere (%d in %d chunks)" % [scenery.icicle_count(), chunks.size()])
@@ -816,6 +821,8 @@ func _test_glacier() -> void:
 	var water := track.find_children("*", "TrackFeature", false, false).filter(
 			func(f: Node) -> bool: return (f as TrackFeature).kind == TrackFeature.Kind.WATER and (f as TrackFeature).on_shortcut == "")
 	_check(water.size() == 1, "a meltwater ford on the main road")
+	_check_hills(track, "Vatnajökull Glacier")
+	_check(not track.find_children("Batch_road_floor*", "MeshInstance3D", true, false).is_empty(), "Glacier: a floor follows the road")
 	track.queue_free()
 
 
@@ -852,7 +859,35 @@ func _test_crazy_house() -> void:
 			"bone arches (%d) never lower than 7.5 m over a road (%.1f m)" % [scenery.bone_arches, scenery.bone_arch_clearance])
 	_check(scenery.window_shafts >= 4 and track.find_children("WindowShaft*", "SpotLight3D", true, false).size() >= 4,
 			"daylight through roof windows")
+	_check_hills(track, "Crazy House")
+	_check(not track.find_children("Batch_road_floor*", "MeshInstance3D", true, false).is_empty(), "Crazy House: a floor follows the road")
 	track.queue_free()
+
+
+## The elevation pass (GDD 8.4-8.6b): a sloped track that climbs and falls
+## at least 25 m over the lap, no steeper than about 10% anywhere on the
+## main road or its shortcuts, with some banked bends or a steady descent.
+func _check_hills(track: TrackCircuit, label: String) -> void:
+	var lo := INF
+	var hi := -INF
+	var steepest := 0.0
+	var d := 0.0
+	while d < track.length:
+		var a := track.curve.sample_baked(d)
+		var b := track.curve.sample_baked(track.wrap_offset(d + 10.0))
+		lo = minf(lo, a.y)
+		hi = maxf(hi, a.y)
+		steepest = maxf(steepest, absf(b.y - a.y) / maxf(0.1, Vector2(b.x - a.x, b.z - a.z).length()))
+		d += 5.0
+	for sc in track.shortcuts:
+		d = 0.0
+		while d + 10.0 < sc.length:
+			var a := sc.point_at(d)
+			var b := sc.point_at(d + 10.0)
+			steepest = maxf(steepest, absf(b.y - a.y) / maxf(0.1, Vector2(b.x - a.x, b.z - a.z).length()))
+			d += 5.0
+	_check(track.sloped and hi - lo >= 25.0 and steepest <= 0.105,
+			"%s climbs and falls: %.0f m (%.1f..%.1f), steepest %.1f%%" % [label, hi - lo, lo, hi, steepest * 100.0])
 
 
 ## Gardens by the Bay: Asia Cup race 3. A glass skyway 10-53 m above the

@@ -4,6 +4,8 @@ extends RefCounted
 ## the test circuit under their own name until their scene exists.
 
 const TEST_CIRCUIT := "res://scenes/tracks/test_circuit.tscn"
+## Tracks the Practice picker offers (free drive, no rivals).
+const PRACTICE_TRACKS: Array[String] = ["Vegas Overdrive", "Test Circuit"]
 
 ## [name, scene path or "" (not built yet), location, race music or "" (none)]
 const TRACKS := [
@@ -11,8 +13,10 @@ const TRACKS := [
 			"res://music/lilex-cyber-dreams-314323.mp3"],
 	["Six Flags New Orleans", "res://scenes/tracks/six_flags_new_orleans.tscn", "Louisiana",
 			"res://music/theboysbeats-the-boy-s-beats-race-winner-282390.mp3"],
-	["Vegas Overdrive", "res://scenes/tracks/vegas_overdrive.tscn", "Las Vegas, Nevada",
+	["Marble Canyon", "res://scenes/tracks/marble_canyon.tscn", "Marble Canyon, Arizona",
 			"res://music/spmusic-heavy-racing-151129.mp3"],
+	# Practice only (free drive plays the Test Circuit song), not in a cup.
+	["Vegas Overdrive", "res://scenes/tracks/vegas_overdrive.tscn", "Las Vegas, Nevada", ""],
 	["Hoia Baciu Run", "res://scenes/tracks/hoia_baciu.tscn", "Romania",
 			"res://music/kulakovka-cyberpunk-music-624631.mp3"],
 	["Catacombs Descent", "res://scenes/tracks/catacombs_descent.tscn", "Paris, France",

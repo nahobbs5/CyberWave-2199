@@ -1,7 +1,9 @@
 extends Node3D
-## Free-drive sandbox (Phase 1 prototype): one car, no race rules.
+## Free-drive sandbox (Practice): one car, no race rules.
 ## Wires the track, car, camera and HUD, using the selected vehicle and its
-## cosmetics. Esc returns to the main menu.
+## cosmetics. The track is GameSession.practice_track (picked on the
+## Practice screen); the scene's own TestCircuit is swapped out for any other.
+## Esc returns to the main menu.
 
 @onready var track: TrackCircuit = $TestCircuit
 @onready var car: VehicleController = $PlayerCar
@@ -12,6 +14,7 @@ var minimap: Minimap
 
 func _ready() -> void:
 	InputSetup.ensure_actions()
+	_use_practice_track()
 	Music.play(get_tree(), TrackCatalog.music("Test Circuit"))
 	var profile := PlayerProfile.get_profile()
 	var vehicle := VehicleCatalog.by_id(profile.selected_vehicle)
@@ -29,6 +32,22 @@ func _ready() -> void:
 		var blur := SpeedBlur.new()
 		blur.vehicle = car
 		add_child(blur)
+
+
+## Replaces the built-in Test Circuit with the chosen practice track.
+func _use_practice_track() -> void:
+	var path := TrackCatalog.scene_path(GameSession.practice_track)
+	if path == track.scene_file_path:
+		return
+	var old := track
+	# The loading screen may have built it already, in steps.
+	track = LoadingScreen.take_track(path)
+	if track == null:
+		track = (load(path) as PackedScene).instantiate() as TrackCircuit
+	remove_child(old)
+	old.free()
+	add_child(track)
+	move_child(track, 0)
 
 
 ## Practice minimap, bottom right like in races: the track and your car.

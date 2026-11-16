@@ -466,8 +466,8 @@ func _test_cups() -> void:
 	var glacier_at := tracks.track_names.find("Vatnajökull Glacier")
 	_check(glacier_at == 5 and not tracks.cards[glacier_at].disabled, "the glacier is the Europe Cup's third track")
 	tracks.pick(0)
-	_check(GameSession.track_name == "Vegas Overdrive", "picking a track: Vegas is first (%s)" % GameSession.track_name)
-	_check(GameSession.current != null and GameSession.current.track_scene.resource_path.ends_with("vegas_overdrive.tscn"),
+	_check(GameSession.track_name == "Marble Canyon", "picking a track: Marble Canyon is first (%s)" % GameSession.track_name)
+	_check(GameSession.current != null and GameSession.current.track_scene.resource_path.ends_with("marble_canyon.tscn"),
 			"and it races that track")
 	tracks.queue_free()
 	example.locked = false
@@ -541,8 +541,8 @@ func _test_neon_setup() -> void:
 	await _frames(1)
 	_check(cups.board.confirm_button.has_focus(), "opening a cup still focuses it")
 	_check(cups.board.handle_back() and cups.cards[0].has_focus(), "Back from it returns to the cup card")
-	var vegas := cups.board.race_cards[0][0] as TrackCard
-	_check(vegas.has_photo() == (TrackCard.photo_path("res://scenes/tracks/vegas_overdrive.tscn") != ""),
+	var first := cups.board.race_cards[0][0] as TrackCard
+	_check(first.has_photo() == (TrackCard.photo_path("res://scenes/tracks/marble_canyon.tscn") != ""),
 			"a race card shows the track's screenshot when there is one")
 	var photos_ok := true
 	for card: TrackCard in cups.board.flat_cards:
@@ -577,6 +577,39 @@ func _test_practice_minimap() -> void:
 		_check(map.visible_racers().is_empty(), "no rivals in Practice")
 		_check(car.slipstream_charge == 0.0 and not car.in_slipstream, "no slipstream on your own")
 	practice.queue_free()
+	await process_frame
+	await _test_practice_picker()
+
+
+## Practice: the picker lists Vegas Overdrive and the Test Circuit, starts
+## on Vegas, and picking one sets the track free drive loads.
+func _test_practice_picker() -> void:
+	_current = "practice picker"
+	print("- practice picker")
+	var before := GameSession.practice_track
+	var picker := (load(GameSession.PRACTICE_SELECT_SCENE) as PackedScene).instantiate() as PracticeSelect
+	root.add_child(picker)
+	await _frames(3)
+	var names: Array[String] = []
+	for c in picker.cards:
+		names.append(c.track)
+	_check(names == ["Vegas Overdrive", "Test Circuit"], "two practice tracks (%s)" % [names])
+	_check(picker.cards[0].has_focus(), "Vegas Overdrive is focused first")
+	_check(picker.cards[0].has_photo(), "Vegas shows its photo")
+	picker.pick_track("Vegas Overdrive")
+	_check(GameSession.practice_track == "Vegas Overdrive", "picking Vegas sets the practice track")
+	picker.queue_free()
+	await process_frame
+	var drive := (load("res://scenes/free_drive.tscn") as PackedScene).instantiate()
+	root.add_child(drive)
+	await _frames(3)
+	var track := drive.get("track") as TrackCircuit
+	var car := drive.get("car") as VehicleController
+	_check(track != null and track.scene_file_path.ends_with("vegas_overdrive.tscn"), "free drive loads Vegas Overdrive")
+	_check(track != null and track.is_on_road(car.global_position), "and the car starts on its road")
+	_check(drive.get_node_or_null("TestCircuit") == null, "the built-in test circuit is gone")
+	drive.queue_free()
+	GameSession.practice_track = before
 	await process_frame
 
 
@@ -940,20 +973,25 @@ func _test_loading_card() -> void:
 	print("- loading card")
 	var config := _config(3)
 	config.mode = RaceConfig.Mode.GRAND_PRIX
-	config.track_name = "Vegas Overdrive"
+	config.track_name = "Marble Canyon"
 	GameSession.current = config
 	var card := LoadingScreen.card_for(GameSession.RACE_SCENE)
-	_check(card.title == "Vegas Overdrive", "card names the track (%s)" % card.title)
-	_check(str(card.detail).contains("Las Vegas") and str(card.detail).contains("Grand Prix"),
+	_check(card.title == "Marble Canyon", "card names the track (%s)" % card.title)
+	_check(str(card.detail).contains("Arizona") and str(card.detail).contains("Grand Prix"),
 			"card shows location and mode (%s)" % card.detail)
-	_check(LoadingScreen.card_for(GameSession.FREE_DRIVE_SCENE).title == "Free Drive", "free drive card")
+	var practice := GameSession.practice_track
+	GameSession.practice_track = "Vegas Overdrive"
+	var free := LoadingScreen.card_for(GameSession.FREE_DRIVE_SCENE)
+	_check(free.title == "Vegas Overdrive" and free.detail == "Practice" and str(free.track_path).ends_with("vegas_overdrive.tscn"),
+			"free drive card names the practice track (%s)" % free.title)
+	GameSession.practice_track = practice
 	_check(GameSession.RACE_SCENE in GameSession.SLOW_SCENES and GameSession.FREE_DRIVE_SCENE in GameSession.SLOW_SCENES
 			and not GameSession.MAIN_MENU_SCENE in GameSession.SLOW_SCENES, "races and free drive load behind the card")
 	var screen := LoadingScreen.new()
 	screen.build(card)
 	root.add_child(screen)
 	await _frames(2)
-	_check(screen.title_label.text == "VEGAS OVERDRIVE", "title on screen")
+	_check(screen.title_label.text == "MARBLE CANYON", "title on screen")
 	_check(screen.thumbnail != null and screen.thumbnail.outline.size() > 10, "track outline on screen")
 	_check(screen.layer > 20, "drawn above the pause menu and HUD")
 	await screen.dismiss()

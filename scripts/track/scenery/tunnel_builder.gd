@@ -57,6 +57,9 @@ func route_length() -> float:
 func frame(d: float) -> Transform3D:
 	if shortcut == null:
 		return scenery.at(d)
+	if scenery.track.sloped:
+		# Pitched with the shortcut, like its road and collider.
+		return shortcut.safe_transform(d, 0.0, 0.0)
 	var t := shortcut.tangent_at(d)
 	return Transform3D(Basis.looking_at(t, Vector3.UP), shortcut.point_at(d))
 
@@ -141,6 +144,9 @@ func build(from_d: float, to_d: float, opts: Dictionary = {}) -> void:
 					_surface(f0, f1, mid, hi, wall_key, wl, wr, wall_h)
 					continue
 			_surface(f0, f1, a, b, key, wl, wr, wall_h)
+		# Floor out to the wall feet (sloped tracks; flat ones use the ground slab).
+		scenery.add_floor_strip(f0, f1, h, wr + 0.3)
+		scenery.add_floor_strip(f0, f1, -h, -wl - 0.3)
 		if on_roof.is_valid():
 			on_roof.call(f0, -wl, wr)
 		# Ribs and pilasters each bay.
@@ -315,15 +321,17 @@ func _low_over_other_road(f: Transform3D, a: Vector2, b: Vector2, _h: float) -> 
 	var mid := (a + b) * 0.5
 	if mid.y >= LOW_OVER_ROAD:
 		return false
+	# On the road surface under the piece (at its height on a sloped track):
+	# the other road only counts when it's about as high (the vault would
+	# hang into its traffic), not a deck far above or below.
 	var p := f * Vector3(mid.x, 0.0, 0.0)
-	p.y = 0.0
 	var track := scenery.track
 	if shortcut != null:
 		var q := track.curve.get_closest_point(p)
-		return Vector2(p.x - q.x, p.z - q.z).length() < track.road_width * 0.5 + 0.5
+		return Vector2(p.x - q.x, p.z - q.z).length() < track.road_width * 0.5 + 0.5 and absf(q.y - p.y) < LOW_OVER_ROAD
 	for sc in track.shortcuts:
 		var q := sc.curve.get_closest_point(p)
-		if Vector2(p.x - q.x, p.z - q.z).length() < sc.road_width * 0.5 + 0.5:
+		if Vector2(p.x - q.x, p.z - q.z).length() < sc.road_width * 0.5 + 0.5 and absf(q.y - p.y) < LOW_OVER_ROAD:
 			return true
 	return false
 

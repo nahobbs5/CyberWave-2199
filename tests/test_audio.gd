@@ -95,7 +95,7 @@ func _test_final_lap_music() -> void:
 	for laps in [3, 1]:
 		var config := RaceConfig.new()
 		config.difficulty = load("res://resources/ai/normal.tres") as AIDifficulty
-		config.track_name = "Vegas Overdrive"
+		config.track_name = "Marble Canyon"
 		config.track_scene = TrackCatalog.scene(config.track_name)
 		config.total_laps = laps
 		var race := (load(RACE_SCENE) as PackedScene).instantiate() as RaceManager
@@ -104,7 +104,7 @@ func _test_final_lap_music() -> void:
 		race.camera.save_preference = false
 		await _seconds(1.0)
 		var music := Music.current_path()
-		_check(music == TrackCatalog.music("Vegas Overdrive") and Music.get_speed() == 1.0, "%d-lap race: track music at normal speed" % laps)
+		_check(music == TrackCatalog.music("Marble Canyon") and Music.get_speed() == 1.0, "%d-lap race: track music at normal speed" % laps)
 		# Drive the player through every gate by hand, lap by lap.
 		race.state = RaceManager.State.RACING
 		var car := race.player.vehicle
@@ -147,10 +147,13 @@ func _test_track_music() -> void:
 		"Gardens by the Bay": "res://music/elisaveta_stoycheva-garden-fairytale-368607.mp3",
 		"Vale da Lua": "res://music/restum-anoush-rise-of-the-phoenix-265090.mp3",
 		"Choquequirao": "res://music/desifreemusic-epic-victory-march-for-heroes-triumph-amp-celebration-462007.mp3",
+		"Marble Canyon": "res://music/spmusic-heavy-racing-151129.mp3",
+		"Vegas Overdrive": "",
 		"Test Circuit": "res://music/stageechoesmusic-the-garden-wakes-628640.mp3",
 	}
 	for track in want:
-		_check(TrackCatalog.music(track) == want[track] and ResourceLoader.exists(want[track]), "%s has its music" % track)
+		_check(TrackCatalog.music(track) == want[track] and (want[track] == "" or ResourceLoader.exists(want[track])),
+				"%s has its music" % track if want[track] != "" else "%s (practice only) has none" % track)
 	_check(ResourceLoader.exists(Music.VICTORY), "victory theme exists")
 	_check(ResourceLoader.exists(Music.RESULTS), "results theme exists")
 	# The web build drops the .mp3s and plays music/web/<name>.ogg copies.

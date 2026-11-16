@@ -61,6 +61,9 @@ func route_length() -> float:
 func frame(d: float) -> Transform3D:
 	if shortcut == null:
 		return scenery.at(d)
+	if scenery.track.sloped:
+		# Pitched with the shortcut, like its road and collider.
+		return shortcut.safe_transform(d, 0.0, 0.0)
 	var t := shortcut.tangent_at(d)
 	return Transform3D(Basis.looking_at(t, Vector3.UP), shortcut.point_at(d))
 
@@ -118,6 +121,9 @@ func build(from_d: float, to_d: float) -> void:
 			var e := f1 * Vector3(p1[i].x, p1[i].y, 0)
 			var centroid := (a + b + c + e) * 0.25
 			scenery._quad(scenery._st(key, centroid), a, b, c, e, centroid * 2.0 - axis)
+		# Floor out to the wall feet (sloped tracks; flat ones use the ground slab).
+		scenery.add_floor_strip(f0, f1, h, maxf(p0[0].x, p1[0].x) + 0.5)
+		scenery.add_floor_strip(f0, f1, -h, minf(p0[SEGMENTS].x, p1[SEGMENTS].x) - 0.5)
 		var dm0 := dim_list[k]
 		if on_roof.is_valid():
 			on_roof.call(f0, -float(dm0.get("left_wall", h + 10.0)), float(dm0.get("right_wall", h + 10.0)))

@@ -33,6 +33,9 @@ static func build(scenery: TrackScenery, bounds: Rect2, cell: float = 7.0, ampli
 				var gz: int = iz + c[1]
 				p.append(Vector3(bounds.position.x + gx * cell, heights[gz * nx + gx], bounds.position.y + gz * cell))
 			var avg: float = (p[0].y + p[1].y + p[2].y + p[3].y) * 0.25
+			if scenery.has_smooth_road_y():
+				# Grass / mud by height above the land's slope, not sea level.
+				avg -= scenery.smooth_road_y((p[0] + p[2]) * 0.5) * SLOPED_FOLLOW
 			var key := "%s@%d,%d" % ["g" if avg > 0.25 else "m", int(p[0].x / TrackScenery.CHUNK), int(p[0].z / TrackScenery.CHUNK)]
 			if not tools.has(key):
 				var nst := SurfaceTool.new()
@@ -119,7 +122,9 @@ static func height_at(scenery: TrackScenery, noise: FastNoiseLite, amplitude: fl
 	var road_y := 0.0
 	if track.sloped:
 		road_y = scenery.road_y_at(Vector3(x, 0, z))
-		h += road_y * SLOPED_FOLLOW
+		# The smooth field (when the scenery built one) has no seams between
+		# legs at different heights; the banks still level to the nearest road.
+		h += (scenery.smooth_road_y(Vector3(x, 0, z)) if scenery.has_smooth_road_y() else road_y) * SLOPED_FOLLOW
 	var off_road := scenery.edge_distance(Vector3(x, 0, z)) - (track.barrier_thickness + 5.0)
 	var t := clampf(off_road / 14.0, 0.0, 1.0)
 	var final_h := lerpf(road_y - 0.04, h, t * t * (3.0 - 2.0 * t))

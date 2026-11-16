@@ -66,7 +66,7 @@ func _build() -> void:
 		layout.add_entry("Versus", "trophy", "Pick your tracks and race the field, standard or elimination.",
 				func() -> void: GameSession.to_race_setup(tree, GameSession.last_versus_mode())),
 		layout.add_entry("Practice", "stopwatch", "Free drive with no rivals to learn the handling.",
-				func() -> void: GameSession.to_free_drive(tree)),
+				func() -> void: GameSession.to_practice_select(tree)),
 		layout.add_entry("Garage", "car", "Choose your car, buy paint and parts, and set your plate.",
 				func() -> void: GameSession.to_garage(tree)),
 		layout.add_entry("Settings", "gear", "Controls, audio and video.",

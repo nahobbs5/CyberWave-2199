@@ -83,6 +83,9 @@ const ITEM_LOSS_REASONS: Array[String] = ["out of bounds", "water", "lava", "off
 @export var progress_slack: float = 15.0
 ## Largest backward move accepted per update.
 @export var max_backward_step: float = 25.0
+## TrackCircuit.terrace_guard: how long a car must sit on a part of the road
+## it didn't drive to (dropped onto another terrace) before it's put back.
+@export var off_route_time: float = 0.4
 
 var track: TrackCircuit
 var last_safe_offset: float = 0.0
@@ -108,6 +111,7 @@ var _stuck_timer: float = 0.0
 var _off_track_timer: float = 0.0
 var _no_progress_timer: float = 0.0
 var _progress_ref: float = -1.0
+var _off_route_timer: float = 0.0
 var _cooldown: float = 0.0
 ## Distance travelled since the safe point last moved.
 var _travelled: float = 0.0
@@ -278,7 +282,9 @@ func _update_safe_point() -> void:
 	# Missed updates (airborne, scraping the edge) are fine: the car really
 	# covered that distance. A teleport or shortcut didn't.
 	if step > _travelled * progress_scale + progress_slack or step < -max_backward_step:
+		_check_off_route()
 		return
+	_off_route_timer = 0.0
 	if branch != null:
 		safe_branch = branch
 		safe_branch_distance = branch.local_offset(track.to_local(pos))
@@ -287,6 +293,19 @@ func _update_safe_point() -> void:
 	last_safe_offset = offset
 	total_progress += step
 	_travelled = 0.0
+
+
+## Stacked switchbacks (TrackCircuit.terrace_guard): a car that fell onto
+## another terrace is driving on road it never reached, ahead (it would skip
+## part of the lap) or behind. Put it back at its last safe point, facing
+## along the road, once it has sat there for off_route_time.
+func _check_off_route() -> void:
+	if not track.terrace_guard:
+		return
+	_off_route_timer += get_physics_process_delta_time()
+	if _off_route_timer >= off_route_time:
+		_off_route_timer = 0.0
+		request_recovery("off route")
 
 
 func _check_automatic(delta: float) -> void:
@@ -385,6 +404,7 @@ func _is_clear(xf: Transform3D) -> bool:
 
 
 func _clear_timers() -> void:
+	_off_route_timer = 0.0
 	_overturn_timer = 0.0
 	_stuck_timer = 0.0
 	_off_track_timer = 0.0

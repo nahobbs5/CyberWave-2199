@@ -79,7 +79,8 @@ static func card_for(path: String) -> Dictionary:
 			"track_path": TrackCatalog.scene_path(config.track_name),
 		}
 	if path == GameSession.FREE_DRIVE_SCENE:
-		return {"title": "Free Drive", "detail": "Practice", "track_path": TrackCatalog.TEST_CIRCUIT}
+		var practice := GameSession.practice_track
+		return {"title": practice, "detail": "Practice", "track_path": TrackCatalog.scene_path(practice)}
 	return {"title": "", "detail": "", "track_path": ""}
 
 
@@ -168,6 +169,10 @@ func _run(path: String) -> void:
 	var track_scene: PackedScene = null
 	if path == GameSession.RACE_SCENE and GameSession.current != null:
 		track_scene = GameSession.current.track_scene
+	elif path == GameSession.FREE_DRIVE_SCENE:
+		var practice := TrackCatalog.scene_path(GameSession.practice_track)
+		if practice != TrackCatalog.TEST_CIRCUIT:
+			track_scene = load(practice) as PackedScene
 	var files_end := FILES_END if track_scene != null else FILES_ONLY_END
 	var scene := await _load_threaded(path, files_end) as PackedScene
 	if track_scene != null:

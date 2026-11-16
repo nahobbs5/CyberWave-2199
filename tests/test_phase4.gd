@@ -374,7 +374,7 @@ func _test_mode_select() -> void:
 ## Versus setup: Next, then pick the first track on the track screen.
 func _start_versus(setup: RaceSetup) -> void:
 	setup.start()
-	GameSession.start_versus_race(self, "Vegas Overdrive")
+	GameSession.start_versus_race(self, "Marble Canyon")
 
 
 func _open_setup(mode: RaceConfig.Mode) -> RaceSetup:

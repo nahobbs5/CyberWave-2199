@@ -430,7 +430,7 @@ func _test_menus() -> void:
 	setup._weapons.button_pressed = false
 	setup.start()
 	# Versus: the track screen comes next (Mario Kart style).
-	GameSession.start_versus_race(self, "Vegas Overdrive")
+	GameSession.start_versus_race(self, "Marble Canyon")
 	var c := GameSession.current
 	_check(c.vehicle_id == "cipher_evo" and c.total_laps == 2 and not c.weapons_enabled
 			and c.difficulty.resource_path.ends_with("easy.tres"), "race config from the setup screen")

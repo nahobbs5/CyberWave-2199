@@ -20,11 +20,16 @@ const CREDITS_SCENE := "res://scenes/menu/credits.tscn"
 const CUP_SELECT_SCENE := "res://scenes/menu/cup_select.tscn"
 const TRACK_SELECT_SCENE := "res://scenes/menu/track_select.tscn"
 const FREE_DRIVE_SCENE := "res://scenes/free_drive.tscn"
+## Practice: pick a practice track (TrackCatalog.PRACTICE_TRACKS).
+const PRACTICE_SELECT_SCENE := "res://scenes/menu/practice_select.tscn"
 const RACE_SCENE := "res://scenes/race/race.tscn"
 ## Scenes that build a track on load; they open behind a LoadingScreen.
 const SLOW_SCENES: Array[String] = [RACE_SCENE, FREE_DRIVE_SCENE]
 
 static var current: RaceConfig
+## The track free drive (Practice) loads. The picker sets it; the default
+## keeps free_drive.tscn light when it's run directly (tests, editor).
+static var practice_track: String = "Test Circuit"
 ## Mode the race setup screen opens with.
 static var setup_mode: RaceConfig.Mode = RaceConfig.Mode.VERSUS
 ## The cup picked on the cup screen (a GrandPrixData path), and in Versus the
@@ -231,7 +236,14 @@ static func last_versus_mode() -> RaceConfig.Mode:
 	return RaceConfig.Mode.ELIMINATION if int(setup.get("race_type", 0)) == 1 else RaceConfig.Mode.VERSUS
 
 
-static func to_free_drive(tree: SceneTree) -> void:
+static func to_practice_select(tree: SceneTree) -> void:
+	_change(tree, PRACTICE_SELECT_SCENE)
+
+
+## Free drive on `track_name` (default: the last practice track).
+static func to_free_drive(tree: SceneTree, track_name: String = "") -> void:
+	if track_name != "":
+		practice_track = track_name
 	_change(tree, FREE_DRIVE_SCENE)
 
 

@@ -1,11 +1,11 @@
 {
   "schema": 1,
-  "updated": "2026-11-15",
+  "updated": "2026-11-16",
   "project": {
     "name": "Cyberwave 2199",
     "pitch": "Retrofuturistic cyberpunk combat kart racing: luxury neon cars, drift boosts, weapons and fifteen real-world circuits, against seven AI rivals or in 2–4 player local split screen.",
     "engine": "Godot 4.7.2 · GDScript · Jolt Physics",
-    "gdd": "v8.7",
+    "gdd": "v8.9",
     "phase": "Phase 6: content and polish (GDD §16)",
     "repo": "https://github.com/nahobbs5/CyberWave-2199",
     "demo": "https://nahobbs5.github.io/CyberWave-2199/web/",
@@ -318,6 +318,10 @@
         },
         {
           "text": "Arashiyama bamboo reworked (straight jointed culms, crowns meeting overhead)",
+          "done": true
+        },
+        {
+          "text": "Elevation for the Europe Cup and Crazy House: 32-38 m climbs and drops, up to ~9%, banked sweepers, floors that follow the road (v8.9)",
           "done": true
         },
         {
@@ -977,7 +981,7 @@
       "date": "2026-11-15",
       "decision": "Garage room follows 'Cyberwave 2199 Neon Garage New.png': small framed CYBERWAVE 2199 plate, lockers and crates, stacked turntable",
       "why": "The big CW-2199 stencil on the wall was too loud; the new reference is cleaner",
-      "gdd": "v8.7"
+      "gdd": "v8.9"
     }
   ],
   "playtest": [

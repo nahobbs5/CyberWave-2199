@@ -88,8 +88,10 @@ func build() -> void:
 	_commit_skulls()
 
 
+## Main-loop offset of a layout point (raised to the road's height first, so
+## the nearest point is found on the right stretch of the sloped road).
 func _off(p: Vector3) -> float:
-	return track.curve.get_closest_offset(p)
+	return track.curve.get_closest_offset(on_road_level(p))
 
 
 # --- roof map (tests check the whole lap is under a ceiling) ---------------------------
@@ -222,6 +224,10 @@ func _skull_glyph(img: Image, bump: Image, x: int, y: int) -> void:
 # --- skulls (instanced) ------------------------------------------------------------------
 
 func place_skull(xf: Transform3D) -> void:
+	# Never on a road or its barrier (where two tunnels meet, one's wall
+	# dressing can reach the other's road edge).
+	if edge_distance(xf.origin) < track.barrier_thickness + 0.1:
+		return
 	var key := Vector2i(int(floor(xf.origin.x / SKULL_CHUNK)), int(floor(xf.origin.z / SKULL_CHUNK)))
 	if not _skulls.has(key):
 		_skulls[key] = []
@@ -240,7 +246,7 @@ func _commit_skulls() -> void:
 		_skull_mesh = _build_skull_mesh()
 	for key: Vector2i in _skulls:
 		var list: Array = _skulls[key]
-		var centre := Vector3((key.x + 0.5) * SKULL_CHUNK, 0, (key.y + 0.5) * SKULL_CHUNK)
+		var centre := Vector3((key.x + 0.5) * SKULL_CHUNK, mean_y(list), (key.y + 0.5) * SKULL_CHUNK)
 		var mm := MultiMesh.new()
 		mm.transform_format = MultiMesh.TRANSFORM_3D
 		mm.mesh = _skull_mesh
@@ -312,7 +318,7 @@ func _start_chamber(from_offset: float, to_offset: float) -> void:
 	var d := 6.0
 	while d < span - 4.0:
 		for side: float in [-1.0, 1.0]:
-			var p := at(from_offset + d, side * (h + 4.0))
+			var p := upright(from_offset + d, side * (h + 4.0))
 			if clear(p.origin, 0.9):
 				var top := TunnelBuilder.vault_height(h + 7.0, h + 7.0, 8.0, 15.0, h + 4.0)
 				add_box("blocks", Vector3(1.6, top, 1.6), p.translated_local(Vector3(0, top * 0.5, 0)))
@@ -322,7 +328,7 @@ func _start_chamber(from_offset: float, to_offset: float) -> void:
 	# Iron braziers either side of the start gantry.
 	for along: float in [-22.0, 22.0]:
 		for side: float in [-1.0, 1.0]:
-			var p := at(track.start_line_offset + along, side * (h + 2.4))
+			var p := upright(track.start_line_offset + along, side * (h + 2.4))
 			if clear(p.origin, 0.5):
 				_brazier(p)
 
@@ -366,12 +372,13 @@ func _cistern(from_offset: float, to_offset: float, wall: float) -> void:
 		var o := from_offset + d
 		for side: float in [-1.0, 1.0]:
 			# Black water from the barrier to the wall.
-			var water := at(o, side * (h + 1.0 + (wall - h - 1.2) * 0.5))
+			# Level water (the road may climb through the cistern).
+			var water := upright(o, side * (h + 1.0 + (wall - h - 1.2) * 0.5))
 			if clear(water.origin, 0.0) or edge_distance(water.origin) > 1.0:
 				add_box("water", Vector3(wall - h - 1.2, 0.05, 3.05), water.translated_local(Vector3(0, 0.04, 0)))
 			if n % 3 == 0:
 				for lat: float in [h + 3.2, h + 6.6]:
-					var p := at(o, side * lat)
+					var p := upright(o, side * lat)
 					if clear(p.origin, 0.8):
 						var top := TunnelBuilder.vault_height(wall, wall, 6.0, 12.0, lat)
 						add_cyl("blocks", 0.65, top, p, 10)
@@ -396,7 +403,7 @@ func _chapel(from_offset: float, to_offset: float) -> void:
 		if edge_distance(floor_xf.origin) > 1.0:
 			add_box("slab", Vector3(wl - h - 1.0, 0.06, 3.05), floor_xf.translated_local(Vector3(0, 0.03, 0)))
 		if n % 4 == 1:
-			var p := at(o, -(h + 2.9))
+			var p := upright(o, -(h + 2.9))
 			if clear(p.origin, 0.6):
 				var top := TunnelBuilder.vault_height(wl, h + 3.0, 5.0, 11.0, -(h + 2.9))
 				add_cyl("blocks", 0.5, top, p, 10)
@@ -405,7 +412,7 @@ func _chapel(from_offset: float, to_offset: float) -> void:
 		n += 1
 	# The apse: steps, an altar, a white statue, a cross on the wall, candles.
 	var mid := from_offset + span * 0.5
-	var apse := at(mid, -(wl - 4.0))
+	var apse := upright(mid, -(wl - 4.0))
 	add_box("slab", Vector3(6.0, 0.3, 9.0), apse.translated_local(Vector3(0, 0.15, 0)))
 	add_box("slab", Vector3(4.5, 0.3, 7.0), apse.translated_local(Vector3(-0.5, 0.45, 0)))
 	add_box("blocks", Vector3(1.3, 1.1, 3.2), apse.translated_local(Vector3(0.4, 1.15, 0)))
@@ -465,7 +472,7 @@ func _flooded_crypt(sc: TrackShortcut) -> void:
 	while d < water_to:
 		var f := tube.frame(d)
 		for side: float in [-1.0, 1.0]:
-			var p := f.translated_local(Vector3(side * (h + 1.0 + (wall - h - 1.0) * 0.5), 0.05, 0))
+			var p := TrackScenery.level(f.translated_local(Vector3(side * (h + 1.0 + (wall - h - 1.0) * 0.5), 0.05, 0)))
 			if edge_distance(p.origin) > 0.4:
 				add_box("water", Vector3(wall - h - 1.0, 0.05, 3.05), p)
 		d += 3.0
@@ -483,14 +490,18 @@ func _flooded_crypt(sc: TrackShortcut) -> void:
 	# It hangs over the rubble beside the road, clear of the cars and the camera.
 	add_box("rib", Vector3(0.7, 0.5, 3.4), hang.translated_local(Vector3(h + 1.6, 4.6, 0)).rotated_local(Vector3.FORWARD, 0.7).rotated_local(Vector3.UP, PI * 0.5))
 	# Ceiling slabs over the two junctions, so the vaults close up where the tunnels meet.
-	_junction_slab(sc.point_at(28.0), track.curve.sample_baked(track.wrap_offset(sc.start_offset + 28.0)))
-	_junction_slab(sc.point_at(sc.length - 28.0), track.curve.sample_baked(track.wrap_offset(sc.end_offset - 28.0)))
+	_junction_slab(sc.point_at(28.0), track.wrap_offset(sc.start_offset + 28.0))
+	_junction_slab(sc.point_at(sc.length - 28.0), track.wrap_offset(sc.end_offset - 28.0))
 
 
-func _junction_slab(a: Vector3, b: Vector3) -> void:
+## A ceiling slab between a shortcut point a and the main road at offset o,
+## pitched with the main road there (the two roads climb together).
+func _junction_slab(a: Vector3, o: float) -> void:
+	var b := track.curve.sample_baked(o)
 	var c := (a + b) * 0.5
 	var size := 44.0
-	add_box("vault", Vector3(size, 0.6, size), xform(c + Vector3(0, 7.9, 0)))
+	var f := at(o)
+	add_box("vault", Vector3(size, 0.6, size), Transform3D(f.basis, c + f.basis.y * 7.9))
 	var x := -size * 0.5
 	while x <= size * 0.5:
 		var z := -size * 0.5

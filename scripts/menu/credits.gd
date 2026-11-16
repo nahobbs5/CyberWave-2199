@@ -37,7 +37,7 @@ const MUSIC := [
 	["Wings of Hope", "ikoliks", "garage"],
 	["Cyber Dreams", "Lilex", "The Stacks"],
 	["Race Winner", "TheBoysBeats", "Six Flags New Orleans"],
-	["Heavy Racing", "SPmusic", "Vegas Overdrive"],
+	["Heavy Racing", "SPmusic", "Marble Canyon"],
 	["Cyberpunk Music", "kulakovka", "Hoia Baciu Run"],
 	["Hard Cyberpunk", "kulakovka", "Catacombs Descent"],
 	["The Cyber Geisha", "Ob-Lix", "Arashiyama Circuit"],

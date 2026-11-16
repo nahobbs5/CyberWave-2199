@@ -109,8 +109,10 @@ func build() -> void:
 	_commit_icicles()
 
 
+## Main-loop offset of a layout point (raised to the road's height first, so
+## the nearest point is found on the right stretch of the sloped road).
 func _off(p: Vector3) -> float:
-	return track.curve.get_closest_offset(p)
+	return track.curve.get_closest_offset(on_road_level(p))
 
 
 # --- cave shape -------------------------------------------------------------------------
@@ -266,8 +268,10 @@ func _dress_section(f: Transform3D, pr: PackedVector2Array, d: float, dm: Dictio
 
 ## Hangs one icicle with its top at `top` (kept clear above any road).
 func _hang(top: Vector3, length: float, radius: float) -> void:
-	var ground := Vector3(top.x, 0, top.z)
-	var lowest := ROAD_CLEARANCE if edge_distance(ground) < 2.0 else 0.6
+	# Heights are above the nearest road (the road climbs and falls); off the
+	# road the floor can sit a little higher on a banked bend.
+	var edge := edge_distance(top)
+	var lowest := road_y_at(top) + (ROAD_CLEARANCE if edge < 2.0 else 0.6 + 0.09 * edge)
 	length = minf(length, top.y - lowest)
 	if length < 0.3:
 		return
@@ -296,7 +300,7 @@ func _column(f: Transform3D, pr: PackedVector2Array, dm: Dictionary) -> void:
 	var top := _ceiling_at(pr, lat)
 	if top < 5.0 or top > 20.0:
 		return
-	var base := f.translated_local(Vector3(lat, 0, -1.5))
+	var base := TrackScenery.level(f.translated_local(Vector3(lat, 0, -1.5)))
 	if not clear(base.origin, 1.8):
 		return
 	var waist := top * rng.randf_range(0.45, 0.6)
@@ -321,7 +325,7 @@ func _commit_icicles() -> void:
 		_icicle_mesh = _build_icicle_mesh()
 	for key: Vector2i in _icicles:
 		var list: Array = _icicles[key]
-		var centre := Vector3((key.x + 0.5) * ICICLE_CHUNK, 0, (key.y + 0.5) * ICICLE_CHUNK)
+		var centre := Vector3((key.x + 0.5) * ICICLE_CHUNK, mean_y(list), (key.y + 0.5) * ICICLE_CHUNK)
 		var mm := MultiMesh.new()
 		mm.transform_format = MultiMesh.TRANSFORM_3D
 		mm.mesh = _icicle_mesh
@@ -426,7 +430,7 @@ func _mouth() -> void:
 			var y := clampf((lat - wl) * 0.33, 0.0, 16.0)
 			add_sphere("snow", rng.randf_range(2.5, 5.0), f.translated_local(Vector3(-lat, y - 0.8, 0)).scaled_local(Vector3(1.6, 0.4, 1.3)), 4, 8)
 			var rock := f.translated_local(Vector3(-(wl + rng.randf_range(8.0, 60.0)), 0, rng.randf_range(-3.0, 3.0)))
-			rock.origin.y = clampf((absf((f.affine_inverse() * rock.origin).x) - wl) * 0.36, 0.0, 28.0)
+			rock.origin.y = f.origin.y + clampf((absf((f.affine_inverse() * rock.origin).x) - wl) * 0.36, 0.0, 28.0)
 			add_sphere("basalt", rng.randf_range(0.8, 2.2), rock.scaled_local(Vector3(1.2, 0.7, 1.0)), 3, 6)
 		d += 6.0
 	var mid_o := track.wrap_offset(_mouth_from + span * 0.5)
