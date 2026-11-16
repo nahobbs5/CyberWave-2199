@@ -5,7 +5,7 @@
     "name": "Cyberwave 2199",
     "pitch": "Retrofuturistic cyberpunk combat kart racing: luxury neon cars, drift boosts, weapons and fifteen real-world circuits, against seven AI rivals or in 2–4 player local split screen.",
     "engine": "Godot 4.7.2 · GDScript · Jolt Physics",
-    "gdd": "v8.9",
+    "gdd": "v9.2",
     "phase": "Phase 6: content and polish (GDD §16)",
     "repo": "https://github.com/nahobbs5/CyberWave-2199",
     "demo": "https://nahobbs5.github.io/CyberWave-2199/web/",
@@ -387,7 +387,7 @@
       ],
       "test": {
         "headless": "godot --headless --fixed-fps 60 -s res://tests/test_phase6.gd",
-        "also": "test_boost_patterns.gd, test_quinta_normal.gd, test_vale_da_lua.gd, test_choquequirao.gd, test_kilwa_kisiwani.gd, test_nyiragongo.gd, test_chefchaouen.gd",
+        "also": "test_boost_patterns.gd, test_quinta_normal.gd, test_vale_da_lua.gd, test_choquequirao.gd, test_kilwa_kisiwani.gd, test_nyiragongo.gd, test_chefchaouen.gd, test_small_ramps.gd",
         "manual": "Versus → each cup's tracks at 1080p with Debug → Monitors open (FPS). Check that water and EMP puddles read at full speed and fog never hides a corner. On Six Flags, the bumper-car pavilion should be clear dead ahead coming up the Midway straight."
       },
       "blockers": "Arashiyama: 'shortcut is shorter (350 vs 470)' and 'every gate counted on the shortcut' fail. Six Flags: 'ramp item boxes gave a weapon' and 'every gate counted' (shortcut lap and full race) fail, also at e57fcde.",
@@ -982,6 +982,24 @@
       "decision": "Garage room follows 'Cyberwave 2199 Neon Garage New.png': small framed CYBERWAVE 2199 plate, lockers and crates, stacked turntable",
       "why": "The big CW-2199 stencil on the wall was too loud; the new reference is cleaner",
       "gdd": "v8.9"
+    },
+    {
+      "date": "2026-11-16",
+      "decision": "Car fidelity pass stays procedural: rounded smooth-shaded bodies, auto wheel arches / shut lines / mirrors, detailed tyres and spoked rims for every car",
+      "why": "Big visual gain for all eight cars at once with no new art; the .glb slot stays open for hand-made models later",
+      "gdd": "v9.0"
+    },
+    {
+      "date": "2026-11-16",
+      "decision": "EMP jam gets a big HUD cue (red X over the item squares, dim flicker, OFFLINE captions, countdown ring and timer, shake + beep on blocked fire); every race track gets a small half-width trick ramp (11 new, 3 existing jumps cut to half width)",
+      "why": "Playtest: the small JAMMED text was easy to miss, and Chefchaouen's half-width jump (pick a side) was a highlight",
+      "gdd": "v9.1"
+    },
+    {
+      "date": "2026-11-16",
+      "decision": "Garage door shows a neon world map with a pin per track (coloured by cup) instead of the CYBERWAVE 2199 sign text; smaller map on the split-screen car cards",
+      "why": "Ties the car picker to the world tour of the cups; the game name is already in the top-left logo",
+      "gdd": "v9.2"
     }
   ],
   "playtest": [
@@ -1070,6 +1088,10 @@
         {
           "text": "Triple Railgun's three shots feel distinct; hits read \"RAILGUN!\" and Triple Spike hits \"ROAD SPIKE!\"",
           "done": false
+        },
+        {
+          "text": "EMP jam: the X, countdown and blocked-fire shake read clearly at a glance (also in split screen and with reduced flashing)",
+          "done": false
         }
       ]
     },
@@ -1136,6 +1158,24 @@
         },
         {
           "text": "Rumble is felt on boosts and hits, and the Settings toggle turns it off",
+          "done": false
+        }
+      ]
+    },
+    {
+      "area": "Vehicles",
+      "items": [
+        {
+          "text": "New car models: garage spin, a night race and 4-player split screen look right and hold frame rate",
+          "done": false
+        }
+      ]
+    },
+    {
+      "area": "Tracks",
+      "items": [
+        {
+          "text": "Small half-width ramps: each one is easy to spot, fun to take, and AI cars don't clip their sides",
           "done": false
         }
       ]

@@ -139,5 +139,15 @@ boost_extra = 8.0
 boost_duration = 1.2
 boost_kick = 5.0
 
+[node name="SmallRampMoraineCrest" type="Node3D" parent="."]
+script = ExtResource("3_feature")
+kind = 4
+offset = 0
+lateral = 3.25
+anchor_point = Vector3(-376.4, -6.09, 522)
+width = 6.5
+length = 11.0
+ramp_height = 0.9
+
 [node name="Scenery" type="Node3D" parent="."]
 script = ExtResource("4_scenery")

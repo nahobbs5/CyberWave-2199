@@ -45,6 +45,7 @@ static func apply_model(car: Node3D, vehicle: VehicleData) -> void:
 		var model := vehicle.model_scene.instantiate() as Node3D
 		model.name = "Model"
 		body.add_child(model)
+		WheelBuilder.dress(car)
 	elif CarDesigns.has_design(vehicle.id):
 		CarModelBuilder.build(car, vehicle.id)
 	else:
@@ -161,6 +162,9 @@ static func paint_material(color: Color, finish: String) -> StandardMaterial3D:
 		_: # gloss
 			mat.metallic = 0.55
 			mat.roughness = 0.28
+			mat.clearcoat_enabled = true
+			mat.clearcoat = 0.6
+			mat.clearcoat_roughness = 0.1
 	return mat
 
 
@@ -264,6 +268,10 @@ static func _apply_wheels(car: Node3D, item: CosmeticItem) -> void:
 			continue
 		var mesh := child.get_node_or_null("Pivot/Mesh") as Node3D
 		if mesh == null:
+			continue
+		if WheelBuilder.is_dressed(mesh):
+			# Model cars always have a spoked rim; the item just recolours it.
+			WheelBuilder.set_rim_material(mesh, _material(item.color, item.style) if item != null else null)
 			continue
 		var old := mesh.get_node_or_null("Rim")
 		if old != null:

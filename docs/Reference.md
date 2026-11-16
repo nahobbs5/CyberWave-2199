@@ -2,7 +2,7 @@
 
 The detailed companion to the [README](../README.md). It covers how each system works, every track, the weapons, the project layout and the headless checks. The [Game Design Document](Game%20Design%20Document.md) (v6.9) is the design authority; this file describes what is **built**. The [dev tracker](https://nahobbs5.github.io/CyberWave-2199/dev/) follows the work still in progress.
 
-Last refreshed 2026-11-12.
+Last refreshed 2026-11-16.
 
 ## Controls
 
@@ -139,7 +139,7 @@ The layout is the `control_points` list on `scenes/tracks/test_circuit.tscn`, sa
 - **Credits:** the game, music, sound, fonts, textures and sky, weapon art and engine, with a Back button (Esc / B also goes back).
 - **Race setup** (GDD §11.3): a Race Results style title, centred (GRAND PRIX or VERSUS; `NeonScreenLayout.use_results_header`, also used by the cup and track screens, Settings and the Garage via `add_results_header`); Grand Prix also shows the cup's gold banner, Versus none. The cup (Grand Prix) or race type and number of races (Versus), vehicle picker with a rotating preview of your car (paint, cosmetics and plate), stats, NPC difficulty, laps (Versus), weapons on/off, a short explanation of the chosen mode (how Elimination knocks cars out, how points work), and a **Name** field just above the gold button (`RaceSetup.name_field`; `PlayerProfile.player_name`, 12 characters, cleaned by `sanitize_name`; `race_name()` gives "You" when empty; Enter or Esc moves on to the button). Grand Prix starts the race; Versus goes on to the track screen. It keeps your choices until the game closes (each launch starts on the defaults: Standard, 3 races, 3 laps, Normal, weapons on; the last cup is kept) and shows your personal best (Versus) or best championship finish (Grand Prix).
   - **A Grand Prix keeps the car you started it with** for all three races (the GDD saves the player vehicle with the championship).
-- **Garage** (GDD §11.4): your car on a stacked neon turntable in a full-screen garage room (paneled wall, framed CYBERWAVE 2199 sign plate, lockers and crates in the corners; `VehiclePreview`) (auto-spin; drag or the right stick turns it), COSMETICS and INFO tabs, the license plate editor, the 8 cosmetic categories and your coin balance, with B Back / A Apply.
+- **Garage** (GDD §11.4): your car on a stacked neon turntable in a full-screen garage room (paneled garage door with a neon world map and a pin on every track — `WorldMapBuilder`, smaller on the split-screen cards — lockers and crates in the corners; `VehiclePreview`) (auto-spin; drag or the right stick turns it), COSMETICS and INFO tabs, the license plate editor, the 8 cosmetic categories and your coin balance, with B Back / A Apply.
   - **Click an item's name** to try it on. **Buy** spends coins and equips it; **Equip** puts an item you own on this car. Purchases are permanent and shared by all cars, but **each car has its own equipped look**.
   - The **license plate** is one text for every car: up to 8 characters (letters, digits, spaces, dashes), saved as you type.
 - **Settings** (GDD §11.9): every change applies and saves immediately.
@@ -194,11 +194,11 @@ Speeds are m/s, acceleration m/s², handling and drift rad/s. Each rival drives 
 
 #### Vehicle models
 
-`CarModelBuilder` lofts each body and cabin through cross-section stations listed in `scripts/vehicles/car_designs.gd`, then adds detail parts (grilles, light bars, wings, fins). Edit a design there to reshape a car (the format is explained at the top of that file). The meshes are cached, so eight cars on the grid share geometry.
+`CarModelBuilder` lofts each body and cabin through cross-section stations listed in `scripts/vehicles/car_designs.gd`, then adds detail parts (grilles, light bars, wings, fins). Edit a design there to reshape a car (the format is explained at the top of that file). The stations are resampled with Catmull-Rom and each section is a rounded 24-point ring with smooth normals, so a few stations give a curved body. Every design also gets wheel arches (skipped when the body is narrower than 0.75 m at the axles, i.e. open-wheelers), door shut lines and, on closed cabins, side mirrors, with no extra data. `WheelBuilder` swaps the scene's plain wheel cylinders for a rounded tyre plus a `Rim` child (five spokes, brake disc), nudged outward to sit flush in the arches; the Rims cosmetic recolours the rim's surface 0. The meshes are cached, so eight cars on the grid share geometry.
 
 To use **your own model** for a car, import it (`.glb`) and set it as `model_scene` on that car's `resources/vehicles/<car>.tres`. It replaces the procedural model; anything it doesn't provide falls back gracefully. Conventions:
 - **Orientation and scale:** metres, +Y up, the car's nose toward **−Z**, origin at the body centre (matching the 1.9 × 0.55 × 4.2 m collision box).
-- **No wheels in the model:** the game's wheels sit at x ±0.85, z ±1.35, radius 0.38 and move with the suspension.
+- **No wheels in the model:** the game's wheels sit at x ±0.85, z ±1.35, radius 0.38 and move with the suspension (imported models get the same detailed tyres and rims).
 - **Paint:** every mesh whose name starts with `Paint` gets the player's paint and finish. Other meshes keep their imported materials.
 - **Optional anchors** (empties or `Marker3D`, named exactly): `PlateAnchor` (rear plate, facing +Z), `DecalL` / `DecalR` (door decals), `ExhaustL` / `ExhaustR`, and meshes `NeonL` / `NeonR` for the underglow strips.
 - **Stripes** only work on the procedural models; imported models skip them.
@@ -238,7 +238,7 @@ Tuck in close behind another car to draft it. You're in its **slipstream** when 
 
 ### Ramp tricks
 
-Going over a **jump ramp** (three on Six Flags New Orleans, one in The Stacks) opens a trick window. Press **Trick** (E / gamepad Y) while you're in the air, or just as you leave the lip, and the car spins a full turn; land it and you get a short cyan **Trick** boost (+6 m/s for 1 s, a little weaker than a Cyan drift boost). The spin is visual only (body and wheels), so your heading, physics and the camera aren't affected. The HUD shows TRICK! and TRICK BOOST!, with a tone. AI rivals trick too: 30% of the time on Easy, 60% on Normal, 90% on Hard (`trick_chance` in `resources/ai/*.tres`). Logic in `scripts/vehicles/vehicle_trick.gd`.
+Going over a **jump ramp** opens a trick window. Most ramps span the road; every race track also has at least one **small ramp** (about half the road wide, 0.9–1.1 m high) on one side, so you pick: jump it for air time, a trick and its two item boxes, or drive past (GDD v9.1 §8.7; checked by `tests/test_small_ramps.gd`). Press **Trick** (E / gamepad Y) while you're in the air, or just as you leave the lip, and the car spins a full turn; land it and you get a short cyan **Trick** boost (+6 m/s for 1 s, a little weaker than a Cyan drift boost). The spin is visual only (body and wheels), so your heading, physics and the camera aren't affected. The HUD shows TRICK! and TRICK BOOST!, with a tone. AI rivals trick too: 30% of the time on Easy, 60% on Normal, 90% on Hard (`trick_chance` in `resources/ai/*.tres`). Logic in `scripts/vehicles/vehicle_trick.gd`.
 
 ### HUD and results
 
@@ -301,7 +301,7 @@ One song per screen or track (`scripts/core/music.gd`; race music per track in `
 
 - **Final lap:** in races of 2+ laps (Elimination included), the race music speeds up 5%, pitch and all, over about 0.4 s. Restarting or leaving the race puts it back.
 - **Countdown:** the clip has four beeps a second apart, one per start light and word (3, 2, 1, START).
-- **Weapon and track sounds** (`CombatSfx`, GDD §12.2) come from the car or object that makes them, so they fade with distance: Firewall up / down, Railgun, EMP, System Override, Road Spike drop, Hunter-Killer launch / lock warning / hit, and barrier smashes. Each clip has its own level so it sits just above the music, and a hard limiter on the Master bus stops loud moments distorting.
+- **Weapon and track sounds** (`CombatSfx`, GDD §12.2) come from the car or object that makes them, so they fade with distance: Firewall up / down, Railgun, EMP, System Override, Road Spike drop, Hunter-Killer launch / lock warning / hit, barrier smashes, and a denied beep when you press fire while an EMP has your weapons offline. Each clip has its own level so it sits just above the music, and a hard limiter on the Master bus stops loud moments distorting.
 - **Buses:** music plays on the Music bus and effects on the SFX bus (`default_bus_layout.tres`), so the Settings sliders control each.
 - **Web build:** plays 96 kbps `.ogg` copies from `music/web/`.
 - Every song and clip used must be credited. `tests/test_ui.gd` checks this by the author prefix in each file name.
@@ -650,7 +650,8 @@ Drive through a "?" crate to collect a random weapon into your first free slot. 
 - **HUD:**
   - two item squares with number badges 1 and 2, under the minimap (bottom right; top right in split-screen views), showing each weapon's picture (`assets/ui/weapons/`). Triple items show their charges (x3, x2, x1). Picking an item up flashes the slot and pops the icon in; using one puffs it out
   - a **minimap** in the bottom-right corner (GDD §11.5): the circuit (muted purple), shortcuts (dimmer), the white start line, the elimination gate in Elimination, every racer as a dot in their colour (ringed when near you), and you as a cyan arrow pointing your heading
-  - under the slots: lock status, your active effects (with timers, e.g. JAMMED), and hit / pickup / "LOST …" notices
+  - under the slots: lock status, your active effects (with timers), and hit / pickup / "LOST …" notices
+  - weapons offline (EMP, GDD v9.1): a big red X over both squares, dimmed flickering pictures (steady with reduced flashing), OFFLINE captions, a red ring per square that empties with the jam and a "WEAPONS OFFLINE 4.2" countdown; pressing fire while jammed shakes the squares, flashes them red and beeps (`ItemSlots`, `CombatSfx.DENIED`)
   - a flashing INCOMING warning when someone has locked on to you or a drone is chasing you
   - short tones for pickup, hit, getting hit, blocked and incoming
 - **AI** score each weapon for the moment: fire when locked, EMP when someone is close, drop spikes on a racer behind, Nitro on long straights (one burst at a time), and raise a Firewall when attacked. They launch a Hunter-Killer after a short beat, a System Override when two or more racers are ahead, and an Overdrive once they're on the ground. Difficulty sets reaction time and reliability; personality sets how long they hold weapons.
@@ -767,7 +768,8 @@ Swap in any suite:
 | `test_slipstream_ring.gd` | Slipstream ring |
 | `test_multiplayer.gd` | Split screen: devices, views, setup screens |
 | `test_pad_menus.gd` | Gamepad navigation in menus, pause, podium, results |
-| `test_ui.gd` | Fonts, HUD panels, results, layout at two HUD scales, credits coverage |
+| `test_ui.gd` | Fonts, HUD panels (incl. the EMP weapons-offline overlay), results, layout at two HUD scales, credits coverage |
+| `test_small_ramps.gd` | Every race track has a small half-width ramp inside the road; The Stacks' one launches, allows a trick and gives an item |
 | `test_audio.gd` | Music per screen / track, crossfades, countdown, web copies |
 | `test_quinta_normal.gd`, `test_vale_da_lua.gd`, `test_choquequirao.gd`, `test_kilwa_kisiwani.gd`, `test_nyiragongo.gd`, `test_chefchaouen.gd` | Per-track layout, shortcut and scenery checks |
 
@@ -844,7 +846,7 @@ The exit code is non-zero if anything fails. These checks do **not** judge how t
 
 - **Game:** Cyberwave 2199 by Nathan Hobbs.
 - **Music:** see the Audio table above (ikoliks_aj, ikoliks, alex-morgan, Lilex, TheBoysBeats, SPmusic, kulakovka, Ob-Lix, ed-musicproductions, sonican, elisaveta_stoycheva, theorienvibes, restum-anoush, DesiFreeMusic, vishiv, Jean-Paul-V, vadim_makes_sound, stageechoesmusic).
-- **Sound:** Short beep countdown, Shield drop, Electric zap 001, Crowbar drop 1 (rear), Planks clattering and Missile lock detected by freesound_community; Sci-fi energy shield activation by vadim_makes_sound; Electrical current 2 by 49053354; Sci-fi weapon shoot firing pulse TM 05 by rescopicsound; Field: launching a small model rocket by fronbondi_skegs; Missile explosion by voicebosch.
+- **Sound:** Short beep countdown, Shield drop, Electric zap 001, Crowbar drop 1 (rear), Planks clattering and Missile lock detected by freesound_community; Sci-fi energy shield activation by vadim_makes_sound; Electrical current 2 by 49053354; Sci-fi weapon shoot firing pulse TM 05 by rescopicsound; Field: launching a small model rocket by fronbondi_skegs; Missile explosion by voicebosch; Beep by u_edtmwfwu7c.
 - **Fonts:** Oxanium and Rajdhani, SIL Open Font License 1.1 (`assets/fonts/`).
 - **Engine:** Godot Engine, MIT License.
 

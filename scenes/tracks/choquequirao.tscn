@@ -134,5 +134,15 @@ boost_extra = 7.0
 boost_duration = 1.0
 boost_kick = 4.0
 
+[node name="SmallRampWestTerrace" type="Node3D" parent="."]
+script = ExtResource("3_feature")
+kind = 4
+offset = 0
+lateral = -3.5
+anchor_point = Vector3(-158.8, 0, 18.4)
+width = 7
+length = 11.0
+ramp_height = 0.9
+
 [node name="Scenery" type="Node3D" parent="."]
 script = ExtResource("4_scenery")

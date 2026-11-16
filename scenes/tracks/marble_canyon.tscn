@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" path="res://scripts/track/track_circuit.gd" id="1_track"]
 [ext_resource type="Script" path="res://scripts/track/marble_canyon_scenery.gd" id="2_scenery"]
+[ext_resource type="Script" path="res://scripts/track/track_feature.gd" id="3_feature"]
 [ext_resource type="Texture2D" path="res://assets/sky/kloofendal_48d_partly_cloudy_puresky_2k.hdr" id="3_sky"]
 
 [sub_resource type="PanoramaSkyMaterial" id="Sky_desert"]
@@ -77,6 +78,16 @@ light_energy = 1.9
 shadow_enabled = true
 shadow_opacity = 0.9
 directional_shadow_max_distance = 140.0
+
+[node name="SmallRampCanyonDescent" type="Node3D" parent="."]
+script = ExtResource("3_feature")
+kind = 4
+offset = 0
+lateral = -4.25
+anchor_point = Vector3(504.3, 24.51, -1.2)
+width = 8.5
+length = 11.0
+ramp_height = 0.9
 
 [node name="Scenery" type="Node3D" parent="."]
 script = ExtResource("2_scenery")

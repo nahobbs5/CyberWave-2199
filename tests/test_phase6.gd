@@ -40,13 +40,13 @@ func _run_all() -> void:
 	_test_wet_status()
 	await _test_layout(VEGAS, "Vegas Overdrive", 3000.0, 3400.0, 9, 90.0)
 	await _test_layout(SIX_FLAGS, "Six Flags New Orleans", 2900.0, 3300.0, 10, 80.0)
-	await _test_layout(STACKS, "The Stacks", 2700.0, 2950.0, 5, 80.0)
-	await _test_layout(HOIA, "Hoia Baciu Run", 3100.0, 3300.0, 6, 80.0)
-	await _test_layout(CATACOMBS, "Catacombs Descent", 2700.0, 2950.0, 7, 150.0)
-	await _test_layout(ARASHIYAMA, "Arashiyama Circuit", 3000.0, 3250.0, 7, 120.0)
-	await _test_layout(GLACIER, "Vatnajökull Glacier", 2950.0, 3200.0, 7, 100.0)
+	await _test_layout(STACKS, "The Stacks", 2700.0, 2950.0, 6, 80.0)
+	await _test_layout(HOIA, "Hoia Baciu Run", 3100.0, 3300.0, 7, 80.0)
+	await _test_layout(CATACOMBS, "Catacombs Descent", 2700.0, 2950.0, 8, 150.0)
+	await _test_layout(ARASHIYAMA, "Arashiyama Circuit", 3000.0, 3250.0, 8, 120.0)
+	await _test_layout(GLACIER, "Vatnajökull Glacier", 2950.0, 3200.0, 8, 100.0)
 	await _test_layout(CRAZY, "Crazy House", 2750.0, 3050.0, 7, 100.0)
-	await _test_layout(GARDENS, "Gardens by the Bay", 3200.0, 3500.0, 7, 100.0)
+	await _test_layout(GARDENS, "Gardens by the Bay", 3200.0, 3500.0, 8, 100.0)
 	_test_forest()
 	_test_catacombs()
 	_test_arashiyama()
@@ -172,6 +172,27 @@ func _test_models() -> void:
 		var neon := model.get_node("NeonL") as MeshInstance3D
 		_check(neon.visible and (neon.material_override as StandardMaterial3D).emission.is_equal_approx(loadout[CosmeticItem.Category.UNDERGLOW].color),
 				"%s: underglow recolours the sill strips" % vehicle.display_name)
+		_check(_paint_is_smooth(car), "%s: rounded body with smooth normals" % vehicle.display_name)
+		var wheels_ok := true
+		var rim_item: CosmeticItem = loadout[CosmeticItem.Category.WHEELS]
+		for w in ["WheelFL", "WheelFR", "WheelRL", "WheelRR"]:
+			var wm := car.get_node(w + "/Pivot/Mesh") as MeshInstance3D
+			var rim := wm.get_node_or_null("Rim") as MeshInstance3D
+			wheels_ok = wheels_ok and wm.mesh == WheelBuilder.tyre_mesh() and rim != null and rim.mesh == WheelBuilder.rim_mesh()
+			var rim_mat := rim.get_surface_override_material(WheelBuilder.RIM_SURFACE) as StandardMaterial3D if rim != null else null
+			wheels_ok = wheels_ok and rim_mat != null and rim_mat.albedo_color.is_equal_approx(rim_item.color)
+			# Tyres sit outward (never inward) and stay near the physics wheel.
+			var outward := wm.position.x * signf((car.get_node(w) as Node3D).position.x)
+			wheels_ok = wheels_ok and outward >= 0.0 and outward <= 0.13
+		_check(wheels_ok, "%s: detailed tyres with the rims item on the spoked rim" % vehicle.display_name)
+		var trim := _mesh_aabb(car, "Trim")
+		var arches := trim.end.x > 0.9 and trim.position.z < -1.6 and trim.end.z > 1.6
+		var tub := CarDesigns.get_design(vehicle.id).body as Array
+		var open_wheel := true
+		for st in tub:
+			if absf(st[0] + 1.35) < 0.4 and st[1] >= CarModelBuilder.OPEN_WHEEL_FLANK:
+				open_wheel = false
+		_check(arches or open_wheel, "%s: wheel arches (or an open-wheel body)" % vehicle.display_name)
 		car.queue_free()
 	var distinct := {}
 	for id in sizes:
@@ -186,7 +207,37 @@ func _test_models() -> void:
 			"model meshes are shared between cars")
 	a.queue_free()
 	b.queue_free()
+	# Falling back to the box car puts the stock wheels back.
+	var c := _car()
+	var stock := (c.get_node("WheelFL/Pivot/Mesh") as MeshInstance3D).mesh
+	CarModelBuilder.build(c, "orbiter")
+	CarModelBuilder.show_placeholder(c)
+	var fl := c.get_node("WheelFL/Pivot/Mesh") as MeshInstance3D
+	_check(fl.mesh == stock and fl.get_node_or_null("Rim") == null and fl.position == Vector3.ZERO,
+			"box-car fallback restores the plain wheels")
+	c.queue_free()
 	await process_frame
+
+
+## The Paint mesh is lofted with smooth normals: many vertices share a
+## position with the same normal (flat shading would give each face its own).
+func _paint_is_smooth(car: Node3D) -> bool:
+	var mi := car.get_node_or_null("Body/Model/Paint") as MeshInstance3D
+	if mi == null:
+		return false
+	var arrays := mi.mesh.surface_get_arrays(0)
+	var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+	var norms: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL]
+	var seen := {}
+	var shared := 0
+	for i in verts.size():
+		var key := str(verts[i].snapped(Vector3.ONE * 0.0001))
+		if seen.has(key):
+			if (seen[key] as Vector3).dot(norms[i]) > 0.999:
+				shared += 1
+		else:
+			seen[key] = norms[i]
+	return verts.size() > 2000 and shared > verts.size() / 3
 
 
 func _test_glb_model() -> void:
@@ -221,6 +272,8 @@ func _test_glb_model() -> void:
 	var plate := car.find_child("Plate", true, false)
 	_check(plate != null and plate.get_parent().name == "PlateAnchor", "the plate goes on its PlateAnchor")
 	_check(car.get_node_or_null("Body/Cosmetics/Stripes") == null, "no stripes on imported models")
+	_check((car.get_node("WheelRR/Pivot/Mesh") as MeshInstance3D).mesh == WheelBuilder.tyre_mesh(),
+			"imported models get the detailed wheels")
 	car.queue_free()
 	await process_frame
 
@@ -326,6 +379,9 @@ func _test_item_boxes(race: RaceManager) -> void:
 	var ramp := track.get_node("JumpCourtyard") as TrackFeature
 	var ramp_boxes := ramp.item_box_transforms()
 	var expected := rows + ramp_boxes.size()
+	var small := track.get_node("SmallRampLoadingDock") as TrackFeature
+	_check(small.item_box_transforms().size() == 2, "the small ramp has 2 item boxes")
+	expected += 2
 	for n in ["BoostRingRotunda", "BoostPadGallery"]:
 		var booster := track.get_node(n) as TrackFeature
 		_check(booster.item_boxes and booster.item_box_transforms().size() == 2, "%s has 2 item boxes" % n)

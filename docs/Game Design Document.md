@@ -1,5 +1,5 @@
 # CYBERWAVE 2199
-## Game Design Document — Version 8.9
+## Game Design Document — Version 9.2
 
 **Status:** Development Baseline  
 **Engine:** Godot 4  
@@ -358,6 +358,8 @@ Eight vehicles are available from the beginning.
 | Cipher EVO | Prototype | High skill ceiling |
 
 These characteristics are initial balancing directions rather than final stat assignments.
+
+**Model look.** Every car is built procedurally from its design (CarModelBuilder): rounded, smooth-shaded body sections lofted along curved stations, wheel arches with a dark well and a raised lip, door shut lines, side mirrors (closed cabins), carbon-weave trim and clear-coated paint. Wheels are detailed for every car (WheelBuilder): a rounded tyre and a five-spoke rim with a brake disc; the Rims cosmetic recolours the rim. Open-wheel bodies (Cipher EVO) get no arches. All of this is visual only; the collider, rays and handling are unchanged.
 
 ## 5.2 Vehicle Statistics
 
@@ -917,7 +919,7 @@ Tracks may contain:
 - Collectible coins
 - Speed boost pads. Each pad on the main road is laid out as one of three patterns: a single pad, three in a diagonal, or two side by side then one ahead (a triangle). The pattern is picked at random per pad but seeded by the track, so a track always has the same layout.
 - Speed boost rings
-- Jump ramps
+- Jump ramps. Most are full width; every race track also has at least one small ramp (about half the road wide, 0.9–1.1 m high) on one side of a straight or crest, so you choose a side: take the jump (air time, a trick, the ramp's two item boxes) or drive past it. Small ramps: Arashiyama (main street), Catacombs (ossuary crest), Choquequirao (west terrace), Gardens by the Bay (skyway crest), Hoia Baciu (forest crest), Kilwa Kisiwani (harbour road), The Stacks (loading dock), Vatnajökull (moraine crest), Quinta Normal (park avenue), Nyiragongo (lava flats), Marble Canyon (canyon descent); Vale da Lua's rock hump, Six Flags' Bayou jump and the Crazy House's Bone Gallery stair jump were cut to half width, and Chefchaouen's Fountain Steps drop already was
 - Directional signs
 - Destructible barriers
 - Explosive environmental objects
@@ -1164,7 +1166,7 @@ The setup, cup and track screens share the Settings look (§11.2): the dimmed st
 
 The layout follows the "Cyberwave 2199 Neon Garage" reference art.
 
-- **The garage room** fills the screen (after "reference files/Cyberwave 2199 Neon Garage New.png"). The car sits on a stacked turntable: a glowing magenta foot and a thick magenta band, a dark top with a white rim ring and a cyan inner ring, and a magenta ring on the floor around it. Behind it is a paneled back wall with a header band carrying a framed CYBERWAVE 2199 sign plate (pointed ends, a magenta dash left and a cyan dash right), angled corner struts, lockers and stacked crates in each back corner with a magenta (left) or cyan (right) glow, ceiling lights and a checkered floor. The same room appears behind the car everywhere a car is picked: race setup shows it in a framed stage, and the split-screen car cards use a lighter version with no lockers, crates or plate lettering and fewer lights.
+- **The garage room** fills the screen (after "reference files/Cyberwave 2199 Neon Garage New.png"). The car sits on a stacked turntable: a glowing magenta foot and a thick magenta band, a dark top with a white rim ring and a cyan inner ring, and a magenta ring on the floor around it. Behind it is a paneled garage door with a glowing neon world map across it (cyan coastlines, dim-blue continents, a faint lat / lon grid, and a glowing pin on every track, coloured by its cup), then a header band carrying an empty framed sign plate (pointed ends, a magenta dash left and a cyan dash right), angled corner struts, lockers and stacked crates in each back corner with a magenta (left) or cyan (right) glow, ceiling lights and a checkered floor. The same room appears behind the car everywhere a car is picked: race setup shows it in a framed stage, and the split-screen car cards use a lighter version with a smaller world map (no grid), no lockers or crates and fewer lights.
 - **Top:** the logo and GARAGE at the top left, the coin balance at the top right.
 - **Left:** the car with gold previous / next arrows and a dot per car. Below it are the name on a magenta banner, a cyan type tag, segmented stat bars with icons, a top-speed card, and the license plate.
 - **Right:** COSMETICS and INFO tabs over a neon panel.
@@ -1188,6 +1190,7 @@ Display:
 - Minimap
 - Two weapon slots
 - Active item indicator
+- Weapons offline (EMP): while an EMP has your weapons offline, a big red X slams in over both item squares, the weapon pictures go dim with a light static flicker (steady with reduced flashing), the captions read OFFLINE, a red ring round each square empties as the jam runs out and "WEAPONS OFFLINE 4.2" counts down beside them. Pressing fire while jammed shakes the squares, flashes them red and plays a short denied beep; the weapon is kept
 - Target lock indicator
 - Incoming attack warning
 - Coin pickup feedback
@@ -1345,6 +1348,7 @@ Weapon sounds come from the car (or object) that makes them, so they are loud cl
 | Hunter-Killer warning | Missile lock beeps (stop when it hits, backs off or burns out) | Target |
 | Hunter-Killer hit | Missile explosion | Target |
 | Smashing a breakable barrier (shortcut blockers included) | Planks clattering | The barrier |
+| Fire pressed while weapons are offline (EMP) | Short beep | User (human players only) |
 
 Other sounds: the countdown beeps (§11.8), drift tones and the skid loop (§4.3), the Hunter-Killer's flight whine, recovery and Overdrive sounds, and the podium fanfare (§11.7a). Every song and clip used is listed in the credits.
 
@@ -1739,5 +1743,8 @@ Changes after Version 1.0 should be tracked as revisions rather than silently re
 | 8.7 | 2026-11-15 | Garage room restyled after "Cyberwave 2199 Neon Garage New.png": the roll-up door and big CW-2199 stencil, tool chests, tyres and banner are gone; a paneled wall with a small framed CYBERWAVE 2199 sign plate, corner struts, lockers and crates with magenta / cyan corner glow, and a chunkier stacked turntable take their place (§11.9). |
 | 8.8 | 2026-11-15 | Controller disconnected screen after its reference art: the race pauses when a player's gamepad drops out, solo resumes on any pad button or Enter (keyboard), split screen names the player and lets them claim any free pad or the free keyboard, then a 3-2-1 resumes the race (§11.8). |
 | 8.9 | 2026-11-16 | Elevation pass for the three Europe Cup tracks and the Crazy House: each now climbs and falls 32–38 m with grades up to about 9%, shaped to its setting (Hoia over forest hills and a castle ridge, the Catacombs truly descending 32 m and climbing out, the Glacier over an ice ridge and down into the Ash Canyon, the Crazy House up through the house to the Gables and back down). Long bends are banked 5° on all but the Catacombs. A floor follows the road out to the walls in the three enclosed tracks, and features and the start grid sit on level ground (§8.4, §8.5, §8.6a, §8.6b). |
+| 9.0 | 2026-11-16 | Car fidelity pass: rounded, smooth-shaded bodies (24-point sections, curved stations), wheel arches with flared lips (low noses bulge above the hood), door shut lines, side mirrors, carbon-weave trim and clear-coated paint on every model; detailed tyres and five-spoke rims with brake discs on every car, which the Rims cosmetic now recolours (was a plain disc). Imported .glb models get the detailed wheels too. Purely visual (§5.1). |
+| 9.1 | 2026-11-16 | After playtesting: a much bigger weapons-offline cue when an EMP jams you — a red X over both item squares, dimmed flickering pictures, OFFLINE captions, a countdown ring and "WEAPONS OFFLINE" timer, and a shake plus denied beep if you press fire (§11.5, §12.2). Small trick ramps: every race track now has a half-width ramp on one side of the road (eleven new ones; three existing jumps cut to half width) (§8.7). |
+| 9.2 | 2026-11-16 | The garage door now shows a neon world map with a glowing pin on every track (coloured by cup) instead of the CYBERWAVE 2199 lettering; the split-screen car cards get a smaller version (§11.4). |
 
 **End of Game Design Document — Version 8.9**

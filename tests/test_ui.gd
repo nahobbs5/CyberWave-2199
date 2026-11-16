@@ -47,6 +47,7 @@ func _run_all() -> void:
 	await _test_countdown_waits_for_loading()
 	await _run("pause menu volume", _test_pause_volume, _config(3), false)
 	await _run("HUD in a race", _test_hud, _config(3), false)
+	await _run("EMP jam on the item slots", _test_jam_hud, _config(3), false)
 	await _run("layout at HUD scale 1.0 and 1.5", _test_layout, _config(3), false)
 	var cars := _config(3)
 	cars.rival_vehicles = PackedStringArray(["aurora_gt", "orbiter", "riviera_88", "valkyrie_r", "nexus_x", "cipher_evo", "empyrean_s"])
@@ -280,7 +281,26 @@ func _test_garage_screen() -> void:
 			lite.room_mesh_count(), full.room_mesh_count()])
 	var titled := func(p: VehiclePreview) -> bool:
 		return p.find_children("*", "Label3D", true, false).any(func(l: Label3D) -> bool: return l.text == "CYBERWAVE 2199")
-	_check(titled.call(full) and not titled.call(lite), "the game name is on the garage sign, not on the split-screen cards")
+	_check(not titled.call(full) and not titled.call(lite), "the garage sign no longer shows the game name")
+	var map_of := func(p: VehiclePreview) -> Node3D:
+		return p.find_child("WorldMap", true, false) as Node3D
+	var full_map := map_of.call(full) as Node3D
+	var lite_map := map_of.call(lite) as Node3D
+	var track_total := 0
+	for cup in GrandPrixData.all_cups():
+		track_total += cup.race_count()
+	_check(full_map != null and lite_map != null
+			and float(lite_map.get_meta("width")) < float(full_map.get_meta("width")),
+			"a world map is on the garage door, smaller on the split-screen cards")
+	_check(full_map != null and int(full_map.get_meta("pin_count")) == track_total
+			and WorldMapBuilder.pins().size() == track_total,
+			"the map has a pin on every track (%d)" % track_total)
+	var flat := WorldMapBuilder.landmasses().all(func(shape: Array) -> bool:
+		var pts := PackedVector2Array()
+		for p: Vector2 in shape:
+			pts.append(p)
+		return Geometry2D.triangulate_polygon(pts).size() >= 3)
+	_check(flat, "every continent outline on the map fills in")
 	full.queue_free()
 	lite.queue_free()
 	GameSession.mp_devices = PackedInt32Array([-1, 0])
@@ -764,6 +784,45 @@ func _test_rival_cars(race: RaceManager) -> void:
 		if not racer.is_player and racer.vehicle.global_position.distance_to(start[racer]) < 20.0:
 			stuck.append(racer.display_name)
 	_check(stuck.is_empty(), "every rival gets going (%s)" % ", ".join(stuck))
+
+
+## EMP: a big X over each slot, OFFLINE captions, a countdown; fire is
+## refused with a shake; all gone when the jam ends.
+func _test_jam_hud(race: RaceManager) -> void:
+	var items := race.race_hud.items
+	var car := race.player.vehicle
+	car.inventory.clear()
+	car.inventory.add(load("res://resources/weapons/railgun.tres") as WeaponData)
+	await _frames(2)
+	_check(not items.is_jam_shown() and not items.jam_marks[0].visible and items.jam_text == "", "no X while weapons work")
+	car.status.apply_attack(&"emp", 1.0)
+	await _frames(2)
+	_check(items.is_jam_shown() and items.jam_marks[0].visible and items.jam_marks[1].visible,
+			"the EMP hit puts an X over both slots")
+	car.status.apply_jam(5.0)
+	await _frames(2)
+	_check(items.captions[0].text == "OFFLINE" and items.captions[1].text == "OFFLINE", "captions read OFFLINE")
+	_check(items.jam_text.begins_with("WEAPONS OFFLINE") and items.jam_label.visible
+			and items.jam_text.get_slice("  ", 1).to_float() > 4.0, "countdown shown (%s)" % items.jam_text)
+	_check(not items.status_label.text.contains("JAMMED") and not items.status_label.text.contains("EMP"),
+			"jam not repeated in the effects line (%s)" % items.status_label.text)
+	_check(items.icons[0].modulate.a < 0.5, "the weapon icon is dimmed")
+	var before := items.blocked_anims
+	car.inventory.request_use()
+	await _frames(2)
+	_check(items.blocked_anims == before + 1 and car.inventory.current() != null,
+			"fire while jammed shakes the slots and keeps the weapon")
+	_check(car.find_child("SfxDenied", false, false) != null, "and buzzes")
+	car.status.remove(&"emp")
+	car.status.remove(&"jammed")
+	await _frames(2)
+	_check(not items.is_jam_shown() and not items.jam_marks[0].visible and not items.jam_label.visible,
+			"the X and countdown go when the jam ends")
+	var cap := items.captions[car.inventory.selected].text
+	_check(cap == "ACTIVE" and items.icons[0].modulate == Color.WHITE, "captions and icons back to normal (%s)" % cap)
+	before = items.blocked_anims
+	car.inventory.request_use()
+	_check(items.blocked_anims == before, "no shake when weapons work")
 
 
 func _test_hud(race: RaceManager) -> void:

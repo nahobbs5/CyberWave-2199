@@ -160,7 +160,7 @@ func _test_layout() -> void:
 		return (n as MeshInstance3D).material_override == GlasshouseBuilder.mesh_material())
 	_check(meshes.size() >= 8, "wire mesh everywhere (%d chunks)" % meshes.size())
 	var features := track.find_children("*", "TrackFeature", false, false).filter(func(f: TrackFeature) -> bool: return not f.pattern_copy) # authored (not boost-pad pattern copies)
-	_check(features.size() == 5, "5 track features (%d)" % features.size())
+	_check(features.size() == 6, "6 track features incl. the small ramp (%d)" % features.size())
 	track.queue_free()
 	await process_frame
 

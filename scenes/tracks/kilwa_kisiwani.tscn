@@ -140,5 +140,15 @@ offset = 36
 on_shortcut = "GerezaFortYard"
 width = 11.0
 
+[node name="SmallRampHarbourRoad" type="Node3D" parent="."]
+script = ExtResource("3_feature")
+kind = 4
+offset = 0
+lateral = 5.25
+anchor_point = Vector3(272.5, 0, -252)
+width = 10.5
+length = 11.0
+ramp_height = 0.9
+
 [node name="Scenery" type="Node3D" parent="."]
 script = ExtResource("4_scenery")

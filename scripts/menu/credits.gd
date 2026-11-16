@@ -19,6 +19,7 @@ const SECTIONS := [
 		"Sci-fi weapon shoot firing pulse TM 05 by rescopicsound",
 		"Field: launching a small model rocket by fronbondi_skegs",
 		"Missile explosion by voicebosch",
+		"Beep by u_edtmwfwu7c",
 	]],
 	["FONTS", "fonts", [
 		"Oxanium and Rajdhani  (SIL Open Font License 1.1)",

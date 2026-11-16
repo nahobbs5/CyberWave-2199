@@ -138,5 +138,15 @@ lateral = 0
 on_shortcut = "CastleShortcut"
 width = 10.0
 
+[node name="SmallRampForestCrest" type="Node3D" parent="."]
+script = ExtResource("3_feature")
+kind = 4
+offset = 0
+lateral = -3.5
+anchor_point = Vector3(536, 14, 515.8)
+width = 7
+length = 11.0
+ramp_height = 0.9
+
 [node name="Scenery" type="Node3D" parent="."]
 script = ExtResource("4_scenery")

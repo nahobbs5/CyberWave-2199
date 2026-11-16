@@ -4,8 +4,8 @@ extends SubViewportContainer
 ## car select (GDD 11.3, 11.4). Shows the placeholder car with a vehicle's
 ## proportions, a cosmetic loadout and the license plate on a glowing
 ## turntable inside a neon garage ("reference files/Cyberwave 2199 Neon
-## Garage New.png"): a paneled back wall with a framed CYBERWAVE 2199 sign
-## plate, angled corner struts, a checkered floor, ceiling lights and (detail
+## Garage New.png"): a paneled garage door with a neon world map on it
+## (WorldMapBuilder: a pin on every track), a framed plate above, angled corner struts, a checkered floor, ceiling lights and (detail
 ## FULL) lockers, crates and a magenta / cyan glow in the back corners. The car spins slowly by itself; drag it with the mouse
 ## (or the right stick) to turn it by hand, and the spin resumes shortly after.
 
@@ -25,9 +25,18 @@ const TABLE_RADIUS := 3.0
 ## Camera spot (before zoom) and the point it looks at.
 const CAMERA_POS := Vector3(5.6, 1.7, 5.6)
 const LOOK_AT := Vector3(0.0, -0.2, 0.0)
+## Height of the garage door (to the lip under the header band), from the room floor.
+const DOOR_TOP := 3.2
+## World map on the door: width (m) and centre height above the room floor;
+## LITE (split-screen cards) gets a smaller one.
+const MAP_WIDTH := 6.5
+const MAP_Y := 1.55
+const MAP_WIDTH_LITE := 5.0
+const MAP_Y_LITE := 2.05
 
-## FULL: the whole garage. LITE (small split-screen cards): no props, no
-## game name or neon dashes on the sign plate, and fewer lights.
+## FULL: the whole garage. LITE (small split-screen cards): no props, a
+## smaller world map without its grid, no neon dashes on the sign plate,
+## and fewer lights.
 enum Detail { FULL, LITE }
 ## Opening angle: a front three-quarter view, like the reference art.
 const START_YAW := 4.45
@@ -256,15 +265,21 @@ func _build_showroom() -> void:
 	_box(Vector3(0, ROOM_FLOOR + 5.6, -1.0), Vector3(30, 0.1, 14), WeaponManager.glow_material(Color(0.03, 0.02, 0.06), 0.0))
 	for x in ([-3.2, 3.2] if full else [0.0]):
 		_box(Vector3(x, ROOM_FLOOR + 5.5, -2.6), Vector3(2.2, 0.06, 0.7), WeaponManager.glow_material(Color(0.85, 0.82, 1.0), 2.5))
-	# Horizontal panel seams and vertical joints on the back wall.
-	for y in [0.6, 1.2]:
+	# The garage door: horizontal panel seams and vertical joints.
+	var y := 0.6
+	while y < DOOR_TOP:
 		_box(Vector3(0, ROOM_FLOOR + y, -6.02), Vector3(11.0, 0.05, 0.04), seam_mat)
+		y += 0.6
 	for x in [-3.7, 3.7]:
-		_box(Vector3(x, ROOM_FLOOR + 0.9, -6.02), Vector3(0.05, 1.8, 0.04), seam_mat)
+		_box(Vector3(x, ROOM_FLOOR + DOOR_TOP * 0.5, -6.02), Vector3(0.05, DOOR_TOP, 0.04), seam_mat)
+	# The world map across the door, with a pin on every track.
+	var world := WorldMapBuilder.build(MAP_WIDTH if full else MAP_WIDTH_LITE, not full)
+	world.position = Vector3(0, ROOM_FLOOR + (MAP_Y if full else MAP_Y_LITE), -5.97)
+	_room.add_child(world)
 	# Header band across the top, with a lip under it.
-	_box(Vector3(0, ROOM_FLOOR + 2.45, -5.95), Vector3(12.0, 1.1, 0.2), trim_mat)
-	_box(Vector3(0, ROOM_FLOOR + 1.85, -5.85), Vector3(12.0, 0.1, 0.35), seam_mat)
-	_sign_plate(Vector3(0, ROOM_FLOOR + 2.4, -5.82))
+	_box(Vector3(0, ROOM_FLOOR + DOOR_TOP + 0.6, -5.95), Vector3(12.0, 1.1, 0.2), trim_mat)
+	_box(Vector3(0, ROOM_FLOOR + DOOR_TOP, -5.85), Vector3(12.0, 0.1, 0.35), seam_mat)
+	_sign_plate(Vector3(0, ROOM_FLOOR + DOOR_TOP + 0.55, -5.82))
 
 	# Corner pillars with struts angled up into the ceiling.
 	for side in [-1.0, 1.0]:
@@ -339,8 +354,8 @@ func _ring(radius: float, thickness: float, color: Color, energy: float, y: floa
 	_room.add_child(ring)
 
 
-## The game's name on a framed plate with pointed ends, a magenta dash on
-## the left and a cyan one on the right (name and dashes in the full garage only).
+## A framed plate with pointed ends above the door, a magenta dash on the
+## left and a cyan one on the right (dashes in the full garage only).
 func _sign_plate(pos: Vector3) -> void:
 	var frame := StandardMaterial3D.new()
 	frame.albedo_color = Color(0.17, 0.12, 0.3)
@@ -357,18 +372,6 @@ func _sign_plate(pos: Vector3) -> void:
 				WeaponManager.glow_material(UIStyle.MAGENTA if side < 0.0 else UIStyle.CYAN, 4.0))
 	_box(pos + Vector3(0, 0, 0.05), Vector3(4.2, 0.78, 0.08), frame)
 	_box(pos + Vector3(0, 0, 0.1), Vector3(4.0, 0.64, 0.02), face)
-	if detail == Detail.LITE:
-		return
-	var title := Label3D.new()
-	title.text = "CYBERWAVE 2199"
-	title.font = UIStyle.heading_font()
-	title.font_size = 64
-	title.pixel_size = 0.0055
-	title.modulate = Color(0.95, 0.93, 1.0)
-	title.outline_size = 0
-	title.shaded = false
-	title.position = pos + Vector3(0, 0, 0.12)
-	_room.add_child(title)
 
 
 ## A double locker with vents and handles (pos.y is ignored).

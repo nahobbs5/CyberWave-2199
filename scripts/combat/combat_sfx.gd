@@ -15,6 +15,8 @@ const BARRIER_SMASH := preload("res://sounds/freesound_community-planks-clatteri
 const HK_LAUNCH := preload("res://sounds/fronbondi_skegs-field-launching-a-small-model-rocket-recording-240139.mp3")
 const HK_WARNING := preload("res://sounds/freesound_community-missile-lock-detected-34074JustBeeps.mp3")
 const HK_EXPLOSION := preload("res://sounds/voicebosch-missile-explosion-168600.mp3")
+## Fire pressed while an EMP has weapons offline (ItemSlots).
+const DENIED := preload("res://sounds/u_edtmwfwu7c-beep-329314.mp3")
 
 ## Headroom above each clip's level for the closest listener (Godot caps a
 ## 3D sound at max_db, so raising volume_db alone does nothing).
@@ -39,6 +41,7 @@ static func level_db(stream: AudioStream) -> float:
 		HK_LAUNCH: return 3.0
 		HK_WARNING: return 8.0
 		HK_EXPLOSION: return 5.0
+		DENIED: return -5.0
 	return 0.0
 
 

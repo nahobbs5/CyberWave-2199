@@ -98,11 +98,11 @@ ramp_height = 1.6
 script = ExtResource("3_feature")
 kind = 4
 offset = 0
-lateral = 0
+lateral = -4.25
 anchor_point = Vector3(-412, 0, 100)
-width = 18.0
+width = 8.5
 length = 14.0
-ramp_height = 1.5
+ramp_height = 1.1
 
 [node name="WaterBayou1" type="Node3D" parent="."]
 script = ExtResource("3_feature")

@@ -114,11 +114,11 @@ anchor_point = Vector3(130, 4, 630)
 script = ExtResource("3_feature")
 kind = 4
 offset = 0
-lateral = 0
+lateral = 3.5
 anchor_point = Vector3(-276, -12, 486)
-width = 14.0
+width = 7
 length = 14.0
-ramp_height = 1.1
+ramp_height = 1.0
 
 [node name="BoneBarricade" type="Node3D" parent="."]
 script = ExtResource("3_feature")

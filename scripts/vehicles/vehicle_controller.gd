@@ -292,6 +292,8 @@ func set_visual_scale(s: float) -> void:
 		var mesh := ray.get_node_or_null("Pivot/Mesh") as Node3D
 		if mesh != null:
 			mesh.scale = Vector3.ONE * s
+			# Detailed wheels sit nudged outward (WheelBuilder); scale that too.
+			mesh.position = (mesh.get_meta("base_position", Vector3.ZERO) as Vector3) * s
 
 
 ## Where a drawn wheel sits relative to its ray: out at the (scaled) body's

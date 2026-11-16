@@ -8,11 +8,18 @@ extends VBoxContainer
 ## slots resizes them briefly; picking an item up flashes the slot and pops
 ## the icon in; using one (or losing a charge) puffs the icon out. Under the
 ## slots: target lock, active effects and combat notices.
+## While an EMP has weapons offline (effects "emp" / "jammed") each slot
+## gets a big red X, dimmed static-flickering icons, an OFFLINE caption and
+## a ring that empties with the countdown; pressing fire then shakes the
+## slots and buzzes.
 
 const ACTIVE_SIZE := 88.0
 const STORED_SIZE := 72.0
 const ACTIVE_BORDER := Color(0.25, 0.9, 1.0)
 const STORED_BORDER := Color(0.5, 0.35, 0.75, 0.8)
+const JAM_COLOR := Color(1.0, 0.18, 0.3)
+## Weapon-offline effects (EMP Pulse hit, then its longer jam).
+const JAM_EFFECTS: Array[StringName] = [&"emp", &"jammed"]
 
 var panels: Array[PanelContainer] = []
 var icons: Array[TextureRect] = []
@@ -25,6 +32,14 @@ var empties: Array[Label] = []
 var lock_label: Label
 var status_label: Label
 var notice: Label
+## "WEAPONS OFFLINE  4.2" while jammed.
+var jam_label: Label
+var jam_marks: Array[Control] = []
+var jam_rings: Array[Control] = []
+## Countdown text while jammed (tests); empty otherwise.
+var jam_text: String = ""
+## Fire presses refused while jammed (tests).
+var blocked_anims: int = 0
 ## Notices above the squares (bottom-right placement).
 var bottom_anchored: bool = false
 ## "1  Firewall", "2  EMPTY", "1  Triple Nitro  x3"
@@ -38,6 +53,14 @@ var _last_weapon: Array = [null, null]
 var _last_charges: Array[int] = [0, 0]
 var _last_selected: int = -1
 var _notice_time: float = 0.0
+var _slot_row: HBoxContainer
+var _jammed: bool = false
+var _jam_total: float = 0.0
+var _flicker_time: float = 0.0
+var _flicker_alpha: float = 1.0
+var _fx_rng := RandomNumberGenerator.new()
+var _watched_inventory: ItemInventory
+var _watched_car: VehicleController
 
 
 func _init() -> void:
@@ -50,6 +73,7 @@ func _init() -> void:
 	alignment = BoxContainer.ALIGNMENT_BEGIN
 	add_theme_constant_override("separation", 4)
 	var row := HBoxContainer.new()
+	_slot_row = row
 	row.alignment = BoxContainer.ALIGNMENT_END
 	row.add_theme_constant_override("separation", 10)
 	add_child(row)
@@ -61,6 +85,8 @@ func _init() -> void:
 	status_label.visible = false
 	notice = _right(UIStyle.stat("", 20, Color.WHITE))
 	notice.visible = false
+	jam_label = _right(UIStyle.heading("", 22, JAM_COLOR))
+	jam_label.visible = false
 
 
 func _right(label: Label) -> Label:
@@ -117,6 +143,15 @@ func _build_slot(i: int) -> Control:
 	key.offset_right = 2
 	key.offset_bottom = 2
 	stack.add_child(key)
+	var ring := _JamRing.new()
+	ring.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	ring.visible = false
+	stack.add_child(ring)
+	var mark := _JamX.new()
+	mark.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	mark.resized.connect(func() -> void: mark.pivot_offset = mark.size * 0.5)
+	mark.visible = false
+	stack.add_child(mark)
 	var count := UIStyle.heading("", 16, UIStyle.GOLD)
 	count.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
 	count.grow_horizontal = Control.GROW_DIRECTION_BEGIN
@@ -132,6 +167,8 @@ func _build_slot(i: int) -> Control:
 	keys.append(key)
 	counts.append(count)
 	captions.append(caption)
+	jam_marks.append(mark)
+	jam_rings.append(ring)
 	return column
 
 
@@ -157,6 +194,9 @@ var racer: RaceProgress
 func refresh(race: RaceManager, delta: float) -> void:
 	var car := (racer if racer != null else race.player).vehicle
 	var inventory := car.inventory
+	_watch(car)
+	var jam_left := jam_time_left(car)
+	_update_jam(jam_left, delta)
 	for i in ItemInventory.SLOT_COUNT:
 		var weapon := inventory.slots[i]
 		var charges := inventory.charges[i]
@@ -176,6 +216,9 @@ func refresh(race: RaceManager, delta: float) -> void:
 		_last_weapon[i] = weapon
 		_last_charges[i] = charges
 		icons[i].texture = icon
+		var dim := Color(0.55, 0.55, 0.6, 0.35 * _flicker_alpha) if _jammed else Color.WHITE
+		icons[i].modulate = dim
+		names[i].modulate = dim
 		names[i].visible = weapon != null and icon == null
 		names[i].text = weapon.display_name if weapon != null else ""
 		empties[i].visible = weapon == null
@@ -192,9 +235,17 @@ func refresh(race: RaceManager, delta: float) -> void:
 			style.border_color = STORED_BORDER if weapon != null else Color(1, 1, 1, 0.12)
 			style.bg_color = Color(0.04, 0.02, 0.12, 0.75 if weapon != null else 0.35)
 			style.shadow_size = 0
+		if _jammed:
+			style.border_color = JAM_COLOR
+			style.shadow_color = Color(JAM_COLOR, 0.35)
+			style.shadow_size = 8 if selected else 0
 		style.set_border_width_all(3 if selected else 2)
-		captions[i].text = "ACTIVE" if selected else "STORED"
-		captions[i].add_theme_color_override("font_color", ACTIVE_BORDER if selected else UIStyle.MUTED)
+		if _jammed:
+			captions[i].text = "OFFLINE"
+			captions[i].add_theme_color_override("font_color", JAM_COLOR)
+		else:
+			captions[i].text = "ACTIVE" if selected else "STORED"
+			captions[i].add_theme_color_override("font_color", ACTIVE_BORDER if selected else UIStyle.MUTED)
 	if inventory.selected != _last_selected:
 		_resize_slots(inventory.selected, _last_selected != -1)
 		_last_selected = inventory.selected
@@ -216,6 +267,8 @@ func refresh(race: RaceManager, delta: float) -> void:
 	var effects: PackedStringArray = []
 	if car.status != null:
 		for effect in car.status.active_effects():
+			if JAM_EFFECTS.has(effect):
+				continue  # the slot overlay shows it
 			effects.append("%s %.1fs" % [String(effect).to_upper(), car.status.time_left(effect)])
 		if car.status.is_protected():
 			effects.append("PROTECTED")
@@ -225,6 +278,94 @@ func refresh(race: RaceManager, delta: float) -> void:
 	if _notice_time > 0.0:
 		_notice_time -= delta
 		notice.visible = _notice_time > 0.0
+
+
+## Seconds until `car` can use weapons again after an EMP (0 = not jammed).
+static func jam_time_left(car: VehicleController) -> float:
+	if car == null or car.status == null:
+		return 0.0
+	var left := 0.0
+	for effect in JAM_EFFECTS:
+		left = maxf(left, car.status.time_left(effect))
+	return left
+
+
+func is_jam_shown() -> bool:
+	return _jammed
+
+
+func _update_jam(left: float, delta: float) -> void:
+	var now := left > 0.0
+	if now and not _jammed:
+		_jam_total = left
+		_jam_started()
+	_jammed = now
+	# The total can grow (EMP hit, then the longer jam starts on top).
+	_jam_total = maxf(_jam_total, left)
+	var steady := GameSettings.reduced_flashing
+	_flicker_time -= delta
+	if steady or not now:
+		_flicker_alpha = 1.0
+	elif _flicker_time <= 0.0:
+		_flicker_time = 1.0 / 15.0
+		_flicker_alpha = 1.0 if _fx_rng.randf() < 0.7 else _fx_rng.randf_range(0.45, 0.8)
+	var fraction := clampf(left / _jam_total, 0.0, 1.0) if _jam_total > 0.0 else 0.0
+	for i in jam_marks.size():
+		jam_marks[i].visible = now
+		jam_marks[i].modulate.a = _flicker_alpha
+		jam_rings[i].visible = now
+		(jam_rings[i] as _JamRing).fraction = fraction
+		jam_rings[i].queue_redraw()
+	jam_text = "WEAPONS OFFLINE  %.1f" % left if now else ""
+	jam_label.text = jam_text
+	jam_label.visible = now
+
+
+## The X slams in over each slot and the panels flash white.
+func _jam_started() -> void:
+	for i in jam_marks.size():
+		var mark := jam_marks[i]
+		mark.scale = Vector2.ONE * 1.4
+		var t := mark.create_tween()
+		t.tween_property(mark, "scale", Vector2.ONE, 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		var panel := panels[i]
+		panel.modulate = Color(1.8, 1.8, 1.8)
+		panel.create_tween().tween_property(panel, "modulate", Color.WHITE, 0.3)
+
+
+## Follows this view's car inventory for fire presses (the racer can change).
+func _watch(car: VehicleController) -> void:
+	if car.inventory == _watched_inventory:
+		return
+	if _watched_inventory != null and is_instance_valid(_watched_inventory) \
+			and _watched_inventory.use_requested.is_connected(_on_use_requested):
+		_watched_inventory.use_requested.disconnect(_on_use_requested)
+	_watched_inventory = car.inventory
+	_watched_car = car
+	if _watched_inventory != null:
+		_watched_inventory.use_requested.connect(_on_use_requested)
+
+
+## Fire pressed: if weapons are offline, shake the slots, flash them red
+## and buzz.
+func _on_use_requested() -> void:
+	if _watched_car == null or not is_instance_valid(_watched_car):
+		return
+	if jam_time_left(_watched_car) <= 0.0 or _watched_inventory.current() == null:
+		return
+	blocked_anims += 1
+	var t := _slot_row.create_tween()
+	if GameSettings.reduced_flashing:
+		t.tween_property(_slot_row, "position:x", 4.0, 0.06).as_relative()
+		t.tween_property(_slot_row, "position:x", -4.0, 0.12).as_relative()
+	else:
+		for dx in [8.0, -14.0, 11.0, -8.0, 3.0]:
+			t.tween_property(_slot_row, "position:x", dx, 0.06).as_relative()
+	for panel in panels:
+		panel.modulate = Color(1.0, 1.0, 1.0) + Color(JAM_COLOR, 0.0) * 0.8
+		panel.create_tween().tween_property(panel, "modulate", Color.WHITE, 0.3)
+	if _watched_car.player_controlled:
+		CombatSfx.play_on(_watched_car, CombatSfx.DENIED, "Denied")
 
 
 func _resize_slots(selected: int, animate: bool) -> void:
@@ -267,3 +408,59 @@ func _used(i: int, weapon: WeaponData) -> void:
 	t.tween_property(ghost, "scale", Vector2.ONE * 1.5, 0.3)
 	t.tween_property(ghost, "modulate:a", 0.0, 0.3)
 	t.chain().tween_callback(ghost.queue_free)
+
+
+## Big red X across a slot while weapons are offline.
+class _JamX extends Control:
+	func _init() -> void:
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	func _draw() -> void:
+		var inset := size.x * 0.16
+		var a := Vector2(inset, inset)
+		var b := size - Vector2(inset, inset)
+		var c := Vector2(size.x - inset, inset)
+		var d := Vector2(inset, size.y - inset)
+		for pair in [[a, b], [c, d]]:
+			draw_line(pair[0], pair[1], Color(ItemSlots.JAM_COLOR, 0.3), 16.0, true)
+			draw_line(pair[0], pair[1], ItemSlots.JAM_COLOR, 8.0, true)
+			draw_line(pair[0], pair[1], Color(1.0, 0.75, 0.8), 2.5, true)
+			for p in pair:
+				draw_circle(p, 4.0, ItemSlots.JAM_COLOR)
+
+
+## Rounded-square outline round a slot that empties (clockwise from the top
+## centre) as the jam runs out.
+class _JamRing extends Control:
+	var fraction: float = 1.0
+
+	func _init() -> void:
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	func _draw() -> void:
+		var pts := _outline(size, 5.0, 10.0)
+		var count := int(round((pts.size() - 1) * fraction))
+		if count < 1:
+			return
+		draw_polyline(pts.slice(0, count + 1), ItemSlots.JAM_COLOR, 3.0, true)
+
+	## Points round a rounded rect, starting at the top centre, clockwise.
+	static func _outline(s: Vector2, inset: float, radius: float) -> PackedVector2Array:
+		var r := Rect2(Vector2.ONE * inset, s - Vector2.ONE * inset * 2.0)
+		var rad := minf(radius, minf(r.size.x, r.size.y) * 0.5)
+		var pts := PackedVector2Array()
+		pts.append(Vector2(r.get_center().x, r.position.y))
+		var corners := [
+			[Vector2(r.end.x - rad, r.position.y + rad), -PI * 0.5],
+			[Vector2(r.end.x - rad, r.end.y - rad), 0.0],
+			[Vector2(r.position.x + rad, r.end.y - rad), PI * 0.5],
+			[Vector2(r.position.x + rad, r.position.y + rad), PI],
+		]
+		for corner in corners:
+			var centre: Vector2 = corner[0]
+			var start: float = corner[1]
+			for k in 7:
+				var ang := start + PI * 0.5 * k / 6.0
+				pts.append(centre + Vector2(cos(ang), sin(ang)) * rad)
+		pts.append(Vector2(r.get_center().x, r.position.y))
+		return pts
