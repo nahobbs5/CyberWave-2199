@@ -61,6 +61,66 @@ var _speeds: PackedFloat32Array = PackedFloat32Array()
 
 
 ## Called by TrackCircuit after its own curve is built.
+## Mirror races (TrackCircuit.set_reversed): the same road driven the other
+## way. Reverses the control points, swaps and mirrors the junction lanes,
+## remaps every distance-keyed list (d -> length - d) and rebuilds the route
+## (start and end offsets swap). The track adds a take-off ramp for each gap.
+func reverse_route(track: TrackCircuit, on: bool) -> void:
+	if on:
+		_forward = {}
+		for key in FLIPPED_SETTINGS:
+			_forward[key] = get(key)
+		_flip_settings()
+	elif not _forward.is_empty():
+		for key in FLIPPED_SETTINGS:
+			set(key, _forward[key])
+	build_route(track)
+
+
+## Settings reverse_route() remaps (restored exactly when turned back).
+const FLIPPED_SETTINGS: Array[String] = ["control_points", "start_lateral", "end_lateral",
+		"coin_distances", "crate_distances", "crate_laterals", "gaps", "hidden_surface", "open_edges"]
+## The forward settings, kept while reversed.
+var _forward: Dictionary = {}
+
+
+func _flip_settings() -> void:
+	var old_length := length
+	var pts := PackedVector3Array()
+	for i in range(control_points.size() - 1, -1, -1):
+		pts.append(control_points[i])
+	control_points = pts
+	var lanes := Vector2(start_lateral, end_lateral)
+	start_lateral = -lanes.y
+	end_lateral = -lanes.x
+	coin_distances = _flip_list(coin_distances, old_length)
+	crate_distances = _flip_list(crate_distances, old_length)
+	var lats := PackedFloat32Array()
+	for x in crate_laterals:
+		lats.append(-x)
+	crate_laterals = lats
+	gaps = _flip_ranges(gaps, old_length)
+	hidden_surface = _flip_ranges(hidden_surface, old_length)
+	var edges := PackedVector3Array()
+	for e in open_edges:
+		edges.append(Vector3(old_length - e.y, old_length - e.x, -e.z))
+	open_edges = edges
+
+
+static func _flip_list(values: PackedFloat32Array, total: float) -> PackedFloat32Array:
+	var out := PackedFloat32Array()
+	for i in range(values.size() - 1, -1, -1):
+		out.append(total - values[i])
+	return out
+
+
+static func _flip_ranges(ranges: PackedVector2Array, total: float) -> PackedVector2Array:
+	var out := PackedVector2Array()
+	for i in range(ranges.size() - 1, -1, -1):
+		out.append(Vector2(total - ranges[i].y, total - ranges[i].x))
+	return out
+
+
 func build_route(track: TrackCircuit) -> void:
 	curve = Curve3D.new()
 	curve.bake_interval = 1.0

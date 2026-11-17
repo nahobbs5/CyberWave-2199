@@ -13,7 +13,7 @@ extends Control
 ## an info box explaining the mode, and gold Next.
 
 const MODES: Array[String] = ["Grand Prix", "Versus"]
-const RACE_TYPES: Array[String] = ["Standard", "Elimination"]
+const RACE_TYPES: Array[String] = RaceSetup.RACE_TYPES
 const DIFFICULTIES: Array[String] = ["Easy", "Normal", "Hard"]
 
 var layout: NeonScreenLayout
@@ -63,6 +63,11 @@ func selected_mode() -> RaceConfig.Mode:
 	if _race_type.selected == 1 and elimination_allowed():
 		return RaceConfig.Mode.ELIMINATION
 	return RaceConfig.Mode.VERSUS
+
+
+## Versus Mirror: a Standard race with the track driven in reverse.
+func is_mirror() -> bool:
+	return not is_grand_prix() and _race_type.selected == RaceSetup.MIRROR
 
 
 func race_count() -> int:
@@ -129,10 +134,10 @@ func _update() -> void:
 	# Without NPCs there's no Elimination: it snaps back to Standard.
 	if not elimination_allowed() and _race_type.selected == 1:
 		_race_type.selected = 0
-	_laps_row.visible = not gp and _race_type.selected == 0
+	_laps_row.visible = not gp and _race_type.selected != 1
 	_difficulty_row.visible = _ai.button_pressed
 	var lines: PackedStringArray = []
-	var text := RaceSetup.describe(selected_mode(), 1 if gp else race_count(), _ai.button_pressed)
+	var text := RaceSetup.describe(selected_mode(), 1 if gp else race_count(), _ai.button_pressed, is_mirror())
 	if not gp and not elimination_allowed():
 		text += "\nELIMINATION: needs NPCs to fill the grid, so turn NPCs on to pick it."
 	for line in text.split("\n"):
@@ -151,7 +156,7 @@ func _update() -> void:
 func _restore() -> void:
 	var s := GameSession.mp_settings
 	_mode.selected = clampi(int(s.get("mode", 1)), 0, MODES.size() - 1)
-	_race_type.selected = clampi(int(s.get("race_type", 0)), 0, 1)
+	_race_type.selected = clampi(int(s.get("race_type", 0)), 0, RACE_TYPES.size() - 1)
 	_races.selected = clampi(int(s.get("races", RaceSetup.DEFAULT_RACES)), 0, RaceSetup.RACE_COUNTS.size() - 1)
 	_ai.set_pressed_no_signal(bool(s.get("ai", true)))
 	_difficulty.selected = clampi(int(s.get("difficulty", 1)), 0, 2)

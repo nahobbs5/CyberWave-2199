@@ -12,6 +12,8 @@ const PLAYER_ID := -1
 @export var difficulty: AIDifficulty
 @export_range(1, 9) var total_laps: int = 3
 @export var weapons_enabled: bool = true
+## Mirror race type (GDD 2.1): the track is driven in reverse.
+@export var mirrored: bool = false
 ## Track scene to race on. Null = the race scene's built-in track.
 @export var track_scene: PackedScene
 @export var track_name: String = "Test Circuit"
@@ -110,6 +112,11 @@ static func random_vehicles(count: int) -> PackedStringArray:
 
 func is_elimination() -> bool:
 	return mode == Mode.ELIMINATION
+
+
+## Personal bests and titles: Mirror races keep their own ("Track (Mirror)").
+func record_name() -> String:
+	return track_name + " (Mirror)" if mirrored else track_name
 
 
 func is_grand_prix() -> bool:

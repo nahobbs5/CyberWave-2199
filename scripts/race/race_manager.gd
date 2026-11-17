@@ -332,6 +332,9 @@ func _apply_config() -> void:
 		old.free()
 		add_child(track)
 		move_child(track, 0)
+	# Mirror: the same track driven the other way (before the grid, gates,
+	# racing line, coins and crates are laid out from it).
+	track.set_reversed(config.mirrored)
 
 
 func _physics_process(delta: float) -> void:
@@ -860,7 +863,7 @@ func _grant_rewards(reward: Dictionary) -> void:
 	profile.add_coins(int(reward.total))
 	var bests := {"race": false, "lap": false}
 	if not player.eliminated and player.finish_time > 0.0 and not player.time_projected:
-		bests = profile.record_race_time(config.track_name, total_laps, player.finish_time, player.best_lap)
+		bests = profile.record_race_time(config.record_name(), total_laps, player.finish_time, player.best_lap)
 	profile.save()
 	reward_summary = {
 		"lines": reward.lines,

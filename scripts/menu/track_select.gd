@@ -36,6 +36,8 @@ func _ready() -> void:
 ## "VERSUS  -  RACE 2 OF 4" in a series, else just "VERSUS".
 func title_text() -> String:
 	var mode := RaceConfig.MODE_NAMES[_mode()].to_upper()
+	if GameSession.versus_mirrored():
+		mode = "MIRROR"
 	var s := GameSession.series
 	if s != null:
 		return "%s  -  RACE %d OF %d" % [mode, s.race_index + 1, s.race_count()]

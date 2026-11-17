@@ -68,6 +68,9 @@ const WET_LINGER := 0.3
 
 ## Times anything triggered it (tests / telemetry).
 var triggered: int = 0
+## Mirror races: a gap jump's forward take-off ramp, turned round, is the
+## landing. No trick window or item boxes while it is.
+var mirror_landing: bool = false
 ## Main-road boost pads become a pattern (BoostPattern): this node is the
 ## first pad; the others are generated copies (pattern_copy).
 var pattern_copy: bool = false
@@ -184,6 +187,8 @@ func _place_at(track: TrackCircuit, along: float, p_lateral: float) -> void:
 ## Boosters with item_boxes: two boxes side by side on the pad / in the ring.
 func item_box_transforms() -> Array[Transform3D]:
 	var locals: Array[Vector3] = []
+	if mirror_landing:
+		return []
 	match kind:
 		Kind.JUMP_RAMP:
 			var count := maxi(2, roundi(width / 4.5))
@@ -491,7 +496,7 @@ func _on_body_entered(body: Node3D) -> void:
 			_smash()
 		Kind.JUMP_RAMP:
 			# Opens the trick window (E / gamepad X in the air).
-			if car.trick != null:
+			if car.trick != null and not mirror_landing:
 				car.trick.on_ramp()
 		Kind.WATER:
 			pass # handled every frame in _physics_process

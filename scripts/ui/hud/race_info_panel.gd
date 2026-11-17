@@ -6,12 +6,10 @@ extends PanelContainer
 ## next cut, on a dark band that fades out to the right. Lap, race time and
 ## coins live in `lap_block`, which RaceHUD puts top right in single player
 ## (coins under the time) or under this panel in split screen. Position
-## changes pulse the number: cyan + "POSITION UP!" for a gain, orange for a
-## loss.
+## changes pulse the number: cyan for a gain, orange for a loss.
 
 var pos_number: Label
 var pos_total: Label
-var pos_cue: Label
 var lap_value: Label
 var time_value: Label
 ## Coin count (the number only); the coin symbol sits to its right.
@@ -29,7 +27,6 @@ var losses: int = 0
 
 var _coin_holder: Control
 var _pos_tween: Tween
-var _cue_time: float = 0.0
 
 
 func _init() -> void:
@@ -57,9 +54,6 @@ func _init() -> void:
 	pos_total = _slanted("/8", 34, Color.WHITE)
 	pos_total.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	pos_row.add_child(pos_total)
-	pos_cue = UIStyle.stat("", 16, UIStyle.CYAN)
-	pos_cue.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	pos_row.add_child(pos_cue)
 
 	elim_label = UIStyle.stat("", 16, Color(1.0, 0.45, 0.5))
 	elim_label.visible = false
@@ -138,9 +132,6 @@ func position_changed(gained: bool) -> void:
 	_pos_tween.tween_property(pos_number, "scale", Vector2.ONE, 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	_pos_tween.tween_interval(0.35)
 	_pos_tween.tween_callback(func() -> void: pos_number.add_theme_color_override("font_color", Color.WHITE))
-	if gained:
-		pos_cue.text = "POSITION UP!"
-		_cue_time = 1.0
 
 
 ## Shows or hides the coin counter (split screen has no coins).
@@ -162,14 +153,6 @@ func coin_collected() -> void:
 	f.tween_property(plus, "position:y", -18.0, 0.5)
 	f.tween_property(plus, "modulate:a", 0.0, 0.5)
 	f.chain().tween_callback(plus.queue_free)
-
-
-func _process(delta: float) -> void:
-	if _cue_time > 0.0:
-		_cue_time -= delta
-		pos_cue.modulate.a = clampf(_cue_time / 0.3, 0.0, 1.0)
-		if _cue_time <= 0.0:
-			pos_cue.text = ""
 
 
 ## Top right: LAP "1/3", the race time under it, and (single player) the

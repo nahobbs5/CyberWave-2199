@@ -5,7 +5,7 @@
     "name": "Cyberwave 2199",
     "pitch": "Retrofuturistic cyberpunk combat kart racing: luxury neon cars, drift boosts, weapons and fifteen real-world circuits, against seven AI rivals or in 2–4 player local split screen.",
     "engine": "Godot 4.7.2 · GDScript · Jolt Physics",
-    "gdd": "v9.2",
+    "gdd": "v9.3",
     "phase": "Phase 6: content and polish (GDD §16)",
     "repo": "https://github.com/nahobbs5/CyberWave-2199",
     "demo": "https://nahobbs5.github.io/CyberWave-2199/web/",
@@ -1000,6 +1000,12 @@
       "decision": "Garage door shows a neon world map with a pin per track (coloured by cup) instead of the CYBERWAVE 2199 sign text; smaller map on the split-screen car cards",
       "why": "Ties the car picker to the world tour of the cups; the game name is already in the top-left logo",
       "gdd": "v9.2"
+    },
+    {
+      "date": "2026-11-16",
+      "decision": "Mirror race type for Versus (single player and split screen): the built track is reversed in place (TrackCircuit.set_reversed) rather than mirrored left-right; Nyiragongo's lava-channel jump gets a Mirror take-off ramp so it works backwards; separate Mirror personal bests",
+      "why": "Doubles the track variety for no new art; reversing the curve once keeps AI, recovery, Overdrive and the minimap working unchanged",
+      "gdd": "v9.3"
     }
   ],
   "playtest": [

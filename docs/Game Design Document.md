@@ -1,5 +1,5 @@
 # CYBERWAVE 2199
-## Game Design Document — Version 9.2
+## Game Design Document — Version 9.3
 
 **Status:** Development Baseline  
 **Engine:** Godot 4  
@@ -56,7 +56,7 @@ The initial release focuses on polished single-player racing. Additional feature
 
 A race, or a set of races, against seven AI opponents. Set up Mario Kart style:
 
-1. Race setup: vehicle, race type (Standard or Elimination), **number of races** (1, 2, 3, 4, 6, 8, 12 or 16), lap count, Easy / Normal / Hard AI, weapons on or off. Defaults: Standard, 3 races, 3 laps, Normal AI, weapons on; split-screen Multiplayer uses the same defaults (Versus mode) with NPCs on.
+1. Race setup: vehicle, race type (Standard, Elimination or Mirror), **number of races** (1, 2, 3, 4, 6, 8, 12 or 16), lap count, Easy / Normal / Hard AI, weapons on or off. Defaults: Standard, 3 races, 3 laps, Normal AI, weapons on; split-screen Multiplayer uses the same defaults (Versus mode) with NPCs on.
 2. Cup screen (Versus): a row of cup badges plus a "?" Random badge. Moving across the badges previews each cup's races; opening a cup moves into its race cards, and picking one races it. The Random badge opens a **RANDOM** card for a random built track from any cup (in a series, one not raced yet while any are left). Built tracks of a cup that's locked for Grand Prix can be raced here.
 
 With more than one race, the track screen comes back before each race (showing "RACE 2 OF 4"; the standings stay on the results screen). Points and the next grid work like a Grand Prix (§2.2). The final results name the series winner. A series isn't saved: quitting part-way ends it. Each race pays its normal coins, with no cup bonus.
@@ -66,6 +66,17 @@ The player starts in eighth position.
 The race concludes when the player finishes or is otherwise removed from competition under the active mode's rules.
 
 The race ends for everyone once all but one car have crossed the finish line on the final lap: the last car (human or AI) is placed last at once, without having to finish, and its time reads "classified". Cars keep driving behind the results. This applies to every mode except Elimination, which ends when the first finalist crosses.
+
+### Mirror
+
+**Mirror** is the third Versus race type, single player and split screen: a Standard race with the track driven in reverse. The setup info box reads "MIRROR: Track direction is reversed." Laps are picked as for Standard, and every race of a Mirror set is Mirror.
+
+- The road, walls and scenery stay as they are. The start line keeps its place, with the grid, gantry and start lights turned to face the other way. The start-light board is shown mirrored, so the countdown runs right to left: the three reds light from the right and the green GO lamp is on the far left. Checkpoints run in reverse order, and the corner chevrons point the new way.
+- Item crates and coins keep their spots. Ramps, boost pads and rings turn round where they stand, and a ramp's item boxes go with it.
+- The start stays clear: nothing sits from 20 m behind the back of the grid to 20 m past the line. A start boost pad (Choquequirao, Vale da Lua, Kilwa) or item row (Hoia Baciu) that would land on the reversed grid moves to the same distance past the line in the new direction instead.
+- Shortcuts and alternate routes are driven backwards too, jumps included. Every jump gap (Fires of Nyiragongo's lava channel) gets a matching take-off ramp on its far side, with its row of item boxes. The forward take-off ramp, turned round, becomes the landing (no trick window or item boxes on it). The AI hold their jump speed into it as usual.
+- Mirror keeps its own personal bests ("Marble Canyon (Mirror)"). The results screen and the track screen title show MIRROR.
+- How it works: `TrackCircuit.set_reversed()` turns a built track round. It rebuilds the centre line from the control points in reverse order, remaps every distance-based setting, and reverses each `TrackShortcut`. Everything else (AI racing lines, recovery, Overdrive, drones, the minimap, wrong-way detection) follows the reversed track with no changes of its own.
 
 ## 2.2 Grand Prix
 
@@ -205,7 +216,7 @@ Two to four players on one PC, Mario Kart style. The title menu offers **Single 
 2. **Choose your cars.** One neon card per player in their colour: a header with the player tag, their device and READY, the car turning on a turntable that glows in the player's colour, its name and type, and its stats (top speed, acceleration, handling, drift as 1–10 bars). Two players get tall side-by-side cards with a strip of car pictures (click one to pick it); three or four get a 2×2 grid of wide cards with a car counter, and with three the fourth cell lists the controls and who is still choosing. Left / right changes car on that player's device; Enter / A readies up; Back / B un-readies, or returns to step 1. When everyone is ready, an **ALL READY** banner asks for one more Enter / A / Start before step 3 opens.
    - Player 1 drives their Garage loadout. Players 2–4 drive the stock car painted in their player colour (P1 cyan, P2 magenta, P3 gold, P4 green).
    - Everyone can set a license plate (§9.5) with Y (gamepad) or Tab (keyboard). The keyboard player types; gamepad players use a letter picker (up / down changes the letter, left / right moves, X deletes, A done). Player 1's plate is saved to their profile; players 2–4 default to "P2"–"P4".
-3. **Race setup.** Mode (Grand Prix or Versus); in Versus, race type (Standard or Elimination) and number of races; NPCs on or off (the computer-driven cars: on fills the grid to eight, off races the humans only; Elimination needs NPCs); NPC difficulty (shown only with NPCs on); laps; items. The rows are the single-player race setup's (‹ value › steppers and ON / OFF switches) in a RACE SETTINGS panel with two columns, under a pill per player showing their car. A box underneath explains the chosen mode and race type, including how Elimination knocks cars out and that it needs NPCs. A gold Next button names the next screen: Cup Selection (Grand Prix) or Track Selection (Versus).
+3. **Race setup.** Mode (Grand Prix or Versus); in Versus, race type (Standard, Elimination or Mirror) and number of races; NPCs on or off (the computer-driven cars: on fills the grid to eight, off races the humans only; Elimination needs NPCs); NPC difficulty (shown only with NPCs on); laps; items. The rows are the single-player race setup's (‹ value › steppers and ON / OFF switches) in a RACE SETTINGS panel with two columns, under a pill per player showing their car. A box underneath explains the chosen mode and race type, including how Elimination knocks cars out and that it needs NPCs. A gold Next button names the next screen: Cup Selection (Grand Prix) or Track Selection (Versus).
    - Grand Prix goes to the cup screen. Versus goes to the cup screen to pick a race (§2.1), before every race of the set.
 
 Leaving a race, or finishing a set, returns to step 2 with the same players joined.
@@ -1114,7 +1125,7 @@ The game opens on a title menu: Single Player, Multiplayer (§2.4), Settings, Cr
 
 - Continue Grand Prix, when a championship is saved
 - Grand Prix
-- Versus (Standard or Elimination, picked on the race setup screen)
+- Versus (Standard, Elimination or Mirror, picked on the race setup screen)
 - Practice
 - Garage
 - Settings
@@ -1746,5 +1757,6 @@ Changes after Version 1.0 should be tracked as revisions rather than silently re
 | 9.0 | 2026-11-16 | Car fidelity pass: rounded, smooth-shaded bodies (24-point sections, curved stations), wheel arches with flared lips (low noses bulge above the hood), door shut lines, side mirrors, carbon-weave trim and clear-coated paint on every model; detailed tyres and five-spoke rims with brake discs on every car, which the Rims cosmetic now recolours (was a plain disc). Imported .glb models get the detailed wheels too. Purely visual (§5.1). |
 | 9.1 | 2026-11-16 | After playtesting: a much bigger weapons-offline cue when an EMP jams you — a red X over both item squares, dimmed flickering pictures, OFFLINE captions, a countdown ring and "WEAPONS OFFLINE" timer, and a shake plus denied beep if you press fire (§11.5, §12.2). Small trick ramps: every race track now has a half-width ramp on one side of the road (eleven new ones; three existing jumps cut to half width) (§8.7). |
 | 9.2 | 2026-11-16 | The garage door now shows a neon world map with a glowing pin on every track (coloured by cup) instead of the CYBERWAVE 2199 lettering; the split-screen car cards get a smaller version (§11.4). |
+| 9.3 | 2026-11-16 | New Versus race type **Mirror** (single player and split screen): the track driven in reverse, with gates, grid, gantry, signs, ramps, pads and shortcuts turned round; Nyiragongo's lava-channel jump works backwards (a Mirror take-off ramp on the far side, the old ramp becomes the landing); Mirror keeps its own personal bests (§2.1, §2.4, §11.3). |
 
 **End of Game Design Document — Version 8.9**

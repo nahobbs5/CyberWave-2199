@@ -177,6 +177,13 @@ var length: float = 0.0
 var shortcuts: Array[TrackShortcut] = []
 
 var _rebuild_queued: bool = false
+## Mirror races (GDD 2.1): driven the other way round. See set_reversed().
+var reversed: bool = false
+var _reversing: bool = false
+## The forward settings, kept while reversed.
+var _forward: Dictionary = {}
+## Each feature's forward transform, kept while reversed.
+var _forward_features: Dictionary = {}
 ## road_columns in road terms: x = main-loop offset, y = lateral (right +),
 ## z = half size. Sorted by offset.
 var column_spots: PackedVector3Array = PackedVector3Array()
@@ -197,7 +204,7 @@ func _ready() -> void:
 
 
 func _queue_rebuild() -> void:
-	if not is_inside_tree() or _rebuild_queued:
+	if not is_inside_tree() or _rebuild_queued or _reversing:
 		return
 	_rebuild_queued = true
 	rebuild.call_deferred()
@@ -242,6 +249,202 @@ func build_base() -> bool:
 	_build_checkpoints()
 	_build_columns()
 	return true
+
+
+## Mirror races (GDD 2.1): drive the built track the other way round. The
+## curve is rebuilt from the control points in reverse order (same road,
+## distance d becomes length - d) and every offset-keyed setting is remapped
+## so world positions stay put (laterals and sides flip). Shortcuts reverse
+## too (a jump gap gets a take-off ramp on its far side), features turn
+## round, and the gates, grid,
+## start gantry and corner signs are rebuilt for the new direction. Road,
+## walls and scenery don't depend on direction and stay as built. Calling it
+## again with the same value does nothing; false turns it back.
+func set_reversed(on: bool) -> void:
+	if on == reversed or length <= 0.0:
+		return
+	reversed = on
+	_reversing = true
+	if on:
+		_forward = {}
+		for key in FLIPPED_SETTINGS:
+			_forward[key] = get(key)
+		_flip_settings()
+	else:
+		for key in FLIPPED_SETTINGS:
+			set(key, _forward[key])
+	_build_curve()
+	for sc in shortcuts:
+		sc.reverse_route(self, on)
+	_index_columns()
+	for gen in ["Checkpoints", "GridMarkers", "StartGantry", "CornerSigns"]:
+		var node := get_node_or_null(NodePath(GENERATED_PREFIX + gen))
+		if node != null:
+			remove_child(node)
+			node.free()
+	_build_start_gantry()
+	_build_grid_markers()
+	_build_corner_signs()
+	_build_checkpoints()
+	_remove_mirror_ramps()
+	if on:
+		# Features are centred on their origin: turning them round in place
+		# points ramps, pads and rings (and a ramp's item boxes) the new way.
+		_forward_features = {}
+		for child in get_children():
+			if child is TrackFeature:
+				var f := child as TrackFeature
+				_forward_features[f] = f.transform
+				f.transform.basis = f.transform.basis * Basis(Vector3.UP, PI)
+		_clear_start_area()
+		_add_mirror_ramps()
+	else:
+		for f: TrackFeature in _forward_features:
+			if is_instance_valid(f):
+				f.transform = _forward_features[f]
+		_forward_features = {}
+	_reversing = false
+
+
+## Settings set_reversed() remaps (restored exactly when turned back).
+const FLIPPED_SETTINGS: Array[String] = ["control_points", "start_line_offset", "crate_row_offsets",
+		"coin_offsets", "crate_lateral_positions", "coin_laterals", "banking", "open_edges",
+		"hidden_surface", "elimination_gate"]
+
+
+func _flip_settings() -> void:
+	var total := length
+	var pts := PackedVector3Array([control_points[0]])
+	for i in range(control_points.size() - 1, 0, -1):
+		pts.append(control_points[i])
+	control_points = pts
+	start_line_offset = _flip_offset(start_line_offset, total)
+	crate_row_offsets = _flip_offsets(crate_row_offsets, total)
+	coin_offsets = _flip_offsets(coin_offsets, total)
+	crate_lateral_positions = _negated(crate_lateral_positions)
+	coin_laterals = _negated(coin_laterals)
+	var banks := PackedVector3Array()
+	for b in banking:
+		banks.append(Vector3(_flip_offset(b.y, total), _flip_offset(b.x, total), -b.z))
+	banking = banks
+	var edges := PackedVector3Array()
+	for e in open_edges:
+		edges.append(Vector3(_flip_offset(e.y, total), _flip_offset(e.x, total), -e.z))
+	open_edges = edges
+	var hidden := PackedVector2Array()
+	for h in hidden_surface:
+		hidden.append(Vector2(_flip_offset(h.y, total), _flip_offset(h.x, total)))
+	hidden_surface = hidden
+	if elimination_gate > 0:
+		elimination_gate = checkpoint_count - elimination_gate
+
+
+static func _flip_offset(offset: float, total: float) -> float:
+	return fposmod(total - offset, total)
+
+
+static func _flip_offsets(values: PackedFloat32Array, total: float) -> PackedFloat32Array:
+	var out := PackedFloat32Array()
+	for v in values:
+		out.append(_flip_offset(v, total))
+	return out
+
+
+static func _negated(values: PackedFloat32Array) -> PackedFloat32Array:
+	var out := PackedFloat32Array()
+	for v in values:
+		out.append(-v)
+	return out
+
+
+## Nothing on the main road from START_CLEAR behind the back of the grid to
+## START_CLEAR past the line.
+const START_CLEAR := 20.0
+
+
+## Signed distance of a main-road point from the start line (+ = past it).
+func start_distance(world_pos: Vector3) -> float:
+	return wrapped_delta(start_line_offset, get_offset_at(world_pos))
+
+
+## The start area (grid and line) as distances from the start line.
+func start_area() -> Vector2:
+	var back := wrapped_delta(start_line_offset, get_grid_offset(grid_slots - 1))
+	return Vector2(back - START_CLEAR, START_CLEAR)
+
+
+## Mirror: a feature placed just past the line going forward ends up under
+## the grid going backwards (the start boost pads, some item rows). Each
+## feature, crate row or coin in the start area moves to the same distance
+## past the line in the new direction (same side of the road), so the start
+## is clear and the launch boost stays.
+func _clear_start_area() -> void:
+	var area := start_area()
+	for child in get_children():
+		var f := child as TrackFeature
+		if f == null or f.on_shortcut != "":
+			continue
+		var d := start_distance(f.global_position)
+		if d <= area.x or d >= area.y:
+			continue
+		var o := get_offset_at(f.global_position)
+		var right := get_tangent_at(o).cross(Vector3.UP).normalized()
+		var lateral := (f.global_position - get_center_at(o)).dot(right)
+		var target := wrap_offset(start_line_offset + maxf(-d, START_CLEAR))
+		f.transform = global_transform.affine_inverse() * get_safe_transform(target, lateral, 0.0)
+	# Item crate rows and coins the same way.
+	crate_row_offsets = _clear_offsets(crate_row_offsets, area)
+	coin_offsets = _clear_offsets(coin_offsets, area)
+
+
+func _clear_offsets(values: PackedFloat32Array, area: Vector2) -> PackedFloat32Array:
+	var out := values.duplicate()
+	for i in out.size():
+		var d := wrapped_delta(start_line_offset, out[i])
+		if d > area.x and d < area.y:
+			out[i] = wrap_offset(start_line_offset + maxf(-d, START_CLEAR))
+	return out
+
+
+## Mirror: a take-off ramp on the far side of every shortcut jump gap, so
+## the gap can be jumped the other way. The forward ramp, turned round, is
+## the landing (no trick window or item boxes there while reversed).
+func _add_mirror_ramps() -> void:
+	for sc in shortcuts:
+		for i in sc.gaps.size():
+			var gap := sc.gaps[i]
+			var ramp_length := 14.0
+			var ramp_height := 1.6
+			for child in get_children():
+				var f := child as TrackFeature
+				if f != null and f.kind == TrackFeature.Kind.JUMP_RAMP and f.on_shortcut == String(sc.name):
+					# The forward take-off: its lip sits at this gap's far edge now.
+					var lip := sc.length - (f.offset + f.length * 0.5)
+					if absf(lip - gap.y) < 4.0:
+						ramp_length = f.length
+						ramp_height = f.ramp_height
+						f.mirror_landing = true
+			var ramp := TrackFeature.new()
+			ramp.name = "%sMirrorRamp_%s_%d" % [GENERATED_PREFIX, sc.name, i]
+			ramp.kind = TrackFeature.Kind.JUMP_RAMP
+			ramp.on_shortcut = String(sc.name)
+			ramp.offset = gap.x - ramp_length * 0.5
+			ramp.width = sc.road_width
+			ramp.length = ramp_length
+			ramp.ramp_height = ramp_height
+			add_child(ramp)
+			ramp.place_on_track(self)
+
+
+func _remove_mirror_ramps() -> void:
+	for child in get_children():
+		var f := child as TrackFeature
+		if f == null:
+			continue
+		f.mirror_landing = false
+		if f.name.begins_with(GENERATED_PREFIX + "MirrorRamp_"):
+			remove_child(f)
+			f.free()
 
 
 ## Children that dress themselves along the road (features, scenery).
@@ -1224,6 +1427,8 @@ func _build_start_gantry() -> void:
 	_start_board.shader = load(START_LIGHTS_SHADER) as Shader
 	_start_board.set_shader_parameter("board", load(START_LIGHTS_TEXTURE) as Texture2D)
 	_start_board.set_shader_parameter("lit_count", _start_lights)
+	# Mirror races count down right to left.
+	_start_board.set_shader_parameter("right_to_left", reversed)
 	board.material_override = _start_board
 	holder.add_child(board)
 

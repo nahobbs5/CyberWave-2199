@@ -45,6 +45,8 @@ var ai_rivals: bool = true
 var series_races: int = 0
 ## Versus or Elimination: the race type of every race in a series.
 var series_mode: RaceConfig.Mode = RaceConfig.Mode.VERSUS
+## Series only: every race is a Mirror race (the track driven in reverse).
+var series_mirrored: bool = false
 
 
 static func create(p_gp: GrandPrixData, p_difficulty_id: String, p_weapons: bool,
@@ -88,6 +90,7 @@ static func create_series(count: int, template: RaceConfig, p_difficulty_id: Str
 			template.player_devices, template.player_vehicle_ids, template.ai_rivals)
 	c.series_races = maxi(1, count)
 	c.series_mode = template.mode
+	c.series_mirrored = template.mirrored
 	c.player_plates = template.player_plates.duplicate()
 	if template.rival_plates.size() >= 7:
 		c.rival_plates = template.rival_plates
@@ -176,6 +179,7 @@ func standings() -> Array[int]:
 func make_race_config() -> RaceConfig:
 	var config := RaceConfig.new()
 	config.mode = series_mode if is_series() else RaceConfig.Mode.GRAND_PRIX
+	config.mirrored = is_series() and series_mirrored
 	config.difficulty = load(DIFFICULTY_PATH % difficulty_id) as AIDifficulty
 	config.weapons_enabled = weapons_enabled
 	config.total_laps = gp.laps

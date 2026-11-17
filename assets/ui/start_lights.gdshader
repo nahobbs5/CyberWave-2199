@@ -2,10 +2,13 @@ shader_type spatial;
 // The start-light board (Racing Start Light Assembly.png). Lamps at index
 // lit_count and above are shown switched off: dark and desaturated, with
 // their glow dimmed. Lit lamps are pushed a little brighter so they bloom.
+// right_to_left (Mirror races) shows the board mirrored: the reds light from
+// the right and the green GO lamp is on the far left.
 render_mode unshaded, cull_disabled;
 
 uniform sampler2D board : source_color, filter_linear_mipmap;
 uniform int lit_count = 0;
+uniform bool right_to_left = false;
 uniform float lit_boost = 1.6;
 
 const float ASPECT = 3.0;
@@ -13,13 +16,14 @@ const float LAMP_RADIUS = 0.19;
 const float GLOW_RADIUS = 0.34;
 
 void fragment() {
-	vec4 c = texture(board, UV);
+	vec2 uv = right_to_left ? vec2(1.0 - UV.x, UV.y) : UV;
+	vec4 c = texture(board, uv);
 	float off = 0.0;
 	float glow_off = 0.0;
 	float lit = 0.0;
 	for (int i = 0; i < 4; i++) {
 		vec2 centre = vec2(0.2675 + float(i) * 0.155, 0.487);
-		float d = length((UV - centre) * vec2(ASPECT, 1.0));
+		float d = length((uv - centre) * vec2(ASPECT, 1.0));
 		float inside = 1.0 - smoothstep(LAMP_RADIUS - 0.02, LAMP_RADIUS + 0.01, d);
 		float halo = 1.0 - smoothstep(LAMP_RADIUS, GLOW_RADIUS, d);
 		if (i >= lit_count) {

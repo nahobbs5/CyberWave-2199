@@ -355,6 +355,13 @@ func _test_lobby() -> void:
 	setup.set_race_type(1)
 	_check(setup.selected_mode() == RaceConfig.Mode.ELIMINATION and setup._difficulty_row.visible, "with NPCs it's allowed")
 	_check(setup._note.text.contains("knocked out"), "and the screen explains Elimination")
+	setup.set_race_type(RaceSetup.MIRROR)
+	_check(setup.is_mirror() and setup.selected_mode() == RaceConfig.Mode.VERSUS and setup._laps_row.visible
+			and setup._note.text.contains("Track direction is reversed."), "Mirror: Versus with laps, explained")
+	setup.set_races(1)
+	setup.next()
+	_check(GameSession.versus_template != null and GameSession.versus_template.mirrored
+			and GameSession.versus_template.is_multiplayer(), "a split-screen Mirror race")
 	setup.set_race_type(0)
 	setup.set_races(3)
 	setup.next()

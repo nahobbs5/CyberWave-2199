@@ -145,7 +145,7 @@ func open(manager: RaceManager) -> void:
 ## "CHAMPIONSHIP FINAL / AMERICAN CIRCUIT".
 func context_text() -> String:
 	var c := race.championship
-	var track := race.config.track_name.to_upper()
+	var track := race.config.record_name().to_upper()
 	if c == null:
 		return "%s / %s" % [RaceConfig.MODE_NAMES[race.config.mode].to_upper(), track]
 	if c.is_complete() and c.is_series():

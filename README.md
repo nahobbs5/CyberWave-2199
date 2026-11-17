@@ -11,7 +11,7 @@ Luxury neon cars, drift boosts, weapons and fifteen circuits set in real-world p
 
 ## Features
 
-- **Modes:** Versus (Mario Kart style sets of 1–16 races), Grand Prix (three-race cups with points and a save), and Elimination (checkpoint knockouts each lap).
+- **Modes:** Versus (Mario Kart style sets of 1–16 races), Grand Prix (three-race cups with points and a save), Elimination (checkpoint knockouts each lap), and Mirror (any track driven in reverse).
 - **2–4 player split screen** on one PC with keyboard and gamepads, a live spectator view for three players, and an optional AI field.
 - **Drifting:** hold drift and steer to charge **Cyan → Magenta → Gold** boosts. Steering into the slide charges faster.
 - **Rocket start:** hold accelerate as the "2" fades to launch, but too early and you burn out. A four-lamp start-light board on the gantry counts you in.

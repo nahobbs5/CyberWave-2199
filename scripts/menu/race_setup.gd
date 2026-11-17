@@ -19,7 +19,9 @@ extends Control
 
 const ROSTER := "res://resources/racers/rival_roster.tres"
 const DIFFICULTIES: Array[String] = ["easy", "normal", "hard"]
-const RACE_TYPES: Array[String] = ["Standard", "Elimination"]
+const RACE_TYPES: Array[String] = ["Standard", "Elimination", "Mirror"]
+## RACE_TYPES index of Mirror: a Versus race with the track driven in reverse.
+const MIRROR := 2
 ## Versus: how many races in a set (points add up over the set).
 const RACE_COUNTS: Array[int] = [1, 2, 3, 4, 6, 8, 12, 16]
 ## Default Versus set: 3 races (index into RACE_COUNTS).
@@ -27,7 +29,7 @@ const DEFAULT_RACES: int = 2
 
 ## What a mode / race type means, for the setup screens ("NPCs" are the
 ## computer-driven rivals).
-static func describe(p_mode: RaceConfig.Mode, _races: int = 1, npcs: bool = true) -> String:
+static func describe(p_mode: RaceConfig.Mode, _races: int = 1, npcs: bool = true, mirrored: bool = false) -> String:
 	var lines: PackedStringArray = []
 	match p_mode:
 		RaceConfig.Mode.GRAND_PRIX:
@@ -37,13 +39,18 @@ static func describe(p_mode: RaceConfig.Mode, _races: int = 1, npcs: bool = true
 			lines.append("ELIMINATION: 3 laps total. At each checkpoint, slower players are knocked out of the "
 					+ "race until there is only one victor. Requires NPCs to fill the grid.")
 		_:
-			lines.append("STANDARD: Compete for the fastest time.")
+			if mirrored:
+				lines.append("MIRROR: Track direction is reversed.")
+			else:
+				lines.append("STANDARD: Compete for the fastest time.")
 	if not npcs:
 		lines.append("NPCs OFF: just the players, no computer cars.")
 	return "\n".join(lines)
 
 
 var mode: RaceConfig.Mode = RaceConfig.Mode.VERSUS
+## Versus Mirror race type (mode stays VERSUS): the track driven in reverse.
+var mirrored: bool = false
 var vehicle_index: int = 0
 
 ## Grand Prix: the cup (null in Versus).
@@ -76,6 +83,7 @@ func _ready() -> void:
 	InputSetup.ensure_actions()
 	Music.play(get_tree(), Music.MENU)
 	mode = GameSession.setup_mode
+	mirrored = mode == RaceConfig.Mode.VERSUS and int(GameSession.race_settings.get("race_type", 0)) == MIRROR
 	if is_grand_prix():
 		_resolve_selection()
 	_build()
@@ -115,6 +123,7 @@ func race_count() -> int:
 func make_config() -> RaceConfig:
 	var config := RaceConfig.new()
 	config.mode = mode
+	config.mirrored = mirrored and mode == RaceConfig.Mode.VERSUS
 	config.difficulty = load(Championship.DIFFICULTY_PATH % difficulty_id()) as AIDifficulty
 	config.total_laps = _laps.selected + 1
 	config.weapons_enabled = _weapons.button_pressed
@@ -155,7 +164,7 @@ func _remember() -> void:
 	settings["difficulty"] = _difficulty.selected
 	settings["laps"] = _laps.selected
 	if mode != RaceConfig.Mode.GRAND_PRIX:
-		settings["race_type"] = 1 if mode == RaceConfig.Mode.ELIMINATION else 0
+		settings["race_type"] = race_type_index()
 	settings["weapons"] = _weapons.button_pressed
 	if not is_grand_prix():
 		settings["races"] = _races.selected
@@ -184,7 +193,7 @@ func _restore() -> void:
 
 func _update_note() -> void:
 	var lines: PackedStringArray = []
-	for line in describe(mode, race_count()).split("\n"):
+	for line in describe(mode, race_count(), true, mirrored).split("\n"):
 		# "STANDARD: pick any ..." -> a gold "Standard:", then the rest.
 		var colon := line.find(":")
 		if colon > 0 and colon < 24:
@@ -246,7 +255,7 @@ func _build() -> void:
 		_race_type = NeonStepper.new()
 		for t in RACE_TYPES:
 			_race_type.add_item(t)
-		_race_type.selected = 1 if mode == RaceConfig.Mode.ELIMINATION else 0
+		_race_type.selected = race_type_index()
 		_race_type.item_selected.connect(set_race_type)
 		rows.add_child(SetupWidgets.setting_row("flags", "Race Type", _race_type))
 		_races = NeonStepper.new()
@@ -430,11 +439,19 @@ func _resolve_selection() -> void:
 		cup = GrandPrixData.cup_by_path(cup_path)
 
 
-## Versus race type: 0 = Standard, 1 = Elimination.
+## The Race Type stepper's index for the current choice.
+func race_type_index() -> int:
+	if mode == RaceConfig.Mode.ELIMINATION:
+		return 1
+	return MIRROR if mirrored else 0
+
+
+## Versus race type: 0 = Standard, 1 = Elimination, 2 = Mirror.
 func set_race_type(index: int) -> void:
 	if mode == RaceConfig.Mode.GRAND_PRIX:
 		return
 	mode = RaceConfig.Mode.ELIMINATION if index == 1 else RaceConfig.Mode.VERSUS
+	mirrored = index == MIRROR
 	if _race_type.selected != index:
 		_race_type.selected = index
 	_laps_row.visible = mode == RaceConfig.Mode.VERSUS

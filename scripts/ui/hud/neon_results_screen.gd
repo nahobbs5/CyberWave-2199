@@ -94,7 +94,7 @@ func open(manager: RaceManager) -> void:
 			else (RaceProgress.format_time(player.finish_time) if player.finish_time >= 0.0 else "DNF")
 	best_value.text = RaceProgress.format_time(player.best_lap)
 	laps_value.text = "%d / %d" % [mini(player.lap, race.total_laps) if player.eliminated else race.total_laps, race.total_laps]
-	track_label.text = race.config.track_name.to_upper()
+	track_label.text = race.config.record_name().to_upper()
 	mode_label.text = mode_text()
 	var scene_path := race.config.track_scene.resource_path if race.config.track_scene != null else ""
 	_photo.set_track(scene_path)

@@ -167,6 +167,7 @@ static func make_multiplayer_config(mode: RaceConfig.Mode, track: String) -> Rac
 	config.difficulty = load(Championship.DIFFICULTY_PATH % difficulty_id()) as AIDifficulty
 	config.total_laps = int(mp_settings.get("laps", 2)) + 1
 	config.weapons_enabled = bool(mp_settings.get("weapons", true))
+	config.mirrored = mode == RaceConfig.Mode.VERSUS and int(mp_settings.get("race_type", 0)) == RaceSetup.MIRROR
 	if track != "":
 		config.track_name = track
 		config.track_scene = TrackCatalog.scene(track)
@@ -229,8 +230,15 @@ static func to_credits(tree: SceneTree) -> void:
 	_change(tree, CREDITS_SCENE)
 
 
-## Versus setup opens on the race type (Standard / Elimination) used last
-## this session.
+## The Versus races being picked are Mirror races (track driven in reverse).
+static func versus_mirrored() -> bool:
+	if series != null:
+		return series.is_series() and series.series_mirrored
+	return versus_template != null and versus_template.mirrored
+
+
+## Versus setup opens on the race type (Standard / Elimination / Mirror)
+## used last this session (Mirror is a Versus race, so its mode is VERSUS).
 static func last_versus_mode() -> RaceConfig.Mode:
 	var setup := race_settings
 	return RaceConfig.Mode.ELIMINATION if int(setup.get("race_type", 0)) == 1 else RaceConfig.Mode.VERSUS

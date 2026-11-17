@@ -524,6 +524,25 @@ func _test_neon_setup() -> void:
 	setup._weapons.button_pressed = false
 	_check(not setup.make_config().weapons_enabled, "Items OFF turns weapons off")
 	setup._weapons.button_pressed = true
+	_check(setup._race_type.get_item_count() == 3 and setup._race_type.get_item_text(RaceSetup.MIRROR) == "Mirror",
+			"Race Type: Standard, Elimination, Mirror")
+	setup.set_race_type(RaceSetup.MIRROR)
+	var mirror_config := setup.make_config()
+	_check(mirror_config.mirrored and mirror_config.mode == RaceConfig.Mode.VERSUS and setup._laps_row.visible,
+			"Mirror: a Versus race on a reversed track, laps shown")
+	_check(setup._note.text.contains("Track direction is reversed."), "the info box explains Mirror")
+	setup._remember()
+	setup.set_race_type(0)
+	_check(not setup.make_config().mirrored and not setup._note.text.contains("reversed"), "Standard isn't mirrored")
+	setup.queue_free()
+	await process_frame
+	setup = (load("res://scenes/menu/race_setup.tscn") as PackedScene).instantiate() as RaceSetup
+	root.add_child(setup)
+	await _frames(2)
+	_check(setup._race_type.selected == RaceSetup.MIRROR and setup.make_config().mirrored,
+			"setup reopens on Mirror after picking it")
+	setup.set_race_type(0)
+	setup._remember()
 	setup.queue_free()
 	await process_frame
 	GameSession.setup_mode = RaceConfig.Mode.GRAND_PRIX
@@ -858,7 +877,9 @@ func _test_hud(race: RaceManager) -> void:
 	var gains := hud.info.gains
 	hud._last_position = p.position + 1
 	await _frames(2)
-	_check(hud.info.gains == gains + 1 and hud.info.pos_cue.text == "POSITION UP!", "gaining a place pulses and says POSITION UP!")
+	_check(hud.info.gains == gains + 1, "gaining a place pulses the number")
+	_check(not hud.info.find_children("*", "Label", true, false).any(func(l: Label) -> bool: return l.text.contains("POSITION UP")),
+			"with no POSITION UP! text")
 	var losses := hud.info.losses
 	hud._last_position = maxi(p.position - 1, 1) if p.position > 1 else 0
 	if p.position > 1:

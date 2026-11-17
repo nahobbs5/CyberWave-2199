@@ -137,7 +137,8 @@ static func for_race(cup: GrandPrixData, index: int, show_best: bool, laps: int)
 	card.location_label.add_theme_constant_override("outline_size", 4)
 	loc_row.add_child(card.location_label)
 	if show_best and not card.disabled and not GameSession.split_screen:
-		var best := PlayerProfile.get_profile().best_for(card.track, laps)
+		var record := card.track + (" (Mirror)" if GameSession.versus_mirrored() else "")
+		var best := PlayerProfile.get_profile().best_for(record, laps)
 		var text := "Best (%d laps): %s" % [laps, RaceProgress.format_time(float(best.race))] if best.has("race") else "No time yet"
 		card.best_label = UIStyle.stat(text, 15, UIStyle.CYAN)
 		card.best_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
