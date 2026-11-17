@@ -346,7 +346,9 @@ func _test_jump(race: RaceManager) -> void:
 	var airborne := 0
 	for i in 240:
 		me.throttle_input = 1.0
-		me.steer_input = 0.0
+		# Light steering at the shortcut 15 m ahead, as a player would (hands
+		# off, the curve carries the car 5 m wide onto the edge of the landing).
+		me.steer_input = _steer_along(track, sc, me) if me.grounded_wheels > 0 else 0.0
 		await physics_frame
 		if me.grounded_wheels == 0:
 			airborne += 1
@@ -359,6 +361,20 @@ func _test_jump(race: RaceManager) -> void:
 	_check(me.recovery.last_reason == "" and landed_d > sc.gaps[0].y and track.is_on_road(me.global_position),
 			"it clears the channel backwards and lands on the road (%s)" % me.recovery.last_reason)
 	_check(me.global_transform.basis.y.dot(Vector3.UP) > 0.85, "on its wheels")
+
+
+## Steering (-1 left .. 1 right) toward the shortcut's line 15 m ahead.
+func _steer_along(track: TrackCircuit, sc: TrackShortcut, car: VehicleController) -> float:
+	var local := track.to_local(car.global_position)
+	var ahead := track.to_global(sc.point_at(sc.local_offset(local) + 15.0))
+	var to := ahead - car.global_position
+	to.y = 0.0
+	var fwd := -car.global_transform.basis.z
+	fwd.y = 0.0
+	if to.length() < 0.1 or fwd.length() < 0.1:
+		return 0.0
+	var angle := fwd.normalized().signed_angle_to(to.normalized(), Vector3.UP)
+	return clampf(-angle * 3.0, -1.0, 1.0) # positive angle = target on the left
 
 
 ## Every AI sent over the reversed jump for a Mirror lap.

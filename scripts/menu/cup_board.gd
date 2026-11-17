@@ -112,8 +112,12 @@ func preview(index: int) -> void:
 		if grand_prix and shut:
 			_cup_info.text = "[color=#%s]COMING SOON[/color]   |   More tracks to build" % cyan
 		elif grand_prix:
-			var best := PlayerProfile.get_profile().best_grand_prix(cup.id)
-			_cup_info.text = "Best Finish: [color=#%s]%s[/color]" % [cyan,
+			# Best finish in the engine class (and Mirror) picked for this Grand Prix.
+			var cc := GameSession.pending_gp_cc()
+			var mirrored := GameSession.pending_gp_mirrored()
+			var best := PlayerProfile.get_profile().best_grand_prix(RaceConfig.gp_record_id(cup.id, cc, mirrored))
+			var tag := RaceConfig.record_name_for("", mirrored, cc).strip_edges()
+			_cup_info.text = "Best Finish%s: [color=#%s]%s[/color]" % [" " + tag if tag != "" else "", cyan,
 					ResultsScreen.ordinal(best) if best > 0 else "Not Won Yet"]
 		elif cup.locked:
 			_cup_info.text = "[color=#%s]More tracks coming soon[/color]" % cyan

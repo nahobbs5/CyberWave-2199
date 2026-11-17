@@ -46,6 +46,23 @@ const GROUP := &"vehicles"
 const SHIFT_DRIFT_STEER_THRESHOLD := 0.3
 ## Airtime that counts as a real landing for the landing stabiliser.
 const LANDING_MIN_AIR_TIME := 0.15
+## Air attitude control starts after this long with no wheel down, so
+## bumps and step hops (Chefchaouen's stairs) are left alone; ramps and
+## launches are in the air far longer.
+const AIR_ATTITUDE_DELAY := 0.2
+## Below this speed a car touching something with no wheel down is lying on
+## its side or roof: left to VehicleRecovery.
+const AIR_ATTITUDE_MIN_SPEED := 6.0
+## Landing-ground probe: every this many steps, from this far ahead on the
+## path (seconds of horizontal travel), down to this depth (m); surfaces
+## steeper than this (walls) are ignored.
+## How long a launcher's road direction waits for the car to leave the
+## ground (it's set as the car hits the ramp lip or the trick edge).
+const AIR_HEADING_HOLD := 1.0
+const AIR_PROBE_INTERVAL := 3
+const AIR_PROBE_LEAD := 0.25
+const AIR_PROBE_DEPTH := 60.0
+const AIR_PROBE_MIN_UP := 0.6
 
 @export var stats: VehicleStats
 ## When true, inputs are read from the InputMap each physics frame.
@@ -84,6 +101,21 @@ var wheel_load: PackedFloat32Array = PackedFloat32Array()
 var anti_roll_force: Vector2 = Vector2.ZERO
 ## Seconds with no loaded wheel (0 while on the ground), and since landing.
 var air_time: float = 0.0
+## The way the nose pointed as the car left the ground (the driver's
+## line): the air attitude control brings it back to this heading. A ramp
+## can kick the velocity sideways; landing grip then pulls it back to the
+## nose, along the road. Backwards or mid-drift take-offs keep that pose.
+var _air_heading: Vector3 = Vector3.FORWARD
+## A jump ramp that launches the car gives the road's direction
+## (set_air_heading); it's used for the jump that starts within
+## AIR_HEADING_HOLD seconds, instead of the nose.
+var _pending_air_heading: Vector3 = Vector3.ZERO
+var _pending_air_heading_left: float = 0.0
+## In the air: the up of the ground the car is heading down onto (a landing
+## ramp, a slope, the road), sampled ahead along its path; the air attitude
+## control lines the wheels up with it. road_up until something is found.
+var air_ground_up: Vector3 = Vector3.UP
+var _air_probe_steps: int = 0
 var since_landing: float = 0.0
 ## Shows the physics debug readout (F3, debug builds).
 static var debug_physics: bool = false
@@ -105,6 +137,9 @@ var boost_label: String = ""
 var boost_color: Color = Color.WHITE
 
 var _boost_extra_speed: float = 0.0
+## Engine class speed multiplier (GDD 2.1a, RaceConfig.cc_scale): every
+## boost's extra speed and kick are scaled by it. Set by RaceManager.
+var cc_scale: float = 1.0
 var _pending_kick: float = 0.0
 var _pending_speed_scale: float = 1.0
 var _has_pending_teleport: bool = false
@@ -316,6 +351,12 @@ func teleport(target: Transform3D) -> void:
 	_has_pending_teleport = true
 
 
+## A teleport is waiting for the next physics step (scripted rides such as
+## a half-pipe stop when the car is reset or moved).
+func has_pending_teleport() -> bool:
+	return _has_pending_teleport
+
+
 ## Pins the car motionless at `target` until release() (recovery). Moving
 ## a held car somewhere new emits `teleported` (the camera snaps).
 func hold_at(target: Transform3D) -> void:
@@ -404,8 +445,8 @@ func scrub_speed(fraction_kept: float) -> void:
 ## A boost that isn't from drifting (Nitro Overload).
 func start_external_boost(extra_speed: float, duration: float, kick: float, label: String, color: Color) -> void:
 	boost_time_left = maxf(boost_time_left, duration)
-	_boost_extra_speed = maxf(_boost_extra_speed, extra_speed)
-	_pending_kick = maxf(_pending_kick, kick)
+	_boost_extra_speed = maxf(_boost_extra_speed, extra_speed * cc_scale)
+	_pending_kick = maxf(_pending_kick, kick * cc_scale)
 	boost_label = label
 	boost_color = color
 	external_boost_started.emit(label)
@@ -418,9 +459,9 @@ func start_boost(level: int) -> void:
 	# A stronger or longer boost replaces a weaker one; never shorten an active one.
 	boost_level = maxi(boost_level, level)
 	boost_time_left = maxf(boost_time_left, stats.boost_duration[index])
-	_boost_extra_speed = maxf(_boost_extra_speed, stats.boost_extra_speed[index])
+	_boost_extra_speed = maxf(_boost_extra_speed, stats.boost_extra_speed[index] * cc_scale)
 	# The kick is applied through the physics state on the next step.
-	_pending_kick = maxf(_pending_kick, stats.boost_kick[index])
+	_pending_kick = maxf(_pending_kick, stats.boost_kick[index] * cc_scale)
 	boost_label = DriftController.LEVEL_NAMES[boost_level]
 	boost_color = DriftController.LEVEL_COLORS[boost_level]
 	boost_started.emit(level)
@@ -526,7 +567,8 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 		velocity = _apply_grip(velocity, fwd, dt, traction)
 		state.angular_velocity = _apply_steering(state.angular_velocity, up, dt, traction)
 	var touching := state.get_contact_count() > 0
-	state.angular_velocity = _apply_upright_assist(state.angular_velocity, up, dt, touching)
+	if not _apply_air_attitude(state, dt, touching):
+		state.angular_velocity = _apply_upright_assist(state.angular_velocity, up, dt, touching)
 
 	if _pending_kick > 0.0:
 		if traction > 0.0:
@@ -631,7 +673,12 @@ func _update_traction() -> float:
 
 ## Air time, and a short pitch/roll damping after a real landing.
 func _update_landing(state: PhysicsDirectBodyState3D, up: Vector3, dt: float) -> void:
+	_pending_air_heading_left -= dt
 	if grounded_wheels == 0:
+		if air_time == 0.0: # leaving the ground
+			_air_heading = _pending_air_heading if _pending_air_heading_left > 0.0 else -state.transform.basis.z
+			air_ground_up = road_up
+			_air_probe_steps = 0
 		air_time += dt
 		since_landing = 0.0
 		_stabilize_left = 0.0
@@ -761,6 +808,91 @@ func _apply_steering(angular: Vector3, up: Vector3, dt: float, traction: float) 
 	var blend := clampf(stats.steer_response * dt, 0.0, 1.0) * traction
 	var new_yaw := lerpf(current_yaw, target_yaw, blend)
 	return angular + up * (new_yaw - current_yaw)
+
+
+## In the air (GDD 5.4): turn the car toward its landing pose, wheels down
+## onto the ground it's coming down on (air_ground_up) and nose the way it
+## pointed at take-off, so ramps, trick edges and tricks always land clean.
+## Works on the spin only: the flight path is unchanged.
+## Returns false when it doesn't apply (wheels down, just left the ground,
+## resting on its side or roof, or turned off in the stats).
+func _apply_air_attitude(state: PhysicsDirectBodyState3D, dt: float, touching: bool) -> bool:
+	if stats.air_attitude_gain <= 0.0 or grounded_wheels > 0 or air_time < AIR_ATTITUDE_DELAY:
+		return false
+	var velocity := state.linear_velocity
+	if touching and velocity.length() < AIR_ATTITUDE_MIN_SPEED:
+		return false # lying on its side or roof: VehicleRecovery's job
+	_probe_landing_ground(state)
+	state.angular_velocity = air_attitude_spin(state.transform.basis, _air_heading, state.angular_velocity, dt)
+	return true
+
+
+## A jump ramp launching the car: land it facing `direction` (the road's
+## way, flattened) rather than wherever its nose happened to point.
+func set_air_heading(direction: Vector3) -> void:
+	var flat := Vector3(direction.x, 0.0, direction.z)
+	if flat.length() < 0.01:
+		return
+	_pending_air_heading = flat.normalized()
+	_pending_air_heading_left = AIR_HEADING_HOLD
+	if grounded_wheels == 0:
+		_air_heading = _pending_air_heading # already off the ground
+
+
+## Every few steps in the air, a ray straight down from a little ahead on
+## the car's path finds the surface it will come down on; its normal (if
+## it's ground, not a wall) becomes air_ground_up. Nothing below (a gap, the
+## void): keep the last one.
+func _probe_landing_ground(state: PhysicsDirectBodyState3D) -> void:
+	_air_probe_steps -= 1
+	if _air_probe_steps > 0:
+		return
+	_air_probe_steps = AIR_PROBE_INTERVAL
+	var velocity := state.linear_velocity
+	var ahead := state.transform.origin + Vector3(velocity.x, 0.0, velocity.z) * AIR_PROBE_LEAD
+	var query := PhysicsRayQueryParameters3D.create(ahead + Vector3.UP * 2.0, ahead + Vector3.DOWN * AIR_PROBE_DEPTH,
+			collision_mask, [get_rid()])
+	var hit := state.get_space_state().intersect_ray(query)
+	if hit.is_empty():
+		return
+	var normal: Vector3 = hit.normal
+	if normal.dot(Vector3.UP) >= AIR_PROBE_MIN_UP:
+		air_ground_up = normal.normalized()
+
+
+## The spin the air attitude control asks for this step, from the body's
+## basis, the heading to land on and its current spin (tests call it too).
+func air_attitude_spin(body_basis: Basis, heading: Vector3, angular: Vector3, dt: float) -> Vector3:
+	var target := air_target_basis(body_basis, heading)
+	var error := (target * body_basis.orthonormalized().inverse()).get_rotation_quaternion()
+	if error.w < 0.0:
+		error = -error # the short way round
+	var angle := 2.0 * acos(clampf(error.w, -1.0, 1.0))
+	var desired := Vector3.ZERO
+	var sin_half := sqrt(maxf(1.0 - error.w * error.w, 0.0))
+	if angle > 0.0001 and sin_half > 0.00001:
+		var axis := Vector3(error.x, error.y, error.z) / sin_half
+		desired = axis * angle * stats.air_attitude_gain
+		desired = desired.limit_length(stats.air_attitude_max_rate)
+	return angular.lerp(desired, 1.0 - exp(-stats.air_attitude_response * dt))
+
+
+## Where the car should face on landing: up = the ground it's coming down
+## on (air_ground_up), nose = `heading` laid flat on that ground.
+func air_target_basis(body_basis: Basis, heading: Vector3) -> Basis:
+	var target_up := air_ground_up.normalized()
+	var flat := heading - target_up * heading.dot(target_up)
+	if flat.length() < 0.001: # heading straight up / down: use the body's
+		var nose := -body_basis.z
+		flat = nose - target_up * nose.dot(target_up)
+	if flat.length() < 0.001:
+		flat = body_basis.y - target_up * body_basis.y.dot(target_up)
+	if flat.length() < 0.001:
+		flat = Vector3.FORWARD - target_up * Vector3.FORWARD.dot(target_up)
+	var back := -flat.normalized()
+	var right := target_up.cross(back).normalized()
+	back = right.cross(target_up).normalized()
+	return Basis(right, target_up, back)
 
 
 func _apply_upright_assist(angular: Vector3, up: Vector3, dt: float, touching: bool) -> Vector3:

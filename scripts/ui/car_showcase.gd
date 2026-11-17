@@ -28,6 +28,10 @@ var _type: Label
 var _description: Label
 var _stats: GridContainer
 var _top_speed: Label
+## Engine class the top-speed card is shown for (GDD 2.1a): the race setup
+## sets it from its CC row; the garage keeps the 100cc base. The 1-10 stat
+## bars stay the same in every class (they compare the cars).
+var cc: int = RaceConfig.BASE_CC
 var _neon: bool = false
 var _framed: bool = true
 ## neon: one row per stat.
@@ -56,11 +60,26 @@ func set_vehicle(i: int, loadout: Dictionary, plate_text: String) -> void:
 	_type.text = v.vehicle_type.to_upper()
 	_description.text = v.character
 	_fill_stats(v)
-	_top_speed.text = "%d km/h" % roundi(v.stats.top_speed * 3.6)
+	_update_top_speed()
 	for d in dots.size():
 		dots[d].set_meta("current", d == index)
 		dots[d].queue_redraw()
 	preview.show_vehicle(v, loadout, plate_text)
+
+
+## Shows the top-speed card for engine class `value` (50 / 100 / 150 / 200).
+func set_cc(value: int) -> void:
+	cc = value
+	_update_top_speed()
+
+
+func _update_top_speed() -> void:
+	_top_speed.text = "%d km/h" % roundi(vehicle().stats.for_cc(cc).top_speed * 3.6)
+
+
+## The km/h on the top-speed card (tests).
+func top_speed_text() -> String:
+	return _top_speed.text
 
 
 ## Re-dresses the car without changing which one is shown (try-ons, plate).

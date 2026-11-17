@@ -7,6 +7,13 @@ enum Mode { VERSUS, GRAND_PRIX, ELIMINATION }
 
 const MODE_NAMES: Array[String] = ["Versus", "Grand Prix", "Elimination"]
 const PLAYER_ID := -1
+## Engine classes (GDD 2.1a): engine power and overall race speed. 100cc is
+## the base tuning; the others scale every car (CC_SCALES, same order).
+const CC_CLASSES: Array[int] = [50, 100, 150, 200]
+const CC_SCALES: Array[float] = [0.8, 1.0, 1.15, 1.3]
+## CC_CLASSES index of the default class (100cc).
+const DEFAULT_CC_INDEX := 1
+const BASE_CC := 100
 
 @export var mode: Mode = Mode.VERSUS
 @export var difficulty: AIDifficulty
@@ -14,6 +21,9 @@ const PLAYER_ID := -1
 @export var weapons_enabled: bool = true
 ## Mirror race type (GDD 2.1): the track is driven in reverse.
 @export var mirrored: bool = false
+## Engine class (GDD 2.1a): 50 / 100 / 150 / 200. Scales every car's top
+## speed, acceleration, braking and boosts (RaceConfig.cc_scale).
+@export var cc: int = BASE_CC
 ## Track scene to race on. Null = the race scene's built-in track.
 @export var track_scene: PackedScene
 @export var track_name: String = "Test Circuit"
@@ -114,9 +124,48 @@ func is_elimination() -> bool:
 	return mode == Mode.ELIMINATION
 
 
-## Personal bests and titles: Mirror races keep their own ("Track (Mirror)").
+## Personal bests and titles: Mirror races and each engine class keep their
+## own ("Track (Mirror)", "Track (200cc)", "Track (Mirror, 200cc)"; 100cc
+## adds nothing, so older records carry on).
 func record_name() -> String:
-	return track_name + " (Mirror)" if mirrored else track_name
+	return record_name_for(track_name, mirrored, cc)
+
+
+static func record_name_for(p_track: String, p_mirrored: bool, p_cc: int) -> String:
+	var tags: PackedStringArray = []
+	if p_mirrored:
+		tags.append("Mirror")
+	if p_cc != BASE_CC:
+		tags.append("%dcc" % p_cc)
+	return p_track if tags.is_empty() else "%s (%s)" % [p_track, ", ".join(tags)]
+
+
+## Grand Prix best-result key for a cup: one per engine class and Mirror
+## ("american_cup", "american_cup_mirror_200cc"; 100cc forward = the cup id).
+static func gp_record_id(cup_id: String, p_cc: int, p_mirrored: bool) -> String:
+	var key := cup_id
+	if p_mirrored:
+		key += "_mirror"
+	if p_cc != BASE_CC:
+		key += "_%dcc" % p_cc
+	return key
+
+
+## Speed multiplier for an engine class (1.0 for unknown values).
+static func cc_scale(p_cc: int) -> float:
+	var i := CC_CLASSES.find(p_cc)
+	return CC_SCALES[i] if i >= 0 else 1.0
+
+
+## CC_CLASSES index of `p_cc` (the default class for unknown values).
+static func cc_index(p_cc: int) -> int:
+	var i := CC_CLASSES.find(p_cc)
+	return i if i >= 0 else DEFAULT_CC_INDEX
+
+
+## "150cc".
+static func cc_label(p_cc: int) -> String:
+	return "%dcc" % p_cc
 
 
 func is_grand_prix() -> bool:

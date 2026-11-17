@@ -4,6 +4,7 @@
 [ext_resource type="Script" path="res://scripts/track/track_shortcut.gd" id="2_shortcut"]
 [ext_resource type="Script" path="res://scripts/track/track_feature.gd" id="3_feature"]
 [ext_resource type="Script" path="res://scripts/track/gardens_scenery.gd" id="4_scenery"]
+[ext_resource type="Script" path="res://scripts/track/trick_edge.gd" id="90_trick_edge"]
 
 [sub_resource type="StandardMaterial3D" id="Glass_road"]
 transparency = 1
@@ -184,6 +185,12 @@ anchor_point = Vector3(-351.1, 2.93, 517.1)
 width = 7
 length = 11.0
 ramp_height = 0.9
+
+[node name="TrickEdgeA" type="Node3D" parent="."]
+script = ExtResource("90_trick_edge")
+anchor_point = Vector3(79.8, -7.03, 79.3)
+side = 1
+tint = Color(0.78, 0.8, 0.82, 1)
 
 [node name="Scenery" type="Node3D" parent="."]
 script = ExtResource("4_scenery")

@@ -42,6 +42,13 @@ var _col_side := PackedFloat32Array()
 var _col_min := PackedFloat32Array()
 var _col_max := PackedFloat32Array()
 var _rights: PackedVector3Array = PackedVector3Array()
+## Per sample: the lateral range the line may use. Half-pipes narrow the
+## outside of their bends (the AI drive past them, clear of the curve).
+var _lat_lo := PackedFloat32Array()
+var _lat_hi := PackedFloat32Array()
+## How much of the road a half-pipe takes from the line (the curve's foot is
+## still drivable, so less than its 4 m reach).
+const PIPE_MARGIN := 2.5
 
 
 ## With `source`, reuses that line's path (the slow relaxation) and only
@@ -63,6 +70,7 @@ func _init(p_track: TrackCircuit, stats: VehicleStats, edge_margin: float = 2.4,
 		spacing = track.length / float(count)
 		limit = track.road_width * 0.5 - edge_margin
 		_sample_track()
+		_find_pipe_bounds()
 		if not track.column_spots.is_empty():
 			# Road columns: relax freely first, then pass each column on
 			# the side that free line takes and relax again round them.
@@ -137,6 +145,35 @@ func _sample_track() -> void:
 		lateral[i] = 0.0
 
 
+## Half-pipes on the track: keep the line PIPE_MARGIN further in from their
+## side over their span (scaled down over their tapered ends). Positions come
+## from the built pipe, so this is right in Mirror too.
+func _find_pipe_bounds() -> void:
+	_lat_lo.resize(count)
+	_lat_hi.resize(count)
+	_lat_lo.fill(-limit)
+	_lat_hi.fill(limit)
+	for child in track.get_children():
+		var pipe := child as TrickEdge
+		if pipe == null or not pipe.is_built():
+			continue
+		var into := 0.0
+		while into <= pipe.length:
+			var g := track.to_global(pipe.frame_at(into).origin)
+			var o := track.get_offset_at(g)
+			var right := track.get_tangent_at(o).cross(Vector3.UP).normalized()
+			var on_right := (g - track.get_center_at(o)).dot(right) > 0.0
+			var cut := limit - PIPE_MARGIN * pipe.scale_at(into)
+			var i := int(roundf(o / spacing))
+			for j in [i - 1, i, i + 1]:
+				var k := posmod(j, count)
+				if on_right:
+					_lat_hi[k] = minf(_lat_hi[k], cut)
+				else:
+					_lat_lo[k] = maxf(_lat_lo[k], -cut)
+			into += spacing * 0.5
+
+
 ## For each sample level with a road column, the gap the line keeps to.
 func _find_column_gaps() -> void:
 	_col_side = PackedFloat32Array()
@@ -192,7 +229,7 @@ func _relax(iterations: int) -> void:
 
 func _move_toward(i: int, target: Vector3, weight: float) -> void:
 	var want := (target - _centers[i]).dot(_rights[i])
-	var lat := clampf(lerpf(lateral[i], want, weight), -limit, limit)
+	var lat := clampf(lerpf(lateral[i], want, weight), _lat_lo[i], _lat_hi[i])
 	if not _col_side.is_empty() and _col_side[i] != 0.0:
 		# Never through a road column: stay in the gap the line started in.
 		if _col_side[i] > 0.0:

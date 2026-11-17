@@ -33,11 +33,15 @@ func _ready() -> void:
 	board.badges[cup].grab_focus.call_deferred()
 
 
-## "VERSUS  -  RACE 2 OF 4" in a series, else just "VERSUS".
+## "VERSUS  -  RACE 2 OF 4" in a series, else just "VERSUS" (with the
+## engine class when it isn't 100cc: "MIRROR 200CC").
 func title_text() -> String:
 	var mode := RaceConfig.MODE_NAMES[_mode()].to_upper()
 	if GameSession.versus_mirrored():
 		mode = "MIRROR"
+	var cc := GameSession.versus_cc()
+	if cc != RaceConfig.BASE_CC:
+		mode += " " + RaceConfig.cc_label(cc).to_upper() # "VERSUS 200CC"
 	var s := GameSession.series
 	if s != null:
 		return "%s  -  RACE %d OF %d" % [mode, s.race_index + 1, s.race_count()]

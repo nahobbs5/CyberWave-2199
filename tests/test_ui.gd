@@ -409,8 +409,8 @@ func _test_cups() -> void:
 	root.add_child(setup)
 	await _frames(2)
 	setup._races.selected = RaceSetup.RACE_COUNTS.find(1)
-	_check(setup._races.value_text() == "1 Race" and setup._summary == null,
-			"Versus: the Races row shows the count, no banner (%s)" % setup._races.value_text())
+	_check(setup._races.value_text() == "1 Race",
+			"Versus: the Races row shows the count (%s)" % setup._races.value_text())
 	_check(setup.layout.results_header and setup.layout.title_label.is_visible_in_tree()
 			and setup.layout.title_label.text == "VERSUS", "Versus: results-style VERSUS title")
 	# Name: the last row of the panel, just above the gold button.
@@ -546,13 +546,12 @@ func _test_neon_setup() -> void:
 	setup.queue_free()
 	await process_frame
 	GameSession.setup_mode = RaceConfig.Mode.GRAND_PRIX
-	GameSession.cup_path = GrandPrixData.CUPS[1]
 	setup = (load("res://scenes/menu/race_setup.tscn") as PackedScene).instantiate() as RaceSetup
 	root.add_child(setup)
 	await _frames(2)
 	_check(setup._race_type == null and setup._races == null and not setup._laps_row.visible
-			and setup._summary.text == "EUROPE CUP", "Grand Prix setup: the cup's banner, no race type, races or laps")
-	_check((setup._start as NeonMenuButton).text == "Start Grand Prix", "and a Start Grand Prix button")
+			and setup._cc != null and setup._mirror != null, "Grand Prix setup: CC and Mirror, no race type, races or laps")
+	_check((setup._start as NeonMenuButton).text == "Choose Cup", "and a Choose Cup button (the cup comes next)")
 	_check(setup.layout.results_header and setup.layout.title_label.text == "GRAND PRIX", "Grand Prix setup: GRAND PRIX title")
 	setup.open_garage()
 	_check(GameSession.garage_return == GameSession.RACE_SETUP_SCENE, "Y / G opens the garage and remembers to come back")

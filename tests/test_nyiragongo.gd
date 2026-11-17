@@ -155,6 +155,9 @@ func _test_layout() -> void:
 		for lat in [-half, 0.0, half]:
 			var p := track.to_global(track.surface_point(d, lat))
 			var hit := space.intersect_ray(PhysicsRayQueryParameters3D.create(p + Vector3.UP * 3.0, p - Vector3.UP * 3.0, 1))
+			# A trick edge sits on the road at its edge (the road is under it).
+			if not hit.is_empty() and (hit.collider as Node).get_parent().get_parent() is TrickEdge:
+				continue
 			if hit.is_empty() or not String(hit.collider.name).begins_with("_GenRoadSurface"):
 				bad += 1
 			else:

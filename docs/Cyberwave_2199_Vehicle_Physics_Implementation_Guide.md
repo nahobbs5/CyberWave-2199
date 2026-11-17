@@ -313,3 +313,26 @@ Measured with a headless probe on a flat floor, a 14° × 14 m ramp at 38 m/s, a
 - **Fresh `intersect_ray` contact queries:** not needed. No wheel lost contact in full-lock turns at up to 33 m/s or on the curb at 25 m/s.
 
 Tests: `tests/test_vehicle_physics.gd` covers resting for all 8 cars, contact data, axles, anti-roll, the ramp and landing, hold / flight / teleport hand-offs, and the overlay.
+
+## 14. Air attitude control (2026-11-17, GDD v9.6)
+
+At 200cc, trick-edge pops and ramp lips sent cars spinning: in the air only a weak world-up pull acted on the body and yaw was never touched, so take-off spin carried through the flight.
+
+`VehicleController._apply_air_attitude` (once `air_time >= AIR_ATTITUDE_DELAY` 0.2 s with no wheel down; at 0.08 s it smoothed Chefchaouen's stair hops and made the Blue Stairway 9% faster than the wide route):
+
+- **Target up** (`air_ground_up`): every 3 steps a ray straight down from 0.25 s ahead on the horizontal path finds the surface the car will land on; its normal is used if it's ground (normal·up ≥ 0.6, not a wall). It starts from `road_up` and keeps the last value over gaps.
+- **Target heading** (`_air_heading`, latched as the car leaves the ground): the launcher's road direction if a jump ramp called `set_air_heading()` in the last 1 s (`TrackFeature` JUMP_RAMP: the ramp's forward), else the nose. **Not** the velocity: a Mirror ramp (or the old trick-edge pop, since replaced by guided half-pipes) kicks the velocity sideways, and turning the nose to follow it sent cars off the road; with the nose down the road, landing grip pulls the velocity back.
+- **Control** (`air_attitude_spin`): error rotation `target * current⁻¹` as axis × angle (the short way), desired spin = `axis * angle * air_attitude_gain`, clamped to `air_attitude_max_rate`, blended in with `1 - exp(-air_attitude_response * dt)`.
+- Only the angular velocity changes. Linear velocity is untouched, so trajectories and jump distances are identical (checked: 0 m difference at 0.4 s into a spun vs calm launch).
+- It's skipped while touching something below 6 m/s (lying on a side or roof, which is Recovery's job). With `air_attitude_gain = 0` the old world-up assist is used.
+
+| Touchdown at 200cc (The Stacks) | Without | With |
+|---|---|---|
+| Trick edge A: nose vs road, spin | 122.7°, 3.34 rad/s | 11.9° (the bend), 0.05 rad/s |
+| Trick edge B | 31.1°, 1.95 rad/s | 8.2°, 0.06 rad/s |
+| Small ramp (half width) | 0.0°, 1.01 rad/s | 0.0°, 0.07 rad/s |
+| Spun launch (8 rad/s yaw + 4 pitch/roll) | 5.0°, 6.26 rad/s | 0.0°, 0.09 rad/s |
+
+A level landing puts all four wheels down at once: one touchdown step peaks at about 1.3 rad/s pitch/roll, then it is still (test_vehicle_physics checks the jolt < 2 and < 0.5 after it).
+
+Tests: `tests/test_air_attitude.gd`.

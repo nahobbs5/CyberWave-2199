@@ -62,7 +62,7 @@ func _build() -> void:
 	var entries: Array[NeonMenuButton] = [
 		_continue_button,
 		layout.add_entry("Grand Prix", "flags", "Compete in a cup and aim for the highest overall finish!",
-				func() -> void: GameSession.to_cup_select(tree, RaceConfig.Mode.GRAND_PRIX)),
+				func() -> void: GameSession.to_race_setup(tree, RaceConfig.Mode.GRAND_PRIX)),
 		layout.add_entry("Versus", "trophy", "Pick your tracks and race the field, standard or elimination.",
 				func() -> void: GameSession.to_race_setup(tree, GameSession.last_versus_mode())),
 		layout.add_entry("Practice", "stopwatch", "Free drive with no rivals to learn the handling.",

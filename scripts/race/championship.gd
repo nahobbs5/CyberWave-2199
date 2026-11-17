@@ -45,16 +45,21 @@ var ai_rivals: bool = true
 var series_races: int = 0
 ## Versus or Elimination: the race type of every race in a series.
 var series_mode: RaceConfig.Mode = RaceConfig.Mode.VERSUS
-## Series only: every race is a Mirror race (the track driven in reverse).
-var series_mirrored: bool = false
+## Every race is a Mirror race (the track driven in reverse): the Versus
+## Mirror race type, or the Grand Prix Mirror toggle.
+var mirrored: bool = false
+## Engine class of every race (GDD 2.1a): 50 / 100 / 150 / 200.
+var cc: int = RaceConfig.BASE_CC
 
 
 static func create(p_gp: GrandPrixData, p_difficulty_id: String, p_weapons: bool,
 		roster: RivalRoster, p_vehicle_id: String = PlayerProfile.DEFAULT_VEHICLE,
 		p_devices: PackedInt32Array = PackedInt32Array(), p_vehicles: PackedStringArray = PackedStringArray(),
-		p_ai_rivals: bool = true) -> Championship:
+		p_ai_rivals: bool = true, p_cc: int = RaceConfig.BASE_CC, p_mirrored: bool = false) -> Championship:
 	var c := Championship.new()
 	c.gp = p_gp
+	c.cc = p_cc
+	c.mirrored = p_mirrored
 	c.vehicle_id = p_vehicle_id
 	c.player_devices = p_devices.duplicate()
 	c.player_vehicle_ids = p_vehicles.duplicate()
@@ -87,10 +92,10 @@ static func create_series(count: int, template: RaceConfig, p_difficulty_id: Str
 	cup.display_name = "Versus"
 	cup.laps = template.total_laps
 	var c := create(cup, p_difficulty_id, template.weapons_enabled, roster, template.vehicle_id,
-			template.player_devices, template.player_vehicle_ids, template.ai_rivals)
+			template.player_devices, template.player_vehicle_ids, template.ai_rivals,
+			template.cc, template.mirrored)
 	c.series_races = maxi(1, count)
 	c.series_mode = template.mode
-	c.series_mirrored = template.mirrored
 	c.player_plates = template.player_plates.duplicate()
 	if template.rival_plates.size() >= 7:
 		c.rival_plates = template.rival_plates
@@ -179,7 +184,8 @@ func standings() -> Array[int]:
 func make_race_config() -> RaceConfig:
 	var config := RaceConfig.new()
 	config.mode = series_mode if is_series() else RaceConfig.Mode.GRAND_PRIX
-	config.mirrored = is_series() and series_mirrored
+	config.mirrored = mirrored
+	config.cc = cc
 	config.difficulty = load(DIFFICULTY_PATH % difficulty_id) as AIDifficulty
 	config.weapons_enabled = weapons_enabled
 	config.total_laps = gp.laps
@@ -219,6 +225,8 @@ func to_dict() -> Dictionary:
 		"coins_awarded": coins_awarded,
 		"difficulty": difficulty_id,
 		"weapons": weapons_enabled,
+		"cc": cc,
+		"mirrored": mirrored,
 	}
 
 
@@ -252,6 +260,8 @@ static func from_dict(data: Dictionary) -> Championship:
 	c.coins_awarded = int(data.get("coins_awarded", 0))
 	c.difficulty_id = str(data.get("difficulty", "normal"))
 	c.weapons_enabled = bool(data.get("weapons", true))
+	c.cc = int(data.get("cc", RaceConfig.BASE_CC)) # older saves: 100cc
+	c.mirrored = bool(data.get("mirrored", false))
 	return c
 
 

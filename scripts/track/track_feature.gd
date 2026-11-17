@@ -6,7 +6,7 @@ extends Node3D
 ## shortcut). Kinds:
 ##   BOOST_PAD      flat strip: short speed burst for anyone driving over it
 ##   BOOST_RING     drive-through ring: a bigger burst
-##   EMP_PUDDLE     electrified hazard: a 1 s EMP (a Firewall blocks it)
+##   EMP_PUDDLE     electrified hazard: a 3 s EMP (a Firewall blocks it)
 ##   BREAKABLE      destructible barrier row: smashes on contact, costs some
 ##                  speed, rebuilds after a while (often guards a shortcut)
 ##   JUMP_RAMP      a solid ramp the wheels drive up; launches cars into the
@@ -29,6 +29,8 @@ const EMP_SHADER := preload("res://assets/shaders/emp_puddle.gdshader")
 const SIGN_SHADER := preload("res://assets/shaders/hazard_sign.gdshader")
 ## How long a car stays wet after leaving the water.
 const WET_LINGER := 0.3
+## How long an EMP puddle jams a car (weapons offline, slower, no drift charge).
+const EMP_PUDDLE_DURATION := 3.0
 
 @export var kind: Kind = Kind.BOOST_PAD:
 	set(value):
@@ -487,7 +489,7 @@ func _on_body_entered(body: Node3D) -> void:
 		Kind.BOOST_RING:
 			car.start_external_boost(boost_extra, boost_duration, boost_kick, "Boost ring", RING_COLOR)
 		Kind.EMP_PUDDLE:
-			if car.status == null or not car.status.apply_attack(&"emp", 1.0):
+			if car.status == null or not car.status.apply_attack(&"emp", EMP_PUDDLE_DURATION):
 				return
 		Kind.BREAKABLE:
 			if is_broken():
@@ -498,6 +500,10 @@ func _on_body_entered(body: Node3D) -> void:
 			# Opens the trick window (E / gamepad X in the air).
 			if car.trick != null and not mirror_landing:
 				car.trick.on_ramp()
+			if not mirror_landing:
+				# Land facing the way the ramp points (the way it's taken).
+				var ramp_fwd := -global_transform.basis.z
+				car.set_air_heading(ramp_fwd * (1.0 if car.linear_velocity.dot(ramp_fwd) >= 0.0 else -1.0))
 		Kind.WATER:
 			pass # handled every frame in _physics_process
 	_cooldowns[car] = 1.5

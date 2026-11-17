@@ -5,6 +5,7 @@
 [ext_resource type="Script" path="res://scripts/track/track_feature.gd" id="3_feature"]
 [ext_resource type="Script" path="res://scripts/track/chefchaouen_scenery.gd" id="4_scenery"]
 [ext_resource type="Texture2D" path="res://assets/sky/kloofendal_48d_partly_cloudy_puresky_2k.hdr" id="5_sky"]
+[ext_resource type="Script" path="res://scripts/track/trick_edge.gd" id="90_trick_edge"]
 
 [sub_resource type="PanoramaSkyMaterial" id="Sky_day"]
 panorama = ExtResource("5_sky")
@@ -151,6 +152,18 @@ kind = 0
 offset = 533.02
 lateral = 0
 on_shortcut = "MarketLane"
+
+[node name="TrickEdgeA" type="Node3D" parent="."]
+script = ExtResource("90_trick_edge")
+anchor_point = Vector3(399.5, 28.0, -197.8)
+side = 1
+tint = Color(0.36, 0.55, 0.8, 1)
+
+[node name="TrickEdgeB" type="Node3D" parent="."]
+script = ExtResource("90_trick_edge")
+anchor_point = Vector3(-463.8, 0.0, 359.1)
+side = 1
+tint = Color(0.36, 0.55, 0.8, 1)
 
 [node name="Scenery" type="Node3D" parent="."]
 script = ExtResource("4_scenery")

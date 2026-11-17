@@ -376,10 +376,13 @@ func _spawn_grid() -> void:
 		car.name = ("Player" if human == 0 else "Player%d" % (human + 1)) if is_player else "AI%d" % (id + 1)
 		var rival_vehicle: VehicleData = null
 		if is_player and human_vehicle != null:
-			car.stats = human_vehicle.stats
+			car.stats = human_vehicle.stats.for_cc(config.cc)
 		elif not is_player:
 			rival_vehicle = _rival_vehicle(id)
-			car.stats = rival_vehicle.stats
+			car.stats = rival_vehicle.stats.for_cc(config.cc)
+		elif car.stats != null:
+			car.stats = car.stats.for_cc(config.cc)
+		car.cc_scale = RaceConfig.cc_scale(config.cc)
 		car.is_player = is_player
 		car.player_controlled = is_player and not player_uses_autopilot
 		if is_player and is_multiplayer():
@@ -519,7 +522,9 @@ func _probe_stats() -> VehicleStats:
 	var probe := car_scene.instantiate() as VehicleController
 	var stats := probe.stats
 	probe.free()
-	return stats if stats != null else VehicleStats.new()
+	if stats == null:
+		stats = VehicleStats.new()
+	return stats.for_cc(config.cc) if config != null else stats
 
 
 func _attach_ai(car: VehicleController, profile: RacerProfile, slot: int) -> AIController:
@@ -847,7 +852,8 @@ func _record_championship() -> Dictionary:
 	championship.coins_awarded += int(reward.total)
 	if championship.is_complete():
 		var ranking := championship.standings()
-		PlayerProfile.get_profile().record_grand_prix(championship.gp.id,
+		PlayerProfile.get_profile().record_grand_prix(
+				RaceConfig.gp_record_id(championship.gp.id, championship.cc, championship.mirrored),
 				ranking.find(RaceConfig.PLAYER_ID) + 1, int(championship.points.get(RaceConfig.PLAYER_ID, 0)))
 		Championship.clear_save()
 	else:

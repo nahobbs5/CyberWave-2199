@@ -1,11 +1,11 @@
 {
   "schema": 1,
-  "updated": "2026-11-16",
+  "updated": "2026-11-17",
   "project": {
     "name": "Cyberwave 2199",
     "pitch": "Retrofuturistic cyberpunk combat kart racing: luxury neon cars, drift boosts, weapons and fifteen real-world circuits, against seven AI rivals or in 2–4 player local split screen.",
     "engine": "Godot 4.7.2 · GDScript · Jolt Physics",
-    "gdd": "v9.3",
+    "gdd": "v9.7",
     "phase": "Phase 6: content and polish (GDD §16)",
     "repo": "https://github.com/nahobbs5/CyberWave-2199",
     "demo": "https://nahobbs5.github.io/CyberWave-2199/web/",
@@ -387,7 +387,7 @@
       ],
       "test": {
         "headless": "godot --headless --fixed-fps 60 -s res://tests/test_phase6.gd",
-        "also": "test_boost_patterns.gd, test_quinta_normal.gd, test_vale_da_lua.gd, test_choquequirao.gd, test_kilwa_kisiwani.gd, test_nyiragongo.gd, test_chefchaouen.gd, test_small_ramps.gd",
+        "also": "test_boost_patterns.gd, test_quinta_normal.gd, test_vale_da_lua.gd, test_choquequirao.gd, test_kilwa_kisiwani.gd, test_nyiragongo.gd, test_chefchaouen.gd, test_small_ramps.gd, test_trick_edges.gd",
         "manual": "Versus → each cup's tracks at 1080p with Debug → Monitors open (FPS). Check that water and EMP puddles read at full speed and fog never hides a corner. On Six Flags, the bumper-car pavilion should be clear dead ahead coming up the Midway straight."
       },
       "blockers": "Arashiyama: 'shortcut is shorter (350 vs 470)' and 'every gate counted on the shortcut' fail. Six Flags: 'ramp item boxes gave a weapon' and 'every gate counted' (shortcut lap and full race) fail, also at e57fcde.",
@@ -1006,6 +1006,30 @@
       "decision": "Mirror race type for Versus (single player and split screen): the built track is reversed in place (TrackCircuit.set_reversed) rather than mirrored left-right; Nyiragongo's lava-channel jump gets a Mirror take-off ramp so it works backwards; separate Mirror personal bests",
       "why": "Doubles the track variety for no new art; reversing the curve once keeps AI, recovery, Overdrive and the minimap working unchanged",
       "gdd": "v9.3"
+    },
+    {
+      "date": "2026-11-17",
+      "decision": "EMP puddles jam for 3 s (was 1 s); Mario Kart-style trick edges (TrickEdge): the road edge on the outside of a bend pops cars up and back in for a trick, with two item boxes in the hop; four looks (banked shoulder, raised curb, crested verge, broken edge) matched to each track, 20 in all, working in Mirror too",
+      "why": "Playtest: a 1 s puddle zap barely registered; edge tricks add optional skill lines and item pickups off the racing line",
+      "gdd": "v9.4"
+    },
+    {
+      "date": "2026-11-17",
+      "decision": "Engine classes 50cc / 100cc / 150cc / 200cc (100cc = the base tuning; 0.8x / 1.0x / 1.15x / 1.3x top speed, acceleration, braking and boosts for every car), records kept per class; CC row under Race Type (single player and split screen). Grand Prix now picks car, CC and a Mirror toggle on the race setup before the cup screen, whose START GRAND PRIX starts the cup",
+      "why": "Mario Kart-style difficulty by speed; Grand Prix had its setup after the cup, so START GRAND PRIX didn't really start it",
+      "gdd": "v9.5"
+    },
+    {
+      "date": "2026-11-17",
+      "decision": "Air attitude control: an airborne car turns to land on its wheels, lined up with the surface it is coming down on, facing down the road (the jump ramp's or trick edge's direction, else its take-off heading); spin only, flight path unchanged. Trick window no longer closes on a brush within the lip grace",
+      "why": "Playtest at 200cc: tricks and ramps (trick edges especially) spun cars and they landed sideways",
+      "gdd": "v9.6"
+    },
+    {
+      "date": "2026-11-17",
+      "decision": "Trick edges become half-pipes: 70 m of the outside edge of a bend curves into a 4 m quarter-pipe; a guided ride (up the curve, launched above the lip for a trick and item boxes, back down the same wall onto the road facing down it); one pipe look tinted per track, the four curb styles removed",
+      "why": "Playtest: wanted the edge to curve up so you go up, trick and come back, like a skate half-pipe",
+      "gdd": "v9.7"
     }
   ],
   "playtest": [
@@ -1182,6 +1206,27 @@
       "items": [
         {
           "text": "Small half-width ramps: each one is easy to spot, fun to take, and AI cars don't clip their sides",
+          "done": false
+        },
+        {
+          "text": "EMP puddles: the 3 s jam feels like a real penalty without being unfair",
+          "done": false
+        },
+        {
+          "text": "Half-pipes: easy to steer into, the ride up/over/down feels good at every CC, the item boxes are grabbable, and you exit cleanly (normal and Mirror)",
+          "done": false
+        }
+      ]
+    },
+    {
+      "area": "Modes",
+      "items": [
+        {
+          "text": "CC: 50cc feels gentle, 200cc is fast but drivable (brake points, AI keeps up, no walls on every corner); Grand Prix setup → cup → START GRAND PRIX flow, Mirror toggle",
+          "done": false
+        },
+        {
+          "text": "Jumps, small ramps and trick edges at 200cc always land clean; the mid-air turn doesn't feel robotic or too snappy",
           "done": false
         }
       ]

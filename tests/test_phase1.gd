@@ -399,10 +399,25 @@ func _test_auto_overturned(main: Node) -> void:
 	await _frames(30)
 	var xf := track.get_safe_transform(track.get_spawn_offset() + 30.0, 0.0, 1.5)
 	xf.basis = xf.basis * Basis(Vector3.BACK, PI)
+	# Dropped upside down, the air attitude control would turn it over in the
+	# fall (checked below); off, it lands on its roof for Recovery.
+	var tuned := car.stats
+	var no_air := tuned.duplicate() as VehicleStats
+	no_air.air_attitude_gain = 0.0
+	car.stats = no_air
 	car.teleport(xf)
 	await _frames(200)
+	car.stats = tuned
 	_check(reasons.has("overturned"), "upside-down car is recovered (%s)" % [reasons])
 	_check(car.global_transform.basis.y.dot(Vector3.UP) > 0.9, "car upright after recovery")
+	# With air control, a car dropped upside down rights itself and lands on its wheels.
+	reasons.clear()
+	xf = track.get_safe_transform(track.get_spawn_offset() + 30.0, 0.0, 3.0)
+	xf.basis = xf.basis * Basis(Vector3.BACK, PI)
+	car.teleport(xf)
+	await _frames(120)
+	_check(not reasons.has("overturned") and car.global_transform.basis.y.dot(Vector3.UP) > 0.95 and car.grounded_wheels >= 3,
+			"with air control a car dropped upside down lands on its wheels (%s)" % [reasons])
 
 
 func _test_auto_stuck(main: Node) -> void:

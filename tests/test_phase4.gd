@@ -333,8 +333,13 @@ func _test_mode_select() -> void:
 	_check(GameSession.current.rival_plates.size() == 7 and GameSession.current.rival_plates != versus_plates,
 			"a new set gets new plates")
 	setup.queue_free()
-	# Grand Prix: pick a cup first (Mario Kart style).
-	GameSession.setup_mode = RaceConfig.Mode.GRAND_PRIX
+	# Grand Prix: car and settings first, then the cup (START GRAND PRIX starts it).
+	setup = await _open_setup(RaceConfig.Mode.GRAND_PRIX)
+	setup.set_cc(150)
+	_check(setup.summary_text() == "GRAND PRIX  ·  150CC", "Grand Prix setup shows the engine class")
+	setup.start()
+	_check(GameSession.gp_template != null and GameSession.gp_template.cc == 150
+			and GameSession.setup_mode == RaceConfig.Mode.GRAND_PRIX, "setup's Next keeps the choices for the cup screen")
 	GameSession.cup_path = ""
 	var cups := (load("res://scenes/menu/cup_select.tscn") as PackedScene).instantiate() as CupSelect
 	root.add_child(cups)
@@ -349,10 +354,9 @@ func _test_mode_select() -> void:
 	cups.pick(0)
 	_check(GameSession.cup_path == GrandPrixData.CUPS[0], "picking the American Cup")
 	cups.queue_free()
-	setup = await _open_setup(RaceConfig.Mode.GRAND_PRIX)
-	_check(setup.cup.id == "american_circuit" and setup.summary_text() == "AMERICAN CUP", "setup shows the American Cup")
-	setup.start()
-	_check(GameSession.current.is_grand_prix() and Championship.has_save(), "starting a Grand Prix saves it")
+	_check(GameSession.current.is_grand_prix() and Championship.has_save()
+			and GameSession.current.championship.gp.id == "american_circuit"
+			and GameSession.current.cc == 150, "START GRAND PRIX starts and saves the American Cup at 150cc")
 	setup.queue_free()
 	await process_frame
 	var again := (load(MAIN_MENU) as PackedScene).instantiate() as MainMenu

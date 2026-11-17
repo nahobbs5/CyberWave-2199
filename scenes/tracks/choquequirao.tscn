@@ -5,6 +5,7 @@
 [ext_resource type="Script" path="res://scripts/track/track_feature.gd" id="3_feature"]
 [ext_resource type="Script" path="res://scripts/track/choquequirao_scenery.gd" id="4_scenery"]
 [ext_resource type="Texture2D" path="res://assets/sky/kloofendal_48d_partly_cloudy_puresky_2k.hdr" id="5_sky"]
+[ext_resource type="Script" path="res://scripts/track/trick_edge.gd" id="90_trick_edge"]
 
 [sub_resource type="PanoramaSkyMaterial" id="Sky_day"]
 panorama = ExtResource("5_sky")
@@ -143,6 +144,12 @@ anchor_point = Vector3(-158.8, 0, 18.4)
 width = 7
 length = 11.0
 ramp_height = 0.9
+
+[node name="TrickEdgeA" type="Node3D" parent="."]
+script = ExtResource("90_trick_edge")
+anchor_point = Vector3(-342.4, 0.0, -180.3)
+side = -1
+tint = Color(0.5, 0.45, 0.38, 1)
 
 [node name="Scenery" type="Node3D" parent="."]
 script = ExtResource("4_scenery")

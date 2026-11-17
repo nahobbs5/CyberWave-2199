@@ -5,6 +5,7 @@
 [ext_resource type="Script" path="res://scripts/track/track_feature.gd" id="3_feature"]
 [ext_resource type="Script" path="res://scripts/track/stacks_scenery.gd" id="4_scenery"]
 [ext_resource type="Texture2D" path="res://assets/sky/qwantani_sunset_puresky_2k.hdr" id="5_sky"]
+[ext_resource type="Script" path="res://scripts/track/trick_edge.gd" id="90_trick_edge"]
 
 [sub_resource type="PanoramaSkyMaterial" id="Sky_sunset"]
 panorama = ExtResource("5_sky")
@@ -135,6 +136,18 @@ anchor_point = Vector3(231.8, 0, -100)
 width = 7.5
 length = 11.0
 ramp_height = 0.9
+
+[node name="TrickEdgeA" type="Node3D" parent="."]
+script = ExtResource("90_trick_edge")
+anchor_point = Vector3(350.0, 0.0, 484.0)
+side = 1
+tint = Color(0.55, 0.45, 0.36, 1)
+
+[node name="TrickEdgeB" type="Node3D" parent="."]
+script = ExtResource("90_trick_edge")
+anchor_point = Vector3(150.0, 0.0, 337.7)
+side = 1
+tint = Color(0.55, 0.45, 0.36, 1)
 
 [node name="Scenery" type="Node3D" parent="."]
 script = ExtResource("4_scenery")

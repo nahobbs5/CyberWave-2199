@@ -1,8 +1,8 @@
 class_name MultiplayerSetup
 extends Control
 ## Split screen, step 3 of 3: the race settings. Mode (Grand Prix / Versus),
-## race type and number of races (Versus), AI rivals, difficulty, laps,
-## weapons. Grand Prix goes on to the cup screen; Versus to the track
+## race type (Versus), engine class (CC), Mirror (Grand Prix), number of
+## races (Versus), AI rivals, difficulty, laps, weapons. Grand Prix goes on to the cup screen; Versus to the track
 ## screen, which lists every cup's tracks and comes back before each race of
 ## the set. Any player can drive the menu. No coins or records in split screen.
 ##
@@ -23,6 +23,11 @@ var next_button: NeonMenuButton
 var _mode: NeonStepper
 var _race_type: NeonStepper
 var _race_type_row: Control
+## Engine class: 50 / 100 / 150 / 200cc, under Race Type.
+var _cc: NeonStepper
+## Grand Prix only: Mirror on / off (Versus has it as a race type).
+var _mirror: NeonToggle
+var _mirror_row: Control
 var _races: NeonStepper
 var _races_row: Control
 var _ai: NeonToggle
@@ -65,9 +70,27 @@ func selected_mode() -> RaceConfig.Mode:
 	return RaceConfig.Mode.VERSUS
 
 
-## Versus Mirror: a Standard race with the track driven in reverse.
+## Mirror: the Versus race type (a Standard race driven in reverse) or the
+## Grand Prix toggle.
 func is_mirror() -> bool:
-	return not is_grand_prix() and _race_type.selected == RaceSetup.MIRROR
+	if is_grand_prix():
+		return _mirror.button_pressed
+	return _race_type.selected == RaceSetup.MIRROR
+
+
+## The engine class picked (50 / 100 / 150 / 200).
+func cc() -> int:
+	return RaceConfig.CC_CLASSES[_cc.selected]
+
+
+func set_cc(value: int) -> void:
+	_cc.selected = RaceConfig.cc_index(value)
+	_update()
+
+
+func set_mirror(on: bool) -> void:
+	_mirror.button_pressed = on
+	_update()
 
 
 func race_count() -> int:
@@ -105,6 +128,8 @@ func next() -> void:
 		"difficulty": _difficulty.selected,
 		"laps": _laps.selected,
 		"weapons": _weapons.button_pressed,
+		"cc": _cc.selected,
+		"gp_mirror": _mirror.button_pressed,
 	}
 	GameSession.cup_path = ""
 	GameSession.track_name = ""
@@ -130,6 +155,7 @@ func _unhandled_input(event: InputEvent) -> void:
 func _update() -> void:
 	var gp := is_grand_prix()
 	_race_type_row.visible = not gp
+	_mirror_row.visible = gp
 	_races_row.visible = not gp
 	# Without NPCs there's no Elimination: it snaps back to Standard.
 	if not elimination_allowed() and _race_type.selected == 1:
@@ -162,6 +188,9 @@ func _restore() -> void:
 	_difficulty.selected = clampi(int(s.get("difficulty", 1)), 0, 2)
 	_laps.selected = clampi(int(s.get("laps", 2)), 0, 8)
 	_weapons.set_pressed_no_signal(bool(s.get("weapons", true)))
+	_cc.selected = clampi(int(s.get("cc", RaceConfig.DEFAULT_CC_INDEX)), 0, RaceConfig.CC_CLASSES.size() - 1)
+	_mirror.set_pressed_no_signal(bool(s.get("gp_mirror", false)))
+	_mirror.queue_redraw()
 	_ai.queue_redraw()
 	_weapons.queue_redraw()
 	_update()
@@ -170,7 +199,7 @@ func _restore() -> void:
 ## Up / down: the visible rows (left column, then right), Next, Back.
 func _link_focus() -> void:
 	var chain: Array[Control] = []
-	for c: Control in [_mode, _race_type, _races, _ai, _difficulty, _laps, _weapons, next_button, layout.back_button]:
+	for c: Control in [_mode, _race_type, _cc, _mirror, _races, _ai, _difficulty, _laps, _weapons, next_button, layout.back_button]:
 		var row := c.get_parent().get_parent() if c is NeonStepper or c is NeonToggle else null
 		if row == null or (row as Control).visible:
 			chain.append(c)
@@ -249,6 +278,15 @@ func _build() -> void:
 	_race_type = _stepper(RACE_TYPES)
 	_race_type_row = SetupWidgets.setting_row("flags", "Race Type", _race_type)
 	left.add_child(_race_type_row)
+	var classes: Array[String] = []
+	for c in RaceConfig.CC_CLASSES:
+		classes.append(RaceConfig.cc_label(c))
+	_cc = _stepper(classes)
+	left.add_child(SetupWidgets.setting_row("gauge", "CC", _cc))
+	_mirror = NeonToggle.new()
+	_mirror.toggled.connect(func(_on: bool) -> void: _update())
+	_mirror_row = _toggle_row("flags", "Mirror", _mirror)
+	left.add_child(_mirror_row)
 	var counts: Array[String] = []
 	for n in RaceSetup.RACE_COUNTS:
 		counts.append("%d Race%s" % [n, "" if n == 1 else "s"])

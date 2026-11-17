@@ -3,8 +3,9 @@ extends Control
 ## Grand Prix, step 1 (Mario Kart style): a row of cup cards. Moving across
 ## them previews each cup's races below; opening one (click, Enter or A)
 ## shows its races and START GRAND PRIX to confirm. Cups locked for Grand
-## Prix say "coming soon" and can't be confirmed. Confirming goes to the race
-## setup (or, in split screen, straight into the Grand Prix). See CupBoard.
+## Prix say "coming soon" and can't be confirmed. Confirming starts the Grand
+## Prix: the car, engine class, Mirror and the rest were picked on the race
+## setup screen before this one (split screen: the lobby). See CupBoard.
 ## Laid out after "reference files/Cyberwave 2199_ Europe Cup Grand
 ## Prix.png" on the dimmed 3D street (NeonScreenLayout).
 
@@ -64,14 +65,18 @@ func confirm() -> void:
 		GameSession.start_multiplayer_grand_prix(get_tree(), cup)
 	elif is_grand_prix():
 		GameSession.track_name = ""
-		GameSession.to_race_setup(get_tree(), mode)
+		PlayerProfile.get_profile().save() # remembers the cup for next time
+		GameSession.start_grand_prix(get_tree(), cup)
 	else:
 		GameSession.to_track_select(get_tree())
 
 
+## Back: the setup it came from (split-screen lobby or the race setup).
 func back() -> void:
 	if GameSession.split_screen:
 		GameSession.to_mp_setup(get_tree())
+	elif is_grand_prix():
+		GameSession.to_race_setup(get_tree(), mode)
 	else:
 		GameSession.to_main_menu(get_tree())
 

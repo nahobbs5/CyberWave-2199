@@ -80,7 +80,9 @@ func try_trick() -> bool:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if vehicle == null or not vehicle.player_controlled or not vehicle.can_control():
+	# Not can_control(): a half-pipe ride flies the car (no driving), but the
+	# trick window is open over the lip. Overdrive flights never open it.
+	if vehicle == null or not vehicle.player_controlled or not vehicle.input_enabled or vehicle.recovery_lock:
 		return
 	if event.is_action_pressed(vehicle.action(&"trick")) and try_trick():
 		get_viewport().set_input_as_handled()
@@ -95,8 +97,12 @@ func _physics_process(delta: float) -> void:
 		_since_ramp += delta
 		if airborne:
 			_left_ground = true
-		elif _left_ground and not _spinning and not _pending_boost:
-			_window = 0.0 # landed without tricking
+		elif _left_ground and not _spinning and not _pending_boost and vehicle.grounded_wheels >= 2 \
+				and _since_ramp > LIP_GRACE:
+			# Landed without tricking. Brushing the trick edge or ramp again
+			# just after take-off (within the lip grace, or on one wheel)
+			# doesn't count.
+			_window = 0.0
 	if _spinning:
 		_spin_time += delta
 		if not airborne and _left_ground and _spin_time > 0.1:

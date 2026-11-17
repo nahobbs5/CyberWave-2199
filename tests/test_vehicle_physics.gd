@@ -141,7 +141,13 @@ func _test_rest_all_cars() -> void:
 
 func _test_contact_data() -> void:
 	_section("contact data")
-	var car := await _car()
+	# A tilted drop on purpose: the air attitude control would level it
+	# before touchdown, so it's off here.
+	var tilted := (load(CAR) as PackedScene).instantiate() as VehicleController
+	var no_air := tilted.stats.duplicate() as VehicleStats
+	tilted.free()
+	no_air.air_attitude_gain = 0.0
+	var car := await _car(no_air)
 	car.position = Vector3(0, 3.0, 0)
 	car.rotation = Vector3(deg_to_rad(8), 0, deg_to_rad(10))
 	var hits_ok := true
@@ -212,6 +218,7 @@ func _test_ramp() -> void:
 	var reairborne := 0
 	var was_air := false
 	var post_rate := 0.0
+	var touchdown_rate := 0.0
 	var max_up := 0.0
 	var traction_in_air := 0.0
 	var stabilizing := false
@@ -230,7 +237,12 @@ func _test_ramp() -> void:
 			reairborne += 1
 		was_air = airborne
 		if landed_at >= 0 and f - landed_at < 90:
-			post_rate = maxf(post_rate, _pitch_roll_rate(car))
+			# The touchdown steps themselves get one jolt (a level landing puts
+			# all four wheels down at once); after that it must settle.
+			if f - landed_at < 4:
+				touchdown_rate = maxf(touchdown_rate, _pitch_roll_rate(car))
+			else:
+				post_rate = maxf(post_rate, _pitch_roll_rate(car))
 			if f - landed_at > 3:
 				max_up = maxf(max_up, car.linear_velocity.y)
 	_check(max_air > 120, "real airtime off the ramp (%.2f s)" % (max_air / 60.0))
@@ -238,7 +250,8 @@ func _test_ramp() -> void:
 	_check(landed_at >= 0, "lands with 2+ loaded wheels (what trick boosts need)")
 	_check(stabilizing, "the landing stabiliser starts on touchdown")
 	_check(reairborne == 0, "no bounce back into the air")
-	_check(post_rate < 1.0, "pitch/roll settles after landing (peak %.2f rad/s)" % post_rate)
+	_check(touchdown_rate < 2.0, "touchdown jolt stays small (peak %.2f rad/s)" % touchdown_rate)
+	_check(post_rate < 0.5, "pitch/roll settles after landing (peak %.2f rad/s after touchdown)" % post_rate)
 	_check(max_up < 2.3, "landing rebound kept down (%.2f m/s up)" % max_up)
 
 

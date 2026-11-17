@@ -50,10 +50,15 @@ static var mp_plates: PackedStringArray = PackedStringArray()
 ## Single-player race setup choices (difficulty, laps, race type, races,
 ## weapons) for this session only: each launch starts on the defaults.
 static var race_settings: Dictionary = {}
-static var mp_settings: Dictionary = {"mode": 1, "race_type": 0, "races": RaceSetup.DEFAULT_RACES, "ai": true, "difficulty": 1, "laps": 2, "weapons": true}
+static var mp_settings: Dictionary = {"mode": 1, "race_type": 0, "races": RaceSetup.DEFAULT_RACES, "ai": true, "difficulty": 1, "laps": 2, "weapons": true, "cc": RaceConfig.DEFAULT_CC_INDEX, "gp_mirror": false}
 ## Versus: every setting but the track (set on the race setup screen, or
 ## the split-screen setup screen). The track screen adds the track.
 static var versus_template: RaceConfig
+## Single-player Grand Prix: the setup screen's choices (car, engine class,
+## Mirror, items) and NPC difficulty, set before the cup screen; START GRAND
+## PRIX there starts the championship from them. Null = the defaults.
+static var gp_template: RaceConfig
+static var gp_difficulty_id: String = "normal"
 ## Versus series of more than one race (Mario Kart style), null otherwise.
 ## The track screen picks each race's track for it.
 static var series: Championship
@@ -127,6 +132,47 @@ static func begin_versus(tree: SceneTree, template: RaceConfig, races: int, p_di
 	to_track_select(tree)
 
 
+## Single-player Grand Prix: the setup is done; keep it and go and pick a cup.
+static func begin_grand_prix(tree: SceneTree, template: RaceConfig, p_difficulty_id: String) -> void:
+	gp_template = template
+	gp_difficulty_id = p_difficulty_id
+	to_cup_select(tree, RaceConfig.Mode.GRAND_PRIX)
+
+
+## Single-player Grand Prix: START GRAND PRIX on the cup screen. A new
+## championship from the setup's choices (gp_template), saved, then race 1.
+static func start_grand_prix(tree: SceneTree, cup: GrandPrixData) -> Championship:
+	var t := gp_template if gp_template != null else RaceConfig.new()
+	var vehicle_id := t.vehicle_id if t.vehicle_id != "" else PlayerProfile.get_profile().selected_vehicle
+	var c := Championship.create(cup, gp_difficulty_id, t.weapons_enabled,
+			load("res://resources/racers/rival_roster.tres") as RivalRoster, vehicle_id,
+			PackedInt32Array(), PackedStringArray(), true, t.cc, t.mirrored)
+	c.save()
+	start_race(tree, c.make_race_config())
+	return c
+
+
+## The engine class picked for the Grand Prix about to start (split screen:
+## the lobby's; single player: the setup screen's).
+static func pending_gp_cc() -> int:
+	if split_screen:
+		return mp_cc()
+	return gp_template.cc if gp_template != null else RaceConfig.BASE_CC
+
+
+## Mirror toggle for the Grand Prix about to start.
+static func pending_gp_mirrored() -> bool:
+	if split_screen:
+		return bool(mp_settings.get("gp_mirror", false))
+	return gp_template != null and gp_template.mirrored
+
+
+## Split screen: the lobby's engine class (50 / 100 / 150 / 200).
+static func mp_cc() -> int:
+	var i := clampi(int(mp_settings.get("cc", RaceConfig.DEFAULT_CC_INDEX)), 0, RaceConfig.CC_CLASSES.size() - 1)
+	return RaceConfig.CC_CLASSES[i]
+
+
 ## The track screen picked `track`: the series' next race, or one race.
 static func start_versus_race(tree: SceneTree, track: String) -> void:
 	if series != null:
@@ -168,6 +214,7 @@ static func make_multiplayer_config(mode: RaceConfig.Mode, track: String) -> Rac
 	config.total_laps = int(mp_settings.get("laps", 2)) + 1
 	config.weapons_enabled = bool(mp_settings.get("weapons", true))
 	config.mirrored = mode == RaceConfig.Mode.VERSUS and int(mp_settings.get("race_type", 0)) == RaceSetup.MIRROR
+	config.cc = mp_cc()
 	if track != "":
 		config.track_name = track
 		config.track_scene = TrackCatalog.scene(track)
@@ -183,7 +230,8 @@ static func start_multiplayer_grand_prix(tree: SceneTree, cup: GrandPrixData) ->
 	var c := Championship.create(cup, difficulty_id(), bool(mp_settings.get("weapons", true)),
 			load("res://resources/racers/rival_roster.tres") as RivalRoster,
 			mp_vehicles[0] if not mp_vehicles.is_empty() else PlayerProfile.DEFAULT_VEHICLE,
-			mp_devices, mp_vehicles, bool(mp_settings.get("ai", true)))
+			mp_devices, mp_vehicles, bool(mp_settings.get("ai", true)),
+			mp_cc(), bool(mp_settings.get("gp_mirror", false)))
 	c.player_plates = mp_plates.duplicate()
 	start_race(tree, c.make_race_config())
 
@@ -233,8 +281,15 @@ static func to_credits(tree: SceneTree) -> void:
 ## The Versus races being picked are Mirror races (track driven in reverse).
 static func versus_mirrored() -> bool:
 	if series != null:
-		return series.is_series() and series.series_mirrored
+		return series.is_series() and series.mirrored
 	return versus_template != null and versus_template.mirrored
+
+
+## The engine class of the Versus races being picked.
+static func versus_cc() -> int:
+	if series != null:
+		return series.cc
+	return versus_template.cc if versus_template != null else RaceConfig.BASE_CC
 
 
 ## Versus setup opens on the race type (Standard / Elimination / Mirror)

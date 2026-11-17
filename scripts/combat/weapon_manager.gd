@@ -385,6 +385,9 @@ func _spawn_crates() -> void:
 		if child is TrackFeature:
 			for xf in (child as TrackFeature).item_box_transforms():
 				_add_crate(xf)
+		elif child is TrickEdge:
+			for xf in (child as TrickEdge).item_box_transforms():
+				_add_crate(xf)
 
 
 func _add_crate(xf: Transform3D) -> void:

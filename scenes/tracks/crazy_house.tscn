@@ -4,6 +4,7 @@
 [ext_resource type="Script" path="res://scripts/track/track_shortcut.gd" id="2_shortcut"]
 [ext_resource type="Script" path="res://scripts/track/track_feature.gd" id="3_feature"]
 [ext_resource type="Script" path="res://scripts/track/crazy_house_scenery.gd" id="4_scenery"]
+[ext_resource type="Script" path="res://scripts/track/trick_edge.gd" id="90_trick_edge"]
 
 [sub_resource type="Environment" id="Environment_crazy"]
 background_mode = 1
@@ -137,6 +138,12 @@ on_shortcut = "RibTunnel"
 boost_extra = 8.0
 boost_duration = 1.2
 boost_kick = 5.0
+
+[node name="TrickEdgeA" type="Node3D" parent="."]
+script = ExtResource("90_trick_edge")
+anchor_point = Vector3(-331.4, 0.0, 46.0)
+side = -1
+tint = Color(0.6, 0.5, 0.42, 1)
 
 [node name="Scenery" type="Node3D" parent="."]
 script = ExtResource("4_scenery")

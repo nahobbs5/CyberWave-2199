@@ -81,5 +81,39 @@ extends Resource
 @export var ground_upright_strength: float = 1.5
 ## Upright correction while airborne.
 @export var air_upright_strength: float = 2.5
+## In the air the car turns to land on its wheels, nose along its direction
+## of travel (GDD 5.4): how fast the attitude error closes (1/s; 0 = off,
+## back to the old world-up pull above).
+@export var air_attitude_gain: float = 5.0
+## Fastest it turns the car in the air (rad/s).
+@export var air_attitude_max_rate: float = 7.0
+## How quickly the spin is taken over by that correction (1/s): higher
+## cancels take-off spin faster.
+@export var air_attitude_response: float = 12.0
 ## Forward speed lost in one physics step that counts as a major collision.
 @export var major_impact_speed_loss: float = 10.0
+
+
+## Engine class copies (GDD 2.1a), cached so every car of a model in a race
+## shares one (RaceManager keeps one racing line per stats object).
+static var _cc_cache: Dictionary = {}
+
+
+## These stats for engine class `cc`: top speed, acceleration and braking
+## scaled by RaceConfig.cc_scale (boosts are scaled by the car itself,
+## VehicleController.cc_scale). 100cc returns this object.
+func for_cc(cc: int) -> VehicleStats:
+	var scale := RaceConfig.cc_scale(cc)
+	if is_equal_approx(scale, 1.0):
+		return self
+	var key := "%d:%d" % [get_instance_id(), cc]
+	var cached: VehicleStats = _cc_cache.get(key)
+	if cached != null:
+		return cached
+	var s := duplicate() as VehicleStats
+	s.top_speed = top_speed * scale
+	s.acceleration = acceleration * scale
+	s.brake_deceleration = brake_deceleration * scale
+	s.boost_acceleration = boost_acceleration * scale
+	_cc_cache[key] = s
+	return s

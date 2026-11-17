@@ -287,6 +287,10 @@ func set_reversed(on: bool) -> void:
 	_build_corner_signs()
 	_build_checkpoints()
 	_remove_mirror_ramps()
+	# Trick edges stay on their physical edge; their chevrons turn round.
+	for child in get_children():
+		if child is TrickEdge:
+			(child as TrickEdge).set_reversed(on)
 	if on:
 		# Features are centred on their origin: turning them round in place
 		# points ramps, pads and rings (and a ramp's item boxes) the new way.

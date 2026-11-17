@@ -200,6 +200,12 @@ func _find_landing() -> bool:
 
 func _near_ramp(offset: float) -> bool:
 	for child in track.get_children():
+		if child is TrickEdge:
+			var edge := child as TrickEdge
+			var mid := track.get_offset_at(edge.centre_global())
+			if absf(track.wrapped_delta(offset, mid)) < ramp_clearance + edge.length * 0.5:
+				return true
+			continue
 		var feature := child as TrackFeature
 		if feature == null or feature.kind != TrackFeature.Kind.JUMP_RAMP or feature.on_shortcut != "":
 			continue

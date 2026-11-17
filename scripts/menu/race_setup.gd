@@ -1,23 +1,22 @@
 class_name RaceSetup
 extends Control
 ## Race setup (GDD 11.3): vehicle (with the license plate on the preview),
-## AI difficulty and race settings. Choices last until the app closes (the
-## cup is kept in the profile); each launch starts on the defaults.
-##   Grand Prix: after picking a cup; Start Grand Prix begins the championship.
+## engine class (CC), AI difficulty and race settings. Choices last until the
+## app closes; each launch starts on the defaults.
+##   Grand Prix: straight from the main menu. CC, a Mirror toggle, NPC
+##   difficulty, items; Choose Cup goes to the cup screen, whose START GRAND
+##   PRIX begins the championship (GameSession.begin_grand_prix).
 ##   Versus: straight from the main menu (Mario Kart style). Race type
-##   (Standard or Elimination, always 3 laps), number of races, laps; Next
-##   goes to the track screen, which lists every cup's tracks.
-## Opened directly (tests), Grand Prix uses the remembered or first cup.
+##   (Standard, Elimination (always 3 laps) or Mirror), CC, number of races,
+##   laps; Next goes to the track screen, which lists every cup's tracks.
 ## Your Name (kept in the profile, used in the standings and results) is the
 ## last row, just above the gold button. A Race Results style title across
-## the top (VERSUS or GRAND PRIX); Grand Prix also has the cup's gold banner,
-## Versus has none (the Races row shows the count).
+## the top (VERSUS or GRAND PRIX).
 ## Laid out after "reference files/Neon Versus Race Setup UI.png": settings
 ## rows with < value > steppers on the left, the car on
 ## the right (CarShowcase, neon style), on the dimmed 3D street
 ## (NeonScreenLayout). Y / G opens the garage and comes back here.
 
-const ROSTER := "res://resources/racers/rival_roster.tres"
 const DIFFICULTIES: Array[String] = ["easy", "normal", "hard"]
 const RACE_TYPES: Array[String] = ["Standard", "Elimination", "Mirror"]
 ## RACE_TYPES index of Mirror: a Versus race with the track driven in reverse.
@@ -33,8 +32,9 @@ static func describe(p_mode: RaceConfig.Mode, _races: int = 1, npcs: bool = true
 	var lines: PackedStringArray = []
 	match p_mode:
 		RaceConfig.Mode.GRAND_PRIX:
-			lines.append("GRAND PRIX: every race in a cup. Points after every race (15, 12, 10, 8, 6, 4, 2, 1). "
-					+ "Each race starts in the order the last one finished. Most points wins the cup.")
+			lines.append("GRAND PRIX: Race a Complete Cup")
+			if mirrored:
+				lines.append("MIRROR: Every track is driven in reverse.")
 		RaceConfig.Mode.ELIMINATION:
 			lines.append("ELIMINATION: 3 laps total. At each checkpoint, slower players are knocked out of the "
 					+ "race until there is only one victor. Requires NPCs to fill the grid.")
@@ -49,17 +49,16 @@ static func describe(p_mode: RaceConfig.Mode, _races: int = 1, npcs: bool = true
 
 
 var mode: RaceConfig.Mode = RaceConfig.Mode.VERSUS
-## Versus Mirror race type (mode stays VERSUS): the track driven in reverse.
+## The track driven in reverse: the Versus Mirror race type (mode stays
+## VERSUS) or the Grand Prix Mirror toggle.
 var mirrored: bool = false
 var vehicle_index: int = 0
 
-## Grand Prix: the cup (null in Versus).
-var cup: GrandPrixData
-var cup_path: String = ""
-
 var layout: NeonScreenLayout
-## The gold banner's text ("VERSUS  ·  1 RACE" / the cup's name).
-var _summary: Label
+## Engine class: 50 / 100 / 150 / 200cc (RaceConfig.CC_CLASSES).
+var _cc: NeonStepper
+## Grand Prix only: Mirror on / off (Versus has it as a race type).
+var _mirror: NeonToggle
 var _difficulty: NeonStepper
 var _laps: NeonStepper
 var _laps_row: Control
@@ -83,9 +82,10 @@ func _ready() -> void:
 	InputSetup.ensure_actions()
 	Music.play(get_tree(), Music.MENU)
 	mode = GameSession.setup_mode
-	mirrored = mode == RaceConfig.Mode.VERSUS and int(GameSession.race_settings.get("race_type", 0)) == MIRROR
 	if is_grand_prix():
-		_resolve_selection()
+		mirrored = bool(GameSession.race_settings.get("gp_mirror", false))
+	else:
+		mirrored = mode == RaceConfig.Mode.VERSUS and int(GameSession.race_settings.get("race_type", 0)) == MIRROR
 	_build()
 	UIStyle.fade_in(self)
 	_restore()
@@ -113,17 +113,45 @@ func is_grand_prix() -> bool:
 	return mode == RaceConfig.Mode.GRAND_PRIX
 
 
+## The engine class picked (50 / 100 / 150 / 200).
+func cc() -> int:
+	return RaceConfig.CC_CLASSES[_cc.selected] if _cc != null else RaceConfig.BASE_CC
+
+
+func set_cc(value: int) -> void:
+	_cc.selected = RaceConfig.cc_index(value)
+	_cc_changed()
+
+
+## The CC row moved: the note and the car's top-speed card follow it.
+func _cc_changed() -> void:
+	if showcase != null:
+		showcase.set_cc(cc())
+	_update_note()
+
+
+## Grand Prix: the Mirror toggle.
+func set_mirror(on: bool) -> void:
+	if not is_grand_prix():
+		return
+	mirrored = on
+	if _mirror.button_pressed != on:
+		_mirror.button_pressed = on
+	_update_note()
+
+
 ## Versus: races in the set.
 func race_count() -> int:
 	return RACE_COUNTS[_races.selected] if _races != null else 1
 
 
 ## The race settings (Versus: everything but the track, which the track
-## screen adds).
+## screen adds; Grand Prix: the template the championship is made from).
 func make_config() -> RaceConfig:
 	var config := RaceConfig.new()
 	config.mode = mode
-	config.mirrored = mirrored and mode == RaceConfig.Mode.VERSUS
+	config.mirrored = mirrored and mode != RaceConfig.Mode.ELIMINATION
+	config.cc = cc()
 	config.difficulty = load(Championship.DIFFICULTY_PATH % difficulty_id()) as AIDifficulty
 	config.total_laps = _laps.selected + 1
 	config.weapons_enabled = _weapons.button_pressed
@@ -133,17 +161,13 @@ func make_config() -> RaceConfig:
 	return config
 
 
-## Grand Prix: starts the championship. Versus: on to the track screen.
-## Remembers the choices either way.
+## Grand Prix: on to the cup screen (its START GRAND PRIX begins the
+## championship). Versus: on to the track screen. Remembers the choices
+## either way.
 func start() -> void:
 	_remember()
 	if is_grand_prix():
-		if cup.locked:
-			return
-		var c := Championship.create(cup, difficulty_id(), _weapons.button_pressed,
-				load(ROSTER) as RivalRoster, vehicle().id)
-		c.save()
-		GameSession.start_race(get_tree(), c.make_race_config())
+		GameSession.begin_grand_prix(get_tree(), make_config(), difficulty_id())
 	else:
 		GameSession.setup_mode = mode
 		GameSession.begin_versus(get_tree(), make_config(), race_count(), difficulty_id())
@@ -159,12 +183,15 @@ func open_garage() -> void:
 
 func _remember() -> void:
 	# Race settings last until the app closes, then go back to the defaults
-	# (GameSession.race_settings). Only the cup is kept in the profile.
+	# (GameSession.race_settings). The cup screen keeps the cup in the profile.
 	var settings := GameSession.race_settings
 	settings["difficulty"] = _difficulty.selected
 	settings["laps"] = _laps.selected
+	settings["cc"] = _cc.selected
 	if mode != RaceConfig.Mode.GRAND_PRIX:
 		settings["race_type"] = race_type_index()
+	else:
+		settings["gp_mirror"] = mirrored
 	settings["weapons"] = _weapons.button_pressed
 	if not is_grand_prix():
 		settings["races"] = _races.selected
@@ -172,8 +199,6 @@ func _remember() -> void:
 	var setup := profile.last_setup
 	for key in ["difficulty", "laps", "race_type", "weapons", "races"]:
 		setup.erase(key)
-	if is_grand_prix():
-		setup["cup"] = cup_path
 	profile.last_setup = setup
 	profile.save()
 
@@ -184,9 +209,14 @@ func _restore() -> void:
 	_difficulty.selected = clampi(int(setup.get("difficulty", 1)), 0, DIFFICULTIES.size() - 1)
 	_laps.selected = clampi(int(setup.get("laps", 2)), 0, 8)
 	_weapons.button_pressed = bool(setup.get("weapons", true))
+	_cc.selected = clampi(int(setup.get("cc", RaceConfig.DEFAULT_CC_INDEX)), 0, RaceConfig.CC_CLASSES.size() - 1)
+	if _mirror != null:
+		_mirror.button_pressed = mirrored
 	if _races != null:
 		_races.selected = clampi(int(setup.get("races", DEFAULT_RACES)), 0, RACE_COUNTS.size() - 1)
 	vehicle_index = VehicleCatalog.index_of(profile.selected_vehicle)
+	if showcase != null:
+		showcase.cc = cc()
 	select_vehicle(vehicle_index)
 	_update_note()
 
@@ -197,24 +227,19 @@ func _update_note() -> void:
 		# "STANDARD: pick any ..." -> a gold "Standard:", then the rest.
 		var colon := line.find(":")
 		if colon > 0 and colon < 24:
-			lines.append("[color=#%s]%s:[/color]%s" % [UIStyle.GOLD.to_html(false),
-					line.substr(0, colon).to_lower().capitalize(), line.substr(colon + 1)])
+			var head := line.substr(0, colon)
+			# "STANDARD" -> "Standard".
+			head = head.to_lower().capitalize()
+			lines.append("[color=#%s]%s:[/color]%s" % [UIStyle.GOLD.to_html(false), head, line.substr(colon + 1)])
 		else:
 			lines.append(line)
-	match mode:
-		RaceConfig.Mode.GRAND_PRIX:
-			lines.append("Races: " + ", ".join(cup.track_names) + ". Saved between races.")
-			var best := PlayerProfile.get_profile().best_grand_prix(cup.id)
-			if best > 0:
-				lines.append("Your best result: P%d" % best)
-			if Championship.load_saved() != null:
-				lines.append("Starting a new Grand Prix replaces the saved one.")
+	if mode == RaceConfig.Mode.GRAND_PRIX and Championship.load_saved() != null:
+		lines.append("Starting a new Grand Prix replaces the saved one.")
 	_note.text = "\n".join(lines)
 
 
 func _build() -> void:
-	# The Race Results style title, centred: GRAND PRIX or VERSUS (Grand
-	# Prix also keeps the cup's gold banner in the panel).
+	# The Race Results style title, centred: GRAND PRIX or VERSUS.
 	layout = NeonScreenLayout.new("GRAND PRIX" if is_grand_prix() else "VERSUS", "flags")
 	add_child(layout)
 	layout.use_results_header()
@@ -238,11 +263,6 @@ func _build() -> void:
 	var inner := VBoxContainer.new()
 	inner.add_theme_constant_override("separation", 8)
 	panel.add_child(inner)
-	# Grand Prix: the cup's banner. Versus has none (the Races row shows the count).
-	if is_grand_prix():
-		var banner := SetupWidgets.gold_banner(summary_text(), TrophyIcon.new(cup.emblem, false, 54.0))
-		inner.add_child(banner)
-		_summary = banner.label
 	var rows := VBoxContainer.new()
 	rows.add_theme_constant_override("separation", 8)
 	var rows_margin := MarginContainer.new()
@@ -258,6 +278,19 @@ func _build() -> void:
 		_race_type.selected = race_type_index()
 		_race_type.item_selected.connect(set_race_type)
 		rows.add_child(SetupWidgets.setting_row("flags", "Race Type", _race_type))
+	# Engine class: under Race Type in Versus, first in Grand Prix.
+	_cc = NeonStepper.new()
+	for c in RaceConfig.CC_CLASSES:
+		_cc.add_item(RaceConfig.cc_label(c))
+	_cc.item_selected.connect(func(_i: int) -> void: _cc_changed())
+	rows.add_child(SetupWidgets.setting_row("gauge", "CC", _cc))
+	if is_grand_prix():
+		_mirror = NeonToggle.new()
+		_mirror.toggled.connect(set_mirror)
+		var mirror_row := SetupWidgets.setting_row("flags", "Mirror", _mirror)
+		mirror_row.add_theme_constant_override("margin_right", 14)
+		rows.add_child(mirror_row)
+	if mode != RaceConfig.Mode.GRAND_PRIX:
 		_races = NeonStepper.new()
 		for n in RACE_COUNTS:
 			_races.add_item("%d Race%s" % [n, "" if n == 1 else "s"])
@@ -280,7 +313,7 @@ func _build() -> void:
 	rows.add_child(weapons_row)
 	rows.add_child(_note_box())
 	rows.add_child(_name_row())
-	_start = SetupWidgets.gold_action("Start Grand Prix" if is_grand_prix() else "Track Selection", start)
+	_start = SetupWidgets.gold_action("Choose Cup" if is_grand_prix() else "Track Selection", start)
 	left.add_child(_start)
 
 	# Right: the car.
@@ -305,7 +338,7 @@ func _build() -> void:
 	plate.add_child(plate_label)
 	right.add_child(plate)
 
-	_hints = MenuHints.new([["B", "Esc", "Back"], ["A", "Enter", "Start" if is_grand_prix() else "Next"],
+	_hints = MenuHints.new([["B", "Esc", "Back"], ["A", "Enter", "Next"],
 			["Y", "G", "Garage"]])
 	_hints.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
 	_hints.grow_horizontal = Control.GROW_DIRECTION_BEGIN
@@ -383,7 +416,7 @@ func _note_box() -> Control:
 ## Up / down through the visible settings, then the gold button and Back.
 func _link_focus() -> void:
 	var chain: Array[Control] = []
-	for c: Control in [_race_type, _races, _difficulty, _laps, _weapons, name_field, _start, layout.back_button]:
+	for c: Control in [_race_type, _cc, _mirror, _races, _difficulty, _laps, _weapons, name_field, _start, layout.back_button]:
 		if c != null and (c != _laps or _laps_row.visible):
 			chain.append(c)
 	for i in chain.size():
@@ -412,31 +445,18 @@ func _unhandled_input(event: InputEvent) -> void:
 		open_garage()
 
 
-## "AMERICAN CUP" (Grand Prix) or "VERSUS  ·  4 RACES".
+## "GRAND PRIX  ·  150CC" or "VERSUS  ·  4 RACES  ·  150CC".
 func summary_text() -> String:
+	var cc_text := RaceConfig.cc_label(cc()).to_upper()
 	if is_grand_prix():
-		return cup.display_name.to_upper()
+		return "GRAND PRIX  ·  " + cc_text + ("  ·  MIRROR" if mirrored else "")
 	var n := race_count()
-	return "%s  ·  %d RACE%s" % [RaceConfig.MODE_NAMES[mode].to_upper(), n, "" if n == 1 else "S"]
+	return "%s  ·  %d RACE%s  ·  %s" % [RaceConfig.MODE_NAMES[mode].to_upper(), n, "" if n == 1 else "S", cc_text]
 
 
-## Back: the cup screen (Grand Prix) or the main menu (Versus).
+## Back: the main menu (Grand Prix and Versus both start here).
 func back() -> void:
-	if is_grand_prix():
-		GameSession.to_cup_select(get_tree(), mode)
-	else:
-		GameSession.to_main_menu(get_tree())
-
-
-## Grand Prix: the cup from the cup screen, else the remembered one, else
-## the first unlocked cup.
-func _resolve_selection() -> void:
-	var setup := PlayerProfile.get_profile().last_setup
-	cup_path = GameSession.cup_path if GameSession.cup_path != "" else str(setup.get("cup", ""))
-	cup = GrandPrixData.cup_by_path(cup_path)
-	if cup == null or not cup.is_open(mode == RaceConfig.Mode.GRAND_PRIX):
-		cup_path = GrandPrixData.CUPS[0]
-		cup = GrandPrixData.cup_by_path(cup_path)
+	GameSession.to_main_menu(get_tree())
 
 
 ## The Race Type stepper's index for the current choice.

@@ -1,5 +1,5 @@
 # CYBERWAVE 2199
-## Game Design Document — Version 9.3
+## Game Design Document — Version 9.8
 
 **Status:** Development Baseline  
 **Engine:** Godot 4  
@@ -56,7 +56,7 @@ The initial release focuses on polished single-player racing. Additional feature
 
 A race, or a set of races, against seven AI opponents. Set up Mario Kart style:
 
-1. Race setup: vehicle, race type (Standard, Elimination or Mirror), **number of races** (1, 2, 3, 4, 6, 8, 12 or 16), lap count, Easy / Normal / Hard AI, weapons on or off. Defaults: Standard, 3 races, 3 laps, Normal AI, weapons on; split-screen Multiplayer uses the same defaults (Versus mode) with NPCs on.
+1. Race setup: vehicle, race type (Standard, Elimination or Mirror), engine class (**CC**, §2.1a), **number of races** (1, 2, 3, 4, 6, 8, 12 or 16), lap count, Easy / Normal / Hard AI, weapons on or off. Defaults: Standard, 3 races, 3 laps, Normal AI, weapons on; split-screen Multiplayer uses the same defaults (Versus mode) with NPCs on.
 2. Cup screen (Versus): a row of cup badges plus a "?" Random badge. Moving across the badges previews each cup's races; opening a cup moves into its race cards, and picking one races it. The Random badge opens a **RANDOM** card for a random built track from any cup (in a series, one not raced yet while any are left). Built tracks of a cup that's locked for Grand Prix can be raced here.
 
 With more than one race, the track screen comes back before each race (showing "RACE 2 OF 4"; the standings stay on the results screen). Points and the next grid work like a Grand Prix (§2.2). The final results name the series winner. A series isn't saved: quitting part-way ends it. Each race pays its normal coins, with no cup bonus.
@@ -78,9 +78,28 @@ The race ends for everyone once all but one car have crossed the finish line on 
 - Mirror keeps its own personal bests ("Marble Canyon (Mirror)"). The results screen and the track screen title show MIRROR.
 - How it works: `TrackCircuit.set_reversed()` turns a built track round. It rebuilds the centre line from the control points in reverse order, remaps every distance-based setting, and reverses each `TrackShortcut`. Everything else (AI racing lines, recovery, Overdrive, drones, the minimap, wrong-way detection) follows the reversed track with no changes of its own.
 
+### 2.1a Engine Classes (CC)
+
+Every race runs in one of four engine classes, Mario Kart style: **50cc, 100cc, 150cc, 200cc** (default 100cc). The class sets engine power and the overall speed of the race. Every car on the grid, AI included, is scaled the same way, so each car keeps its strengths:
+
+| Class | Speed scale | Feel |
+|---|---|---|
+| 50cc | 0.80× | slower engines for learning the tracks |
+| 100cc | 1.00× | the base tuning |
+| 150cc | 1.15× | quicker off the line and down the straights |
+| 200cc | 1.30× | top engines; brake before the corners |
+
+- Scaled: top speed, acceleration, braking, and every boost's extra speed and kick (drift boosts, rocket starts, boost pads and rings, slipstream, tricks, Nitro). Grip, handling and drift aren't scaled, so the higher classes are about braking points and lines.
+- The AI racing line is worked out from the scaled stats, so NPCs brake for corners at the new speeds by themselves.
+- CC is picked on the race setup screen: in Versus the CC row sits right under Race Type, in Grand Prix it's the first row (§11.3). Split screen has the same CC row under Race Type (§2.4). Practice is always 100cc. The setup info box doesn't describe the classes (the names speak for themselves). The car's top-speed card on the race setup shows its top speed in the chosen class and changes with the CC row; the 1–10 stat bars stay the same in every class, since they compare the cars. The Garage shows the 100cc figures.
+- Each class keeps its own records: "Marble Canyon (200cc)", "Marble Canyon (Mirror, 200cc)". 100cc keeps the plain names, so older records carry on. Grand Prix best finishes are per class and per Mirror too. The results screen title shows the class when it isn't 100cc.
+- How it works: `RaceConfig.cc` (and `Championship.cc`, saved with a Grand Prix). `VehicleStats.for_cc()` returns a cached scaled copy per car model. `VehicleController.cc_scale` scales boosts. `RaceConfig.record_name()` and `RaceConfig.gp_record_id()` build the record keys.
+
 ## 2.2 Grand Prix
 
-Five cups, each a championship of its tracks raced back to back (three races each). As in Mario Kart, Grand Prix and Versus both pick from the same cup screen: a row of cup cards between gold arrows (each a rounded card in the cup's colours with its white map between gold laurels and its name; the selected one is larger, edged in gold and points down at the panel; a cup locked for Grand Prix is grey with a padlock) above a neon panel that previews the focused cup's races (trophy, name and, in Grand Prix, your best finish, then a card per race with a screenshot of the track, its race number, name and location, and in Versus your best time). Opening a cup (click, Enter or A) moves into the panel. In Grand Prix you confirm the cup with START GRAND PRIX (a cup locked for Grand Prix shows "coming soon" and can't be confirmed). In Versus you pick one of its races (§2.1). Back from the panel returns to the badges.
+Five cups, each a championship of its tracks raced back to back (three races each). As in Mario Kart, Grand Prix and Versus both pick from the same cup screen: a row of cup cards between gold arrows (each a rounded card in the cup's colours with its white map between gold laurels and its name; the selected one is larger, edged in gold and points down at the panel; a cup locked for Grand Prix is grey with a padlock) above a neon panel that previews the focused cup's races (trophy, name and, in Grand Prix, your best finish, then a card per race with a screenshot of the track, its race number, name and location, and in Versus your best time). Opening a cup (click, Enter or A) moves into the panel. In Grand Prix you confirm the cup with START GRAND PRIX, which starts race 1 at once (a cup locked for Grand Prix shows "coming soon" and can't be confirmed).
+
+Grand Prix order: main menu → **race setup** (car, CC, Mirror on/off, NPC difficulty, items, name) → **cup screen** → START GRAND PRIX. Back from the cup screen returns to the setup. With **Mirror** on, every race of the cup is driven in reverse (§2.1 Mirror). The cup panel's best finish is the one for the chosen class and Mirror ("Best Finish (Mirror, 200cc)"). A saved Grand Prix keeps its class and Mirror. In Versus you pick one of its races (§2.1). Back from the panel returns to the badges.
 
 ### American Cup (trophy: a map of the USA)
 
@@ -216,7 +235,7 @@ Two to four players on one PC, Mario Kart style. The title menu offers **Single 
 2. **Choose your cars.** One neon card per player in their colour: a header with the player tag, their device and READY, the car turning on a turntable that glows in the player's colour, its name and type, and its stats (top speed, acceleration, handling, drift as 1–10 bars). Two players get tall side-by-side cards with a strip of car pictures (click one to pick it); three or four get a 2×2 grid of wide cards with a car counter, and with three the fourth cell lists the controls and who is still choosing. Left / right changes car on that player's device; Enter / A readies up; Back / B un-readies, or returns to step 1. When everyone is ready, an **ALL READY** banner asks for one more Enter / A / Start before step 3 opens.
    - Player 1 drives their Garage loadout. Players 2–4 drive the stock car painted in their player colour (P1 cyan, P2 magenta, P3 gold, P4 green).
    - Everyone can set a license plate (§9.5) with Y (gamepad) or Tab (keyboard). The keyboard player types; gamepad players use a letter picker (up / down changes the letter, left / right moves, X deletes, A done). Player 1's plate is saved to their profile; players 2–4 default to "P2"–"P4".
-3. **Race setup.** Mode (Grand Prix or Versus); in Versus, race type (Standard, Elimination or Mirror) and number of races; NPCs on or off (the computer-driven cars: on fills the grid to eight, off races the humans only; Elimination needs NPCs); NPC difficulty (shown only with NPCs on); laps; items. The rows are the single-player race setup's (‹ value › steppers and ON / OFF switches) in a RACE SETTINGS panel with two columns, under a pill per player showing their car. A box underneath explains the chosen mode and race type, including how Elimination knocks cars out and that it needs NPCs. A gold Next button names the next screen: Cup Selection (Grand Prix) or Track Selection (Versus).
+3. **Race setup.** Mode (Grand Prix or Versus); in Versus, race type (Standard, Elimination or Mirror); engine class (CC, §2.1a, right under Race Type, both modes); in Grand Prix, a Mirror ON / OFF switch; in Versus, number of races; NPCs on or off (the computer-driven cars: on fills the grid to eight, off races the humans only; Elimination needs NPCs); NPC difficulty (shown only with NPCs on); laps; items. The rows are the single-player race setup's (‹ value › steppers and ON / OFF switches) in a RACE SETTINGS panel with two columns, under a pill per player showing their car. A box underneath explains the chosen mode and race type, including how Elimination knocks cars out and that it needs NPCs; for Grand Prix it reads "Grand Prix: Race a Complete Cup". It says nothing about the CC. A gold Next button names the next screen: Cup Selection (Grand Prix) or Track Selection (Versus).
    - Grand Prix goes to the cup screen. Versus goes to the cup screen to pick a race (§2.1), before every race of the set.
 
 Leaving a race, or finishing a set, returns to step 2 with the same players joined.
@@ -413,6 +432,12 @@ There is no persistent health meter.
 - Four raycast wheels with spring/damper suspension on a 1200 kg body; grip and steering stay arcade (velocity-driven).
 - Traction is weighted by how loaded each wheel is (a wheel barely touching the road barely steers) and bridged over 2-step contact glitches; airborne and landing checks for tricks, drifts and slipstream are unchanged.
 - After real airtime, landings get 1.5x spring damping and a 0.3 s pitch/roll stabiliser (yaw untouched), so cars no longer bounce back into the air; jump distances are unchanged.
+- **Air attitude control:** in the air (after 0.2 s with no wheel down, so bumps and step hops are left alone) the car turns to its landing pose, so ramps and tricks always land clean, at any CC (half-pipe rides are guided, §8.7):
+  - **Wheels down** onto the ground it's coming down on: a ray from a little ahead on its path finds the surface (a landing ramp, a slope, the road) and the car lines up with it.
+  - **Facing down the road:** off a jump ramp, the way the ramp points; off anything else, the way the nose pointed at take-off (so backwards stays backwards, and a drift angle is held over a hop).
+  - Whatever spin a lip or a trick-edge pop gives it is taken out in about 0.3 s. It only changes the spin, never the flight path, so jump distances are unchanged. Landing grip then lines the travel up with the nose.
+  - A car lying on its side or roof is left to Recovery. The trick spin is visual only and isn't affected.
+  - Stats: `air_attitude_gain` 5, `air_attitude_max_rate` 7 rad/s, `air_attitude_response` 12 (0 gain turns it off).
 - Front/rear anti-roll bars exist (`anti_roll_stiffness`) but are off: cars don't roll in corners on flat tracks, so they would only stiffen curb hits. Intended for banked/hilly tracks.
 - F3 (debug builds) shows a live physics readout.
 
@@ -931,10 +956,18 @@ Tracks may contain:
 - Speed boost pads. Each pad on the main road is laid out as one of three patterns: a single pad, three in a diagonal, or two side by side then one ahead (a triangle). The pattern is picked at random per pad but seeded by the track, so a track always has the same layout.
 - Speed boost rings
 - Jump ramps. Most are full width; every race track also has at least one small ramp (about half the road wide, 0.9–1.1 m high) on one side of a straight or crest, so you choose a side: take the jump (air time, a trick, the ramp's two item boxes) or drive past it. Small ramps: Arashiyama (main street), Catacombs (ossuary crest), Choquequirao (west terrace), Gardens by the Bay (skyway crest), Hoia Baciu (forest crest), Kilwa Kisiwani (harbour road), The Stacks (loading dock), Vatnajökull (moraine crest), Quinta Normal (park avenue), Nyiragongo (lava flats), Marble Canyon (canyon descent); Vale da Lua's rock hump, Six Flags' Bayou jump and the Crazy House's Bone Gallery stair jump were cut to half width, and Chefchaouen's Fountain Steps drop already was
+- Trick window: brushing the edge or ramp again just after take-off (within the 0.25 s lip grace, or on one wheel) no longer closes the trick window; only a real landing (two wheels down) does.
+- **Half-pipes** (Mario Kart 8 / skate style; the engine still calls them trick edges, `TrickEdge`): a 70 m stretch of the road's outside edge on a bend curves up into a 4 m quarter-pipe against the wall (a quarter-circle from the road to a vertical lip), easing into the road over 8 m at each end. Steer into it at speed (over 15 m/s along the road) and the ride is **guided**:
+  - The car is carried up the curve (0.25 s, rolling onto the wall), launched straight up above the lip and comes back down onto the same wall (the air time is whatever the pipe has room for, up to 1.4 s, about 2.4 m over the lip at 100cc), then rides down the curve (0.25 s) onto the road at the pipe's foot, facing down the road. It follows the bend the whole way, so it always comes back clean.
+  - In the air the trick window is open: Trick spins the car and pays the trick boost when it's back on the road. Two item boxes float just above the lip, either side of the middle.
+  - Speed: the car keeps 80% of its speed along the road while riding (at most 26 m/s, so a 200cc car still gets its air time) and comes out at 90% of its entry speed.
+  - Too slow, or coming in too far along to finish the ride before the pipe ends, it's just a banked curve. Recovery or a reset mid-ride ends it.
+  - One look on every track: a smooth concrete pipe in the track's colour, with a glowing cyan coping along the lip, a cyan line along its foot, poured-section seams, and three cyan chevrons on the face pointing the driving way.
+  - 20 in all, at the old trick-edge spots: two each on Kilwa Kisiwani, The Stacks, Quinta Normal, Six Flags and Chefchaouen, one on every other race track, each clear of shortcut junctions, features, item rows and the start. In Mirror races they stay on the same edge (a bend's outside is still its outside), the chevrons turn round, and the ride works the other way. The AI drive past them.
 - Directional signs
 - Destructible barriers
 - Explosive environmental objects
-- Electrified hazards (EMP puddles): dark, oily water with crackling white-violet arcs and sparks, a raised yellow/black hazard lip and a lightning-bolt warning sign on each side, so they never read as a boost pad (with reduced flashing on, the arcs are slow and steady and there are no sparks)
+- Electrified hazards (EMP puddles): driving through one jams you for 3 s (weapons offline, lower top speed, no drift charge; a Firewall blocks it). Dark, oily water with crackling white-violet arcs and sparks, a raised yellow/black hazard lip and a lightning-bolt warning sign on each side, so they never read as a boost pad (with reduced flashing on, the arcs are slow and steady and there are no sparks)
 - Traction-altering surfaces (standing water: about 12% lower top speed and 25% less grip while in it). It looks like real water, with drifting ripples, a few rain-drop rings, silt patches, glints and a soft, uneven shoreline, and each track can tint it. Scenery puddles, pools and ponds use the same water.
 - Starting gantries
 - Open edges on elevated tracks (no wall; falling off means a recovery)
@@ -1148,9 +1181,10 @@ Settings and Credits use the same street, dimmed, behind rounded neon panels. Th
 
 ## 11.3 Race Setup
 
-Grand Prix: cup screen, then race setup. Versus: race setup first (including the number of races), then the cup screen to pick a race (§2.1). The race setup, cup and track screens (and Settings and the Garage, §11.4, §11.9) share the Race Results header: the logo top left, a slanted title bar between two checker flags centred at the top (GRAND PRIX or VERSUS), and a neon rule under it. There's no "CHOOSE A CUP" or "CHOOSE A TRACK" subtitle; mid-series the track screen shows "RACE 2 OF 3" under the title. On race setup, Grand Prix also shows the cup's gold banner at the top of the settings; Versus has none (the Races row shows the count). The last row is **Name**, just above the gold button: your name in races (standings, results, championship tables), up to 12 characters, kept between launches. Left empty, you race as "You". Esc leaves the field without leaving the screen; split screen still names players P1–P4.
+Grand Prix: race setup first (car, CC, Mirror), then the cup screen, whose START GRAND PRIX starts it (§2.2). Versus: race setup first (including the number of races), then the cup screen to pick a race (§2.1). The race setup, cup and track screens (and Settings and the Garage, §11.4, §11.9) share the Race Results header: the logo top left, a slanted title bar between two checker flags centred at the top (GRAND PRIX or VERSUS), and a neon rule under it. There's no "CHOOSE A CUP" or "CHOOSE A TRACK" subtitle; mid-series the track screen shows "RACE 2 OF 3" under the title. The last row is **Name**, just above the gold button: your name in races (standings, results, championship tables), up to 12 characters, kept between launches. Left empty, you race as "You". Esc leaves the field without leaving the screen; split screen still names players P1–P4.
 
-- Championship (Grand Prix) or number of races (Versus)
+- Number of races (Versus)
+- Engine class (CC) and Mirror
 - Vehicle selection
 - License plate preview
 - Your name
@@ -1162,7 +1196,7 @@ Previously selected settings are remembered until the game is closed; every laun
 
 The setup, cup and track screens share the Settings look (§11.2): the dimmed street behind them, the screen name along the top, coins at the top right and Back at the bottom left.
 
-- **Race setup.** On the left is a panel under a gold banner ("VERSUS · 1 RACE", or the cup's name and trophy in Grand Prix). The panel has one rounded row per setting, each with an icon and a ‹ value › stepper (left / right changes it): Race Type, Races, NPC Difficulty, Laps, and an ON / OFF switch for Items. Grand Prix shows only NPC Difficulty and Items. A note explains the race type. Below the panel is a big gold button: Track Selection, or Start Grand Prix. On the right is the car on its platform with gold arrows (LB / RB also change it), its name on a magenta banner, a cyan type tag, segmented stat bars with icons, a top-speed card and the plate. Hints along the bottom: B Back, A Next, Y Garage. The garage's Back returns to the setup.
+- **Race setup.** On the left is a settings panel with one rounded row per setting, each with an icon and a ‹ value › stepper (left / right changes it): Race Type, CC, Races, NPC Difficulty, Laps, and an ON / OFF switch for Items. Grand Prix shows CC, a Mirror ON / OFF switch, NPC Difficulty and Items. A note explains the race type and Mirror (Grand Prix: "Grand Prix: Race a Complete Cup", plus a warning when a saved Grand Prix would be replaced); there's no CC line. Below the panel is a big gold button: Track Selection, or Choose Cup. On the right is the car on its platform with gold arrows (LB / RB also change it), its name on a magenta banner, a cyan type tag, segmented stat bars with icons, a top-speed card (in km/h for the chosen CC, §2.1a) and the plate. Hints along the bottom: B Back, A Next, Y Garage. The garage's Back returns to the setup.
 - **Cup screen (Grand Prix) and track screen (Versus).** These use the cup cards and race panel described in §2.2. Grand Prix confirms with a gold START GRAND PRIX button at the bottom right. A track without a screenshot shows its outline instead.
 
 ## 11.4 Garage
@@ -1758,5 +1792,10 @@ Changes after Version 1.0 should be tracked as revisions rather than silently re
 | 9.1 | 2026-11-16 | After playtesting: a much bigger weapons-offline cue when an EMP jams you — a red X over both item squares, dimmed flickering pictures, OFFLINE captions, a countdown ring and "WEAPONS OFFLINE" timer, and a shake plus denied beep if you press fire (§11.5, §12.2). Small trick ramps: every race track now has a half-width ramp on one side of the road (eleven new ones; three existing jumps cut to half width) (§8.7). |
 | 9.2 | 2026-11-16 | The garage door now shows a neon world map with a glowing pin on every track (coloured by cup) instead of the CYBERWAVE 2199 lettering; the split-screen car cards get a smaller version (§11.4). |
 | 9.3 | 2026-11-16 | New Versus race type **Mirror** (single player and split screen): the track driven in reverse, with gates, grid, gantry, signs, ramps, pads and shortcuts turned round; Nyiragongo's lava-channel jump works backwards (a Mirror take-off ramp on the far side, the old ramp becomes the landing); Mirror keeps its own personal bests (§2.1, §2.4, §11.3). |
+| 9.4 | 2026-11-17 | After playtesting: EMP puddles jam you for 3 s (was 1 s). New **trick edges**: stretches of road edge on the outside of bends that pop you up and back in over the road for a trick, with two item boxes in the hop; four looks (banked shoulder, raised curb, crested verge, broken edge) matched to each track, at least one on every race track (20 in all), working in Mirror too (§8.7). |
+| 9.5 | 2026-11-17 | Engine classes **50cc / 100cc / 150cc / 200cc** (100cc = the base tuning) scale every car's top speed, acceleration, braking and boosts; per-class records (§2.1a). Picked under Race Type in Versus and in split screen. Grand Prix now starts on the race setup (car, CC, a new Mirror toggle), then the cup screen's START GRAND PRIX starts it (§2.2, §2.4, §11.3). |
+| 9.6 | 2026-11-17 | After playtesting 200cc: **air attitude control**. In the air the car turns to land on its wheels, lined up with the surface it's coming down on, facing down the road (the ramp's or trick edge's direction, else its take-off heading), so ramps, trick edges and tricks always land clean (trick-edge pops used to land up to 120° off the road and spinning); the flight path is unchanged. The trick window no longer closes if the car brushes the edge or ramp again just after take-off (§5.4, §8.7). |
+| 9.7 | 2026-11-17 | After playtesting: the trick edges are now **half-pipes**. 70 m of the outside edge on a bend curves up into a 4 m quarter-pipe; at speed the car is guided up the curve, launched above the lip for a trick and the item boxes, and brought back down the same wall onto the road facing down the road. The four curb looks are gone: one pipe look, tinted per track (§8.7). Trick now works during the ride (it was ignored while the ride flies the car), the AI racing line keeps clear of the pipes, and the air attitude control starts after 0.2 s of air (was 0.08 s) so Chefchaouen's stair hops aren't smoothed (§5.4). |
+| 9.8 | 2026-11-17 | The race setup's top-speed card shows the car's top speed for the chosen CC and follows the CC row. The setup info box drops the CC line (the class names are self-explanatory), the Grand Prix line now reads "Grand Prix: Race a Complete Cup", and "Pick the cup next. Saved between races." is gone (§2.1a, §2.4, §11.3). |
 
 **End of Game Design Document — Version 8.9**

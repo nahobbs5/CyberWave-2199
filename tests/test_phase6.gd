@@ -386,6 +386,10 @@ func _test_item_boxes(race: RaceManager) -> void:
 		var booster := track.get_node(n) as TrackFeature
 		_check(booster.item_boxes and booster.item_box_transforms().size() == 2, "%s has 2 item boxes" % n)
 		expected += 2
+	for n in ["TrickEdgeA", "TrickEdgeB"]:
+		var edge := track.get_node(n) as TrickEdge
+		_check(edge.item_box_transforms().size() == 2, "%s has 2 item boxes" % n)
+		expected += 2
 	var plain := track.get_node("BoostPadCorridor") as TrackFeature
 	_check(not plain.item_boxes and plain.item_box_transforms().is_empty(), "a booster without item_boxes has none")
 	_check(wm.crates.size() == expected, "%d crates placed (rows %d + features %d)" % [wm.crates.size(), rows, expected - rows])
