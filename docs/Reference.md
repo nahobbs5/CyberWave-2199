@@ -626,6 +626,8 @@ Drive through a "?" crate to collect a random weapon into your first free slot. 
 - **Self-effects** (GDD §6.4): only the Road Spike can hit its owner, and only after a 1 s grace period. Everything else ignores its owner.
 - **Crate odds** depend on race position (GDD §6.5). Each weapon has a percent chance per position (`WeaponData.position_chance`, 1st to 8th), and a crate makes one pick from those. Leaders get weak and defensive items: Road Spikes only drop for 1st–3rd and Firewalls only for 1st–5th. Odds climb toward stronger items further back, and 7th–8th mostly get Overdrive, System Override and Triple Nitro.
 - **Advanced weapons** (`docs/Cyberwave_2199_Advanced_Weapons.md`): the three rare items (`WeaponData.rare`) never drop for 1st and 2nd.
+- **Crate roulette** (GDD §6.1, v9.9): a crate pickup spins its slot for `ItemInventory.ROULETTE_TIME` (2.5 s) before the weapon can be used. The weapon is rolled at pickup; `current()` is null while the slot spins. The weapon button lands every rolling slot at once without firing (`request_use` → `stop_spin`), and `revealed` / `WeaponManager.weapon_revealed` fire when a slot lands. `inventory.add(w)` without `spin` (tests, debug) skips the roll; `WeaponManager.roulette_enabled` turns it off for crates. AI ignores rolling slots and waits out the spin.
+- **One per inventory** (v9.9): `WeaponData.one_per_inventory` (Overdrive, System Override). `try_give_weapon` passes held ones to `roll_weapon(..., exclude)`, so the rest of the odds scale up, and `add()` refuses a duplicate. Checked by `tests/test_weapon_roulette.gd`.
 
   | Weapon | 1st | 2nd | 3rd | 4th | 5th | 6th | 7th | 8th |
   |---|---:|---:|---:|---:|---:|---:|---:|---:|
@@ -652,7 +654,7 @@ Drive through a "?" crate to collect a random weapon into your first free slot. 
     - System Override's is a symbol (a hacked chip split by a glitch bolt), drawn as SVG.
     - Regenerate them with `tests/tools/make_weapon_icons.gd`.
 - **HUD:**
-  - two item squares with number badges 1 and 2, under the minimap (bottom right; top right in split-screen views), showing each weapon's picture (`assets/ui/weapons/`). Triple items show their charges (x3, x2, x1). Picking an item up flashes the slot and pops the icon in; using one puffs it out
+  - two item squares with number badges 1 and 2, under the minimap (bottom right; top right in split-screen views), showing each weapon's picture (`assets/ui/weapons/`). Triple items show their charges (x3, x2, x1). Picking an item up rolls the slot: it flicks through the weapon pictures (fast, then slowing; steady with reduced flashing) under a gold ROLLING caption, then flashes and pops the icon in when it lands. Using one puffs it out
   - a **minimap** in the bottom-right corner (GDD §11.5): the circuit (muted purple), shortcuts (dimmer), the white start line, the elimination gate in Elimination, every racer as a dot in their colour (ringed when near you), and you as a cyan arrow pointing your heading
   - under the slots: lock status, your active effects (with timers), and hit / pickup / "LOST …" notices
   - weapons offline (EMP, GDD v9.1): a big red X over both squares, dimmed flickering pictures (steady with reduced flashing), OFFLINE captions, a red ring per square that empties with the jam and a "WEAPONS OFFLINE 4.2" countdown; pressing fire while jammed shakes the squares, flashes them red and beeps (`ItemSlots`, `CombatSfx.DENIED`)
@@ -765,6 +767,7 @@ Swap in any suite:
 | `test_start_grid.gd` | Starting grid on every track: slots on the road with room to the walls, 6 m apart, on a straight; painted slot markers 1–8 |
 | `test_weapons_advanced.gd` | Hunter-Killer, Overdrive, System Override: odds, counters, AI use |
 | `test_recovery_items.gd` | Which recoveries clear the item slots |
+| `test_weapon_roulette.gd` | Crate roulette (spin, press to land, HUD) and one Overdrive / System Override per inventory |
 | `test_weapon_sfx.gd` | Weapon and barrier sounds |
 | `test_race_end.gd` | Last-car classification, projected times, DNF |
 | `test_boost_patterns.gd` | Boost-pad patterns: single, diagonal, triangle, same layout every load |

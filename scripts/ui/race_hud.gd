@@ -107,6 +107,7 @@ func setup(manager: RaceManager) -> void:
 		# After hit_resolved, so "LOST ..." replaces the plain hit notice.
 		race.weapon_manager.item_lost.connect(_on_item_lost)
 		race.weapon_manager.weapon_collected.connect(_on_weapon_collected)
+		race.weapon_manager.weapon_revealed.connect(_on_weapon_revealed)
 
 
 # --- queries (tests) ------------------------------------------------------------
@@ -343,10 +344,18 @@ func _update_elimination() -> void:
 
 # --- combat events ----------------------------------------------------------------
 
+## Crate grabbed: the pickup tone now; the name waits for the roulette
+## (shown at once when the pickup didn't spin).
 func _on_weapon_collected(vehicle: VehicleController, weapon: WeaponData) -> void:
 	if vehicle == racer.vehicle:
-		items.show_notice("+ %s" % weapon.display_name, weapon.color)
 		_play("pickup")
+		if vehicle.inventory == null or not vehicle.inventory.any_spinning():
+			items.show_notice("+ %s" % weapon.display_name, weapon.color)
+
+
+func _on_weapon_revealed(vehicle: VehicleController, weapon: WeaponData) -> void:
+	if vehicle == racer.vehicle and weapon != null:
+		items.show_notice("+ %s" % weapon.display_name, weapon.color)
 
 
 func _on_hit_resolved(target: VehicleController, weapon: WeaponData, shooter: VehicleController,

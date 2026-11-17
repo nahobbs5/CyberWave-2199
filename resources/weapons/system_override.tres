@@ -16,3 +16,4 @@ effect_duration = 2.5
 duration_by_position = PackedFloat32Array(12, 10.5, 9, 7.5, 6, 4.5, 3, 1.5)
 position_chance = PackedFloat32Array(0, 0, 2, 5, 8, 12, 26, 31)
 rare = true
+one_per_inventory = true

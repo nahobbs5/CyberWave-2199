@@ -11,11 +11,15 @@ signal weapon_collected(vehicle: VehicleController, weapon: WeaponData)
 signal weapon_used(vehicle: VehicleController, weapon: WeaponData)
 ## blocked_by is &"" on a successful hit, else &"shield" / &"protection".
 signal hit_resolved(target: VehicleController, weapon: WeaponData, shooter: VehicleController, blocked_by: StringName)
+## A crate roulette landed (or was stopped) on `weapon`.
+signal weapon_revealed(vehicle: VehicleController, weapon: WeaponData)
 ## A landed hit knocked a weapon out of the target's inventory.
 signal item_lost(target: VehicleController, lost: WeaponData, by_weapon: WeaponData, shooter: VehicleController)
 
 @export var weapons: Array[WeaponData] = []
 @export var crate_respawn_time: float = 3.0
+## Crate pickups spin like a slot machine before landing (GDD 6.1).
+@export var roulette_enabled: bool = true
 @export var random_seed: int = 6199
 ## Where projectiles leave the car, relative to its origin.
 @export var muzzle_offset: Vector3 = Vector3(0.0, 0.0, -2.6)
@@ -45,6 +49,7 @@ func setup(race_manager: RaceManager) -> void:
 		var car := racer.vehicle
 		if car.inventory != null:
 			car.inventory.use_requested.connect(use_weapon.bind(car))
+			car.inventory.revealed.connect(func(_slot: int, w: WeaponData) -> void: weapon_revealed.emit(car, w))
 		if car.targeting != null:
 			car.targeting.racers = vehicles
 			car.targeting.is_eligible = is_targetable
@@ -75,16 +80,21 @@ func can_fight(vehicle: VehicleController) -> bool:
 
 ## Crate roll from each weapon's per-position percent (GDD 6.5): leaders get
 ## fewer powerful offensive weapons. If some weapons are missing, the rest
-## scale up to fill 100%.
-func roll_weapon(position: int, racer_count: int = 8) -> WeaponData:
+## scale up to fill 100%. `exclude` weapons can't be rolled (the rest scale
+## up the same way).
+func roll_weapon(position: int, racer_count: int = 8, exclude: Array = []) -> WeaponData:
 	var total := 0.0
 	for w in weapons:
+		if exclude.has(w):
+			continue
 		total += maxf(0.0, w.chance_for(position, racer_count))
 	if total <= 0.0:
 		return null
 	var roll := _rng.randf() * total
 	var last: WeaponData = null
 	for w in weapons:
+		if exclude.has(w):
+			continue
 		var chance := maxf(0.0, w.chance_for(position, racer_count))
 		if chance <= 0.0:
 			continue
@@ -98,8 +108,12 @@ func roll_weapon(position: int, racer_count: int = 8) -> WeaponData:
 func try_give_weapon(vehicle: VehicleController) -> bool:
 	if not is_targetable(vehicle) or vehicle.inventory == null or not vehicle.inventory.has_space():
 		return false
-	var weapon := roll_weapon(race.progress_of(vehicle).position, race.racers.size())
-	if weapon == null or not vehicle.inventory.add(weapon):
+	# Never a second Overdrive / System Override next to one already held
+	# (even one still rolling: its outcome is already decided).
+	var held: Array = vehicle.inventory.slots.filter(
+			func(w: WeaponData) -> bool: return w != null and w.one_per_inventory)
+	var weapon := roll_weapon(race.progress_of(vehicle).position, race.racers.size(), held)
+	if weapon == null or not vehicle.inventory.add(weapon, roulette_enabled):
 		return false
 	weapon_collected.emit(vehicle, weapon)
 	return true

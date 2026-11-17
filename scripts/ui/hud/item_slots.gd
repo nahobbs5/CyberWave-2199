@@ -12,6 +12,9 @@ extends VBoxContainer
 ## gets a big red X, dimmed static-flickering icons, an OFFLINE caption and
 ## a ring that empties with the countdown; pressing fire then shakes the
 ## slots and buzzes.
+## A crate pickup rolls like a slot machine: the slot flicks through weapon
+## icons, slowing down, with a ROLLING caption until it lands (or fire is
+## pressed); the pickup flash plays when it lands.
 
 const ACTIVE_SIZE := 88.0
 const STORED_SIZE := 72.0
@@ -61,6 +64,16 @@ var _flicker_alpha: float = 1.0
 var _fx_rng := RandomNumberGenerator.new()
 var _watched_inventory: ItemInventory
 var _watched_car: VehicleController
+## Roulette: icon shown per slot, time until the next flick, flick count.
+var _spin_icon: Array = [null, null]
+var _spin_wait: Array[float] = [0.0, 0.0]
+var spin_flicks: Array[int] = [0, 0]
+var _spin_pool: Array[Texture2D] = []
+
+## Roulette flick interval: fast at first, slowing as it lands.
+const SPIN_FAST := 0.05
+const SPIN_SLOW := 0.25
+const SPIN_STEADY := 0.2
 
 
 func _init() -> void:
@@ -198,10 +211,12 @@ func refresh(race: RaceManager, delta: float) -> void:
 	var jam_left := jam_time_left(car)
 	_update_jam(jam_left, delta)
 	for i in ItemInventory.SLOT_COUNT:
-		var weapon := inventory.slots[i]
+		var spinning := inventory.is_spinning(i)
+		# A rolling slot hides its weapon until it lands.
+		var weapon: WeaponData = null if spinning else inventory.slots[i]
 		var charges := inventory.charges[i]
 		var selected := i == inventory.selected
-		var weapon_text := "EMPTY"
+		var weapon_text := "ROLLING" if spinning else "EMPTY"
 		if weapon != null:
 			weapon_text = weapon.display_name
 			if weapon.charges > 1:
@@ -209,6 +224,10 @@ func refresh(race: RaceManager, delta: float) -> void:
 		slot_text[i] = "%d  %s" % [i + 1, weapon_text]
 		# The picture from the Weapon Arsenal art; the name only as a fallback.
 		var icon: Texture2D = weapon.icon if weapon != null else null
+		if spinning:
+			icon = _spin_tick(i, race, inventory.spin_progress(i), delta)
+		else:
+			_spin_icon[i] = null
 		if weapon != _last_weapon[i] and weapon != null:
 			_pickup(i, weapon)
 		elif _last_weapon[i] != null and (weapon == null or (weapon == _last_weapon[i] and charges < _last_charges[i])):
@@ -221,7 +240,7 @@ func refresh(race: RaceManager, delta: float) -> void:
 		names[i].modulate = dim
 		names[i].visible = weapon != null and icon == null
 		names[i].text = weapon.display_name if weapon != null else ""
-		empties[i].visible = weapon == null
+		empties[i].visible = weapon == null and not spinning
 		panels[i].tooltip_text = weapon.display_name if weapon != null else ""
 		keys[i].add_theme_color_override("font_color", Color.WHITE if weapon != null else Color(1, 1, 1, 0.3))
 		counts[i].text = "x%d" % charges if weapon != null and weapon.charges > 1 else ""
@@ -243,6 +262,9 @@ func refresh(race: RaceManager, delta: float) -> void:
 		if _jammed:
 			captions[i].text = "OFFLINE"
 			captions[i].add_theme_color_override("font_color", JAM_COLOR)
+		elif spinning:
+			captions[i].text = "ROLLING"
+			captions[i].add_theme_color_override("font_color", UIStyle.GOLD)
 		else:
 			captions[i].text = "ACTIVE" if selected else "STORED"
 			captions[i].add_theme_color_override("font_color", ACTIVE_BORDER if selected else UIStyle.MUTED)
@@ -278,6 +300,28 @@ func refresh(race: RaceManager, delta: float) -> void:
 	if _notice_time > 0.0:
 		_notice_time -= delta
 		notice.visible = _notice_time > 0.0
+
+
+## Roulette icon for a rolling slot: flicks to another weapon each interval
+## (eased slower toward the end; steady with reduced flashing). Uses the
+## HUD's own RNG so gameplay randomness is untouched.
+func _spin_tick(i: int, race: RaceManager, progress: float, delta: float) -> Texture2D:
+	if _spin_pool.is_empty() and race.weapon_manager != null:
+		for w in race.weapon_manager.weapons:
+			if w != null and w.icon != null and not _spin_pool.has(w.icon):
+				_spin_pool.append(w.icon)
+	if _spin_pool.is_empty():
+		return null
+	_spin_wait[i] -= delta
+	if _spin_icon[i] == null or _spin_wait[i] <= 0.0:
+		var next: Texture2D = _spin_pool[_fx_rng.randi() % _spin_pool.size()]
+		if next == _spin_icon[i] and _spin_pool.size() > 1:
+			next = _spin_pool[(_spin_pool.find(next) + 1) % _spin_pool.size()]
+		_spin_icon[i] = next
+		spin_flicks[i] += 1
+		_spin_wait[i] = SPIN_STEADY if GameSettings.reduced_flashing \
+				else lerpf(SPIN_FAST, SPIN_SLOW, progress * progress)
+	return _spin_icon[i]
 
 
 ## Seconds until `car` can use weapons again after an EMP (0 = not jammed).

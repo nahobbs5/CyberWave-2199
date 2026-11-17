@@ -60,6 +60,9 @@ enum Kind { PROJECTILE, GUIDED, AREA, HAZARD, SELF_BOOST, SHIELD, LEADER_DRONE, 
 ## Rare comeback item (Advanced Weapons doc): Hunter-Killer, Overdrive,
 ## System Override.
 @export var rare: bool = false
+## A racer can't hold two of these at once (one per slot): crates never roll
+## it while the other slot already has it (Overdrive, System Override).
+@export var one_per_inventory: bool = false
 
 
 ## Name for one use of this weapon (one spike, one shot, one burst).

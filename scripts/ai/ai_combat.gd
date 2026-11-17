@@ -41,7 +41,8 @@ func _physics_process(delta: float) -> void:
 		return
 	var inventory := vehicle.inventory
 	for i in ItemInventory.SLOT_COUNT:
-		_held[i] = _held[i] + delta if inventory.slots[i] != null else 0.0
+		# A crate roulette still rolling doesn't count as held yet.
+		_held[i] = _held[i] + delta if inventory.slots[i] != null and not inventory.is_spinning(i) else 0.0
 	_since_hazard += delta
 	_since_shot += delta
 	if not manager.can_fight(vehicle) or inventory.is_empty():
@@ -58,7 +59,7 @@ func _physics_process(delta: float) -> void:
 	var best_score := 0.0
 	for i in ItemInventory.SLOT_COUNT:
 		var weapon := inventory.slots[i]
-		if weapon == null:
+		if weapon == null or inventory.is_spinning(i):
 			continue
 		var score := _score(weapon, i == inventory.selected, _held[i])
 		if score > best_score:
@@ -75,7 +76,7 @@ func _physics_process(delta: float) -> void:
 	# Nothing to fire yet: keep a targeted weapon selected so a lock can build.
 	for i in ItemInventory.SLOT_COUNT:
 		var weapon := inventory.slots[i]
-		if weapon != null and weapon.targeted and vehicle.targeting != null \
+		if weapon != null and not inventory.is_spinning(i) and weapon.targeted and vehicle.targeting != null \
 				and vehicle.targeting.find_best_candidate() != null:
 			inventory.select(i)
 			return

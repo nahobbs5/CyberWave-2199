@@ -1,5 +1,5 @@
 # CYBERWAVE 2199
-## Game Design Document — Version 9.8
+## Game Design Document — Version 9.9
 
 **Status:** Development Baseline  
 **Engine:** Godot 4  
@@ -468,6 +468,8 @@ Each racer has two weapon slots.
 
 - Question-mark crates award random weapons.
 - Items occupy available slots.
+- **Roulette:** a crate pickup spins its slot like a slot machine for 2.5 s, flicking through the weapon icons (fast, then slowing) under a ROLLING caption. The weapon is decided at pickup (position odds, §6.5); the spin only hides it. A rolling slot can't be fired. Pressing the weapon button lands every rolling slot at once (that press doesn't fire; the next one does), even while EMP-jammed. The pickup tone plays on collection; the item's name and the slot flash appear when it lands. AI racers wait out the full spin.
+- **One per inventory:** Overdrive Protocol and System Override can't fill both slots. While one is held (or rolling), crates never roll a second; the other weapons' odds scale up to fill 100%. Holding one of each is allowed, and another can come once the first is used.
 - Full inventories cannot collect additional weapons.
 - Keys 1 and 2 select a slot.
 - Space activates the selected weapon.
@@ -1797,5 +1799,6 @@ Changes after Version 1.0 should be tracked as revisions rather than silently re
 | 9.6 | 2026-11-17 | After playtesting 200cc: **air attitude control**. In the air the car turns to land on its wheels, lined up with the surface it's coming down on, facing down the road (the ramp's or trick edge's direction, else its take-off heading), so ramps, trick edges and tricks always land clean (trick-edge pops used to land up to 120° off the road and spinning); the flight path is unchanged. The trick window no longer closes if the car brushes the edge or ramp again just after take-off (§5.4, §8.7). |
 | 9.7 | 2026-11-17 | After playtesting: the trick edges are now **half-pipes**. 70 m of the outside edge on a bend curves up into a 4 m quarter-pipe; at speed the car is guided up the curve, launched above the lip for a trick and the item boxes, and brought back down the same wall onto the road facing down the road. The four curb looks are gone: one pipe look, tinted per track (§8.7). Trick now works during the ride (it was ignored while the ride flies the car), the AI racing line keeps clear of the pipes, and the air attitude control starts after 0.2 s of air (was 0.08 s) so Chefchaouen's stair hops aren't smoothed (§5.4). |
 | 9.8 | 2026-11-17 | The race setup's top-speed card shows the car's top speed for the chosen CC and follows the CC row. The setup info box drops the CC line (the class names are self-explanatory), the Grand Prix line now reads "Grand Prix: Race a Complete Cup", and "Pick the cup next. Saved between races." is gone (§2.1a, §2.4, §11.3). |
+| 9.9 | 2026-11-17 | Crate **roulette**: the slot spins through weapon icons for 2.5 s before landing; the weapon button lands it at once (that press doesn't fire), AI waits it out. Overdrive Protocol and System Override are **one per inventory**: crates never roll a second while one is held or rolling (§6.1). |
 
 **End of Game Design Document — Version 8.9**
