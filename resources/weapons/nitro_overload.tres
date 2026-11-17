@@ -14,4 +14,4 @@ color = Color(1, 0.5, 0.1, 1)
 effect_duration = 3.0
 boost_extra_speed = 10.0
 boost_kick = 4.0
-position_chance = PackedFloat32Array(5, 8, 11, 15, 15, 14, 9, 5)
+position_chance = PackedFloat32Array(5, 7, 10, 12, 12, 11, 7, 4)

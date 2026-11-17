@@ -598,6 +598,8 @@ A 3.2 km night circuit (shortened from 4.4 km after your first drive) with 20 m 
 
 Drive through a "?" crate to collect a random weapon into your first free slot. With both slots full, crates stay in place for someone else. Crates respawn after 3 s, in 5 rows of 4 around the lap, plus the item boxes on jump ramps and some boosters.
 
+The crates (`scripts/combat/weapon_crate.gd`, GDD v10.1 §6.1, ref "reference files/Four Neon Item Crates in Tunnel.png") are a beveled graphite shell with metal corner caps, a segmented magenta frame on the front, back and top, magenta stripes on the sides, a white "?" (`Label3D`) on the front and back (local ±Z, along the road), and a magenta glow pool laid on whatever is under the crate by one ray down (none if nothing is within 1.8 m, as for the half-pipe boxes). Meshes and materials are built once and shared; each crate has its own frame material for the flashes. They bob and sway ±20° (per-crate phase, so a row doesn't move in step). On pickup the shell and "?" hide and the frame scales out to 1.8× and fades in 0.25 s (1.3×, dimmer, 0.4 s with Reduced Flashing). For the last 0.4 s of the cooldown the frame alone fades up, then the crate comes back and the frame settles to its normal glow. Pickup and respawn timing are unchanged.
+
 | Weapon | How it works | Effect on the victim |
 |---|---|---|
 | Railgun | Targeted. Fast shot aimed at your lock (with lead), else straight ahead | 0.7 s stagger (hard stun); knocks out the selected weapon |
@@ -612,9 +614,12 @@ Drive through a "?" crate to collect a random weapon into your first free slot. 
 | Hunter-Killer Drone | Rare (4th–8th). Locks on to the **leader** at launch and keeps that racer even if they lose the lead. Flies along the road at 1.8× their top speed, passing everyone else. Close behind, it holds a red reticle and beam over them for 1.2 s, then dives in | 1.5 s spin-out (hard stun). Goes straight through a Firewall. **Dodge** it with a Nitro in the last 0.4 s of the warning or during the dive: it misses (DODGED). Waits while the target is recovering or in Overdrive, and burns out after 12 s or when the target finishes |
 | Overdrive Protocol | Rare (4th–8th, mostly 7th–8th). Your kart lifts 3.5 m off the road (2.2 m under the catacomb vaults), grows cyan thruster pods and flies itself along the road centre at 2× top speed for about 5 s. It then lands on the next clear stretch of road (not near a jump ramp or another car) and hands back control at top speed | You can't be hit, steered or recovered while flying, and cars under your path are nudged aside. Every checkpoint gate still counts. Starting it shrugs off a System Override |
 | System Override | Rare (3rd–8th, mostly 7th–8th). A red hacking pulse hits **every racer ahead of you** at that moment. Nobody behind you is touched | Hacked for a time set by **their** position when it fires: 1st 12 s, 2nd 10.5 s, 3rd 9 s, 4th 7.5 s, 5th 6 s, 6th 4.5 s, 7th 3 s (`duration_by_position` in `resources/weapons/system_override.tres`), so the leader suffers most. −25% top speed, −30% acceleration, drift charge lost and no charging while hacked; steering and weapons still work. Red arcs crawl over the car. A repeat hit does nothing |
+| Holo Decoy | Front-runner defence (1st–5th). A cyan hologram copy of your car rides behind you and to one side for 8 s | Hunter Drones and Swarm Bots aimed at you home on it, Railguns locked on to you aim at it; the first hit pops it ("DECOY TOOK …") and you're untouched. The Hunter-Killer isn't fooled. A new one replaces the old |
+| System Glitch | Mid-pack and back (2nd–8th). Hits **every racer ahead of you** | 4.5 s of centre-screen scramble (tearing, colour split, cyan/magenta static, heavier bursts); the HUD stays clean and the car isn't slowed. AI weave and ease off. Firewall blocks it; reduced flashing keeps it smooth |
+| Swarm Bots | Targeted like the Hunter Drone (2nd–8th). A cloud of bots chases your lock and latches on | 5 s leash: ×0.55 top speed, ×0.35 acceleration; bots cling to the car with tethers dragging behind. Not a hard stun, no item lost. Firewall blocks it |
 
 - **Targeting** (GDD §6.2):
-  - With a Railgun, Triple Railgun or Hunter Drone selected, the nearest eligible opponent in a 40° cone ahead is targeted, preferring racers ahead of you in the race.
+  - With a Railgun, Triple Railgun, Hunter Drone or Swarm Bots selected, the nearest eligible opponent in a 40° cone ahead is targeted, preferring racers ahead of you in the race.
   - A reticle shrinks onto them and locks after 0.4 s.
   - A lock survives 0.6 s without line of sight.
   - You never target yourself, and finished racers can't be targeted.
@@ -702,7 +707,7 @@ scripts/
   progression/               PlayerProfile, CosmeticCatalog, CosmeticItem, RaceRewards, TrackCoins
 resources/
   vehicles/                  The eight cars (+ stats/)
-  weapons/*.tres             The twelve weapons: durations, speeds, position_chance odds
+  weapons/*.tres             The fifteen weapons: durations, speeds, position_chance odds
   ai/easy|normal|hard.tres   AI difficulty (speed, drift, shortcut, trick and rocket-start odds)
   grand_prix/*.tres          The five cups (listed in GrandPrixData.CUPS)
   cameras/                   Far chase, close chase, rear view
@@ -868,7 +873,7 @@ Environment textures and the track skies are from [Poly Haven](https://polyhaven
 
 As of 2026-11-14 (GDD v7.9). Phase 6, content and polish, is in progress. The [dev tracker](https://nahobbs5.github.io/CyberWave-2199/dev/) holds the live milestone status.
 
-- **Content built:** 15 race tracks in 5 cups (all open for Grand Prix) plus the Test Circuit, 8 cars, 12 weapons, 7 named rivals, split screen for 2–4 players, podium, music on every track.
+- **Content built:** 15 race tracks in 5 cups (all open for Grand Prix) plus the Test Circuit, 8 cars, 15 weapons, 7 named rivals, split screen for 2–4 players, podium, music on every track.
 - **Weapons:** Railgun, Hunter Drone, EMP Pulse, Road Spike, Nitro Overload, Triple Nitro, Triple Spike, Triple Railgun, Firewall, Hunter-Killer Drone, Overdrive Protocol and System Override. The GDD §6.3 roster's Holo Decoy, Gravity Mine, System Glitch, Cyber Leech and Swarm Bots are not built.
 - **Known failing checks** (they failed before the latest work):
   - `test_phase3`: "every racer crossed every gate despite weapons" (also fails with the pre-v7.4 crate odds; cause not yet checked);

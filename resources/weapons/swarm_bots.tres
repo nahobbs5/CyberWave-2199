@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="WeaponData" format=3]
+
+[ext_resource type="Script" path="res://scripts/combat/weapon_data.gd" id="1_wd"]
+
+[ext_resource type="Texture2D" path="res://assets/ui/weapons/swarm_bots.png" id="2_icon"]
+
+[resource]
+script = ExtResource("1_wd")
+id = &"swarm_bots"
+display_name = "Swarm Bots"
+icon = ExtResource("2_icon")
+kind = 11
+color = Color(1, 0.6, 0.2, 1)
+targeted = true
+effect = &"leash"
+effect_duration = 5.0
+speed = 55.0
+lifetime = 8.0
+position_chance = PackedFloat32Array(0, 2, 4, 6, 8, 7, 5, 2)

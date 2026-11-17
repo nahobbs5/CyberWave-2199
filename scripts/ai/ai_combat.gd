@@ -93,7 +93,7 @@ func _score(weapon: WeaponData, selected: bool, held: float) -> float:
 			if selected and vehicle.targeting != null and vehicle.targeting.locked:
 				return 1.5
 			return 1.0 if held > 18.0 * patience else 0.0
-		WeaponData.Kind.GUIDED:
+		WeaponData.Kind.GUIDED, WeaponData.Kind.SWARM:
 			if selected and vehicle.targeting != null and vehicle.targeting.locked:
 				return 1.5
 			if held > 8.0 * patience and manager.find_target_ahead(vehicle.global_position, vehicle, 100.0) != null:
@@ -129,6 +129,18 @@ func _score(weapon: WeaponData, selected: bool, held: float) -> float:
 			if ahead >= 2 or (ahead >= 1 and held > 4.0 * patience):
 				return 1.2
 			return 0.0
+		WeaponData.Kind.GLITCH:
+			var ahead := _position() - 1
+			if ahead >= 2 or (ahead >= 1 and held > 4.0 * patience):
+				return 1.2
+			return 0.0
+		WeaponData.Kind.DECOY:
+			if manager.decoy_of(vehicle) != null:
+				return 0.0
+			# Something is locked on or chasing: put the clone out now.
+			if manager.is_locked_on(vehicle) or manager.is_incoming(vehicle):
+				return 2.0
+			return 1.0 if held > 25.0 * patience else 0.0
 		WeaponData.Kind.OVERDRIVE:
 			# Take off from the road, not mid-air or while spun out.
 			if vehicle.grounded_wheels < 3 or vehicle.is_flying() or (vehicle.status != null and vehicle.status.is_stunned()):

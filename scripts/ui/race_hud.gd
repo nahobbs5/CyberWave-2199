@@ -41,6 +41,8 @@ var items: ItemSlots
 var results: ResultsScreen
 var minimap: Minimap
 var wind_lines: SlipstreamLines
+## System Glitch: centre-screen scramble at the back of the HUD.
+var glitch: GlitchOverlay
 ## SLIPSTREAM banner (slipstream_banner.gd).
 var slipstream_banner: Control
 ## Single player: the minimap over the item squares, bottom right.
@@ -90,6 +92,7 @@ func setup(manager: RaceManager) -> void:
 	if racer != null:
 		racer.vehicle.slipstream_boost.connect(func() -> void: _play("slipstream"))
 		wind_lines.vehicle = racer.vehicle
+		glitch.vehicle = racer.vehicle
 		slipstream_banner.vehicle = racer.vehicle
 	if trick != null:
 		trick.trick_started.connect(func() -> void: _play("trick"))
@@ -371,6 +374,9 @@ func _on_hit_resolved(target: VehicleController, weapon: WeaponData, shooter: Ve
 		elif blocked_by == &"dodge":
 			items.show_notice("DODGED %s" % weapon.use_name().to_upper(), UIStyle.CYAN)
 			_play("blocked")
+		elif blocked_by == &"decoy":
+			items.show_notice("DECOY TOOK %s" % weapon.use_name().to_upper(), UIStyle.CYAN)
+			_play("blocked")
 		elif blocked_by == &"":
 			items.show_notice("%s!" % weapon.use_name().to_upper(), UIStyle.DANGER)
 			_play("hurt")
@@ -382,6 +388,8 @@ func _on_hit_resolved(target: VehicleController, weapon: WeaponData, shooter: Ve
 			_play("hit")
 		elif blocked_by == &"dodge":
 			items.show_notice("DODGED by %s" % target_name, Color(1, 1, 1, 0.8))
+		elif blocked_by == &"decoy":
+			items.show_notice("DECOYED by %s" % target_name, Color(1, 1, 1, 0.8))
 		else:
 			items.show_notice("BLOCKED by %s" % target_name, Color(1, 1, 1, 0.8))
 
@@ -432,6 +440,10 @@ func _build() -> void:
 	wind_lines = SlipstreamLines.new()
 	add_child(wind_lines)
 	move_child(wind_lines, 0)
+	# System Glitch: at the very back, so every HUD panel stays on top.
+	glitch = GlitchOverlay.new()
+	add_child(glitch)
+	move_child(glitch, 0)
 
 	announcer = HudAnnouncer.new()
 	add_child(announcer)

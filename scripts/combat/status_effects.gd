@@ -11,6 +11,10 @@ extends Node
 ##   jammed          weapons offline; outlasts the EMP itself (EMP Pulse)
 ##   override        lower top speed and acceleration, no drift charging;
 ##                   never stacks or extends (System Override)
+##   glitch          screen scrambled (System Glitch): humans see centre-screen
+##                   static, AI drive sloppier; no physics change
+##   leash           swarm bots clinging on (Swarm Bots): much lower top
+##                   speed and acceleration, like a leash
 ##   shield          blocks the next incoming attack (Firewall)
 ##   burnout         jumped the start: no control, smoke and a lazy spin;
 ##                   not a hard stun (no protection after)
@@ -38,6 +42,9 @@ const FORCE_FIELD_SHADER := preload("res://assets/shaders/force_field.gdshader")
 ## System Override (Advanced Weapons §3): top speed and acceleration kept.
 @export var override_speed_multiplier: float = 0.75
 @export var override_accel_multiplier: float = 0.7
+## Swarm Bots leash: top speed and acceleration kept.
+@export var leash_speed_multiplier: float = 0.55
+@export var leash_accel_multiplier: float = 0.35
 
 var _timers: Dictionary = {}
 var _protection: float = 0.0
@@ -172,12 +179,19 @@ func speed_multiplier() -> float:
 		m *= wet_speed_multiplier
 	if has(&"override"):
 		m *= override_speed_multiplier
+	if has(&"leash"):
+		m *= leash_speed_multiplier
 	return m
 
 
-## Scales the car's acceleration (System Override).
+## Scales the car's acceleration (System Override, Swarm Bots).
 func accel_multiplier() -> float:
-	return override_accel_multiplier if has(&"override") else 1.0
+	var m := 1.0
+	if has(&"override"):
+		m *= override_accel_multiplier
+	if has(&"leash"):
+		m *= leash_accel_multiplier
+	return m
 
 
 func grip_multiplier() -> float:
@@ -300,6 +314,14 @@ func _process(delta: float) -> void:
 		_status_light.light_color = Color(1.0, 0.15, 0.4)
 		var stutter := 0.8 if GameSettings.reduced_flashing else (1.0 if fmod(Time.get_ticks_msec() * 0.011, 1.0) < 0.6 else 0.2)
 		_status_light.light_energy = 3.5 * stutter
+	elif has(&"leash"):
+		_status_light.light_color = Color(1.0, 0.6, 0.2)
+		_status_light.light_energy = 3.0 * flicker
+	elif has(&"glitch"):
+		# Scrambled electronics: cyan / magenta stutter.
+		var phase := fmod(Time.get_ticks_msec() * 0.007, 1.0)
+		_status_light.light_color = Color(0.3, 1.0, 0.9) if phase < 0.5 or GameSettings.reduced_flashing else Color(1.0, 0.3, 0.8)
+		_status_light.light_energy = 2.5 if GameSettings.reduced_flashing else (3.0 if phase < 0.8 else 0.6)
 	elif has(&"traction"):
 		_status_light.light_color = Color(1.0, 0.9, 0.2)
 		_status_light.light_energy = 3.0 * flicker

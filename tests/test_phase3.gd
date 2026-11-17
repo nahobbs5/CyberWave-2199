@@ -264,8 +264,13 @@ func _test_crates(race: RaceManager) -> void:
 	car.teleport(crate2.global_transform)
 	await _frames(5)
 	_check(crate2.is_available(), "a full inventory leaves the crate in place")
-	await _frames(int(wm.crate_respawn_time * 60) + 5)
+	_check(not crate._body.visible, "a taken crate's shell and ? are hidden")
+	await _frames(int((wm.crate_respawn_time - 0.2) * 60) - 10)
+	_check(not crate.is_available() and crate._frame.visible and not crate._body.visible,
+			"the frame lights up before the crate respawns")
+	await _frames(25)
 	_check(crate.is_available(), "crate respawns after %.0f s" % wm.crate_respawn_time)
+	_check(crate._body.visible, "the respawned crate shows its ?")
 
 
 func _test_slot_keys(race: RaceManager) -> void:

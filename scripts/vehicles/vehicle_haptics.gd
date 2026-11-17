@@ -145,7 +145,7 @@ func _on_effect_started(effect: StringName, _duration: float) -> void:
 			_pulse(HIT_STUN)
 		&"emp":
 			_pulse(HIT_EMP)
-		&"traction", &"override":
+		&"traction", &"override", &"glitch", &"leash":
 			_pulse(HIT_LIGHT)
 
 

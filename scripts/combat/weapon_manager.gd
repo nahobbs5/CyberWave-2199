@@ -9,7 +9,8 @@ extends Node3D
 
 signal weapon_collected(vehicle: VehicleController, weapon: WeaponData)
 signal weapon_used(vehicle: VehicleController, weapon: WeaponData)
-## blocked_by is &"" on a successful hit, else &"shield" / &"protection".
+## blocked_by is &"" on a successful hit, else &"shield" / &"protection" /
+## &"overdrive" / &"dodge" / &"decoy" (a Holo Decoy took it).
 signal hit_resolved(target: VehicleController, weapon: WeaponData, shooter: VehicleController, blocked_by: StringName)
 ## A crate roulette landed (or was stopped) on `weapon`.
 signal weapon_revealed(vehicle: VehicleController, weapon: WeaponData)
@@ -166,7 +167,30 @@ func is_incoming(vehicle: VehicleController) -> bool:
 	for drone in get_tree().get_nodes_in_group(&"hunter_drones"):
 		if drone is HunterKillerDrone and drone.target == vehicle and not drone.is_spent():
 			return true
+		if drone is SwarmBots and drone.is_chasing(vehicle):
+			return true
 	return false
+
+
+## The racer's live Holo Decoy, or null.
+func decoy_of(vehicle: VehicleController) -> HoloDecoy:
+	if vehicle == null or not is_inside_tree():
+		return null
+	for node in get_tree().get_nodes_in_group(HoloDecoy.GROUP):
+		var decoy := node as HoloDecoy
+		if decoy != null and decoy.owner_car == vehicle and decoy.is_live():
+			return decoy
+	return null
+
+
+## A Holo Decoy took an attack meant for its owner: the owner is untouched,
+## the decoy pops.
+func absorb_with_decoy(decoy: HoloDecoy, weapon: WeaponData, shooter: VehicleController) -> void:
+	if decoy == null or not decoy.is_live():
+		return
+	var owner_car := decoy.owner_car
+	decoy.pop()
+	hit_resolved.emit(owner_car, weapon, shooter, &"decoy")
 
 
 ## True if an opponent has a weapon lock on this racer (a Firewall helps).
@@ -276,6 +300,22 @@ func _deploy(user: VehicleController, weapon: WeaponData) -> void:
 			OverdriveController.for_vehicle(user).activate(track)
 		WeaponData.Kind.OVERRIDE:
 			_system_override(user, weapon)
+		WeaponData.Kind.DECOY:
+			_holo_decoy(user, weapon)
+		WeaponData.Kind.GLITCH:
+			_system_glitch(user, weapon)
+		WeaponData.Kind.SWARM:
+			var swarm := SwarmBots.new()
+			swarm.manager = self
+			swarm.shooter = user
+			swarm.weapon = weapon
+			var swarm_target: VehicleController = user.targeting.get_target() if user.targeting != null else null
+			if swarm_target == null:
+				swarm_target = find_target_ahead(user.global_position, user, 120.0)
+			swarm.target = swarm_target
+			swarm.position = user.global_transform * muzzle_offset + Vector3.UP * 1.5
+			add_child(swarm)
+			CombatSfx.play_on(user, CombatSfx.RAILGUN, "Swarm", -6.0)
 
 
 ## System Override: every racer ahead of the user right now is hacked
@@ -284,16 +324,9 @@ func _deploy(user: VehicleController, weapon: WeaponData) -> void:
 ## Already-hacked cars are skipped (no stacking, no extending).
 func _system_override(user: VehicleController, weapon: WeaponData) -> Array[VehicleController]:
 	var hit: Array[VehicleController] = []
-	var me := race.progress_of(user)
-	if me == null:
-		return hit
-	# Snapshot first, so hits can't reshuffle who counts as "ahead".
-	var ahead: Array[VehicleController] = []
-	var places: Array[int] = []
-	for racer in race.get_standings():
-		if racer.vehicle != user and racer.position < me.position and not racer.finished and not racer.eliminated:
-			ahead.append(racer.vehicle)
-			places.append(racer.position)
+	var snapshot := _racers_ahead(user)
+	var ahead: Array[VehicleController] = snapshot[0]
+	var places: Array[int] = snapshot[1]
 	for i in ahead.size():
 		var car := ahead[i]
 		if car.status != null and car.status.has(weapon.effect):
@@ -314,6 +347,61 @@ func _system_override(user: VehicleController, weapon: WeaponData) -> Array[Vehi
 		if car.is_player:
 			CombatSfx.play_on(car, CombatSfx.OVERRIDE, "Override")
 	return hit
+
+
+## Racers ahead of `user` right now and their places: [cars, places].
+## A snapshot, so hits can't reshuffle who counts as "ahead".
+func _racers_ahead(user: VehicleController) -> Array:
+	var ahead: Array[VehicleController] = []
+	var places: Array[int] = []
+	var me := race.progress_of(user)
+	if me != null:
+		for racer in race.get_standings():
+			if racer.vehicle != user and racer.position < me.position and not racer.finished and not racer.eliminated:
+				ahead.append(racer.vehicle)
+				places.append(racer.position)
+	return [ahead, places]
+
+
+## System Glitch (GDD 6.3): every racer ahead of the user gets their screen
+## scrambled (humans: centre-screen glitch, the HUD stays clean; AI drive
+## sloppier). A Firewall blocks it; Overdrive ignores it.
+func _system_glitch(user: VehicleController, weapon: WeaponData) -> Array[VehicleController]:
+	var hit: Array[VehicleController] = []
+	var ahead: Array[VehicleController] = _racers_ahead(user)[0]
+	for car in ahead:
+		if is_targetable(car) and apply_hit(car, weapon, user):
+			hit.append(car)
+	var pulse := EmpBlast.new()
+	pulse.radius = 10.0
+	pulse.color = weapon.color
+	pulse.position = user.global_position
+	add_child(pulse)
+	CombatSfx.play_on(user, CombatSfx.EMP, "Glitch")
+	for car in hit:
+		if car.is_player:
+			CombatSfx.play_on(car, CombatSfx.OVERRIDE, "Glitch", -4.0)
+	return hit
+
+
+## Holo Decoy (GDD 6.3): a hologram clone rides beside the user; a new one
+## replaces the old.
+func _holo_decoy(user: VehicleController, weapon: WeaponData) -> HoloDecoy:
+	var old := decoy_of(user)
+	if old != null:
+		old.pop()
+	var decoy := HoloDecoy.new()
+	decoy.name = "HoloDecoy"
+	decoy.manager = self
+	decoy.owner_car = user
+	decoy.lifetime = weapon.lifetime
+	decoy.color = weapon.color
+	# Ride on the side with more road (towards the centre line).
+	var centre := track.get_center_at(track.get_offset_at(user.global_position))
+	decoy.set_side((centre - user.global_position).dot(user.global_transform.basis.x))
+	add_child(decoy)
+	CombatSfx.play_on(user, CombatSfx.SHIELD_UP, "Decoy", -4.0)
+	return decoy
 
 
 ## Red arcs crawling over a hacked car for `seconds`.
@@ -380,8 +468,11 @@ func _aim(user: VehicleController, weapon: WeaponData, from: Vector3, forward: V
 	var target: VehicleController = user.targeting.get_target() if user.targeting != null else null
 	if target == null or weapon.speed <= 0.0:
 		return forward
-	var lead_time := from.distance_to(target.global_position) / weapon.speed
-	var predicted := target.global_position + target.linear_velocity * lead_time
+	# A decoy out draws the shot (it rides along at the car's speed).
+	var decoy := decoy_of(target)
+	var aim_at: Vector3 = decoy.global_position + Vector3.UP * 0.5 if decoy != null else target.global_position
+	var lead_time := from.distance_to(aim_at) / weapon.speed
+	var predicted := aim_at + target.linear_velocity * lead_time
 	return (predicted - from).normalized()
 
 

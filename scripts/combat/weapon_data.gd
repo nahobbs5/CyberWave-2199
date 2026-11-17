@@ -5,8 +5,11 @@ extends Resource
 
 ## New kinds go at the end: .tres files store the number.
 ## LEADER_DRONE: Hunter-Killer Drone (hunts the leader). OVERDRIVE: automated
-## flight. OVERRIDE: System Override (slows everyone ahead).
-enum Kind { PROJECTILE, GUIDED, AREA, HAZARD, SELF_BOOST, SHIELD, LEADER_DRONE, OVERDRIVE, OVERRIDE }
+## flight. OVERRIDE: System Override (slows everyone ahead). DECOY: Holo
+## Decoy (a hologram clone that soaks targeted attacks). GLITCH: System
+## Glitch (scrambles the screens of everyone ahead). SWARM: Swarm Bots
+## (guided; leashes the target).
+enum Kind { PROJECTILE, GUIDED, AREA, HAZARD, SELF_BOOST, SHIELD, LEADER_DRONE, OVERDRIVE, OVERRIDE, DECOY, GLITCH, SWARM }
 
 @export var id: StringName = &"weapon"
 @export var display_name: String = "Weapon"

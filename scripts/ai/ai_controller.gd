@@ -40,6 +40,9 @@ var enabled: bool = true
 var drift_boosts: int = 0
 
 var _steer: float = 0.0
+## System Glitch: steering weave added and throttle cap while glitched.
+const GLITCH_WOBBLE := 0.25
+const GLITCH_THROTTLE := 0.85
 var _avoid: float = 0.0
 var _wander_phase: float = 0.0
 var _time: float = 0.0
@@ -146,6 +149,11 @@ func _physics_process(delta: float) -> void:
 	var raw_steer := clampf(-angle * difficulty.steer_gain, -1.0, 1.0)
 	_steer = move_toward(_steer, raw_steer, delta / maxf(difficulty.reaction_time, 0.01))
 	vehicle.steer_input = _steer
+	# System Glitch: a scrambled screen, so the AI weaves and eases off.
+	var glitched := vehicle.status != null and vehicle.status.has(&"glitch")
+	if glitched:
+		vehicle.steer_input = clampf(_steer + GLITCH_WOBBLE * (sin(_time * 2.3 + _wander_phase) * 0.6
+				+ sin(_time * 5.1 + _wander_phase * 2.0) * 0.4), -1.0, 1.0)
 
 	if _update_unstick(delta, raw_steer):
 		return
@@ -183,6 +191,8 @@ func _physics_process(delta: float) -> void:
 	else:
 		vehicle.throttle_input = 0.35
 		vehicle.brake_input = 0.0
+	if glitched:
+		vehicle.throttle_input = minf(vehicle.throttle_input, GLITCH_THROTTLE)
 
 	if _shortcut != null:
 		vehicle.drift_left_held = false

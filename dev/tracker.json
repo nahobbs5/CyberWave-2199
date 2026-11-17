@@ -5,7 +5,7 @@
     "name": "Cyberwave 2199",
     "pitch": "Retrofuturistic cyberpunk combat kart racing: luxury neon cars, drift boosts, weapons and fifteen real-world circuits, against seven AI rivals or in 2–4 player local split screen.",
     "engine": "Godot 4.7.2 · GDScript · Jolt Physics",
-    "gdd": "v9.7",
+    "gdd": "v10.0",
     "phase": "Phase 6: content and polish (GDD §16)",
     "repo": "https://github.com/nahobbs5/CyberWave-2199",
     "demo": "https://nahobbs5.github.io/CyberWave-2199/web/",
@@ -206,14 +206,15 @@
       "system": "Weapons",
       "current": false,
       "status": "In progress",
-      "summary": "There are 11 data-driven weapons with crate odds for each position: weak and defensive items at the front, powerful comeback items at the back. System Override hacks every racer ahead of the user, and the time to recover depends on the victim's position, so racers farther ahead stay hacked longer: 1st 12 s down to 7th 3 s.",
+      "summary": "There are 15 data-driven weapons with crate odds for each position: weak and defensive items at the front, powerful comeback items at the back. System Override hacks every racer ahead of the user, and the time to recover depends on the victim's position, so racers farther ahead stay hacked longer: 1st 12 s down to 7th 3 s.",
       "files": [
         "resources/weapons/*.tres",
         "scripts/combat/weapon_data.gd",
         "scripts/combat/weapon_manager.gd",
         "scripts/combat/status_effects.gd",
         "scripts/ai/ai_combat.gd",
-        "docs/Cyberwave_2199_Advanced_Weapons.md"
+        "docs/Cyberwave_2199_Advanced_Weapons.md",
+        "scripts/ui/hud/glitch_overlay.gd"
       ],
       "prerequisites": [
         "Recovery rules settled (some recoveries empty the item slots)",
@@ -221,7 +222,7 @@
       ],
       "steps": [
         {
-          "text": "12 weapons as WeaponData resources (Triple Railgun added in v8.0)",
+          "text": "15 weapons as WeaponData resources (Triple Railgun v8.0; Holo Decoy, System Glitch, Swarm Bots v10.0)",
           "done": true
         },
         {
@@ -249,6 +250,10 @@
           "done": true
         },
         {
+          "text": "Holo Decoy (clone soaks Drone / Swarm / Railgun, 8 s), System Glitch (centre-screen scramble on everyone ahead, 4.5 s, HUD untouched), Swarm Bots (5 s leash ×0.55 speed ×0.35 accel); odds rebalanced (v10.0)",
+          "done": true
+        },
+        {
           "text": "Find why test_weapons_advanced's System Override top-speed / acceleration checks fail",
           "done": false
         },
@@ -266,6 +271,10 @@
         },
         {
           "text": "Decide on the 5 unbuilt GDD weapons (Holo Decoy, Gravity Mine, System Glitch, Cyber Leech, Swarm Bots)",
+          "done": false
+        },
+        {
+          "text": "Playtest System Glitch (4.5 s, intensity) and the Swarm leash strength",
           "done": false
         }
       ],

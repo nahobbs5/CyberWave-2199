@@ -1,5 +1,5 @@
 # CYBERWAVE 2199
-## Game Design Document — Version 9.9
+## Game Design Document — Version 10.1
 
 **Status:** Development Baseline  
 **Engine:** Godot 4  
@@ -467,6 +467,7 @@ Recovery timing and momentum penalties will be balanced during development.
 Each racer has two weapon slots.
 
 - Question-mark crates award random weapons.
+- **Crate look** (after "reference files/Four Neon Item Crates in Tunnel.png"): a beveled graphite shell with reinforced metal corners, a segmented glowing magenta frame on the front, back and top, magenta stripes on the sides, an oversized white "?" on the front and back, and a soft magenta glow on the road below, so it reads at speed even in a dark tunnel. Crates bob gently and sway side to side so the "?" stays facing approaching cars. On pickup the magenta frame snaps outward in a quick flash (smaller and dimmer with Reduced Flashing). Before a crate respawns its frame lights up first, then the crate and its "?" appear.
 - Items occupy available slots.
 - **Roulette:** a crate pickup spins its slot like a slot machine for 2.5 s, flicking through the weapon icons (fast, then slowing) under a ROLLING caption. The weapon is decided at pickup (position odds, §6.5); the spin only hides it. A rolling slot can't be fired. Pressing the weapon button lands every rolling slot at once (that press doesn't fire; the next one does), even while EMP-jammed. The pickup tone plays on collection; the item's name and the slot flash appear when it lands. AI racers wait out the full spin.
 - **One per inventory:** Overdrive Protocol and System Override can't fill both slots. While one is held (or rolling), crates never roll a second; the other weapons' odds scale up to fill 100%. Holding one of each is allowed, and another can come once the first is used.
@@ -494,17 +495,17 @@ Automatic targeting with lock-on is the standard system.
 |---|---|---|
 | EMP Pulse | Disrupts nearby opponent electronics | 1.5s disruption, weapons offline 5s |
 | Hunter Drone | Pursues and stuns a target | 0.8s stun |
-| Holo Decoy | Creates a false vehicle | 8s lifetime |
+| Holo Decoy | A hologram clone of your car rides behind you; targeted attacks aimed at you hit it instead | 8s lifetime or one hit |
 | Road Spike | Deploys electrified spikes | 12s lifetime, 1s traction penalty |
 | Nitro Overload | Temporary speed boost | 3s |
 | Triple Nitro | Three Nitro Overload charges in one slot, used one at a time | 3s per charge |
 | Gravity Mine | Creates a localized gravity pull | 12s lifetime, 1.5s pull |
 | Firewall | Blocks one incoming attack | Maximum 10s |
-| System Glitch | Interferes with HUD and steering | 2s |
+| System Glitch | Scrambles the middle of the screen of every racer ahead (the HUD stays readable) | 4.5s |
 | Cyber Leech | Drains or steals boost energy | 2s |
 | Railgun | Fires a fast projectile | 0.7s stagger |
 | Triple Railgun | Three Railgun shots in one slot, fired one at a time | 0.7s stagger per shot |
-| Swarm Bots | Pursue and disrupt an opponent | 5s pursuit |
+| Swarm Bots | Bots chase your lock and latch on like a leash: much slower top speed and acceleration | 5s leash |
 
 The Firewall shows as an orange force field around the car: a glowing rim and a drifting hex energy grid. It fades in, dissolves away when it runs out, and bursts with a flash when it blocks a hit (`assets/shaders/force_field.gdshader`).
 
@@ -555,20 +556,29 @@ Crate odds by race position (each column adds up to 100%; with fewer than 8 race
 
 | Weapon | 1st | 2nd | 3rd | 4th | 5th | 6th | 7th | 8th |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| Road Spike | 30% | 25% | 15% | 0% | 0% | 0% | 0% | 0% |
-| Triple Spike | 12% | 12% | 10% | 6% | 0% | 0% | 0% | 0% |
-| Firewall | 25% | 23% | 18% | 14% | 8% | 0% | 0% | 0% |
-| Railgun | 15% | 15% | 13% | 12% | 9% | 7% | 0% | 0% |
-| Triple Railgun | 0% | 0% | 4% | 6% | 8% | 8% | 4% | 0% |
-| EMP Pulse | 8% | 9% | 11% | 13% | 12% | 11% | 4% | 2% |
-| Hunter Drone | 5% | 8% | 12% | 15% | 16% | 14% | 7% | 4% |
-| Nitro Overload | 5% | 8% | 11% | 15% | 15% | 14% | 9% | 5% |
-| Triple Nitro | 0% | 0% | 4% | 9% | 14% | 18% | 22% | 25% |
+| Road Spike | 27% | 22% | 12% | 0% | 0% | 0% | 0% | 0% |
+| Triple Spike | 12% | 10% | 8% | 5% | 0% | 0% | 0% | 0% |
+| Firewall | 22% | 20% | 15% | 11% | 5% | 0% | 0% | 0% |
+| Railgun | 13% | 13% | 11% | 10% | 7% | 5% | 0% | 0% |
+| Triple Railgun | 0% | 0% | 3% | 5% | 6% | 6% | 3% | 0% |
+| EMP Pulse | 8% | 8% | 9% | 10% | 9% | 9% | 3% | 1% |
+| Hunter Drone | 5% | 7% | 10% | 12% | 12% | 11% | 5% | 3% |
+| Nitro Overload | 5% | 7% | 10% | 12% | 12% | 11% | 7% | 4% |
+| Triple Nitro | 0% | 0% | 4% | 8% | 13% | 17% | 20% | 24% |
 | Hunter-Killer | 0% | 0% | 0% | 2% | 4% | 6% | 8% | 8% |
-| Overdrive | 0% | 0% | 0% | 3% | 6% | 10% | 20% | 25% |
-| System Override | 0% | 0% | 2% | 5% | 8% | 12% | 26% | 31% |
+| Overdrive | 0% | 0% | 0% | 3% | 6% | 10% | 19% | 24% |
+| System Override | 0% | 0% | 2% | 5% | 8% | 11% | 24% | 30% |
+| Holo Decoy | 8% | 8% | 7% | 5% | 3% | 0% | 0% | 0% |
+| System Glitch | 0% | 3% | 5% | 6% | 7% | 7% | 6% | 4% |
+| Swarm Bots | 0% | 2% | 4% | 6% | 8% | 7% | 5% | 2% |
 
 **System Override** hacks every racer ahead of the user: −25% top speed, −30% acceleration, drift charge lost and no charging while hacked; steering and weapons still work. Time hacked is fixed from position at activation: 1st 12 s, 2nd 10.5 s, 3rd 9 s, 4th 7.5 s, 5th 6 s, 6th 4.5 s, 7th 3 s. A repeat hit does nothing; Firewall blocks it (shield used up); Overdrive is immune.
+
+**Holo Decoy** puts a flickering cyan hologram of your car behind you and to one side for 8 s. Hunter Drones and Swarm Bots aimed at you home on it, and Railguns locked on to you aim at it (any shot passing through it hits it). The first hit pops it and you're untouched ("DECOY TOOK …"). The Hunter-Killer isn't fooled. Using another replaces it. AI racers put one out when something is locked on to them or chasing them.
+
+**System Glitch** hits **every racer ahead of you** at that moment, like an ink splat. For 4.5 s the middle of their screen is scrambled: blocky tearing, colour split, cyan/magenta static and heavier bursts every half second or so. The HUD (position, laps, standings, items, minimap) stays clean and readable, and the car itself isn't slowed. AI racers weave and ease off the throttle while glitched. A Firewall blocks it; Overdrive ignores it. Reduced flashing keeps it slow and smooth with no strobing, but it still covers the centre.
+
+**Swarm Bots** lock on like the Hunter Drone (or chase the nearest racer ahead). The swarm latches on and leashes the car for 5 s: top speed ×0.55 and acceleration ×0.35 (boosts are capped too). Bots crawl over the car and glowing tethers drag behind it. It's not a hard stun (no spin, no item lost). A Firewall blocks it.
 
 **Hunter-Killer** goes straight through a Firewall. The only escape is a Nitro fired in the last 0.4 s of its red-reticle warning or during its dive: it misses and fizzles out.
 
@@ -1396,6 +1406,9 @@ Weapon sounds come from the car (or object) that makes them, so they are loud cl
 | Hunter-Killer hit | Missile explosion | Target |
 | Smashing a breakable barrier (shortcut blockers included) | Planks clattering | The barrier |
 | Fire pressed while weapons are offline (EMP) | Short beep | User (human players only) |
+| Holo Decoy out | Sci-fi energy shield activation (quieter) | User |
+| System Glitch | Electric zap; electrical current on each glitched human player | User / glitched humans |
+| Swarm Bots launched | Sci-fi weapon firing pulse (quieter) | User |
 
 Other sounds: the countdown beeps (§11.8), drift tones and the skid loop (§4.3), the Hunter-Killer's flight whine, recovery and Overdrive sounds, and the podium fanfare (§11.7a). Every song and clip used is listed in the credits.
 
@@ -1800,5 +1813,7 @@ Changes after Version 1.0 should be tracked as revisions rather than silently re
 | 9.7 | 2026-11-17 | After playtesting: the trick edges are now **half-pipes**. 70 m of the outside edge on a bend curves up into a 4 m quarter-pipe; at speed the car is guided up the curve, launched above the lip for a trick and the item boxes, and brought back down the same wall onto the road facing down the road. The four curb looks are gone: one pipe look, tinted per track (§8.7). Trick now works during the ride (it was ignored while the ride flies the car), the AI racing line keeps clear of the pipes, and the air attitude control starts after 0.2 s of air (was 0.08 s) so Chefchaouen's stair hops aren't smoothed (§5.4). |
 | 9.8 | 2026-11-17 | The race setup's top-speed card shows the car's top speed for the chosen CC and follows the CC row. The setup info box drops the CC line (the class names are self-explanatory), the Grand Prix line now reads "Grand Prix: Race a Complete Cup", and "Pick the cup next. Saved between races." is gone (§2.1a, §2.4, §11.3). |
 | 9.9 | 2026-11-17 | Crate **roulette**: the slot spins through weapon icons for 2.5 s before landing; the weapon button lands it at once (that press doesn't fire), AI waits it out. Overdrive Protocol and System Override are **one per inventory**: crates never roll a second while one is held or rolling (§6.1). |
+| 10.0 | 2026-11-17 | Three new weapons: **Holo Decoy** (a hologram clone that soaks the next Hunter Drone, Swarm or Railgun aimed at you, 8 s), **System Glitch** (scrambles the middle of every racer ahead's screen for 4.5 s, HUD untouched; AI drive sloppier) and **Swarm Bots** (lock-on swarm that leashes the target for 5 s: ×0.55 top speed, ×0.35 acceleration). Crate odds rebalanced so every position still sums to 100% (§6.3, §6.5, §12.2). |
+| 10.1 | 2026-11-17 | New **item crate look**: graphite shell, metal corners, segmented magenta frame, big white "?", glow on the road; crates bob and sway, the frame flashes outward on pickup and lights up just before a respawn (§6.1). |
 
-**End of Game Design Document — Version 8.9**
+**End of Game Design Document — Version 10.0**

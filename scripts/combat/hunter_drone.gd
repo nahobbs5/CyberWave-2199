@@ -2,7 +2,9 @@ class_name HunterDrone
 extends Node3D
 ## Guided drone. Follows the track above the barriers toward its target and
 ## homes in when close. Without a target it hunts the nearest racer ahead.
-## Never targets the racer who launched it.
+## Never targets the racer who launched it. A target with a Holo Decoy out
+## draws the drone onto the decoy instead (it pops the decoy).
+## SwarmBots reuses the chase with its own look and strike.
 
 var manager: WeaponManager
 var shooter: VehicleController
@@ -19,6 +21,11 @@ var _velocity: Vector3 = Vector3.ZERO
 
 func _ready() -> void:
 	add_to_group(&"hunter_drones")
+	_build_visuals()
+	_velocity = -shooter.global_transform.basis.z * maxf(shooter.forward_speed, 20.0)
+
+
+func _build_visuals() -> void:
 	var core := MeshInstance3D.new()
 	var sphere := SphereMesh.new()
 	sphere.radius = 0.45
@@ -39,7 +46,11 @@ func _ready() -> void:
 	light.light_energy = 2.5
 	light.omni_range = 7.0
 	add_child(light)
-	_velocity = -shooter.global_transform.basis.z * maxf(shooter.forward_speed, 20.0)
+
+
+## True while chasing a live target (the HUD's INCOMING warning).
+func is_chasing(vehicle: VehicleController) -> bool:
+	return target == vehicle and not is_queued_for_deletion()
 
 
 func _physics_process(delta: float) -> void:
@@ -54,16 +65,31 @@ func _physics_process(delta: float) -> void:
 	var offset := track.get_offset_at(global_position)
 	var goal := track.get_center_at(offset + 25.0) + Vector3.UP * CRUISE_HEIGHT
 	if target != null:
-		var to_target := target.global_position - global_position
+		# A decoy out draws the drone onto it.
+		var decoy := manager.decoy_of(target)
+		var aim: Vector3 = decoy.global_position if decoy != null else target.global_position
+		var to_target := aim - global_position
 		if to_target.length() < HIT_RANGE:
-			manager.apply_hit(target, weapon, shooter)
+			if decoy != null:
+				manager.absorb_with_decoy(decoy, weapon, shooter)
+			else:
+				_strike(target)
 			manager.spawn_flash(global_position, weapon.color)
 			queue_free()
 			return
 		if to_target.length() < HOMING_RANGE:
-			goal = target.global_position + Vector3.UP * 0.6
+			goal = aim + Vector3.UP * 0.6
 	var desired := (goal - global_position).normalized() * weapon.speed
 	_velocity = _velocity.lerp(desired, clampf(6.0 * delta, 0.0, 1.0))
 	global_position += _velocity * delta
-	var ring := get_node("Ring") as Node3D
-	ring.rotate_x(delta * 9.0)
+	_animate(delta)
+
+
+func _strike(victim: VehicleController) -> void:
+	manager.apply_hit(victim, weapon, shooter)
+
+
+func _animate(delta: float) -> void:
+	var ring := get_node_or_null("Ring") as Node3D
+	if ring != null:
+		ring.rotate_x(delta * 9.0)

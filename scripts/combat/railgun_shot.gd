@@ -32,6 +32,12 @@ func _physics_process(delta: float) -> void:
 	var to := from + direction * step
 	var query := PhysicsRayQueryParameters3D.create(from, to, 3, [shooter.get_rid()])
 	var hit := get_world_3d().direct_space_state.intersect_ray(query)
+	# A Holo Decoy in the path takes the shot (unless it's the shooter's own).
+	var decoy := _decoy_on_path(from, to if hit.is_empty() else hit.position)
+	if decoy != null:
+		manager.absorb_with_decoy(decoy, weapon, shooter)
+		queue_free()
+		return
 	if not hit.is_empty():
 		if hit.collider is VehicleController:
 			manager.apply_hit(hit.collider, weapon, shooter)
@@ -42,3 +48,15 @@ func _physics_process(delta: float) -> void:
 	_travelled += step
 	if _travelled > weapon.radius:
 		queue_free()
+
+
+func _decoy_on_path(from: Vector3, to: Vector3) -> HoloDecoy:
+	for node in get_tree().get_nodes_in_group(HoloDecoy.GROUP):
+		var decoy := node as HoloDecoy
+		if decoy == null or not decoy.is_live() or decoy.owner_car == shooter:
+			continue
+		var centre := decoy.global_position + Vector3.UP * 0.5
+		var closest := Geometry3D.get_closest_point_to_segment(centre, from, to)
+		if closest.distance_to(centre) <= HoloDecoy.HIT_RADIUS:
+			return decoy
+	return null

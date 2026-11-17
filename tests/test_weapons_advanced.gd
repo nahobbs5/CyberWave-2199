@@ -149,7 +149,7 @@ func _test_odds(race: RaceManager) -> void:
 	var wm := race.weapon_manager
 	var specials := {&"hunter_killer": 0, &"overdrive_protocol": 0, &"system_override": 0}
 	var expected := {
-		1: [0, 0, 0], 2: [0, 0, 0], 3: [0, 0, 2], 5: [4, 6, 8], 8: [8, 25, 31],
+		1: [0, 0, 0], 2: [0, 0, 0], 3: [0, 0, 2], 5: [4, 6, 8], 8: [8, 24, 30],
 	}
 	var back_three := {&"overdrive_protocol": 0.0, &"system_override": 0.0, &"triple_nitro": 0.0}
 	for position in range(1, 9):

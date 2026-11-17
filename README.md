@@ -16,7 +16,7 @@ Luxury neon cars, drift boosts, weapons and fifteen circuits set in real-world p
 - **Drifting:** hold drift and steer to charge **Cyan → Magenta → Gold** boosts. Steering into the slide charges faster.
 - **Rocket start:** hold accelerate as the "2" fades to launch, but too early and you burn out. A four-lamp start-light board on the gantry counts you in.
 - **Slipstream, tricks off ramps and half-pipes, and boost pads / rings,** plus shortcuts with smashable barriers on every track.
-- **12 weapons** with position-based crate odds. System Override hacks everyone ahead of you, and the leader stays hacked longest.
+- **15 weapons** with position-based crate odds. System Override hacks everyone ahead of you, and the leader stays hacked longest.
 - **Holographic recovery** that never moves you forward.
 - **8 cars** with distinct stats, a neon garage with 8 cosmetic categories, coins and license plates.
 - **Presentation:** a podium ceremony, neon results, music for every track (5% faster on the final lap), rebindable controls and accessibility settings.
