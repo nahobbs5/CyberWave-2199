@@ -143,6 +143,10 @@ func _draw() -> void:
 	if race != null and race.elimination != null:
 		_draw_tick(track, track.get_checkpoint_offset(race.elimination.gate_index), Color(1.0, 0.2, 0.3))
 	var me: Vector3 = player_car.global_position if is_instance_valid(player_car) else Vector3.INF
+	if race != null and race.ghost != null and race.ghost.car != null and not race.ghost.is_finished():
+		# Time Trial ghost: a hollow dot in its tint.
+		var g := world_to_map(race.ghost.car.global_position)
+		draw_arc(g, 5.0, 0.0, TAU, 18, race.ghost.tint, 2.0, true)
 	for racer in visible_racers():
 		if racer.is_player:
 			continue

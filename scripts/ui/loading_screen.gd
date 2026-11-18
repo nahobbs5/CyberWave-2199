@@ -111,7 +111,7 @@ func build(card: Dictionary) -> void:
 		photo.texture = load(shot) as Texture2D
 		photo.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		photo.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-		photo.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		photo.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 		photo.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		photo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		_root.add_child(photo)

@@ -20,6 +20,7 @@ func _initialize() -> void:
 	GameSettings.path = "user://test_podium_settings.cfg"
 	Championship.save_path = "user://test_podium_gp.json"
 	PlayerProfile.delete_save()
+	CarUnlockScreen.instant = true
 	_run_all.call_deferred()
 
 

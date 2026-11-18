@@ -36,6 +36,15 @@ var _neon: bool = false
 var _framed: bool = true
 ## neon: one row per stat.
 var _stat_rows: VBoxContainer
+## Locked car (GDD 9.1a, "reference files/Neon locked mystery car.png"):
+## the preview turns into a silhouette under a gold "?", and this LOCKED
+## plate with a padlock sits on the turntable front. The name reads "???",
+## the stats are hidden and the description is how to unlock it.
+var lock_banner: Control
+## The how-to-unlock line(s): the description label, in gold.
+var lock_label: Label
+## The rows hidden while a locked car is shown.
+var _stats_row: Control
 
 
 func _init(stage_height: float = 300.0, neon: bool = false, framed_stage: bool = true) -> void:
@@ -56,15 +65,52 @@ func vehicle() -> VehicleData:
 func set_vehicle(i: int, loadout: Dictionary, plate_text: String) -> void:
 	index = posmod(i, VehicleCatalog.all().size())
 	var v := vehicle()
-	_name.text = v.display_name.to_upper()
-	_type.text = v.vehicle_type.to_upper()
+	var locked := not PlayerProfile.get_profile().has_vehicle(v.id)
+	_name.text = "???" if locked else v.display_name.to_upper()
+	_type.text = "MYSTERY CAR" if locked else v.vehicle_type.to_upper()
 	_description.text = v.character
+	if locked:
+		_description.add_theme_color_override("font_color", UIStyle.GOLD)
+	else:
+		_description.remove_theme_color_override("font_color")
 	_fill_stats(v)
 	_update_top_speed()
+	if _stats_row != null:
+		_stats_row.visible = not locked
+	var profile := PlayerProfile.get_profile()
 	for d in dots.size():
 		dots[d].set_meta("current", d == index)
+		var car_d := VehicleCatalog.all()[d]
+		dots[d].tooltip_text = car_d.display_name if profile.has_vehicle(car_d.id) else "???"
 		dots[d].queue_redraw()
+	preview.set_mystery(locked)
 	preview.show_vehicle(v, loadout, plate_text)
+	_update_lock(v)
+
+
+## Whether the car shown is locked.
+func is_locked() -> bool:
+	return not PlayerProfile.get_profile().has_vehicle(vehicle().id)
+
+
+func _update_lock(v: VehicleData) -> void:
+	if lock_banner == null:
+		_build_lock_banner()
+	var locked := not PlayerProfile.get_profile().has_vehicle(v.id)
+	lock_banner.visible = locked
+	if locked:
+		var ways := UnlockCatalog.how_to_unlock(v.id)
+		lock_label.text = ("To unlock: " + "; or ".join(ways)) if not ways.is_empty() else "Coming soon"
+
+
+func _build_lock_banner() -> void:
+	var plate := _LockPlate.new(preview)
+	plate.name = "LockBanner"
+	lock_banner = plate
+	lock_label = _description
+	# Over the stage (a sibling drawn after the 3D view, not inside it).
+	var host: Node = preview.get_parent() if preview.get_parent() != null else self
+	host.add_child(lock_banner)
 
 
 ## Shows the top-speed card for engine class `value` (50 / 100 / 150 / 200).
@@ -179,6 +225,7 @@ func _build(stage_height: float) -> void:
 	var stats_row := HBoxContainer.new()
 	stats_row.add_theme_constant_override("separation", 18)
 	add_child(stats_row)
+	_stats_row = stats_row
 	_stats = GridContainer.new()
 	_stats.columns = 3
 	_stats.add_theme_constant_override("h_separation", 14)
@@ -317,6 +364,7 @@ func _build_neon_info() -> void:
 	var stats_row := HBoxContainer.new()
 	stats_row.add_theme_constant_override("separation", 16)
 	add_child(stats_row)
+	_stats_row = stats_row
 	_stat_rows = VBoxContainer.new()
 	_stat_rows.add_theme_constant_override("separation", 4)
 	_stat_rows.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -514,3 +562,76 @@ class _NameBanner extends MarginContainer:
 		outline.append(pts[0])
 		draw_polyline(outline, Color(UIStyle.MAGENTA, 0.3), 8.0, true)
 		draw_polyline(outline, UIStyle.MAGENTA, 2.5, true)
+
+
+## The LOCKED plate (clipped corners, gold LOCKED over a padlock). Follows the front of the turntable on screen,
+## so it sits right wherever the owner's layout puts the car.
+class _LockPlate extends VBoxContainer:
+	var _preview: VehiclePreview
+
+	func _init(p_preview: VehiclePreview) -> void:
+		_preview = p_preview
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+		alignment = BoxContainer.ALIGNMENT_BEGIN
+		add_theme_constant_override("separation", 8)
+		var plate := PanelContainer.new()
+		plate.name = "Plate"
+		var style := UIStyle.box_style(Color(0.12, 0.05, 0.2, 0.92), Color(0.62, 0.3, 0.95), 0, 3)
+		style.set_corner_radius_all(16)
+		style.corner_detail = 1
+		style.content_margin_left = 30
+		style.content_margin_right = 30
+		style.content_margin_top = 4
+		style.content_margin_bottom = 8
+		style.shadow_color = Color(0.0, 0.0, 0.0, 0.5)
+		style.shadow_size = 8
+		plate.add_theme_stylebox_override("panel", style)
+		plate.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(plate)
+		var box := VBoxContainer.new()
+		box.alignment = BoxContainer.ALIGNMENT_CENTER
+		box.add_theme_constant_override("separation", 0)
+		plate.add_child(box)
+		var word := UIStyle.heading("LOCKED", 26, Color(1.0, 0.95, 0.82))
+		word.name = "Word"
+		word.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		word.add_theme_color_override("font_outline_color", Color(0.25, 0.1, 0.0, 0.9))
+		word.add_theme_constant_override("outline_size", 4)
+		box.add_child(word)
+		var lock := _Padlock.new()
+		lock.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		box.add_child(lock)
+
+	func _process(_delta: float) -> void:
+		if not visible or _preview == null:
+			return
+		var host := get_parent() as Control
+		if host == null:
+			return
+		var spot := _preview.turntable_front()
+		# From the preview's own coordinates into the host's.
+		var at := _preview.get_global_transform() * spot
+		at = host.get_global_transform().affine_inverse() * at
+		size = get_combined_minimum_size()
+		position = Vector2(at.x - size.x * 0.5, at.y - size.y + 12.0)
+
+
+## A gold padlock, drawn (the fonts have no lock glyph).
+class _Padlock extends Control:
+	func _init() -> void:
+		custom_minimum_size = Vector2(30, 34)
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	func _draw() -> void:
+		var gold := Color(1.0, 0.82, 0.15)
+		var w := size.x
+		var body := Rect2(Vector2(w * 0.12, size.y * 0.44), Vector2(w * 0.76, size.y * 0.54))
+		var centre := Vector2(w * 0.5, body.position.y)
+		draw_arc(centre, w * 0.25, PI, TAU, 18, gold, 4.0, true)
+		draw_line(centre + Vector2(-w * 0.25, 0.0), centre + Vector2(-w * 0.25, 2.0), gold, 4.0)
+		draw_line(centre + Vector2(w * 0.25, 0.0), centre + Vector2(w * 0.25, 2.0), gold, 4.0)
+		draw_rect(body, gold)
+		var hole := body.get_center() + Vector2(0.0, -2.0)
+		draw_circle(hole, 3.0, Color(0.25, 0.12, 0.0))
+		draw_line(hole, hole + Vector2(0.0, 7.0), Color(0.25, 0.12, 0.0), 2.5)

@@ -15,6 +15,7 @@ var _speeds: Dictionary = {}
 
 func _initialize() -> void:
 	PodiumCeremony.instant = true
+	CarUnlockScreen.instant = true
 	PlayerProfile.save_path = "user://test_start_boost_profile.json"
 	GameSettings.path = "user://test_start_boost_settings.cfg"
 	PlayerProfile.delete_save()

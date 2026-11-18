@@ -1,7 +1,9 @@
 class_name CarDesigns
 extends RefCounted
-## Shapes of the eight procedural car models (GDD 5.1), after the roster
-## concept art. CarModelBuilder reads these.
+## Shapes of the procedural car models (GDD 5.1), after the roster concept
+## art ('Neon Retrofuturistic Vehicle Roster.png' for the first eight,
+## 'Cyberwave 2199_ Five Retro-Futuristic Racers.png' for the last five).
+## CarModelBuilder reads these.
 ##
 ## body:  stations front (-Z) to rear, [z, half_width, bottom_y, top_y, top_fraction]
 ##        (top_fraction = how much of the width the flat top keeps).
@@ -10,9 +12,13 @@ extends RefCounted
 ##        windscreens. open_cabin = only the windscreen (roadster, prototype).
 ## parts: [kind, material, size, position, rotation_degrees]
 ##        kinds: box, wedge, cyl (size = radius, length, segments), and
+##        flare (size = inner radius, outer radius, width: a half ring over
+##        a wheel, centred on the wheel), and
 ##        mirror_* versions that also add the part mirrored across X.
-##        materials: Paint, Glass, Trim, Chrome, Lights (accent), Tail.
+##        materials: Paint, Glass, Trim, Chrome, Lights (accent), Tail,
+##        TwoTone (paint2: flares, stripes; paint cosmetics don't touch it).
 ## accent: the car's signature light colour. paint: default body colour.
+## paint2: optional second body colour for TwoTone parts.
 ## Optional: plate_anchor (Transform3D), decal (right-side position; mirrored).
 
 const DESIGNS := {
@@ -223,6 +229,180 @@ const DESIGNS := {
 			["mirror_box", "Trim", Vector3(0.5, 0.03, 0.06), Vector3(0.62, -0.08, -1.35)],
 			["mirror_box", "Trim", Vector3(0.45, 0.03, 0.06), Vector3(0.62, -0.08, 1.35)],
 			["box", "Tail", Vector3(0.3, 0.05, 0.04), Vector3(0, 0.05, 2.31)],
+		],
+	},
+	# Rally hatch: short and boxy, teal flares and roof wing, triangle tails.
+	"switchback": {
+		"paint": Color(0.86, 0.84, 0.78),
+		"paint2": Color(0.0, 0.52, 0.5),
+		"accent": Color(1.0, 0.88, 0.62),
+		"body": [
+			[-2.05, 0.9, -0.18, 0.12, 0.88],
+			[-1.9, 0.97, -0.24, 0.2, 0.9],
+			[-0.9, 0.98, -0.25, 0.24, 0.9],
+			[1.0, 0.98, -0.25, 0.27, 0.9],
+			[1.85, 0.97, -0.24, 0.28, 0.9],
+			[2.0, 0.92, -0.2, 0.27, 0.9],
+		],
+		"cabin": [[-0.85, 0.82, 0.235], [-0.2, 0.7, 0.84], [1.6, 0.7, 0.84], [1.93, 0.8, 0.278]],
+		"parts": [
+			["mirror_flare", "TwoTone", Vector3(0.45, 0.6, 0.16), Vector3(0.99, -0.29, -1.35)],
+			["mirror_flare", "TwoTone", Vector3(0.45, 0.6, 0.16), Vector3(0.99, -0.29, 1.35)],
+			["mirror_box", "TwoTone", Vector3(0.1, 0.15, 1.5), Vector3(0.99, -0.3, 0.0)],
+			["box", "TwoTone", Vector3(1.9, 0.12, 0.08), Vector3(0, -0.3, 2.02)],
+			["mirror_box", "TwoTone", Vector3(0.02, 0.34, 0.07), Vector3(0.985, 0.0, -0.18), Vector3(28, 0, 0)],
+			["mirror_box", "TwoTone", Vector3(0.02, 0.34, 0.07), Vector3(0.985, 0.0, -0.02), Vector3(28, 0, 0)],
+			["box", "TwoTone", Vector3(1.62, 0.05, 0.36), Vector3(0, 0.96, 1.72), Vector3(-6, 0, 0)],
+			["mirror_box", "TwoTone", Vector3(0.05, 0.14, 0.16), Vector3(0.6, 0.88, 1.7)],
+			["box", "Trim", Vector3(0.56, 0.13, 0.04), Vector3(0, 0.06, -2.06)],
+			["mirror_box", "Lights", Vector3(0.2, 0.1, 0.04), Vector3(0.46, 0.06, -2.07)],
+			["mirror_box", "Lights", Vector3(0.2, 0.1, 0.04), Vector3(0.72, 0.06, -2.06)],
+			["mirror_box", "Lights", Vector3(0.17, 0.07, 0.04), Vector3(0.58, -0.2, -2.08)],
+			["box", "Trim", Vector3(1.85, 0.05, 0.22), Vector3(0, -0.36, -1.98)],
+			["box", "Trim", Vector3(0.5, 0.06, 0.42), Vector3(0, 0.255, -1.3)],
+			["mirror_cyl", "Tail", Vector3(0.15, 0.04, 3), Vector3(0.66, 0.08, 2.01), Vector3(0, 0, 90)],
+			["box", "Trim", Vector3(1.2, 0.12, 0.1), Vector3(0, -0.28, 2.0)],
+		],
+	},
+	# Wedge on stilts: angular purple body, wheels out on violet coilovers.
+	"afterimage": {
+		"paint": Color(0.36, 0.11, 0.3),
+		"paint2": Color(0.5, 0.22, 0.85),
+		"accent": Color(0.72, 0.32, 1.0),
+		"body": [
+			[-2.35, 0.5, -0.1, -0.04, 0.85],
+			[-2.0, 0.62, -0.15, 0.02, 0.85],
+			[-1.0, 0.64, -0.17, 0.12, 0.8],
+			[0.5, 0.64, -0.17, 0.22, 0.8],
+			[1.7, 0.64, -0.15, 0.3, 0.85],
+			[2.25, 0.62, -0.11, 0.3, 0.9],
+		],
+		"cabin": [[-1.1, 0.5, 0.1], [-0.15, 0.42, 0.62], [0.6, 0.42, 0.62], [1.8, 0.52, 0.296]],
+		"parts": [
+			["mirror_box", "Paint", Vector3(0.2, 0.3, 1.5), Vector3(0.7, -0.04, 0.0)],
+			["mirror_box", "Trim", Vector3(0.04, 0.18, 0.5), Vector3(0.805, 0.0, 0.35)],
+			["mirror_cyl", "TwoTone", Vector3(0.075, 0.4, 8), Vector3(0.69, 0.02, -1.35), Vector3(90, 0, 0)],
+			["mirror_cyl", "TwoTone", Vector3(0.075, 0.4, 8), Vector3(0.69, 0.02, 1.35), Vector3(90, 0, 0)],
+			["mirror_cyl", "Chrome", Vector3(0.035, 0.56, 8), Vector3(0.69, 0.02, -1.35), Vector3(90, 0, 0)],
+			["mirror_cyl", "Chrome", Vector3(0.035, 0.56, 8), Vector3(0.69, 0.02, 1.35), Vector3(90, 0, 0)],
+			["mirror_box", "Trim", Vector3(0.36, 0.04, 0.09), Vector3(0.66, -0.27, -1.35)],
+			["mirror_box", "Trim", Vector3(0.36, 0.04, 0.09), Vector3(0.66, -0.27, 1.35)],
+			["mirror_box", "Trim", Vector3(0.3, 0.04, 0.09), Vector3(0.64, 0.1, -1.35)],
+			["mirror_box", "Trim", Vector3(0.3, 0.04, 0.09), Vector3(0.64, 0.1, 1.35)],
+			["mirror_box", "Lights", Vector3(0.36, 0.05, 0.05), Vector3(0.3, -0.04, -2.3), Vector3(0, -14, 0)],
+			["box", "Trim", Vector3(1.4, 0.04, 0.42), Vector3(0, -0.27, -2.1)],
+			["box", "Trim", Vector3(0.62, 0.025, 0.6), Vector3(0, 0.08, -1.3), Vector3(-5, 0, 0)],
+			["box", "Trim", Vector3(1.0, 0.03, 0.07), Vector3(0, 0.38, 1.55)],
+			["box", "Trim", Vector3(1.0, 0.03, 0.07), Vector3(0, 0.36, 1.72)],
+			["box", "Trim", Vector3(1.0, 0.03, 0.07), Vector3(0, 0.34, 1.89)],
+			["mirror_box", "Lights", Vector3(0.36, 0.06, 0.04), Vector3(0.36, 0.1, 2.26)],
+			["mirror_box", "Tail", Vector3(0.16, 0.04, 0.04), Vector3(0.5, -0.12, 2.26)],
+			["box", "Trim", Vector3(1.1, 0.16, 0.16), Vector3(0, -0.2, 2.18)],
+		],
+	},
+	# Long 80s wedge GT: tan with a maroon centre stripe, full-width tail bar.
+	"high_roller": {
+		"paint": Color(0.72, 0.62, 0.48),
+		"paint2": Color(0.36, 0.08, 0.2),
+		"accent": Color(1.0, 0.94, 0.82),
+		"body": [
+			[-2.45, 0.86, -0.14, -0.04, 0.9],
+			[-2.1, 0.96, -0.2, 0.04, 0.9],
+			[-0.8, 1.0, -0.22, 0.14, 0.88],
+			[0.8, 1.0, -0.23, 0.22, 0.86],
+			[2.0, 0.99, -0.22, 0.27, 0.88],
+			[2.45, 0.96, -0.18, 0.27, 0.9],
+		],
+		"cabin": [[-1.05, 0.82, 0.13], [-0.2, 0.62, 0.6], [0.6, 0.62, 0.6], [2.0, 0.78, 0.275]],
+		"parts": [
+			["box", "TwoTone", Vector3(0.7, 0.02, 1.45), Vector3(0, 0.07, -1.75), Vector3(-6, 0, 0)],
+			["box", "TwoTone", Vector3(0.6, 0.02, 0.8), Vector3(0, 0.612, 0.2)],
+			["box", "TwoTone", Vector3(0.66, 0.02, 1.45), Vector3(0, 0.455, 1.3), Vector3(13, 0, 0)],
+			["mirror_box", "TwoTone", Vector3(0.03, 0.12, 4.0), Vector3(0.99, -0.16, 0.0)],
+			["box", "TwoTone", Vector3(1.8, 0.04, 0.26), Vector3(0, -0.32, -2.32)],
+			["mirror_box", "Lights", Vector3(0.5, 0.03, 0.04), Vector3(0.5, -0.02, -2.42)],
+			["box", "Trim", Vector3(0.7, 0.05, 0.04), Vector3(0, -0.06, -2.44)],
+			["mirror_box", "Trim", Vector3(0.04, 0.22, 0.6), Vector3(0.99, 0.02, 0.95)],
+			["mirror_box", "Paint", Vector3(0.05, 0.02, 0.6), Vector3(1.0, 0.06, 0.95)],
+			["mirror_box", "Paint", Vector3(0.05, 0.02, 0.6), Vector3(1.0, -0.02, 0.95)],
+			["box", "Trim", Vector3(1.85, 0.2, 0.04), Vector3(0, 0.06, 2.45)],
+			["box", "Tail", Vector3(1.8, 0.05, 0.04), Vector3(0, 0.08, 2.47)],
+			["mirror_box", "Trim", Vector3(0.18, 0.03, 0.3), Vector3(0.82, 0.18, 2.3)],
+			["mirror_box", "Trim", Vector3(0.18, 0.03, 0.3), Vector3(0.82, 0.12, 2.3)],
+			["box", "Trim", Vector3(1.3, 0.12, 0.12), Vector3(0, -0.3, 2.35)],
+		],
+	},
+	# Wide-body coupe: cream with an orange stripe and flares, quad lamps.
+	"revenant": {
+		"paint": Color(0.8, 0.76, 0.66),
+		"paint2": Color(0.85, 0.36, 0.12),
+		"accent": Color(1.0, 0.9, 0.68),
+		"body": [
+			[-2.3, 0.92, -0.18, 0.08, 0.88],
+			[-2.15, 0.99, -0.24, 0.16, 0.9],
+			[-0.8, 1.0, -0.25, 0.2, 0.9],
+			[1.0, 1.0, -0.25, 0.26, 0.9],
+			[2.1, 0.99, -0.24, 0.3, 0.9],
+			[2.3, 0.95, -0.2, 0.3, 0.9],
+		],
+		"cabin": [[-0.95, 0.82, 0.19], [-0.25, 0.64, 0.72], [0.8, 0.64, 0.72], [1.85, 0.8, 0.295]],
+		"parts": [
+			["box", "TwoTone", Vector3(0.55, 0.02, 1.4), Vector3(0, 0.15, -1.55), Vector3(-3, 0, 0)],
+			["box", "TwoTone", Vector3(0.5, 0.02, 1.05), Vector3(0, 0.732, 0.27)],
+			["box", "TwoTone", Vector3(0.55, 0.02, 1.15), Vector3(0, 0.52, 1.33), Vector3(23, 0, 0)],
+			["mirror_box", "Trim", Vector3(0.16, 0.035, 0.36), Vector3(0.48, 0.2, -1.25)],
+			["mirror_flare", "TwoTone", Vector3(0.45, 0.62, 0.15), Vector3(1.01, -0.29, -1.35)],
+			["mirror_flare", "TwoTone", Vector3(0.45, 0.62, 0.15), Vector3(1.01, -0.29, 1.35)],
+			["mirror_box", "TwoTone", Vector3(0.03, 0.3, 0.7), Vector3(1.0, 0.1, 1.85)],
+			["mirror_box", "Trim", Vector3(0.04, 0.2, 0.45), Vector3(1.0, 0.0, 0.55)],
+			["box", "Trim", Vector3(1.0, 0.14, 0.04), Vector3(0, -0.1, -2.31)],
+			["mirror_box", "Lights", Vector3(0.2, 0.09, 0.04), Vector3(0.42, 0.04, -2.31)],
+			["mirror_box", "Lights", Vector3(0.2, 0.09, 0.04), Vector3(0.7, 0.04, -2.3)],
+			["box", "Trim", Vector3(1.9, 0.05, 0.26), Vector3(0, -0.36, -2.22)],
+			["box", "Trim", Vector3(1.8, 0.24, 0.03), Vector3(0, 0.06, 2.31)],
+			["mirror_box", "Tail", Vector3(0.2, 0.14, 0.04), Vector3(0.42, 0.06, 2.32)],
+			["mirror_box", "Tail", Vector3(0.2, 0.14, 0.04), Vector3(0.72, 0.06, 2.32)],
+			["box", "Trim", Vector3(1.0, 0.03, 0.07), Vector3(0, 0.6, 1.5)],
+			["box", "Trim", Vector3(1.1, 0.03, 0.07), Vector3(0, 0.5, 1.65)],
+			["box", "Trim", Vector3(1.2, 0.03, 0.07), Vector3(0, 0.4, 1.8)],
+			["box", "Trim", Vector3(1.4, 0.14, 0.12), Vector3(0, -0.28, 2.25)],
+		],
+	},
+	# Open-wheel racer: dark tub, bubble canopy, blue nose and a tall fin.
+	"interceptor": {
+		"paint": Color(0.12, 0.13, 0.16),
+		"paint2": Color(0.1, 0.25, 0.78),
+		"accent": Color(0.2, 0.5, 1.0),
+		"body": [
+			[-2.4, 0.15, -0.12, -0.04, 0.9],
+			[-1.7, 0.26, -0.16, 0.06, 0.85],
+			[-0.6, 0.4, -0.2, 0.16, 0.8],
+			[0.6, 0.46, -0.2, 0.24, 0.8],
+			[1.6, 0.4, -0.18, 0.26, 0.85],
+			[2.3, 0.26, -0.14, 0.18, 0.9],
+		],
+		"cabin": [[-1.1, 0.24, 0.12], [-0.5, 0.26, 0.5], [0.2, 0.26, 0.55], [0.95, 0.3, 0.247]],
+		"plate_anchor": Transform3D(Basis.IDENTITY, Vector3(0.0, -0.04, 2.31)),
+		"decal": Vector3(0.715, -0.1, 0.35), # on the sidepods
+		"parts": [
+			["box", "TwoTone", Vector3(0.3, 0.03, 1.2), Vector3(0, 0.03, -1.85), Vector3(-6, 0, 0)],
+			["mirror_box", "TwoTone", Vector3(0.03, 0.1, 1.1), Vector3(0.3, -0.06, -1.5), Vector3(0, 5, 0)],
+			["box", "Trim", Vector3(1.95, 0.04, 0.42), Vector3(0, -0.22, -2.22)],
+			["mirror_box", "TwoTone", Vector3(0.03, 0.18, 0.46), Vector3(0.97, -0.15, -2.22)],
+			["mirror_box", "Lights", Vector3(0.12, 0.02, 0.3), Vector3(0.17, 0.0, -1.95), Vector3(0, -8, 0)],
+			["mirror_box", "Paint", Vector3(0.3, 0.26, 1.3), Vector3(0.56, -0.06, 0.35)],
+			["mirror_box", "Lights", Vector3(0.02, 0.03, 1.2), Vector3(0.715, 0.03, 0.35)],
+			["mirror_box", "TwoTone", Vector3(0.03, 0.05, 1.3), Vector3(0.715, -0.14, 0.35)],
+			["wedge", "Paint", Vector3(0.04, 0.56, 1.4), Vector3(0, 0.5, 1.5)],
+			["box", "Lights", Vector3(0.05, 0.5, 0.05), Vector3(0, 0.52, 2.2)],
+			["box", "Trim", Vector3(1.4, 0.04, 0.36), Vector3(0, 0.62, 2.12), Vector3(-6, 0, 0)],
+			["mirror_box", "TwoTone", Vector3(0.03, 0.34, 0.42), Vector3(0.7, 0.5, 2.12)],
+			["mirror_box", "Trim", Vector3(0.48, 0.025, 0.06), Vector3(0.6, -0.08, -1.35)],
+			["mirror_box", "Trim", Vector3(0.48, 0.025, 0.06), Vector3(0.6, -0.2, -1.35)],
+			["mirror_box", "Trim", Vector3(0.45, 0.025, 0.06), Vector3(0.6, -0.08, 1.35)],
+			["mirror_box", "Trim", Vector3(0.45, 0.025, 0.06), Vector3(0.6, -0.2, 1.35)],
+			["mirror_box", "Tail", Vector3(0.1, 0.04, 0.04), Vector3(0.18, -0.02, 2.31)],
+			["box", "Trim", Vector3(0.6, 0.12, 0.15), Vector3(0, -0.2, 2.25)],
 		],
 	},
 }

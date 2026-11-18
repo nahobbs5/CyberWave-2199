@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="VehicleStats" format=3]
+
+[ext_resource type="Script" path="res://scripts/vehicles/vehicle_stats.gd" id="1_stats"]
+
+[resource]
+script = ExtResource("1_stats")
+display_name = "Switchback"
+top_speed = 42.6
+acceleration = 15.2
+handling = 2.55
+drift = 1.6
+steer_response = 16.0
+drift_grip = 2.0

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="VehicleData" format=3]
+
+[ext_resource type="Script" path="res://scripts/vehicles/vehicle_data.gd" id="1_data"]
+[ext_resource type="Resource" path="res://resources/vehicles/stats/interceptor_stats.tres" id="2_stats"]
+
+[resource]
+script = ExtResource("1_data")
+id = "interceptor"
+display_name = "Interceptor"
+vehicle_type = "Open-Wheel Racer"
+character = "Grip and precision: carves the racing line, but hates being thrown sideways."
+stats = ExtResource("2_stats")
+factory_color = Color(0.12, 0.13, 0.16, 1)

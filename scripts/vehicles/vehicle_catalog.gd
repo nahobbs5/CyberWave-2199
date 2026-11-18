@@ -1,16 +1,23 @@
 class_name VehicleCatalog
 extends RefCounted
-## The eight vehicles, all available from the start (GDD 5.1, 9.1).
+## The thirteen vehicles (GDD 5.1, 9.1a), in list order: the three starter
+## cars (UnlockCatalog.STARTERS) first, then the ten you unlock. The order
+## is fixed; unlocking a car doesn't move it.
 
 const PATHS: Array[String] = [
 	"res://resources/vehicles/v8_specter.tres",
 	"res://resources/vehicles/aurora_gt.tres",
+	"res://resources/vehicles/riviera_88.tres",
 	"res://resources/vehicles/empyrean_s.tres",
 	"res://resources/vehicles/nexus_x.tres",
-	"res://resources/vehicles/riviera_88.tres",
 	"res://resources/vehicles/orbiter.tres",
 	"res://resources/vehicles/valkyrie_r.tres",
 	"res://resources/vehicles/cipher_evo.tres",
+	"res://resources/vehicles/switchback.tres",
+	"res://resources/vehicles/afterimage.tres",
+	"res://resources/vehicles/high_roller.tres",
+	"res://resources/vehicles/revenant.tres",
+	"res://resources/vehicles/interceptor.tres",
 ]
 
 ## Display ranges for the four primary stats (GDD 5.2), shown as 1-10 bars.

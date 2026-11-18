@@ -21,8 +21,11 @@ var _current: String = ""
 func _initialize() -> void:
 	# Races open the results without the podium ceremony (see test_podium.gd).
 	PodiumCeremony.instant = true
+	CarUnlockScreen.instant = true
 	# Never touch the real profile or settings: races now pay out coins.
 	PlayerProfile.save_path = "user://test_phase4_profile.json"
+	# Every car unlocked: these checks pick any car (unlocks: test_time_trial).
+	PlayerProfile.unlock_all_for_tests()
 	GameSettings.path = "user://test_phase4_settings.cfg"
 	PlayerProfile.delete_save()
 	_run_all.call_deferred()
@@ -300,9 +303,8 @@ func _test_mode_select() -> void:
 	var menu := (load(MAIN_MENU) as PackedScene).instantiate() as MainMenu
 	root.add_child(menu)
 	await process_frame
-	_check(not menu.has_continue(), "no Continue Grand Prix without a save")
 	var order := ", ".join(menu.button_texts())
-	_check(order == "Grand Prix, Versus, Practice, Garage, Settings, Credits, Back", "main menu order (%s)" % order)
+	_check(order == "Grand Prix, Versus, Time Trial, Practice, Garage, Settings, Credits, Back", "main menu order (%s)" % order)
 	menu.queue_free()
 	var setup := await _open_setup(RaceConfig.Mode.VERSUS)
 	_start_versus(setup)
@@ -362,11 +364,7 @@ func _test_mode_select() -> void:
 	var again := (load(MAIN_MENU) as PackedScene).instantiate() as MainMenu
 	root.add_child(again)
 	await process_frame
-	_check(again.has_continue(), "Continue Grand Prix appears when a save exists")
-	GameSession.current = null
-	again.continue_grand_prix()
-	_check(GameSession.current != null and GameSession.current.is_grand_prix()
-			and GameSession.current.championship.race_index == 0, "Continue loads the saved championship")
+	_check(not "Continue Grand Prix" in again.button_texts(), "no Continue Grand Prix even with a save")
 	again.queue_free()
 	await process_frame
 	Championship.clear_save()

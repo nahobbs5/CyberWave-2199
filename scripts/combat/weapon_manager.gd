@@ -40,11 +40,13 @@ var _reticle_materials: Array[StandardMaterial3D] = []
 var _last_block: StringName = &""
 
 
-func setup(race_manager: RaceManager) -> void:
+## `with_crates` false: no crates (Time Trial hands out its one item itself).
+func setup(race_manager: RaceManager, with_crates: bool = true) -> void:
 	race = race_manager
 	track = race.track
 	_rng.seed = random_seed
-	_spawn_crates()
+	if with_crates:
+		_spawn_crates()
 	var vehicles := race.get_vehicles()
 	for racer in race.racers:
 		var car := racer.vehicle

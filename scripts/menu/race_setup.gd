@@ -9,6 +9,9 @@ extends Control
 ##   Versus: straight from the main menu (Mario Kart style). Race type
 ##   (Standard, Elimination (always 3 laps) or Mirror), CC, number of races,
 ##   laps; Next goes to the track screen, which lists every cup's tracks.
+##   Time Trial (GDD 2.5): just the car and your name; always 3 laps,
+##   100cc, one Triple Nitro, no crates. Track Selection goes to the track screen (with the
+##   ghost picker). Only cars you've unlocked can be picked (any mode).
 ## Your Name (kept in the profile, used in the standings and results) is the
 ## last row, just above the gold button. A Race Results style title across
 ## the top (VERSUS or GRAND PRIX).
@@ -35,6 +38,9 @@ static func describe(p_mode: RaceConfig.Mode, _races: int = 1, npcs: bool = true
 			lines.append("GRAND PRIX: Race a Complete Cup")
 			if mirrored:
 				lines.append("MIRROR: Every track is driven in reverse.")
+		RaceConfig.Mode.TIME_TRIAL:
+			lines.append("TIME TRIAL: %d laps, %dcc, one Triple Nitro to use any time. Race a ghost: beat a rival to win its car, " \
+					% [TimeTrialCatalog.LAPS, TimeTrialCatalog.CC] + "beat the expert for its signature look.")
 		RaceConfig.Mode.ELIMINATION:
 			lines.append("ELIMINATION: 3 laps total. At each checkpoint, slower players are knocked out of the "
 					+ "race until there is only one victor. Requires NPCs to fill the grid.")
@@ -96,13 +102,39 @@ func vehicle() -> VehicleData:
 	return VehicleCatalog.all()[vehicle_index]
 
 
+## Shows car `index`, in the fixed list order (starters first). A locked
+## car shows as a mystery ("?", how to unlock it) and can't be raced: Start
+## is disabled until you step to a car you own. Only owned cars become the
+## selected car.
 func select_vehicle(index: int) -> void:
-	var count := VehicleCatalog.all().size()
-	vehicle_index = posmod(index, count)
+	vehicle_index = posmod(index, VehicleCatalog.all().size())
 	var profile := PlayerProfile.get_profile()
 	profile.set_selected_vehicle(vehicle().id)
 	if showcase != null:
 		showcase.set_vehicle(vehicle_index, profile.loadout_for(vehicle().id), profile.plate_text)
+	if _start != null:
+		_start.disabled = vehicle_locked()
+
+
+## The car on show hasn't been unlocked yet.
+func vehicle_locked() -> bool:
+	return not PlayerProfile.get_profile().has_vehicle(vehicle().id)
+
+
+## The first unlocked car from `index` stepping by `dir` (the default car
+## if somehow none is).
+static func next_available(index: int, dir: int) -> int:
+	var all := VehicleCatalog.all()
+	var profile := PlayerProfile.get_profile()
+	for k in all.size():
+		var i := posmod(index + k * dir, all.size())
+		if profile.has_vehicle(all[i].id):
+			return i
+	return VehicleCatalog.index_of(PlayerProfile.DEFAULT_VEHICLE)
+
+
+func is_time_trial() -> bool:
+	return mode == RaceConfig.Mode.TIME_TRIAL
 
 
 func difficulty_id() -> String:
@@ -115,6 +147,8 @@ func is_grand_prix() -> bool:
 
 ## The engine class picked (50 / 100 / 150 / 200).
 func cc() -> int:
+	if is_time_trial():
+		return TimeTrialCatalog.CC
 	return RaceConfig.CC_CLASSES[_cc.selected] if _cc != null else RaceConfig.BASE_CC
 
 
@@ -165,8 +199,14 @@ func make_config() -> RaceConfig:
 ## championship). Versus: on to the track screen. Remembers the choices
 ## either way.
 func start() -> void:
+	if vehicle_locked():
+		return
 	_remember()
-	if is_grand_prix():
+	if is_time_trial():
+		GameSession.setup_mode = mode
+		GameSession.series = null
+		GameSession.to_track_select(get_tree())
+	elif is_grand_prix():
 		GameSession.begin_grand_prix(get_tree(), make_config(), difficulty_id())
 	else:
 		GameSession.setup_mode = mode
@@ -185,6 +225,9 @@ func _remember() -> void:
 	# Race settings last until the app closes, then go back to the defaults
 	# (GameSession.race_settings). The cup screen keeps the cup in the profile.
 	var settings := GameSession.race_settings
+	if is_time_trial():
+		PlayerProfile.get_profile().save() # nothing to remember but the car
+		return
 	settings["difficulty"] = _difficulty.selected
 	settings["laps"] = _laps.selected
 	settings["cc"] = _cc.selected
@@ -233,14 +276,13 @@ func _update_note() -> void:
 			lines.append("[color=#%s]%s:[/color]%s" % [UIStyle.GOLD.to_html(false), head, line.substr(colon + 1)])
 		else:
 			lines.append(line)
-	if mode == RaceConfig.Mode.GRAND_PRIX and Championship.load_saved() != null:
-		lines.append("Starting a new Grand Prix replaces the saved one.")
 	_note.text = "\n".join(lines)
 
 
 func _build() -> void:
 	# The Race Results style title, centred: GRAND PRIX or VERSUS.
-	layout = NeonScreenLayout.new("GRAND PRIX" if is_grand_prix() else "VERSUS", "flags")
+	var heading := "GRAND PRIX" if is_grand_prix() else ("TIME TRIAL" if is_time_trial() else "VERSUS")
+	layout = NeonScreenLayout.new(heading, "flags")
 	add_child(layout)
 	layout.use_results_header()
 	_title = layout.title_label
@@ -277,13 +319,13 @@ func _build() -> void:
 			_race_type.add_item(t)
 		_race_type.selected = race_type_index()
 		_race_type.item_selected.connect(set_race_type)
-		rows.add_child(SetupWidgets.setting_row("flags", "Race Type", _race_type))
+		_add_row(rows, SetupWidgets.setting_row("flags", "Race Type", _race_type))
 	# Engine class: under Race Type in Versus, first in Grand Prix.
 	_cc = NeonStepper.new()
 	for c in RaceConfig.CC_CLASSES:
 		_cc.add_item(RaceConfig.cc_label(c))
 	_cc.item_selected.connect(func(_i: int) -> void: _cc_changed())
-	rows.add_child(SetupWidgets.setting_row("gauge", "CC", _cc))
+	_add_row(rows, SetupWidgets.setting_row("gauge", "CC", _cc))
 	if is_grand_prix():
 		_mirror = NeonToggle.new()
 		_mirror.toggled.connect(set_mirror)
@@ -295,11 +337,11 @@ func _build() -> void:
 		for n in RACE_COUNTS:
 			_races.add_item("%d Race%s" % [n, "" if n == 1 else "s"])
 		_races.item_selected.connect(func(_i: int) -> void: _update_note())
-		rows.add_child(SetupWidgets.setting_row("checker", "Races", _races))
+		_add_row(rows, SetupWidgets.setting_row("checker", "Races", _races))
 	_difficulty = NeonStepper.new()
 	for d in DIFFICULTIES:
 		_difficulty.add_item(d.capitalize())
-	rows.add_child(SetupWidgets.setting_row("robot", "NPC Difficulty", _difficulty))
+	_add_row(rows, SetupWidgets.setting_row("robot", "NPC Difficulty", _difficulty))
 	_laps = NeonStepper.new()
 	for i in range(1, 10):
 		_laps.add_item(str(i))
@@ -310,7 +352,7 @@ func _build() -> void:
 	_weapons = NeonToggle.new()
 	var weapons_row := SetupWidgets.setting_row("item_box", "Items", _weapons)
 	weapons_row.add_theme_constant_override("margin_right", 14)
-	rows.add_child(weapons_row)
+	_add_row(rows, weapons_row)
 	rows.add_child(_note_box())
 	rows.add_child(_name_row())
 	_start = SetupWidgets.gold_action("Choose Cup" if is_grand_prix() else "Track Selection", start)
@@ -348,6 +390,12 @@ func _build() -> void:
 	_hints.alignment = BoxContainer.ALIGNMENT_END
 	add_child(_hints)
 	_link_focus()
+
+
+## A settings row (hidden in Time Trial, which has no settings).
+func _add_row(rows: Container, row: Control) -> void:
+	rows.add_child(row)
+	row.visible = not is_time_trial()
 
 
 ## Name: a text field styled like the Garage's plate. Saved as you type.
@@ -418,6 +466,8 @@ func _link_focus() -> void:
 	var chain: Array[Control] = []
 	for c: Control in [_race_type, _cc, _mirror, _races, _difficulty, _laps, _weapons, name_field, _start, layout.back_button]:
 		if c != null and (c != _laps or _laps_row.visible):
+			if is_time_trial() and not c in [name_field, _start, layout.back_button]:
+				continue
 			chain.append(c)
 	for i in chain.size():
 		chain[i].focus_neighbor_top = chain[i].get_path_to(chain[(i - 1 + chain.size()) % chain.size()])
@@ -448,6 +498,8 @@ func _unhandled_input(event: InputEvent) -> void:
 ## "GRAND PRIX  ·  150CC" or "VERSUS  ·  4 RACES  ·  150CC".
 func summary_text() -> String:
 	var cc_text := RaceConfig.cc_label(cc()).to_upper()
+	if is_time_trial():
+		return "TIME TRIAL  ·  %d LAPS  ·  %dCC" % [TimeTrialCatalog.LAPS, TimeTrialCatalog.CC]
 	if is_grand_prix():
 		return "GRAND PRIX  ·  " + cc_text + ("  ·  MIRROR" if mirrored else "")
 	var n := race_count()

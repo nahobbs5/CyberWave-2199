@@ -41,7 +41,7 @@ const TRACKS := [
 			"res://music/jean-paul-v-danger-imminent-317370.mp3"],
 	["Chefchaouen", "res://scenes/tracks/chefchaouen.tscn", "Chefchaouen, Morocco",
 			"res://music/vadim_makes_sound-atlas-morocco-560008.mp3"],
-	["Test Circuit", TEST_CIRCUIT, "Graybox",
+	["Test Circuit", TEST_CIRCUIT, "Groom Lake, Nevada",
 			"res://music/stageechoesmusic-the-garden-wakes-628640.mp3"],
 ]
 

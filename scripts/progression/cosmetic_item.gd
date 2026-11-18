@@ -16,7 +16,22 @@ const CATEGORY_NAMES: Array[String] = ["Paint", "Finish", "Stripes", "Decals", "
 ## Category-specific variant: finish (gloss / matte / metallic / chrome),
 ## stripe layout, decal text, wheel style.
 @export var style: String = ""
+## Signature items (GDD 2.5): only this car can wear it ("" = any car).
+@export var vehicle_id: String = ""
+## Never sold: won in Time Trial (beat the expert ghost).
+@export var unlock_only: bool = false
+## Animated underglow: the second colour it pulses to.
+@export var color2: Color = Color.WHITE
 
 
 func is_free() -> bool:
-	return price <= 0
+	return price <= 0 and not unlock_only
+
+
+## Whether `p_vehicle_id`'s car can wear it.
+func fits(p_vehicle_id: String) -> bool:
+	return vehicle_id == "" or vehicle_id == p_vehicle_id
+
+
+func is_animated() -> bool:
+	return style == "animated"

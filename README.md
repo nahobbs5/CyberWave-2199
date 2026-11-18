@@ -11,14 +11,14 @@ Luxury neon cars, drift boosts, weapons and fifteen circuits set in real-world p
 
 ## Features
 
-- **Modes:** Versus (Mario Kart style sets of 1–16 races), Grand Prix (three-race cups with points and a save), Elimination (checkpoint knockouts each lap), and Mirror (any track driven in reverse, in Versus or as a Grand Prix toggle). Every mode runs at **50cc, 100cc, 150cc or 200cc**.
+- **Modes:** Versus (Mario Kart style sets of 1–16 races), Grand Prix (three-race cups with points and a save), Elimination (checkpoint knockouts each lap), Mirror (any track driven in reverse, in Versus or as a Grand Prix toggle), and **Time Trial** (3 laps, one Triple Nitro, against a ghost; beat a rival ghost to win a new car or its signature paint). Three cars to start; five unlock by winning the five Grand Prix cups, and the others by winning Elimination, a Mirror podium, a 200cc win (single player or split screen), a Time Trial rival, or a lap of a hidden developer track in Practice. Every mode runs at **50cc, 100cc, 150cc or 200cc**.
 - **2–4 player split screen** on one PC with keyboard and gamepads, a live spectator view for three players, and an optional AI field.
 - **Drifting:** hold drift and steer to charge **Cyan → Magenta → Gold** boosts. Steering into the slide charges faster.
 - **Rocket start:** hold accelerate as the "2" fades to launch, but too early and you burn out. A four-lamp start-light board on the gantry counts you in.
 - **Slipstream, tricks off ramps and half-pipes, and boost pads / rings,** plus shortcuts with smashable barriers on every track.
 - **15 weapons** with position-based crate odds. System Override hacks everyone ahead of you, and the leader stays hacked longest.
 - **Holographic recovery** that never moves you forward.
-- **8 cars** with distinct stats, a neon garage with 8 cosmetic categories, coins and license plates.
+- **13 cars** (3 starters, 10 to unlock) with distinct stats, a neon garage with 8 cosmetic categories, coins and license plates.
 - **Presentation:** a podium ceremony, neon results, music for every track (5% faster on the final lap), rebindable controls and accessibility settings.
 
 ## Cups and tracks

@@ -43,7 +43,7 @@ const FORCE_FIELD_SHADER := preload("res://assets/shaders/force_field.gdshader")
 @export var override_speed_multiplier: float = 0.75
 @export var override_accel_multiplier: float = 0.7
 ## Swarm Bots leash: top speed and acceleration kept.
-@export var leash_speed_multiplier: float = 0.55
+@export var leash_speed_multiplier: float = 0.66
 @export var leash_accel_multiplier: float = 0.35
 
 var _timers: Dictionary = {}

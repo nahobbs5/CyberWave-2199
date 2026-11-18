@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="VehicleData" format=3]
+
+[ext_resource type="Script" path="res://scripts/vehicles/vehicle_data.gd" id="1_data"]
+[ext_resource type="Resource" path="res://resources/vehicles/stats/switchback_stats.tres" id="2_stats"]
+
+[resource]
+script = ExtResource("1_data")
+id = "switchback"
+display_name = "Switchback"
+vehicle_type = "Rally Hatch"
+character = "A drift king with a short top end: loose, quick to rotate and quick off the line."
+stats = ExtResource("2_stats")
+factory_color = Color(0.86, 0.84, 0.78, 1)

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="VehicleStats" format=3]
+
+[ext_resource type="Script" path="res://scripts/vehicles/vehicle_stats.gd" id="1_stats"]
+
+[resource]
+script = ExtResource("1_stats")
+display_name = "Interceptor"
+top_speed = 45.6
+acceleration = 14.0
+handling = 2.68
+drift = 1.24
+grip = 14.0
+steer_response = 16.0

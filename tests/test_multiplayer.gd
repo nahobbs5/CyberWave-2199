@@ -26,7 +26,10 @@ var _current: String = ""
 func _initialize() -> void:
 	# Races open the results without the podium ceremony (see test_podium.gd).
 	PodiumCeremony.instant = true
+	CarUnlockScreen.instant = true
 	PlayerProfile.save_path = "user://test_mp_profile.json"
+	# Every car unlocked: these checks pick any car (unlocks: test_time_trial).
+	PlayerProfile.unlock_all_for_tests()
 	GameSettings.path = "user://test_mp_settings.cfg"
 	PlayerProfile.delete_save()
 	Championship.save_path = TEST_SAVE

@@ -82,7 +82,7 @@ The kart stays recognizably the player's kart; it is **not** replaced by a missi
 | Parameter | Starting value |
 |---|---|
 | Spawn positions | 4th–8th (mostly 7th–8th) |
-| Nominal active duration | 5–7 seconds |
+| Nominal active duration | 8.5 seconds (7 s of flight) |
 | Flight speed | 2.0× normal top speed |
 | Height above track | 3–5 meters, track dependent |
 | Steering | Fully automated along flight route |

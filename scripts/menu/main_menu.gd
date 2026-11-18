@@ -1,15 +1,14 @@
 class_name MainMenu
 extends Control
 ## Single-player menu (GDD 11.2), opened from the title's Single Player:
-## Continue Grand Prix (only when a championship is saved), Grand Prix,
-## Versus (Standard or Elimination, picked on the setup screen), Practice
-## (free drive), Garage, Settings, Credits, Back to the title. Laid out
+## Grand Prix, Versus (Standard, Elimination or Mirror, picked on the setup
+## screen), Time Trial (race a ghost; beating a rival can unlock its car),
+## Practice (free drive), Garage, Settings, Credits, Back to the title. Laid out
 ## after "reference files/Cyberwave 2199 Neon Racing Menu.png" (see
 ## StartMenuLayout); the car on the street is the garage's selected car.
 
 ## Logo, buttons, info box, coins and the garage car on a night street.
 var layout: StartMenuLayout
-var _continue_button: NeonMenuButton
 var _buttons: Array[Button] = []
 
 
@@ -37,35 +36,20 @@ func _unhandled_input(event: InputEvent) -> void:
 		GameSession.to_title(get_tree())
 
 
-func has_continue() -> bool:
-	return _continue_button.visible
-
-
-func continue_grand_prix() -> void:
-	var c := Championship.load_saved()
-	if c != null:
-		GameSession.start_race(get_tree(), c.make_race_config())
-
-
 func _build() -> void:
 	UIStyle.background(self)
 	layout = StartMenuLayout.new(true, true)
 	add_child(layout)
 	layout.set_coins(PlayerProfile.get_profile().coins)
-	var saved := Championship.load_saved()
 	var tree := get_tree()
-	_continue_button = layout.add_entry("Continue Grand Prix", "play", "", continue_grand_prix)
-	_continue_button.visible = saved != null
-	if saved != null:
-		_continue_button.description = "Pick up the %s at race %d of %d." % [
-				saved.gp.display_name, saved.race_index + 1, saved.race_count()]
 	var entries: Array[NeonMenuButton] = [
-		_continue_button,
 		layout.add_entry("Grand Prix", "flags", "Compete in a cup and aim for the highest overall finish!",
 				func() -> void: GameSession.to_race_setup(tree, RaceConfig.Mode.GRAND_PRIX)),
 		layout.add_entry("Versus", "trophy", "Pick your tracks and race the field, standard or elimination.",
 				func() -> void: GameSession.to_race_setup(tree, GameSession.last_versus_mode())),
-		layout.add_entry("Practice", "stopwatch", "Free drive with no rivals to learn the handling.",
+		layout.add_entry("Time Trial", "stopwatch", "Race the ghosts to win new cars and signature paint.",
+				func() -> void: GameSession.to_race_setup(tree, RaceConfig.Mode.TIME_TRIAL)),
+		layout.add_entry("Practice", "play", "Free drive with no rivals to learn the handling.",
 				func() -> void: GameSession.to_practice_select(tree)),
 		layout.add_entry("Garage", "car", "Choose your car, buy paint and parts, and set your plate.",
 				func() -> void: GameSession.to_garage(tree)),

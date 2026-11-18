@@ -86,6 +86,10 @@ var _light: OmniLight3D
 var _time: float = 0.0
 var _area: Area3D
 var _emp_mat: ShaderMaterial
+var _pad_mat: ShaderMaterial
+var _ring_mat: ShaderMaterial
+## Rim pulses on a ring's approach: 1 just started, runs down to 0.
+var _sweep: float = 0.0
 var _sparks: CPUParticles3D
 var _flash: float = 0.0
 ## Own RNG for the flicker so visuals never shift the global random sequence.
@@ -220,6 +224,8 @@ func _rebuild_visuals() -> void:
 	for child in get_children():
 		child.queue_free()
 	_emp_mat = null
+	_pad_mat = null
+	_ring_mat = null
 	_sparks = null
 	_visual = Node3D.new()
 	add_child(_visual)
@@ -237,6 +243,7 @@ func _rebuild_visuals() -> void:
 			box.size = Vector3(7.0, 7.0, 2.0)
 			shape.position.y = 3.2
 			_ring_visual()
+			_add_ring_approach()
 		Kind.EMP_PUDDLE:
 			box.size = Vector3(width, 2.0, width * 0.8)
 			_puddle_visual()
@@ -283,31 +290,358 @@ func _box(size: Vector3, pos: Vector3, mat: Material, rot_z: float = 0.0) -> Mes
 	return mi
 
 
+## Boost pad look (ref 'reference files/New Boost Pads.png'): a beveled
+## graphite frame with clipped corners, a ribbed centre plate with three
+## segmented cyan chevrons (boost_pad.gdshader: pulse + flash) and amber
+## lights on the corners so the pad's width reads on approach.
 func _pad_visual() -> void:
-	_box(Vector3(width, 0.04, 6.0), Vector3(0, 0.05, 0), _mat(Color(0.05, 0.05, 0.1), 0.0))
-	var glow := _mat(PAD_COLOR, 4.0)
-	# Three chevrons pointing forward (-Z).
-	for i in 3:
-		for arm in [-1.0, 1.0]:
-			var bar := _box(Vector3(width * 0.42, 0.06, 0.35), Vector3(arm * width * 0.19, 0.08, -1.6 + i * 1.5), glow)
-			bar.rotation.y = -arm * 0.55 # arms trail back: the point faces the driving direction
-	_light = _add_light(PAD_COLOR, 2.5, 7.0, Vector3(0, 1.0, 0))
+	var frame := MeshInstance3D.new()
+	frame.name = "PadFrame"
+	frame.mesh = _pad_frame_mesh(width)
+	frame.material_override = _pad_shared_mat(&"frame")
+	_visual.add_child(frame)
+	var plate_size := Vector2(width - PAD_BAND * 2.0, PAD_LENGTH - PAD_BAND * 2.0)
+	var plate := MeshInstance3D.new()
+	plate.name = "PadPlate"
+	var plane := PlaneMesh.new()
+	plane.size = plate_size
+	plate.mesh = plane
+	plate.position.y = PAD_PLATE_Y
+	_pad_mat = ShaderMaterial.new()
+	_pad_mat.shader = PAD_SHADER
+	_pad_mat.set_shader_parameter("plate_size", plate_size)
+	_pad_mat.set_shader_parameter("glow_color", PAD_COLOR)
+	_pad_mat.set_shader_parameter("calm", 1.0 if GameSettings.reduced_flashing else 0.0)
+	plate.material_override = _pad_mat
+	_visual.add_child(plate)
+	# Amber lights set into the four clipped corners, square to the bevel.
+	var hw := width * 0.5 - PAD_BAND * 0.5
+	var hl := PAD_LENGTH * 0.5 - PAD_BAND * 0.5
+	var c := PAD_CORNER - PAD_BAND * 0.5 * 0.414
+	for sx in [-1.0, 1.0]:
+		for sz in [-1.0, 1.0]:
+			var lamp := MeshInstance3D.new()
+			lamp.name = "PadCornerLight%d" % _visual.get_child_count()
+			lamp.mesh = _pad_lamp_mesh()
+			lamp.material_override = _pad_shared_mat(&"amber")
+			lamp.position = Vector3(sx * (hw - c * 0.5), PAD_TOP_Y, sz * (hl - c * 0.5))
+			lamp.rotation.y = sx * sz * PI * 0.25
+			_visual.add_child(lamp)
+	_flash = 0.0
+	_light = _add_light(PAD_COLOR, PAD_LIGHT_ENERGY, 7.0, Vector3(0, 1.0, 0))
 
 
+const PAD_SHADER := preload("res://assets/shaders/boost_pad.gdshader")
+const PAD_LENGTH := 6.0
+## Frame band width, clipped-corner size, heights (metres).
+const PAD_BAND := 0.36
+const PAD_CORNER := 0.55
+const PAD_TOP_Y := 0.13
+const PAD_PLATE_Y := 0.07
+const PAD_LIGHT_ENERGY := 2.5
+const PAD_AMBER := Color(1.0, 0.58, 0.08)
+## How long the crossing flash takes to fade (seconds).
+const PAD_FLASH_TIME := 0.35
+## Shared by every pad: frame meshes per width, frame/amber materials.
+static var _pad_frames: Dictionary = {}
+static var _pad_mats: Dictionary = {}
+static var _pad_lamp: Mesh
+
+
+## Brightness of the crossing flash (1 just crossed, 0 idle).
+func pad_flash() -> float:
+	return _flash if kind == Kind.BOOST_PAD else 0.0
+
+
+## The plate's material (tests).
+func pad_material() -> ShaderMaterial:
+	return _pad_mat
+
+
+static func _pad_shared_mat(which: StringName) -> StandardMaterial3D:
+	if _pad_mats.has(which):
+		return _pad_mats[which]
+	var m := StandardMaterial3D.new()
+	if which == &"frame":
+		m.albedo_color = Color(0.3, 0.31, 0.33)
+		m.metallic = 0.6
+		m.roughness = 0.3
+		m.cull_mode = BaseMaterial3D.CULL_DISABLED
+	else:
+		m.albedo_color = PAD_AMBER
+		m.emission_enabled = true
+		m.emission = PAD_AMBER
+		m.emission_energy_multiplier = 5.0
+		m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	_pad_mats[which] = m
+	return m
+
+
+static func _pad_lamp_mesh() -> Mesh:
+	if _pad_lamp == null:
+		var b := BoxMesh.new()
+		b.size = Vector3(0.44, 0.06, 0.17)
+		_pad_lamp = b
+	return _pad_lamp
+
+
+## Clipped-corner rectangle (8 points, clockwise from the back right),
+## half-width hw, half-length hl, corner cut c.
+static func _octagon(hw: float, hl: float, c: float, y: float) -> PackedVector3Array:
+	return PackedVector3Array([
+		Vector3(hw, y, hl - c), Vector3(hw, y, -hl + c), Vector3(hw - c, y, -hl), Vector3(-hw + c, y, -hl),
+		Vector3(-hw, y, -hl + c), Vector3(-hw, y, hl - c), Vector3(-hw + c, y, hl), Vector3(hw - c, y, hl),
+	])
+
+
+## The beveled frame: outer bevel up from the road, flat top band, inner
+## bevel down to the plate. Cached per width.
+static func _pad_frame_mesh(w: float) -> Mesh:
+	var key := snappedf(w, 0.01)
+	if _pad_frames.has(key):
+		return _pad_frames[key]
+	var hw := w * 0.5
+	var hl := PAD_LENGTH * 0.5
+	var k := 0.414 # tan(22.5 deg): how much a corner cut shrinks per metre of inset
+	var rings: Array[PackedVector3Array] = []
+	for step in [[0.0, 0.03], [0.09, PAD_TOP_Y], [PAD_BAND - 0.08, PAD_TOP_Y], [PAD_BAND, PAD_PLATE_Y - 0.01]]:
+		var d: float = step[0]
+		rings.append(_octagon(hw - d, hl - d, PAD_CORNER - d * k, step[1]))
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for r in rings.size() - 1:
+		var a := rings[r]
+		var b := rings[r + 1]
+		for i in 8:
+			var j := (i + 1) % 8
+			var quad: Array[Vector3] = [a[i], a[j], b[j], b[i]]
+			var n := (quad[1] - quad[0]).cross(quad[3] - quad[0]).normalized()
+			if n.y < 0.0:
+				n = -n
+			for t in [[0, 1, 2], [0, 2, 3]]:
+				for idx in t:
+					st.set_normal(n)
+					st.add_vertex(quad[idx])
+	var mesh := st.commit()
+	_pad_frames[key] = mesh
+	return mesh
+
+
+## Boost ring look (ref 'reference files/Cyberwave New Boost Ring.png'): a
+## slim beveled graphite frame, a segmented magenta inner rim
+## (boost_ring.gdshader: two pulses round the rim on approach, an inner-edge
+## flash on the pass), four graphite pods with amber lamps like the pads'
+## corner lights, two small feet. The centre stays clear.
 func _ring_visual() -> void:
-	var ring := MeshInstance3D.new()
-	var torus := TorusMesh.new()
-	torus.inner_radius = 3.3
-	torus.outer_radius = 3.8
-	torus.rings = 32
-	ring.mesh = torus
-	ring.rotation.x = PI * 0.5
-	ring.position.y = 3.6
-	ring.material_override = _mat(RING_COLOR, 4.5)
-	_visual.add_child(ring)
+	var centre := Vector3(0, RING_CENTER_Y, 0)
+	var frame := MeshInstance3D.new()
+	frame.name = "RingFrame"
+	frame.mesh = _ring_frame_mesh()
+	frame.material_override = _pad_shared_mat(&"frame")
+	frame.position = centre
+	_visual.add_child(frame)
+	var rim := MeshInstance3D.new()
+	rim.name = "RingRim"
+	rim.mesh = _ring_rim_mesh()
+	rim.position = centre
+	_ring_mat = ShaderMaterial.new()
+	_ring_mat.shader = RING_SHADER
+	_ring_mat.set_shader_parameter("glow_color", RING_COLOR)
+	_ring_mat.set_shader_parameter("calm", 1.0 if GameSettings.reduced_flashing else 0.0)
+	rim.material_override = _ring_mat
+	_visual.add_child(rim)
+	# Pods at the top, bottom and sides, an amber lamp on each face.
+	var pod_r := (RING_POD_IN + RING_POD_OUT) * 0.5
+	for i in 4:
+		var ang := i * PI * 0.5
+		var dir := Vector3(cos(ang), sin(ang), 0.0)
+		var pod := MeshInstance3D.new()
+		pod.name = "RingMarker%d" % i
+		pod.mesh = _ring_box_mesh(&"pod")
+		pod.material_override = _pad_shared_mat(&"frame")
+		pod.position = centre + dir * pod_r
+		pod.rotation.z = ang
+		_visual.add_child(pod)
+		for face in [-1.0, 1.0]:
+			var lamp := MeshInstance3D.new()
+			lamp.name = "RingLamp%d" % (i * 2 + (0 if face < 0.0 else 1))
+			lamp.mesh = _ring_box_mesh(&"lamp")
+			lamp.material_override = _pad_shared_mat(&"amber")
+			lamp.position = centre + dir * (pod_r + 0.04) + Vector3(0, 0, face * (RING_POD_DEPTH * 0.5 + 0.012))
+			lamp.rotation.z = ang
+			_visual.add_child(lamp)
+	# Two short feet up to the lower sides of the frame.
 	for side in [-1.0, 1.0]:
-		_box(Vector3(0.4, 0.6, 0.4), Vector3(side * 3.6, 0.3, 0), _mat(Color(0.1, 0.1, 0.14), 0.0))
-	_light = _add_light(RING_COLOR, 3.0, 12.0, Vector3(0, 3.6, 0))
+		var foot := MeshInstance3D.new()
+		foot.name = "RingFoot%d" % (0 if side < 0.0 else 1)
+		foot.mesh = _ring_box_mesh(&"foot")
+		foot.material_override = _pad_shared_mat(&"frame")
+		foot.position = Vector3(side * RING_FOOT_X, RING_FOOT_HEIGHT * 0.5, 0.0)
+		_visual.add_child(foot)
+	_flash = 0.0
+	_sweep = 0.0
+	_light = _add_light(RING_COLOR, RING_LIGHT_ENERGY, 12.0, centre)
+
+
+## Second, longer area: any car within RING_APPROACH_REACH either side of the
+## ring (so Mirror races work too) starts the rim pulses. Never boosts.
+func _add_ring_approach() -> void:
+	var approach := Area3D.new()
+	approach.name = "RingApproach"
+	approach.collision_layer = 0
+	approach.collision_mask = 2 # vehicles
+	approach.monitorable = false
+	var shape := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = Vector3(7.0, 7.0, RING_APPROACH_REACH * 2.0)
+	shape.shape = box
+	shape.position.y = 3.2
+	approach.add_child(shape)
+	add_child(approach)
+	if not Engine.is_editor_hint():
+		approach.body_entered.connect(_on_approach)
+
+
+func _on_approach(body: Node3D) -> void:
+	if body is VehicleController and _sweep <= 0.0:
+		_sweep = 1.0
+
+
+const RING_SHADER := preload("res://assets/shaders/boost_ring.gdshader")
+## Hub height. The frame's bottom sits just under the road.
+const RING_CENTER_Y := 3.75
+## Frame cross-section: inner / outer radius, half depth, bevel (metres).
+const RING_FRAME_IN := 3.42
+const RING_FRAME_OUT := 3.88
+const RING_FRAME_HALF := 0.22
+const RING_BEVEL := 0.06
+## The magenta band: inner face radius, and how far out it runs on each face.
+const RING_RIM_IN := 3.4
+const RING_RIM_OUT := 3.58
+## Marker pods: radial span and depth.
+const RING_POD_IN := 3.5
+const RING_POD_OUT := 3.98
+const RING_POD_DEPTH := 0.52
+const RING_FOOT_X := 3.35
+const RING_FOOT_HEIGHT := 2.1
+const RING_SEGMENTS := 72
+const RING_LIGHT_ENERGY := 2.0
+## Approach area reach either side, and how long the two pulses take a lap.
+const RING_APPROACH_REACH := 22.0
+const RING_SWEEP_TIME := 0.9
+static var _ring_meshes: Dictionary = {}
+
+
+## Brightness of the pass-through flash (1 just passed, 0 idle).
+func ring_flash() -> float:
+	return _flash if kind == Kind.BOOST_RING else 0.0
+
+
+## Rim pulses: 1 just started, runs down to 0 when the lap is done.
+func ring_sweep() -> float:
+	return _sweep if kind == Kind.BOOST_RING else 0.0
+
+
+## The rim's material (tests).
+func ring_material() -> ShaderMaterial:
+	return _ring_mat
+
+
+static func _ring_box_mesh(which: StringName) -> Mesh:
+	if not _ring_meshes.has(which):
+		var b := BoxMesh.new()
+		match which:
+			&"pod": # x = radial, y = round the ring, z = depth
+				b.size = Vector3(RING_POD_OUT - RING_POD_IN, 0.66, RING_POD_DEPTH)
+			&"lamp":
+				b.size = Vector3(0.16, 0.4, 0.03)
+			_:
+				b.size = Vector3(0.28, RING_FOOT_HEIGHT, 0.32)
+		_ring_meshes[which] = b
+	return _ring_meshes[which]
+
+
+## The frame: a beveled octagonal section swept round the ring (axis local Z).
+static func _ring_frame_mesh() -> Mesh:
+	if _ring_meshes.has(&"frame"):
+		return _ring_meshes[&"frame"]
+	var r0 := RING_FRAME_IN
+	var r1 := RING_FRAME_OUT
+	var h := RING_FRAME_HALF
+	var b := RING_BEVEL
+	# (radius, z) round the section.
+	var section: Array[Vector2] = [
+		Vector2(r0, -h + b), Vector2(r0, h - b), Vector2(r0 + b, h), Vector2(r1 - b, h),
+		Vector2(r1, h - b), Vector2(r1, -h + b), Vector2(r1 - b, -h), Vector2(r0 + b, -h),
+	]
+	var mid := (r0 + r1) * 0.5
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for s in RING_SEGMENTS:
+		var a0 := TAU * s / RING_SEGMENTS
+		var a1 := TAU * (s + 1) / RING_SEGMENTS
+		for i in section.size():
+			var p := section[i]
+			var q := section[(i + 1) % section.size()]
+			var quad: Array[Vector3] = [_ring_point(p, a0), _ring_point(q, a0), _ring_point(q, a1), _ring_point(p, a1)]
+			var n := (quad[1] - quad[0]).cross(quad[3] - quad[0]).normalized()
+			# Point away from the middle of the section.
+			var am := (a0 + a1) * 0.5
+			var tube := Vector3(cos(am) * mid, sin(am) * mid, 0.0)
+			if n.dot((quad[0] + quad[2]) * 0.5 - tube) < 0.0:
+				n = -n
+			for t in [[0, 1, 2], [0, 2, 3]]:
+				for idx in t:
+					st.set_normal(n)
+					st.add_vertex(quad[idx])
+	var mesh := st.commit()
+	_ring_meshes[&"frame"] = mesh
+	return mesh
+
+
+static func _ring_point(rz: Vector2, ang: float) -> Vector3:
+	return Vector3(cos(ang) * rz.x, sin(ang) * rz.x, rz.y)
+
+
+## The magenta band: the inner face of the ring plus a strip on the inner lip
+## of each face. UV.x = angle (0..1), UV.y = 0 at the inner edge, 1 outside.
+static func _ring_rim_mesh() -> Mesh:
+	if _ring_meshes.has(&"rim"):
+		return _ring_meshes[&"rim"]
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var face_z := RING_FRAME_HALF + 0.006
+	var inner_z := RING_FRAME_HALF - 0.02
+	for s in RING_SEGMENTS:
+		var u0 := float(s) / RING_SEGMENTS
+		var u1 := float(s + 1) / RING_SEGMENTS
+		var a0 := TAU * u0
+		var a1 := TAU * u1
+		var d0 := Vector3(cos(a0), sin(a0), 0.0)
+		var d1 := Vector3(cos(a1), sin(a1), 0.0)
+		var n_in := -(d0 + d1).normalized()
+		# Inner face, facing the hub.
+		_rim_quad(st, n_in,
+			[d0 * RING_RIM_IN + Vector3(0, 0, -inner_z), d0 * RING_RIM_IN + Vector3(0, 0, inner_z),
+			d1 * RING_RIM_IN + Vector3(0, 0, inner_z), d1 * RING_RIM_IN + Vector3(0, 0, -inner_z)],
+			[Vector2(u0, 0.0), Vector2(u0, 0.0), Vector2(u1, 0.0), Vector2(u1, 0.0)])
+		# Front and back lips.
+		for face in [-1.0, 1.0]:
+			var z := Vector3(0, 0, face * face_z)
+			_rim_quad(st, Vector3(0, 0, face),
+				[d0 * RING_RIM_IN + z, d0 * RING_RIM_OUT + z, d1 * RING_RIM_OUT + z, d1 * RING_RIM_IN + z],
+				[Vector2(u0, 0.0), Vector2(u0, 1.0), Vector2(u1, 1.0), Vector2(u1, 0.0)])
+	var mesh := st.commit()
+	_ring_meshes[&"rim"] = mesh
+	return mesh
+
+
+static func _rim_quad(st: SurfaceTool, n: Vector3, pts: Array, uvs: Array) -> void:
+	for t in [[0, 1, 2], [0, 2, 3]]:
+		for idx in t:
+			st.set_normal(n)
+			st.set_uv(uvs[idx])
+			st.add_vertex(pts[idx])
 
 
 func _puddle_visual() -> void:
@@ -486,8 +820,10 @@ func _on_body_entered(body: Node3D) -> void:
 	match kind:
 		Kind.BOOST_PAD:
 			car.start_external_boost(boost_extra, boost_duration, boost_kick, "Boost pad", PAD_COLOR)
+			_flash = 1.0
 		Kind.BOOST_RING:
 			car.start_external_boost(boost_extra, boost_duration, boost_kick, "Boost ring", RING_COLOR)
+			_flash = 1.0
 		Kind.EMP_PUDDLE:
 			if car.status == null or not car.status.apply_attack(&"emp", EMP_PUDDLE_DURATION):
 				return
@@ -545,6 +881,12 @@ func _process(delta: float) -> void:
 	if _light == null or Engine.is_editor_hint():
 		return
 	_time += delta
+	if kind == Kind.BOOST_PAD:
+		_animate_pad(delta)
+		return
+	if kind == Kind.BOOST_RING:
+		_animate_ring(delta)
+		return
 	if kind != Kind.EMP_PUDDLE:
 		return
 	var calm := GameSettings.reduced_flashing
@@ -560,3 +902,32 @@ func _process(delta: float) -> void:
 	if _fx_rng.randf() < delta * 7.0:
 		_flash = _fx_rng.randf_range(0.6, 1.0)
 	_light.light_energy = 1.2 + 4.0 * _flash
+
+
+## The chevron pulse runs in the shader; this only fades the crossing flash
+## (softer with reduced flashing) and follows the setting.
+func _animate_pad(delta: float) -> void:
+	if _pad_mat == null:
+		return
+	var calm := GameSettings.reduced_flashing
+	_flash = maxf(_flash - delta / PAD_FLASH_TIME, 0.0)
+	var shown := _flash * (0.35 if calm else 1.0)
+	_pad_mat.set_shader_parameter("flash", shown)
+	_pad_mat.set_shader_parameter("calm", 1.0 if calm else 0.0)
+	_light.light_energy = PAD_LIGHT_ENERGY * (1.0 + 2.0 * shown)
+
+
+## The rim pulses and pass flash run in the shader; this runs them down and
+## follows Reduced flashing (dimmer pulses, a soft flash).
+func _animate_ring(delta: float) -> void:
+	if _ring_mat == null:
+		return
+	var calm := GameSettings.reduced_flashing
+	_sweep = maxf(_sweep - delta / RING_SWEEP_TIME, 0.0)
+	_flash = maxf(_flash - delta / PAD_FLASH_TIME, 0.0)
+	var shown := _flash * (0.35 if calm else 1.0)
+	_ring_mat.set_shader_parameter("sweep", _sweep)
+	_ring_mat.set_shader_parameter("flash", shown)
+	_ring_mat.set_shader_parameter("calm", 1.0 if calm else 0.0)
+	var pulse := (0.3 if calm else 0.8) * sin(PI * _sweep)
+	_light.light_energy = RING_LIGHT_ENERGY * (1.0 + pulse + 1.5 * shown)

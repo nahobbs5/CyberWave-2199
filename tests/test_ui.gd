@@ -21,7 +21,10 @@ var _current: String = ""
 func _initialize() -> void:
 	# Races open the results without the podium ceremony (see test_podium.gd).
 	PodiumCeremony.instant = true
+	CarUnlockScreen.instant = true
 	PlayerProfile.save_path = "user://test_ui_profile.json"
+	# Every car unlocked: these checks pick any car (unlocks: test_time_trial).
+	PlayerProfile.unlock_all_for_tests()
 	GameSettings.path = "user://test_ui_settings.cfg"
 	Championship.save_path = "user://test_ui_gp.json"
 	_run_all.call_deferred()
@@ -1087,6 +1090,15 @@ func _test_loading_card() -> void:
 			and bare.thumbnail != null and bare.title_label.text == "TEST CIRCUIT",
 			"no screenshot: track map and title only")
 	bare.free()
+	# Track pictures are big: they need mipmaps for the small cup cards.
+	var no_mips: PackedStringArray = []
+	for f in DirAccess.get_files_at(TrackCard.PHOTO_DIR):
+		if f.get_extension() != "png":
+			continue
+		var imp := ConfigFile.new()
+		if imp.load(TrackCard.PHOTO_DIR + f + ".import") != OK or not imp.get_value("params", "mipmaps/generate", false):
+			no_mips.append(f)
+	_check(no_mips.is_empty(), "every track picture imports with mipmaps (fix: track_cards.gd -- --fix-imports) %s" % [no_mips])
 	var plain := LoadingScreen.new()
 	plain.build(LoadingScreen.card_for(""))
 	_check(plain.photo == null and plain.thumbnail == null, "no track: no photo or map")

@@ -24,7 +24,10 @@ static func apply(car: Node3D, vehicle: VehicleData, loadout: Dictionary, plate_
 	var paint: CosmeticItem = loadout.get(CosmeticItem.Category.PAINT)
 	var finish: CosmeticItem = loadout.get(CosmeticItem.Category.FINISH)
 	var color := factory if paint == null or paint.style == "factory" else paint.color
-	_apply_paint(car, color, finish.style if finish != null else "gloss")
+	var finish_style := finish.style if finish != null else "gloss"
+	if paint != null and paint.unlock_only and paint.style != "":
+		finish_style = paint.style # signature paint: always its own finish
+	_apply_paint(car, color, finish_style)
 	_add_stripes(car, loadout.get(CosmeticItem.Category.STRIPES))
 	_add_decal(car, root, loadout.get(CosmeticItem.Category.DECAL))
 	_apply_wheels(car, loadout.get(CosmeticItem.Category.WHEELS))
@@ -316,6 +319,11 @@ static func _apply_underglow(car: Node3D, root: Node3D, item: CosmeticItem) -> v
 	light.omni_range = 3.6
 	light.position = Vector3(0.0, -0.42, 0.0)
 	root.add_child(light)
+	if item.is_animated():
+		var pulse := UnderglowPulse.new()
+		pulse.name = "UnderglowPulse"
+		pulse.setup(item, neon_mat as StandardMaterial3D, light)
+		root.add_child(pulse)
 
 
 static func _add_exhaust(car: Node3D, root: Node3D, item: CosmeticItem) -> void:

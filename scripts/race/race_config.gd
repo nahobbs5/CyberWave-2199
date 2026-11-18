@@ -3,9 +3,9 @@ extends Resource
 ## Settings for one race (GDD 2.1 race setup). Built by the mode select screen
 ## or by a Championship for the next Grand Prix race, then read by RaceManager.
 
-enum Mode { VERSUS, GRAND_PRIX, ELIMINATION }
+enum Mode { VERSUS, GRAND_PRIX, ELIMINATION, TIME_TRIAL }
 
-const MODE_NAMES: Array[String] = ["Versus", "Grand Prix", "Elimination"]
+const MODE_NAMES: Array[String] = ["Versus", "Grand Prix", "Elimination", "Time Trial"]
 const PLAYER_ID := -1
 ## Engine classes (GDD 2.1a): engine power and overall race speed. 100cc is
 ## the base tuning; the others scale every car (CC_SCALES, same order).
@@ -49,8 +49,40 @@ const BASE_CC := 100
 ## Split screen: fill the grid to eight with AI rivals; off = humans only.
 @export var ai_rivals: bool = true
 
+## Time Trial only: which ghost to race (TimeTrialCatalog.Ghost).
+@export var ghost_kind: int = 0
+## Time Trial only: the grid slot the lone car starts in (the ghost bake
+## records from slot 1, so ghosts start beside you in slot 0).
+@export var start_slot: int = 0
+
 ## Grand Prix only: the championship this race belongs to.
 var championship: Championship
+
+
+## A Time Trial on `track` (GDD 2.5): always 3 laps, 150cc, forward, no
+## items, no rivals.
+static func time_trial(track: String, ghost: int, p_vehicle_id: String = "") -> RaceConfig:
+	var c := RaceConfig.new()
+	c.mode = Mode.TIME_TRIAL
+	c.track_name = track
+	c.track_scene = TrackCatalog.scene(track)
+	c.ghost_kind = ghost
+	c.vehicle_id = p_vehicle_id
+	c.difficulty = load("res://resources/ai/hard.tres") as AIDifficulty
+	_force_time_trial(c)
+	return c
+
+
+static func _force_time_trial(c: RaceConfig) -> void:
+	c.total_laps = TimeTrialCatalog.LAPS
+	c.weapons_enabled = false
+	c.mirrored = false
+	c.cc = TimeTrialCatalog.CC
+	c.ai_rivals = false
+
+
+func is_time_trial() -> bool:
+	return mode == Mode.TIME_TRIAL
 
 
 ## Rivals first, then the humans at the back (player 1 last).
@@ -88,10 +120,13 @@ func human_count() -> int:
 ## Rivals on the grid: enough to make eight cars, or none in a humans-only
 ## split-screen race.
 func rival_count() -> int:
+	if is_time_trial():
+		return 0
 	return rivals_for(human_count(), ai_rivals)
 
 
 static func rivals_for(humans: int, ai: bool) -> int:
+	# (Time Trial has no rivals: RaceConfig.rival_count() checks it first.)
 	return 8 - humans if humans <= 1 or ai else 0
 
 
@@ -128,6 +163,8 @@ func is_elimination() -> bool:
 ## own ("Track (Mirror)", "Track (200cc)", "Track (Mirror, 200cc)"; 100cc
 ## adds nothing, so older records carry on).
 func record_name() -> String:
+	if is_time_trial():
+		return "%s (Time Trial)" % track_name
 	return record_name_for(track_name, mirrored, cc)
 
 

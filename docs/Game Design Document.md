@@ -1,5 +1,5 @@
 # CYBERWAVE 2199
-## Game Design Document — Version 10.3
+## Game Design Document — Version 10.13
 
 **Status:** Development Baseline  
 **Engine:** Godot 4  
@@ -261,6 +261,52 @@ Leaving a race, or finishing a set, returns to step 2 with the same players join
 - Rubber-banding, coin respawns and the final-lap music follow the leading human.
 - Any player's pause button pauses the race for everyone.
 
+## 2.5 Time Trial
+
+Single player only, from the main menu (below Versus). You race alone against a **ghost**: a see-through recording of a car that you drive straight through.
+
+### Rules
+- Always **3 laps, 150cc, forward**. No rivals, no crates and no track coins. Every car, you and the ghosts alike, starts with **one Triple Nitro** (three boosts) to use at any point in the race; recoveries don't take it. Rocket starts, drifts, tricks, ramps, half-pipes and shortcuts all work as usual.
+- Every track has one (all 15 cup tracks, plus Vegas Overdrive, the Strip). Each track has a **rival car**: one of the locked cars (§9.1a). On the Strip you see the Empyrean S pull away on the straight, then reel it in through the corners.
+- Pick a ghost after the track:
+  - **Rival**: the rival car, timed so that a clean run in any starter car can win. Beat it and the car is yours if it's the Time Trial car (Revenant); other cars (§9.1a) only open their expert ghost.
+  - **Expert**: the same car, much faster. It only appears once you've beaten the rival. Beating it takes clean tricks, better drift timing and the faster routes. The prize is that car's **signature paint** or **animated underglow** (§9.4), or 500 coins once both are won. The five cars with a single rival track (Switchback, Afterimage, High Roller, Revenant, Interceptor) win their paint here; their underglow is sold in the Garage.
+  - **Your Best**: your own fastest run on the track, saved whenever you set a new best.
+  - **No Ghost**: just the clock.
+- What counts is your finish time against the target time. Beating the expert also counts as beating the rival.
+
+| Rival car | Tracks (expert prize) |
+|---|---|
+| Empyrean S | Vegas Overdrive (paint), Vatnajökull Glacier (underglow) |
+| Nexus X | Marble Canyon (paint), Catacombs Descent (underglow) |
+| Orbiter | Six Flags New Orleans (paint), Gardens by the Bay (underglow) |
+| Valkyrie R | The Stacks (paint), Crazy House (underglow), Chefchaouen |
+| Cipher EVO | Hoia Baciu Run (paint), Choquequirao (underglow) |
+| Switchback | Arashiyama Circuit (paint) |
+| Afterimage | Vale da Lua (paint) |
+| High Roller | Parque Quinta Normal (paint) |
+| Revenant | Fires of Nyiragongo (paint) |
+| Interceptor | Kilwa Kisiwani Ruins (paint) |
+
+### Ghosts
+- The rival and expert ghosts are **baked recordings** (tests/tools/bake_ghosts.gd). The AI drives the rival car alone under Time Trial rules, Triple Nitro included, and the car's pose (and whether it is boosting) is sampled 30 times a second. The ghost's exhaust flames light up when it boosted.
+- The baked target times:
+  - **Rival target** = the slowest clean Hard-AI run of the three starter cars × 1.02.
+  - **Expert target** = the rival car's best run (Expert AI: every trick, drift boost and shortcut) × 0.97.
+- Playback is time-scaled so the ghost crosses the line on its target. Targets can be tuned per track without re-baking (TimeTrialCatalog.TARGET_OVERRIDES).
+- How the ghost looks:
+  - A hologram tinted magenta (rival), gold (expert) or cyan (your best), with a name tag ("RIVAL · EMPYREAN S").
+  - It fades when the camera gets close and after it finishes, and shows as a hollow dot on the minimap.
+  - It can't be hit, targeted or drafted.
+
+### Screens
+- **Setup:** the race setup screen titled TIME TRIAL, with just the car (unlocked cars only) and your name.
+- **Track select:** every cup's tracks plus THE STRIP (Vegas). There's no RANDOM card. Each card names the rival car, shows RIVAL BEATEN / EXPERT BEATEN, and your best time.
+- **Ghost picker:** Choose Your Ghost opens on the first ghost you haven't beaten.
+- **HUD:** no position or standings, and no time-gap readout. The minimap's ghost dot shows where the ghost is.
+- **Car unlocked:** beating a Time Trial car's rival ghost opens the CAR UNLOCKED screen (§9.1a) after the results.
+- **Results:** a ghost card replaces the table: your time, the ghost's, the gap, the rival and expert targets, and your track best. Any unlock is shown in gold. The buttons are RACE AGAIN and CHANGE TRACK. There's no podium.
+
 ---
 
 # 3. Driving and Controls
@@ -374,7 +420,7 @@ Feedback while the meter fills: "SLIPSTREAM nn%" under the speed gauge (its char
 
 ## 5.1 Vehicle Roster
 
-Eight vehicles are available from the beginning.
+Thirteen vehicles. Three are available from the beginning (V8 Specter, Aurora GT, Riviera 88); the other ten are unlocked (§9.1a). The first eight follow 'Neon Retrofuturistic Vehicle Roster.png'; the last five follow 'Cyberwave 2199_ Five Retro-Futuristic Racers.png'.
 
 | Vehicle | Type | Intended Character |
 |---|---|---|
@@ -386,10 +432,15 @@ Eight vehicles are available from the beginning.
 | Orbiter | Aero Coupe | Stable high-speed driving |
 | Valkyrie R | Performance Sedan | Balanced, predictable control |
 | Cipher EVO | Prototype | High skill ceiling |
+| Switchback | Rally Hatch | Drift king, short top end, quick off the line |
+| Afterimage | Wedge Racer | Explosive launch; light and twitchy at speed |
+| High Roller | Super Tourer | Long-legged top speed; slow off the line |
+| Revenant | Wide-Body Coupe | Aggressive all-rounder with a loose rear |
+| Interceptor | Open-Wheel Racer | Grip and precision; hates drifting |
 
 These characteristics are initial balancing directions rather than final stat assignments.
 
-**Model look.** Every car is built procedurally from its design (CarModelBuilder): rounded, smooth-shaded body sections lofted along curved stations, wheel arches with a dark well and a raised lip, door shut lines, side mirrors (closed cabins), carbon-weave trim and clear-coated paint. Wheels are detailed for every car (WheelBuilder): a rounded tyre and a five-spoke rim with a brake disc; the Rims cosmetic recolours the rim. Open-wheel bodies (Cipher EVO) get no arches. All of this is visual only; the collider, rays and handling are unchanged.
+**Model look.** Every car is built procedurally from its design (CarModelBuilder): rounded, smooth-shaded body sections lofted along curved stations, wheel arches with a dark well and a raised lip, door shut lines, side mirrors (closed cabins), carbon-weave trim and clear-coated paint. Wheels are detailed for every car (WheelBuilder): a rounded tyre and a five-spoke rim with a brake disc; the Rims cosmetic recolours the rim. Open-wheel bodies (Cipher EVO, Interceptor, and Afterimage on its exposed coilovers) get no arches. Two-tone cars (Switchback's teal flares and wing, High Roller's maroon stripe, Revenant's orange stripe and flares, Afterimage's violet springs, Interceptor's blue nose) keep their second colour when repainted: paint cosmetics only change the main body colour. Fender flares are curved half rings over the wheels. All of this is visual only; the collider, rays and handling are unchanged.
 
 ## 5.2 Vehicle Statistics
 
@@ -494,9 +545,9 @@ Automatic targeting with lock-on is the standard system.
 | Weapon | Effect | Initial Duration |
 |---|---|---|
 | EMP Pulse | Disrupts nearby opponent electronics | 1.5s disruption, weapons offline 5s |
-| Hunter Drone | Pursues and stuns a target | 0.8s stun |
+| Hunter Drone | Pursues and stuns a target | 2.3s stun |
 | Holo Decoy | A hologram clone of your car rides behind you; targeted attacks aimed at you hit it instead | 8s lifetime or one hit |
-| Road Spike | Deploys electrified spikes | 12s lifetime, 1s traction penalty |
+| Road Spike | Deploys electrified spikes | 12s lifetime, 2s traction penalty |
 | Nitro Overload | Temporary speed boost | 3s |
 | Triple Nitro | Three Nitro Overload charges in one slot, used one at a time | 3s per charge |
 | Gravity Mine | Creates a localized gravity pull | 12s lifetime, 1.5s pull |
@@ -578,7 +629,7 @@ Crate odds by race position (each column adds up to 100%; with fewer than 8 race
 
 **System Glitch** hits **every racer ahead of you** at that moment, like an ink splat. For 4.5 s most of their screen is scrambled (a big ellipse reaching nearly to the edges): blocky tearing, colour split, cyan/magenta static and heavier bursts every half second or so. A **SYSTEM GLITCH** panel at the top centre (icon, flickering title, seconds left and a draining bar) shows it's happening. The HUD (position, laps, standings, items, minimap) stays clean and readable, and the car itself isn't slowed. AI racers weave and ease off the throttle while glitched. A Firewall blocks it; Overdrive ignores it. Reduced flashing keeps it slow and smooth with no strobing, but it still covers the centre.
 
-**Swarm Bots** lock on like the Hunter Drone (or chase the nearest racer ahead). The swarm latches on and leashes the car for 5 s: top speed ×0.55 and acceleration ×0.35 (boosts are capped too). Bots crawl over the car and glowing tethers drag behind it. It's not a hard stun (no spin, no item lost). A Firewall blocks it.
+**Swarm Bots** lock on like the Hunter Drone (or chase the nearest racer ahead). The swarm latches on and leashes the car for 5 s: top speed ×0.66 and acceleration ×0.35 (boosts are capped too). Bots crawl over the car and glowing tethers drag behind it. It's not a hard stun (no spin, no item lost). A Firewall blocks it.
 
 **Hunter-Killer** goes straight through a Firewall. The only escape is a Nitro fired in the last 0.4 s of its red-reticle warning or during its dive: it misses and fizzles out.
 
@@ -965,8 +1016,8 @@ Race music: *Atlas Morocco* (§12.1).
 Tracks may contain:
 - Question-mark weapon crates
 - Collectible coins
-- Speed boost pads. Each pad on the main road is laid out as one of three patterns: a single pad, three in a diagonal, or two side by side then one ahead (a triangle). The pattern is picked at random per pad but seeded by the track, so a track always has the same layout.
-- Speed boost rings
+- Speed boost pads. Each pad on the main road is laid out as one of three patterns: a single pad, three in a diagonal, or two side by side then one ahead (a triangle). The pattern is picked at random per pad but seeded by the track, so a track always has the same layout. Look (v10.6): a beveled graphite frame with clipped corners around a ribbed dark centre, three segmented cyan chevrons pointing the way to drive (bright enough to read far downtrack in daylight), and amber lights in the four corners so the pad's width is easy to judge on approach. A soft pulse runs through the chevrons from back to front about once a second, and the whole pad flashes once as a car crosses it. With Reduced flashing the pulse is slower and shallower and the flash is a soft brighten.
+- Speed boost rings: a slim graphite frame with a segmented magenta inner rim, four amber markers (top, bottom and sides, like the boost pads' corner lights) and a clear centre, so you can line up the approach and see the track beyond. As a car comes within about 20 m, two light pulses run once round the rim; as it passes through, the inner edge flashes once. With Reduced flashing the pulses are dimmer and the flash is a soft brighten.
 - Jump ramps. Most are full width; every race track also has at least one small ramp (about half the road wide, 0.9–1.1 m high) on one side of a straight or crest, so you choose a side: take the jump (air time, a trick, the ramp's two item boxes) or drive past it. Small ramps: Arashiyama (main street), Catacombs (ossuary crest), Choquequirao (west terrace), Gardens by the Bay (skyway crest), Hoia Baciu (forest crest), Kilwa Kisiwani (harbour road), The Stacks (loading dock), Vatnajökull (moraine crest), Quinta Normal (park avenue), Nyiragongo (lava flats), Marble Canyon (canyon descent); Vale da Lua's rock hump, Six Flags' Bayou jump and the Crazy House's Bone Gallery stair jump were cut to half width, and Chefchaouen's Fountain Steps drop already was. A second small ramp was added to every race track (v10.2), on the opposite side of the road to the first, on a straight well away (at least ~150 m) from the track's other ramps, half-pipes and shortcut junctions: `SmallRampB` (or `SmallRampA` where the first is a cut-down jump). On Gardens by the Bay it avoids the open edges.
 - Trick window: brushing the edge or ramp again just after take-off (within the 0.25 s lip grace, or on one wheel) no longer closes the trick window; only a real landing (two wheels down) does.
 - **Half-pipes** (Mario Kart 8 / skate style; the engine still calls them trick edges, `TrickEdge`): a 70 m stretch of the road's outside edge on a bend curves up into a 4 m quarter-pipe against the wall (a quarter-circle from the road to a vertical lip), easing into the road over 8 m at each end. Steer into it at speed (over 15 m/s along the road) and the ride is **guided**:
@@ -1035,11 +1086,53 @@ The track concept art suggests one signature dynamic event per track. They are r
 
 ## 9.1 Progression Model
 
-All eight vehicles, eight tracks, and all three Grand Prix cups are available immediately.
-
-Progression is cosmetic-only.
+Every track and Grand Prix cup is available immediately. Three cars are available from the start, and the other ten are unlocked by playing (§9.1a). Coins buy cosmetics.
 
 No performance upgrades are included.
+
+## 9.1a Car Unlocks
+
+| Car | Unlocked by |
+|---|---|
+| V8 Specter, Aurora GT, Riviera 88 | Starters |
+| Empyrean S | Winning the American Cup |
+| Nexus X | Winning the Europe Cup |
+| Orbiter | Winning the Asia Cup |
+| Valkyrie R | Winning the South America Cup |
+| Cipher EVO | Winning the Africa Cup |
+| Switchback | Winning an Elimination race |
+| Afterimage | Finishing in the top 3 of a Mirror race |
+| High Roller | Winning a race at 200cc |
+| Revenant | Its rival ghost in Time Trial (Fires of Nyiragongo) |
+| Interceptor | Finding the developer track (Vegas Overdrive) in Practice and running a full lap of it |
+
+- Each car has one route. The cups, in menu order, give the last five of the original eight cars in list order; of the five newer cars, Switchback comes from Elimination, Afterimage from a Mirror podium, High Roller from a 200cc win, Revenant from Time Trial, and Interceptor from a full Practice lap of the developer track. Cars with a non-Time-Trial route are still rival ghosts in Time Trial (beating one opens its expert ghost and prize), but beating them doesn't unlock the car.
+- **Practice lap:** only a full free-drive lap of Vegas Overdrive in Practice counts (Time Trial laps on THE STRIP don't). The Garage hint doesn't name the track: "Find the developer's discarded versus rough draft and run a complete lap". When the lap completes the game pauses on the CAR UNLOCKED screen; Continue drives on.
+- **Single player or split screen:** every race route counts in either. In split screen, the best-placed player's result counts and the car is unlocked on the profile for everyone.
+- A cup win means 1st overall in a Grand Prix, at any engine class, forward or Mirror. An Elimination win is an Elimination race won outright, on its own or in a set. A Mirror podium is a top-3 finish in any Mirror race (Versus, Elimination or a Grand Prix race). A 200cc win is 1st place in any race at 200cc. Time Trial doesn't count for these, and there must be at least one other racer.
+- The rules are data (UnlockCatalog, TimeTrialCatalog), so new unlock-only cars just add rows.
+- Locked cars are still out on track: AI rivals drive every car.
+- **Car order:** every car list starts with the three starters (V8 Specter, Aurora GT, Riviera 88), then the ten unlockable cars (Empyrean S, Nexus X, Orbiter, Valkyrie R, Cipher EVO, Switchback, Afterimage, High Roller, Revenant, Interceptor). The order is fixed, so unlocking a car doesn't move it.
+- **Locked cars are a mystery** (ref 'Neon locked mystery car.png'):
+  - In the Garage the car on the turntable is a black silhouette under a big glowing gold "?", with a LOCKED plate and padlock on the front of the turntable.
+  - The name reads "???" (type MYSTERY CAR), and the stats are hidden. The description line says how to unlock it, and so does the INFO tab. The dots' tooltips don't give the name away either.
+  - It can't be selected or dressed.
+  - The Versus / Grand Prix / Time Trial setup screen steps through all thirteen cars in list order the same way: a locked car shows as the "?" mystery with how to unlock it, and Track Selection / Choose Cup stays disabled until you step to a car you own.
+  - The split-screen car strip shows a gold "?" for each locked car, and the split-screen pickers skip locked cars.
+- Unlocks apply to every profile, including saves from before this change: an older save keeps only the starters, and a locked selected car falls back to the V8 Specter.
+- **CAR UNLOCKED screen** (ref 'Switchback car unlocked screen.png'):
+  - Shown after the race that unlocks a car, after the podium and the results, so you see the scores first (one screen per car, single player or split screen). Whichever results button you press (Race again, Next Race, Standings → Back to main menu, Change track, Main menu) opens it first. It shows once per race.
+  - The new car stands in the dark garage on the right, seen from behind and turning slowly.
+  - On the left: CAR UNLOCKED, the car's name, and where and how it was won:
+    - "Arashiyama Circuit / Rival ghost beaten by 0.842 s";
+    - "Asia Cup Grand Prix / Won at 150cc · Mirror";
+    - "Hoia Baciu Run / Elimination won";
+    - "Vale da Lua · Mirror / Finished P2";
+    - "Crazy House / Won at 200cc";
+    - "Vegas Overdrive · Practice / Lap completed in 1:52.30".
+  - **Continue** goes on to the next unlocked car, then does what the results button you pressed does. **View in Garage** goes straight to the garage with the new car selected; Back from there returns to the main menu.
+  - The logo sits between cyan and magenta bars inside a thin cyan frame.
+- The results screen also announces a new car or item in gold ("NEW CAR UNLOCKED: EMPYREAN S").
 
 ## 9.2 Coin Collection
 
@@ -1095,6 +1188,27 @@ Prices may change during balancing.
 Purchased cosmetics remain permanently available.
 
 Purchases are shared by every vehicle; each vehicle keeps its own equipped cosmetics.
+
+### Signature Items
+Each unlockable car has a signature paint and an animated underglow. They only show in the Garage on their own car.
+- The first five cars' items can't be bought: beat that car's expert ghosts in Time Trial to win them (§2.5). They show once won.
+- The last five cars have one rival track each, so their expert ghost wins the paint, and their underglow is sold in the Garage for 600 coins. It can only be bought once that car is unlocked.
+
+| Car | Signature paint (finish) | Animated underglow |
+|---|---|---|
+| Empyrean S | High Roller Gold (metallic) | Jackpot Pulse (gold ↔ magenta) |
+| Nexus X | Nexus Volt (metallic) | Circuit Surge (cyan ↔ lime) |
+| Orbiter | Orbiter Nebula (metallic) | Orbit Wave (violet ↔ cyan) |
+| Valkyrie R | Valkyrie Crimson Steel (chrome) | Valkyrie Flare (red ↔ orange) |
+| Cipher EVO | Cipher Blackout (matte) | Cipher Code (lime ↔ white) |
+| Switchback | Rally Stage Red (metallic) | Rally Lights (warm white ↔ teal), shop |
+| Afterimage | Afterimage Phantom (chrome) | Ghost Trail (violet ↔ magenta), shop |
+| High Roller | Champagne Stakes (metallic) | Full House (gold ↔ crimson), shop |
+| Revenant | Revenant Ash (matte) | Afterburn (orange ↔ red), shop |
+| Interceptor | Interceptor Cobalt (metallic) | Pursuit Strobe (blue ↔ white), shop |
+
+- A signature paint always has its own finish.
+- An animated underglow eases between its two colours every 1.6 s. With Reduced Flashing on, it holds a steady mix of the two.
 
 ## 9.5 License Plates
 
@@ -1168,9 +1282,9 @@ Visual effects should never compromise gameplay readability.
 
 The game opens on a title menu: Single Player, Multiplayer (§2.4), Settings, Credits, Exit. Single Player opens the main menu:
 
-- Continue Grand Prix, when a championship is saved
 - Grand Prix
 - Versus (Standard, Elimination or Mirror, picked on the race setup screen)
+- Time Trial (§2.5)
 - Practice
 - Garage
 - Settings
@@ -1275,6 +1389,8 @@ The single-player results are laid out after the "Cyberwave 2199 Race Results" r
   - Under the card: your new coin balance and any newly affordable cosmetics.
 - **Table:** every racer, with a slanted place badge (gold / silver / bronze for the top three), a picture of their car in their own paint, their name, the points the place earns (PTS, in every race, on the Grand Prix scale), total time and best lap. A racer placed without crossing the line (the race is over for the players) gets a projected time from their pace so far; only the last place and Elimination's runner-up show DNF. Projected times never count as personal bests. Your row is filled magenta.
 - **Buttons:** RACE AGAIN (or the next step) and MAIN MENU.
+- **Unlocks:** a car won this race (cup, Elimination, Mirror podium or 200cc win, §9.1a) is announced in gold under the table.
+- **Time Trial** (§2.5): a ghost card replaces the table (your time, the ghost's and the gap, the rival and expert targets, your track best and any unlock). The big text is WIN or the gap ("+1.42"), and the buttons are RACE AGAIN and CHANGE TRACK.
 - **Hint bar:** A / Enter Confirm, Start / Esc Pause.
 - **Grand Prix and Versus sets** work as in Mario Kart:
   - first the race, with the +PTS column counting toward the cup;
@@ -1430,6 +1546,9 @@ Save:
 - Accessibility settings
 - Personal bests
 - Grand Prix results
+- Unlocked cars and signature items
+- Time Trial results per track (best time, rival beaten, expert beaten)
+- Your best Time Trial ghost per track (user://ghosts/)
 
 ## 13.2 Grand Prix Persistence
 
@@ -1818,5 +1937,15 @@ Changes after Version 1.0 should be tracked as revisions rather than silently re
 | 10.1 | 2026-11-17 | New **item crate look**: graphite shell, metal corners, segmented magenta frame, big white "?", glow on the road; crates bob and sway, the frame flashes outward on pickup and lights up just before a respawn (§6.1). |
 | 10.2 | 2026-11-18 | More tricks: every race track gets one more **small ramp** (opposite side of the road from the first) and one more **half-pipe** (outside of a bend), placed away from the other ramps, pipes and junctions. 15 new small ramps and 15 new half-pipes, 35 half-pipes in all (§8.7). |
 | 10.3 | 2026-11-18 | New **loading screen**: full-screen track screenshot, big title and location / mode top left, a TRACK MAP panel on the right, full-width progress bar; tracks without a screenshot get the same layout on the plain background (§11.8). |
+| 10.4 | 2026-11-18 | Weapon balance: **Overdrive Protocol** lasts 8.5 s in all (7 s of flight, was 5 s); **Swarm Bots** leash is lighter, top speed ×0.66 (was ×0.55); **Road Spike** traction loss 2 s (was 1 s, Triple Spike too); **Hunter Drone** stun 2.3 s (was 0.8 s) (§6.3, §6.5). |
+| 10.5 | 2026-11-18 | New **boost ring look**: slim graphite frame, segmented magenta inner rim, four amber markers that match the boost pads, clear centre; two light pulses run round the rim as a car approaches, and the inner edge flashes once as it passes through (§8.7). |
+| 10.6 | 2026-11-18 | New **boost pad look** (ref 'New Boost Pads.png'): beveled graphite frame, ribbed centre, three segmented cyan chevrons, amber corner lights; a soft pulse runs through the chevrons in the driving direction and the pad flashes once as a car crosses it (§8.7). |
+| 10.7 | 2026-11-18 | **Time Trial** mode (single player, below Versus): 3 laps, 150cc, one Triple Nitro each and no crates, alone against a baked **rival** or **expert** ghost of a locked car, or your own best (§2.5). **Car unlocks**: three starters (V8 Specter, Aurora GT, Riviera 88); the other five are unlocked by beating their rival ghost, winning a cup, or (Cipher EVO) winning Elimination (§9.1a). Expert ghosts give each car's **signature paint** or **animated underglow** (§9.4). **Continue Grand Prix** removed from the main menu (§11.2). |
+| 10.8 | 2026-11-18 | **CAR UNLOCKED screen** after the podium, before the results: the new car, where and how it was won, Continue / View in Garage. **Locked cars are a mystery**: a black silhouette under a gold "?" with a LOCKED plate, name "???", stats hidden, how-to-unlock kept. Every car list puts the **three starters first**. Time Trial HUD **drops the ghost time gap** (the minimap dot is enough) (§2.5, §9.1a). |
+| 10.9 | 2026-11-18 | **Five new cars** (ref 'Cyberwave 2199_ Five Retro-Futuristic Racers.png'): **Switchback** (rally hatch), **Afterimage** (wedge on coilovers), **High Roller** (super tourer), **Revenant** (wide-body coupe), **Interceptor** (open-wheel racer); 13 in all, 10 to unlock (§5.1). Each is unlocked by its rival ghost: Switchback on Arashiyama, Afterimage on Vale da Lua, High Roller on Quinta Normal, Revenant on Nyiragongo, Interceptor on Kilwa; Cipher EVO's underglow moves to Choquequirao (§2.5, §9.1a). New **two-tone paint** and curved **fender flares** on procedural bodies. Their expert ghost gives a signature paint; their animated underglow is a 600-coin shop item for that car only (§9.4). |
+| 10.10 | 2026-11-18 | **One unlock route per car**: the five cups (American, Europe, Asia, South America, Africa) give Empyrean S, Nexus X, Orbiter, Valkyrie R and Cipher EVO; an **Elimination** win gives Switchback; Afterimage, High Roller, Revenant and Interceptor come from their Time Trial rival ghosts. Beating a cup or Elimination car's rival ghost no longer unlocks it (§2.5, §9.1a). |
+| 10.11 | 2026-11-18 | Two new race routes: **Afterimage** for a top-3 finish in a Mirror race, **High Roller** for winning a race at 200cc; Revenant and Interceptor stay Time Trial unlocks. Cup, Elimination, Mirror and 200cc routes now count in **split screen** too (best-placed player; the car is saved to the profile) (§9.1a). |
+| 10.12 | 2026-11-18 | The **CAR UNLOCKED screen moves after the results** (you see the scores first): any results button opens it, and Continue then carries out that button. Shown in split screen too (§9.1a). |
+| 10.13 | 2026-11-18 | **Interceptor** is now unlocked by finding the developer track (Vegas Overdrive) in Practice and running a full lap; the game pauses on CAR UNLOCKED, Continue drives on. Revenant is the only Time Trial rival unlock (§2.5, §9.1a). |
 
-**End of Game Design Document — Version 10.3**
+**End of Game Design Document — Version 10.6**

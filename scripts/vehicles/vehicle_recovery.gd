@@ -39,6 +39,8 @@ enum State { NORMAL, DISINTEGRATING, TELEPORTING, RECONSTRUCTING, PROTECTED }
 const ITEM_LOSS_REASONS: Array[String] = ["out of bounds", "water", "lava", "off track", "manual"]
 
 @export var auto_recovery_enabled: bool = true
+## Time Trial: the race's one Triple Nitro survives every recovery.
+var keep_items: bool = false
 @export_group("Sequence")
 @export var disintegration_time: float = 0.3
 @export var teleport_time: float = 0.4
@@ -174,7 +176,7 @@ func request_recovery(reason: String) -> bool:
 	_travelled = 0.0
 	vehicle.drift.cancel("recovery")
 	vehicle.clear_boost()
-	if loses_items(reason) and vehicle.inventory != null:
+	if loses_items(reason) and vehicle.inventory != null and not keep_items:
 		vehicle.inventory.clear()
 	vehicle.slipstream_charge = 0.0
 	vehicle.in_slipstream = false

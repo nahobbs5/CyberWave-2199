@@ -49,10 +49,18 @@ const START_YAW := 4.45
 @export var view_offset: Vector2 = Vector2.ZERO
 ## Camera distance scale (>1 shows more of the room).
 @export var zoom: float = 1.0
+## Opening turn of the car (set before adding to the tree). The CAR UNLOCKED
+## screen uses a rear three-quarter view.
+@export var start_yaw: float = START_YAW
 ## Colour of the turntable's inner glow ring (set before adding to the tree).
 @export var ring_color: Color = UIStyle.CYAN
 
 var car: VehicleController
+## Locked car look (set_mystery).
+var mystery: bool = false
+
+static var _silhouette: StandardMaterial3D
+var _mark: Node3D
 
 var _viewport: SubViewport
 var _camera: Camera3D
@@ -83,7 +91,7 @@ func _ready() -> void:
 	_viewport.add_child(_camera)
 	place_camera()
 	_pivot = Node3D.new()
-	_pivot.rotation.y = START_YAW
+	_pivot.rotation.y = start_yaw
 	_viewport.add_child(_pivot)
 	car = (load(CAR_SCENE) as PackedScene).instantiate() as VehicleController
 	# Display only: no physics, input, AI or effects.
@@ -103,6 +111,112 @@ func show_vehicle(vehicle: VehicleData, loadout: Dictionary, plate_text: String)
 	if car == null:
 		return
 	VehicleCosmetics.apply(car, vehicle, loadout, plate_text)
+	if mystery:
+		_apply_mystery()
+
+
+## Locked car (GDD 9.1a, "reference files/Neon locked mystery car.png"): the
+## car turns into a black silhouette (labels, lights and effects hidden) and a
+## big glowing gold "?" stands over it, facing the camera. Stays on across
+## show_vehicle until switched off.
+func set_mystery(on: bool) -> void:
+	mystery = on
+	if car == null:
+		return
+	if on:
+		_apply_mystery()
+	else:
+		_clear_mystery()
+
+
+func is_mystery_shown() -> bool:
+	return mystery and _mark != null and _mark.visible
+
+
+func _apply_mystery() -> void:
+	if _mark == null:
+		_build_mystery_mark()
+	_mark.visible = true
+	for node in car.find_children("*", "Node3D", true, false):
+		if node is Label3D or node is Light3D or node is GPUParticles3D or node is CPUParticles3D:
+			if not node.has_meta(&"mystery_visible"):
+				node.set_meta(&"mystery_visible", node.visible)
+			node.visible = false
+		elif node is GeometryInstance3D:
+			var g := node as GeometryInstance3D
+			if g.material_override != _silhouette_material():
+				g.set_meta(&"mystery_material", g.material_override)
+			g.material_override = _silhouette_material()
+
+
+func _clear_mystery() -> void:
+	if _mark != null:
+		_mark.visible = false
+	for node in car.find_children("*", "Node3D", true, false):
+		if node.has_meta(&"mystery_visible"):
+			node.visible = bool(node.get_meta(&"mystery_visible"))
+			node.remove_meta(&"mystery_visible")
+		if node.has_meta(&"mystery_material"):
+			(node as GeometryInstance3D).material_override = node.get_meta(&"mystery_material") as Material
+			node.remove_meta(&"mystery_material")
+
+
+static func _silhouette_material() -> StandardMaterial3D:
+	if _silhouette == null:
+		# Unlit near-black: a flat shape with no reflections giving it away.
+		_silhouette = StandardMaterial3D.new()
+		_silhouette.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		_silhouette.albedo_color = Color(0.02, 0.015, 0.035)
+	return _silhouette
+
+
+## The "?": an extruded Oxanium glyph in emissive gold with a warm light.
+func _build_mystery_mark() -> void:
+	_mark = Node3D.new()
+	_mark.name = "MysteryMark"
+	_viewport.add_child(_mark)
+	var text := TextMesh.new()
+	text.text = "?"
+	text.font = UIStyle.heading_font()
+	text.font_size = 64
+	text.pixel_size = 0.026
+	text.depth = 0.24
+	text.curve_step = 2.0
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(1.0, 0.78, 0.1)
+	mat.emission_enabled = true
+	mat.emission = Color(1.0, 0.72, 0.05)
+	mat.emission_energy_multiplier = 1.4
+	mat.roughness = 0.3
+	mat.metallic = 0.4
+	# In front of the silhouette, never hidden inside it.
+	mat.no_depth_test = true
+	mat.render_priority = 10
+	text.material = mat
+	var glyph := MeshInstance3D.new()
+	glyph.name = "Glyph"
+	glyph.mesh = text
+	glyph.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_mark.add_child(glyph)
+	var glow := OmniLight3D.new()
+	glow.name = "Glow"
+	glow.light_color = Color(1.0, 0.75, 0.2)
+	glow.light_energy = 2.5
+	glow.omni_range = 4.5
+	glow.position = Vector3(0.0, 0.0, 1.0)
+	_mark.add_child(glow)
+	_place_mystery_mark()
+
+
+## Stands the "?" over the turntable centre, square to the camera.
+func _place_mystery_mark() -> void:
+	if _mark == null or _camera == null:
+		return
+	_mark.position = Vector3(0.0, FLOOR_Y + 1.15, 0.0)
+	var to_cam := _camera.global_position - _mark.position if _camera.is_inside_tree() else _camera.position - _mark.position
+	to_cam.y = 0.0
+	if to_cam.length() > 0.01:
+		_mark.basis = Basis.looking_at(-to_cam.normalized(), Vector3.UP)
 
 
 ## Re-aims the camera after changing view_offset or zoom.
@@ -114,6 +228,20 @@ func place_camera() -> void:
 	_camera.look_at(LOOK_AT)
 	_camera.h_offset = view_offset.x
 	_camera.v_offset = view_offset.y
+	_place_mystery_mark()
+
+
+## Where the front edge of the turntable (the side facing the camera) is on
+## screen, in this control's local coordinates. The LOCKED plate sits there.
+func turntable_front() -> Vector2:
+	if _camera == null or _viewport == null:
+		return size * Vector2(0.5, 0.8)
+	var to_cam := Vector3(_camera.position.x, 0.0, _camera.position.z).normalized()
+	var p := _camera.unproject_position(to_cam * TABLE_RADIUS * 0.72 + Vector3(0.0, FLOOR_Y, 0.0))
+	var vp := Vector2(_viewport.size)
+	if vp.x <= 0.0 or vp.y <= 0.0:
+		return size * Vector2(0.5, 0.8)
+	return p * size / vp
 
 
 ## Lights in the scene (tests: LITE uses fewer).

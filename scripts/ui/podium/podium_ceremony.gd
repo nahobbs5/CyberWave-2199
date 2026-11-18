@@ -104,8 +104,9 @@ static func entries_for(race: RaceManager) -> Array:
 	return out
 
 
-## Shows the podium when the race wants one, then opens `results`;
-## otherwise opens `results` now. `delay` lets "FINISH!" show first.
+## Shows the podium when the race wants one, then opens `results`; with no
+## podium, the results now. `delay` lets "FINISH!" show first. Any CAR
+## UNLOCKED screens come after the results (CarUnlockScreen.show_then).
 static func open_then(race: RaceManager, results: ResultsScreen, delay: float = 0.0) -> PodiumCeremony:
 	if instant or not wants_podium(race):
 		results.open(race)

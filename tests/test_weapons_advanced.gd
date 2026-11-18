@@ -394,7 +394,7 @@ func _test_overdrive(race: RaceManager) -> void:
 	var attacked := false
 	var recovered := false
 	me.recovery.recovered.connect(func(_r: String) -> void: recovered = true)
-	for i in 600:
+	for i in 780:
 		await physics_frame
 		var road_y := track.get_center_at(track.get_offset_at(me.global_position)).y
 		max_height = maxf(max_height, me.global_position.y - road_y)

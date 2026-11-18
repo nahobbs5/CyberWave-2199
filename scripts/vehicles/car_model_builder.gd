@@ -10,6 +10,8 @@ extends RefCounted
 ##
 ## Output, under the car's Body node:
 ##   Model/Paint, Glass, Trim, Chrome, Lights, Tail   (one mesh per material)
+##   Model/TwoTone   second body colour (design "paint2"); not named Paint*,
+##                   so paint cosmetics leave it alone
 ##   Model/NeonL, NeonR                               (underglow strips)
 ##   Model/PlateAnchor, DecalL, DecalR, ExhaustL, ExhaustR  (Marker3D)
 ## Meshes are cached per design, so eight cars on the grid share geometry.
@@ -17,7 +19,7 @@ extends RefCounted
 ## Coordinates match the shared car scene: wheels at x ±0.85, z ±1.35,
 ## radius 0.38; the body sits roughly between y -0.25 and +0.3 (cabin above).
 
-const PARTS: Array[String] = ["Paint", "Glass", "Trim", "Chrome", "Lights", "Tail"]
+const PARTS: Array[String] = ["Paint", "Glass", "Trim", "Chrome", "Lights", "Tail", "TwoTone"]
 ## The whole model sits this much lower than the design numbers...
 const Y_SHIFT := -0.05
 ## ...and the sills reach this much further down, so the cars sit low over
@@ -66,7 +68,8 @@ static func build(car: Node3D, design_id: String) -> Node3D:
 		var mi := MeshInstance3D.new()
 		mi.name = part
 		mi.mesh = mesh
-		mi.material_override = material_for(part, accent, design.get("paint", Color(0.2, 0.2, 0.25)))
+		var paint: Color = design.get("paint", Color(0.2, 0.2, 0.25))
+		mi.material_override = material_for(part, accent, design.get("paint2", paint) if part == "TwoTone" else paint)
 		model.add_child(mi)
 	for side in [-1.0, 1.0]:
 		var neon := MeshInstance3D.new()
@@ -114,7 +117,7 @@ static func material_for(part: String, accent: Color, paint: Color) -> StandardM
 	var mat := StandardMaterial3D.new()
 	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 	match part:
-		"Paint":
+		"Paint", "TwoTone":
 			mat.albedo_color = paint
 			mat.metallic = 0.55
 			mat.roughness = 0.3
@@ -627,6 +630,13 @@ static func _add_part(tools: Dictionary, spec: Array) -> void:
 			var p2: Vector3 = spec[2]
 			_cylinder(st, p2.x, p2.y, int(p2.z), xf)
 			_cylinder(st, p2.x, p2.y, int(p2.z), _mirror(xf))
+		"flare":
+			var p3: Vector3 = spec[2] # inner radius, outer radius, width
+			_flare(st, p3.x, p3.y, p3.z, xf)
+		"mirror_flare":
+			var p4: Vector3 = spec[2]
+			_flare(st, p4.x, p4.y, p4.z, xf)
+			_flare(st, p4.x, p4.y, p4.z, _mirror(xf))
 
 
 static func _mirror(xf: Transform3D) -> Transform3D:
@@ -704,6 +714,39 @@ static func _wedge(st: SurfaceTool, size: Vector3, xf: Transform3D) -> void:
 	_quad(st, b3, b2, t2, t3, c)
 	_tri(st, b0, b3, t3, c)
 	_tri(st, b1, b2, t2, c)
+
+
+## Fender flare: a half ring over a wheel (slightly past horizontal at both
+## ends) in the local YZ plane, `width` thick along X.
+static func _flare(st: SurfaceTool, inner: float, outer: float, width: float, xf: Transform3D) -> void:
+	var segments := 14
+	var start := -0.12
+	var sweep := PI + 0.24
+	var hw := width * 0.5
+	var mid := (inner + outer) * 0.5
+	for i in segments:
+		var a0 := start + sweep * i / segments
+		var a1 := start + sweep * (i + 1) / segments
+		var d0 := Vector3(0, sin(a0), cos(a0))
+		var d1 := Vector3(0, sin(a1), cos(a1))
+		var dm := Vector3(0, sin((a0 + a1) * 0.5), cos((a0 + a1) * 0.5))
+		var c := xf * (dm * mid)
+		var o0 := d0 * outer
+		var o1 := d1 * outer
+		var i0 := d0 * inner
+		var i1 := d1 * inner
+		var x := Vector3(hw, 0, 0)
+		_quad(st, xf * (o0 - x), xf * (o0 + x), xf * (o1 + x), xf * (o1 - x), c)
+		_quad(st, xf * (i0 - x), xf * (i0 + x), xf * (i1 + x), xf * (i1 - x), c)
+		_quad(st, xf * (i0 + x), xf * (o0 + x), xf * (o1 + x), xf * (i1 + x), c)
+		_quad(st, xf * (i0 - x), xf * (o0 - x), xf * (o1 - x), xf * (i1 - x), c)
+	for a: float in [start, start + sweep]:
+		var d := Vector3(0, sin(a), cos(a))
+		var x2 := Vector3(hw, 0, 0)
+		# A point just inside the ring from this end cap.
+		var b := a + (0.1 if a == start else -0.1)
+		var inside := xf * (Vector3(0, sin(b), cos(b)) * mid)
+		_quad(st, xf * (d * inner - x2), xf * (d * inner + x2), xf * (d * outer + x2), xf * (d * outer - x2), inside)
 
 
 ## Cylinder along local Z.

@@ -6,6 +6,9 @@ extends CanvasLayer
 ## its camera / lap timer; in races RaceHUD handles laps, so show_lap_info is
 ## turned off there.
 
+## A free-drive lap was completed (Practice car unlock, GDD 9.1a).
+signal lap_completed(lap: int, lap_time: float)
+
 ## Show the distance-based free-drive lap timer.
 @export var show_lap_info: bool = true
 
@@ -91,6 +94,7 @@ func _update_laps() -> void:
 			_best_lap_time = _last_lap_time
 		_lap_start_time = _race_clock
 		_show_notice("Lap %d complete  %s" % [_lap_count, _fmt(_last_lap_time)])
+		lap_completed.emit(_lap_count, _last_lap_time)
 
 
 func _on_recovered(reason: String) -> void:

@@ -6,7 +6,7 @@ extends Node
 ##
 ##   ACTIVATING  0.3 s  energy floods the kart, thruster pods slide out
 ##   ASCENDING   0.6 s  rises to the track's flight height
-##   FLIGHT      ~5 s   automated flight along the road centre at 2x top speed
+##   FLIGHT      ~7 s   automated flight along the road centre at 2x top speed
 ##   DESCENDING  0.6 s  drops onto a validated landing spot
 ##
 ## The route is the main road's centre line by distance, so the car never
@@ -29,7 +29,7 @@ const GROUND_HEIGHT := 0.9
 
 @export var activate_time: float = 0.3
 @export var ascend_time: float = 0.6
-@export var flight_time: float = 5.0
+@export var flight_time: float = 7.0
 @export var descend_time: float = 0.6
 ## Flight speed as a multiple of the car's top speed.
 @export var speed_factor: float = 2.0

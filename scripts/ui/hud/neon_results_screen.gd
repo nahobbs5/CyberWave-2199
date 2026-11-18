@@ -11,6 +11,10 @@ extends ResultsScreen
 ## race with each racer's +points, then Continue shows the standings (rows
 ## slide into championship order while the totals count up), and Continue
 ## again goes on. Split screen keeps the plain ResultsScreen.
+## Time Trial (GDD 2.5): the table makes way for a ghost card (your time,
+## the ghost's, the gap, rival / expert targets) and Main menu becomes
+## Change track. Any car or signature item unlocked this race (any mode)
+## shows in gold under the table / on the ghost card.
 
 const DESIGN := Vector2(1280, 720)
 const ROW_H := 44.0
@@ -55,6 +59,11 @@ var _slide: float = -1.0
 var _slide_from: Array[int] = []
 var _slide_to: Array[int] = []
 var _totals_before: Dictionary = {}
+## Time Trial card (in the table's place) and its lines.
+var tt_panel: NeonPanel
+var _tt_box: VBoxContainer
+## Gold "NEW CAR UNLOCKED: ..." line(s) under the table.
+var unlock_label: Label
 
 
 # --- open / pages -------------------------------------------------------------------
@@ -99,11 +108,17 @@ func open(manager: RaceManager) -> void:
 	var scene_path := race.config.track_scene.resource_path if race.config.track_scene != null else ""
 	_photo.set_track(scene_path)
 	_fill_rewards()
+	_fill_unlocks()
+	var tt := race.config.is_time_trial()
+	_table.visible = not tt
+	tt_panel.visible = tt
+	if tt:
+		_fill_time_trial(player)
 	_set_continue_text()
 	menu_button.visible = c == null or not c.is_complete()
 	# Split screen: back to the title screen (home), not car select.
-	menu_button.text = "Quit to Home" if mp else "Main menu"
-	(menu_button as NeonMenuButton).icon_kind = "home" if mp else "car"
+	menu_button.text = "Quit to Home" if mp else ("Change track" if tt else "Main menu")
+	(menu_button as NeonMenuButton).icon_kind = "home" if mp else ("flags" if tt else "car")
 	menu_button.queue_redraw()
 	continue_button.disabled = true
 	menu_button.disabled = true
@@ -122,6 +137,8 @@ func open(manager: RaceManager) -> void:
 func mode_text() -> String:
 	var c := race.championship
 	if c == null:
+		if race.config.is_time_trial():
+			return "TIME TRIAL · %s" % TimeTrialCatalog.GHOST_NAMES[race.config.ghost_kind].to_upper()
 		return "ELIMINATION" if race.config.mode == RaceConfig.Mode.ELIMINATION else "VERSUS RACE"
 	var kind := "%s SET" % RaceConfig.MODE_NAMES[c.series_mode].to_upper() if c.is_series() else c.gp.display_name.to_upper()
 	return "%s · RACE %d OF %d" % [kind, c.results.size(), c.race_count()]
@@ -145,7 +162,7 @@ func _on_continue() -> void:
 	if race != null and race.championship != null and not standings_page:
 		show_standings()
 		return
-	continue_pressed.emit()
+	leave(continue_pressed.emit)
 
 
 ## Grand Prix / series page 2: the totals, rows sliding into championship order.
@@ -334,6 +351,84 @@ func _fill_rewards() -> void:
 		_rewards_final += "\nNow affordable in the Garage: " + ", ".join(names) + more
 
 
+## Gold unlock lines (cars / signature items won this race), also added to
+## the rewards text.
+func _fill_unlocks() -> void:
+	var u: Dictionary = race.unlocks if race != null else {}
+	var lines: PackedStringArray = []
+	for line in u.get("lines", []):
+		lines.append(str(line))
+	unlock_label.text = "\n".join(lines)
+	unlock_label.visible = not lines.is_empty() and not race.config.is_time_trial()
+	if not lines.is_empty():
+		_rewards_final += ("\n" if _rewards_final != "" else "") + "\n".join(lines)
+
+
+## Time Trial: the big text, placement and the ghost card.
+func _fill_time_trial(player: RaceProgress) -> void:
+	var t := race.time_trial_summary
+	var kind := int(t.get("ghost_kind", TimeTrialCatalog.Ghost.NONE))
+	var ghost_t := float(t.get("ghost_time", 0.0))
+	var beat := bool(t.get("beat_ghost", false))
+	var has_ghost := ghost_t > 0.0
+	big_place.text = "WIN" if beat else (("%+.2f" % float(t.get("delta", 0.0))) if has_ghost else "TT")
+	big_place.add_theme_color_override("font_color", UIStyle.GOLD if beat else Color(1.0, 0.3, 0.9))
+	placement.text = "GHOST BEATEN!" if beat else ("GHOST WINS" if has_ghost else "TIME TRIAL")
+	subtitle.text = "NEW PERSONAL BEST!" if bool(t.get("new_best", false)) else race.config.track_name.to_upper()
+	for child in _tt_box.get_children():
+		_tt_box.remove_child(child)
+		child.queue_free()
+	_tt_line("YOUR TIME", RaceProgress.format_time(player.finish_time) if player.finish_time > 0.0 else "DNF", UIStyle.CYAN)
+	if has_ghost:
+		var who := TimeTrialCatalog.GHOST_NAMES[kind].to_upper()
+		if kind != TimeTrialCatalog.Ghost.BEST and race.ghost != null:
+			who += " · " + VehicleCatalog.by_id(race.ghost.data.vehicle_id).display_name.to_upper()
+		_tt_line("GHOST  (%s)" % who, RaceProgress.format_time(ghost_t), Color.WHITE)
+		_tt_line("GAP", "%+.3f" % float(t.get("delta", 0.0)), UIStyle.CYAN if beat else UIStyle.DANGER)
+	var rec := PlayerProfile.get_profile().time_trial(race.config.track_name)
+	var rival_t := float(t.get("rival_time", 0.0))
+	var expert_t := float(t.get("expert_time", 0.0))
+	if rival_t > 0.0:
+		_tt_line("RIVAL TARGET", RaceProgress.format_time(rival_t) + ("   BEATEN" if bool(rec.get("rival", false)) else ""), UIStyle.GOLD)
+	if expert_t > 0.0:
+		_tt_line("EXPERT TARGET", RaceProgress.format_time(expert_t) + ("   BEATEN" if bool(rec.get("expert", false)) else ""), UIStyle.GOLD)
+	if rec.has("best"):
+		_tt_line("TRACK BEST", RaceProgress.format_time(float(rec.best)), UIStyle.CYAN)
+	for line in race.unlocks.get("lines", []):
+		var l := UIStyle.heading(str(line), 24, UIStyle.GOLD)
+		l.add_theme_font_override("font", UIStyle.slanted_font(true))
+		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		l.custom_minimum_size = Vector2(740, 0)
+		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_tt_box.add_child(l)
+	if not (race.unlocks.get("vehicles", []) as Array).is_empty():
+		var hint := UIStyle.stat("It's waiting in the Garage.", 17, UIStyle.MUTED)
+		hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_tt_box.add_child(hint)
+
+
+func _tt_line(caption: String, value: String, color: Color) -> void:
+	var row := HBoxContainer.new()
+	row.custom_minimum_size = Vector2(740, 44)
+	_tt_box.add_child(row)
+	var cap := UIStyle.stat(caption, 22, Color(0.85, 0.9, 1.0))
+	cap.add_theme_font_override("font", UIStyle.slanted_font(false))
+	cap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(cap)
+	var v := UIStyle.heading(value, 28, color)
+	v.add_theme_font_override("font", UIStyle.slanted_font(true))
+	v.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	row.add_child(v)
+
+
+## The Time Trial card's text (tests).
+func time_trial_text() -> String:
+	var out: PackedStringArray = []
+	for l in _tt_box.find_children("*", "Label", true, false):
+		out.append((l as Label).text)
+	return "\n".join(out)
+
+
 ## Split screen: one coloured line per player on the card.
 func _fill_players() -> void:
 	for child in _players_list.get_children():
@@ -478,6 +573,27 @@ func _build() -> void:
 
 	_build_left()
 	_build_table()
+	tt_panel = NeonPanel.new(18, UIStyle.GOLD, UIStyle.MAGENTA)
+	tt_panel.position = Vector2(450, 116)
+	tt_panel.size = Vector2(800, 468)
+	tt_panel.custom_minimum_size = Vector2(800, 468)
+	tt_panel.visible = false
+	_canvas.add_child(tt_panel)
+	var tt_margin := MarginContainer.new()
+	for side in ["left", "right", "top"]:
+		tt_margin.add_theme_constant_override("margin_" + side, 18)
+	tt_panel.add_child(tt_margin)
+	_tt_box = VBoxContainer.new()
+	_tt_box.add_theme_constant_override("separation", 6)
+	tt_margin.add_child(_tt_box)
+	unlock_label = UIStyle.stat("", 18, UIStyle.GOLD)
+	unlock_label.add_theme_font_override("font", UIStyle.slanted_font(true))
+	unlock_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	unlock_label.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+	unlock_label.position = Vector2(450, 546)
+	unlock_label.size = Vector2(800, 52)
+	unlock_label.visible = false
+	_canvas.add_child(unlock_label)
 
 	# Buttons and hints.
 	var go := NeonMenuButton.new("Race again", "reset")
@@ -495,7 +611,7 @@ func _build() -> void:
 	menu.custom_minimum_size = Vector2(360, 60)
 	menu.position = Vector2(866, 604)
 	menu.size = Vector2(360, 60)
-	menu.pressed.connect(func() -> void: menu_pressed.emit())
+	menu.pressed.connect(func() -> void: leave(menu_pressed.emit))
 	_canvas.add_child(menu)
 	menu_button = menu
 	continue_button.focus_neighbor_right = continue_button.get_path_to(menu_button)

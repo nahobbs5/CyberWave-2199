@@ -53,6 +53,8 @@ func _ready() -> void:
 		if index < 0:
 			# Player 1: their garage car. Others: a different car each to start.
 			index = VehicleCatalog.index_of(PlayerProfile.get_profile().selected_vehicle) if i == 0 else i % count
+		# Everyone picks from the cars this profile has unlocked (GDD 9.1a).
+		index = RaceSetup.next_available(index, 1)
 		var plate := "P%d" % (i + 1)
 		if i < GameSession.mp_plates.size() and GameSession.mp_plates[i] != "":
 			plate = GameSession.mp_plates[i]
@@ -83,7 +85,10 @@ func pick_vehicle(device: int, index: int) -> void:
 	var i := slot_of(device)
 	if i == -1 or bool(slots[i].ready) or bool(slots[i].editing):
 		return
-	slots[i].vehicle = posmod(index, VehicleCatalog.all().size())
+	index = posmod(index, VehicleCatalog.all().size())
+	if not PlayerProfile.get_profile().has_vehicle(VehicleCatalog.all()[index].id):
+		return # locked
+	slots[i].vehicle = index
 	_show_car(i)
 	_refresh()
 
@@ -204,7 +209,7 @@ func step_vehicle(device: int, delta: int) -> void:
 	var i := slot_of(device)
 	if i == -1 or bool(slots[i].ready) or bool(slots[i].editing):
 		return
-	slots[i].vehicle = posmod(int(slots[i].vehicle) + delta, VehicleCatalog.all().size())
+	slots[i].vehicle = RaceSetup.next_available(int(slots[i].vehicle) + delta, signi(delta) if delta != 0 else 1)
 	_show_car(i)
 	_refresh()
 
@@ -884,6 +889,10 @@ class ThumbStrip extends Control:
 	func first() -> int:
 		return clampi(current - 1, 0, maxi(0, VehicleCatalog.all().size() - cell_count()))
 
+	## A car this profile hasn't unlocked: drawn as a "?".
+	func is_mystery(index: int) -> bool:
+		return not PlayerProfile.get_profile().has_vehicle(VehicleCatalog.all()[index].id)
+
 	func _cell_rect(i: int) -> Rect2:
 		var gap := 8.0
 		var w := (size.x - gap * (cell_count() - 1)) / cell_count()
@@ -907,6 +916,18 @@ class ThumbStrip extends Control:
 			var on := index == current
 			var pts := NeonPanel.rounded_rect(r, 10.0, 3)
 			draw_colored_polygon(pts, Color(0.1, 0.08, 0.22, 0.9) if not on else Color(color.darkened(0.6), 0.9))
+			if is_mystery(index):
+				# Locked (GDD 9.1a): a gold "?" instead of the car.
+				var font := UIStyle.slanted_font(true)
+				var fs := int(r.size.y * 0.78)
+				var q_size := font.get_string_size("?", HORIZONTAL_ALIGNMENT_LEFT, -1, fs)
+				var at := Vector2(r.get_center().x - q_size.x * 0.5, r.get_center().y + font.get_ascent(fs) * 0.5 - fs * 0.1)
+				draw_string_outline(font, at, "?", HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 6, Color(0.3, 0.12, 0.0, 0.9))
+				draw_string(font, at, "?", HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(1.0, 0.8, 0.12))
+				var outline_q := pts.duplicate()
+				outline_q.append(pts[0])
+				draw_polyline(outline_q, Color(1, 1, 1, 0.18), 1.5, true)
+				continue
 			var tex := CarThumbnails.get_texture(cars[index].id)
 			if tex != null:
 				var ts := tex.get_size()

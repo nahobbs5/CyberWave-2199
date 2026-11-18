@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="VehicleData" format=3]
+
+[ext_resource type="Script" path="res://scripts/vehicles/vehicle_data.gd" id="1_data"]
+[ext_resource type="Resource" path="res://resources/vehicles/stats/afterimage_stats.tres" id="2_stats"]
+
+[resource]
+script = ExtResource("1_data")
+id = "afterimage"
+display_name = "Afterimage"
+vehicle_type = "Wedge Racer"
+character = "Explosive launch on long-travel suspension; light and twitchy at full speed."
+stats = ExtResource("2_stats")
+factory_color = Color(0.36, 0.11, 0.3, 1)

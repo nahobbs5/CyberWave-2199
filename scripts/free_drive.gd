@@ -3,7 +3,9 @@ extends Node3D
 ## Wires the track, car, camera and HUD, using the selected vehicle and its
 ## cosmetics. The track is GameSession.practice_track (picked on the
 ## Practice screen); the scene's own TestCircuit is swapped out for any other.
-## Esc returns to the main menu.
+## Esc returns to the main menu. A full lap of the developer track
+## (UnlockCatalog.PRACTICE_LAP_TRACK) unlocks its car: the game pauses on the
+## CAR UNLOCKED screen and Continue drives on.
 
 @onready var track: TrackCircuit = $TestCircuit
 @onready var car: VehicleController = $PlayerCar
@@ -26,12 +28,36 @@ func _ready() -> void:
 	car.recovery.set_track(track, track.get_spawn_offset())
 	camera.set_target(car)
 	hud.setup(car, camera, track)
+	hud.lap_completed.connect(_on_lap_completed)
 	_add_minimap()
 	HudScaler.apply(hud, GameSettings.hud_scale)
 	if GameSettings.motion_blur:
 		var blur := SpeedBlur.new()
 		blur.vehicle = car
 		add_child(blur)
+
+
+## The Practice-lap car unlock (GDD 9.1a).
+func _on_lap_completed(_lap: int, lap_time: float) -> void:
+	if GameSession.practice_track != UnlockCatalog.PRACTICE_LAP_TRACK:
+		return
+	var profile := PlayerProfile.get_profile()
+	if not profile.unlock_vehicle(UnlockCatalog.PRACTICE_LAP_UNLOCK):
+		return
+	profile.save()
+	get_tree().paused = true
+	CarUnlockScreen.show_cards(self, [{
+		"vehicle": UnlockCatalog.PRACTICE_LAP_UNLOCK,
+		"line1": "%s · Practice" % UnlockCatalog.PRACTICE_LAP_TRACK,
+		"line2": "Lap completed in %s" % RaceProgress.format_time(lap_time),
+	}], _resume)
+
+
+## Back to driving after the CAR UNLOCKED screen.
+func _resume() -> void:
+	get_tree().paused = false
+	ResultsScreen.set_race_sfx_muted(false)
+	Music.play(get_tree(), TrackCatalog.music("Test Circuit"))
 
 
 ## Replaces the built-in Test Circuit with the chosen practice track.

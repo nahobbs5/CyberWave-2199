@@ -32,6 +32,12 @@ var personal_bests: Dictionary = {}
 var gp_results: Array = []
 ## Last race setup screen choices (GDD 11.3 "remembered").
 var last_setup: Dictionary = {}
+## Cars unlocked beyond the starters (GDD 9.1a, UnlockCatalog).
+var unlocked_vehicles: Array[String] = []
+## Time Trial per track: { track name: {"best": s, "rival": bool, "expert": bool} }.
+var time_trials: Dictionary = {}
+## Tests: every car counts as unlocked.
+static var all_unlocked_for_tests: bool = false
 
 
 static func get_profile() -> PlayerProfile:
@@ -80,7 +86,13 @@ func owns(id: String) -> bool:
 
 
 func can_buy(item: CosmeticItem) -> bool:
-	return item != null and not owns(item.id) and coins >= item.price
+	return item != null and not item.unlock_only and not owns(item.id) and coins >= item.price \
+			and _car_allows(item)
+
+
+## A car's own shop item (signature underglow) needs that car unlocked.
+func _car_allows(item: CosmeticItem) -> bool:
+	return item.vehicle_id == "" or has_vehicle(item.vehicle_id)
 
 
 ## Spends coins and adds the item permanently (GDD 9.4). Saves on success.
@@ -94,7 +106,7 @@ func buy(item: CosmeticItem) -> bool:
 
 
 func equip(vehicle_id: String, item: CosmeticItem) -> bool:
-	if item == null or not owns(item.id):
+	if item == null or not owns(item.id) or not item.fits(vehicle_id):
 		return false
 	var loadout: Dictionary = equipped.get(vehicle_id, {})
 	loadout[CosmeticItem.CATEGORY_NAMES[item.category]] = item.id
@@ -106,7 +118,7 @@ func equip(vehicle_id: String, item: CosmeticItem) -> bool:
 func equipped_item(vehicle_id: String, category: CosmeticItem.Category) -> CosmeticItem:
 	var loadout: Dictionary = equipped.get(vehicle_id, {})
 	var item := CosmeticCatalog.by_id(str(loadout.get(CosmeticItem.CATEGORY_NAMES[category], "")))
-	return item if item != null and owns(item.id) else CosmeticCatalog.default_for(category)
+	return item if item != null and owns(item.id) and item.fits(vehicle_id) else CosmeticCatalog.default_for(category)
 
 
 ## category -> CosmeticItem for every category.
@@ -122,7 +134,8 @@ func loadout_for(vehicle_id: String) -> Dictionary:
 func newly_affordable(coins_before: int) -> Array[CosmeticItem]:
 	var out: Array[CosmeticItem] = []
 	for item in CosmeticCatalog.items():
-		if not owns(item.id) and item.price > coins_before and item.price <= coins:
+		if not item.unlock_only and not owns(item.id) and item.price > coins_before and item.price <= coins \
+				and _car_allows(item):
 			out.append(item)
 	return out
 
@@ -164,8 +177,68 @@ func race_name() -> String:
 
 
 func set_selected_vehicle(id: String) -> void:
+	if not has_vehicle(id):
+		return
 	selected_vehicle = id
 	save()
+
+
+# --- car unlocks (GDD 9.1a) ---------------------------------------------------------
+
+## A starter or an unlocked car.
+func has_vehicle(id: String) -> bool:
+	return all_unlocked_for_tests or UnlockCatalog.is_starter(id) or unlocked_vehicles.has(id)
+
+
+## Unlocks a car. True only when it wasn't yours before. Doesn't save.
+func unlock_vehicle(id: String) -> bool:
+	if id == "" or has_vehicle(id) or VehicleCatalog.by_id(id).id != id:
+		return false
+	unlocked_vehicles.append(id)
+	return true
+
+
+## The cars you can drive, in catalogue order.
+func available_vehicles() -> Array[VehicleData]:
+	var out: Array[VehicleData] = []
+	for v in VehicleCatalog.all():
+		if has_vehicle(v.id):
+			out.append(v)
+	return out
+
+
+## Grants an unlock-only cosmetic (Time Trial expert reward). True when new.
+## Doesn't save.
+func grant_item(item_id: String) -> bool:
+	if item_id == "" or owned.has(item_id) or CosmeticCatalog.by_id(item_id) == null:
+		return false
+	owned.append(item_id)
+	return true
+
+
+static func unlock_all_for_tests(on: bool = true) -> void:
+	all_unlocked_for_tests = on
+
+
+# --- Time Trial -------------------------------------------------------------------------
+
+func time_trial(track_name: String) -> Dictionary:
+	return time_trials.get(track_name, {})
+
+
+## Records a finished Time Trial; returns { "best": bool } (a new best).
+## Doesn't save.
+func record_time_trial(track_name: String, time: float, beat_rival: bool, beat_expert: bool) -> Dictionary:
+	var entry: Dictionary = time_trials.get(track_name, {})
+	var new_best := time > 0.0 and (not entry.has("best") or time < float(entry.best))
+	if new_best:
+		entry["best"] = time
+	if beat_rival:
+		entry["rival"] = true
+	if beat_expert:
+		entry["expert"] = true
+	time_trials[track_name] = entry
+	return {"best": new_best}
 
 
 # --- records -----------------------------------------------------------------------
@@ -244,6 +317,8 @@ func _to_dict() -> Dictionary:
 		"personal_bests": personal_bests,
 		"grand_prix_results": gp_results,
 		"last_setup": last_setup,
+		"unlocked_vehicles": unlocked_vehicles,
+		"time_trials": time_trials,
 	}
 
 
@@ -268,3 +343,14 @@ func _read(data: Dictionary) -> void:
 	var setup: Variant = data.get("last_setup", {})
 	if setup is Dictionary:
 		last_setup = setup
+	for id in data.get("unlocked_vehicles", []):
+		var vid := str(id)
+		if VehicleCatalog.by_id(vid).id == vid and not unlocked_vehicles.has(vid):
+			unlocked_vehicles.append(vid)
+	var tt: Variant = data.get("time_trials", {})
+	if tt is Dictionary:
+		time_trials = tt
+	# Cars are locked for every profile (older saves included): a locked
+	# selection falls back to the default car.
+	if not has_vehicle(selected_vehicle):
+		selected_vehicle = DEFAULT_VEHICLE

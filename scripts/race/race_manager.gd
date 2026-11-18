@@ -10,6 +10,9 @@ extends Node3D
 ##                championship is saved; the next grid follows this order.
 ##   Elimination  EliminationTracker knocks out racers at lap midpoints; the
 ##                first across the line wins and the other finalist is second.
+##   Time Trial   the player alone (3 laps, 150cc, one Triple Nitro, no crates or coins) against
+##                a GhostCar; beating the rival / expert ghost unlocks its car /
+##                signature item (GDD 2.5). A GhostRecorder keeps your run.
 ## Spawns the starting grid (seven AI rivals in slots 1-7, the player last),
 ## runs the READY / SET / GO countdown with all controls locked, routes
 ## checkpoint crossings to each racer's RaceProgress, keeps live positions,
@@ -94,6 +97,9 @@ var coins: TrackCoins
 ## Filled in when the player's race ends: reward lines, coin totals,
 ## personal bests and newly affordable cosmetics (GDD 11.7).
 var reward_summary: Dictionary = {}
+## Time Trial: {time, ghost_kind, ghost_time, delta, beat_ghost, new_best,
+## rival_time, expert_time} once you finish.
+var time_trial_summary: Dictionary = {}
 
 var _by_vehicle: Dictionary = {}
 var _countdown_time: float = 0.0
@@ -107,6 +113,12 @@ var _finish_count: int = 0
 var _wrong_way_time: float = 0.0
 ## The neon sign hung over the road while the player drives the wrong way.
 var wrong_way_sign: WrongWaySign
+## Time Trial: the ghost being raced (null without one) and your run.
+var ghost: GhostCar
+var ghost_recorder: GhostRecorder
+## Unlocks won this race (any mode): {"vehicles": [ids], "items": [ids],
+## "lines": [text]}; also copied into reward_summary.unlocks.
+var unlocks: Dictionary = {}
 ## Esc / Start pause screen.
 var pause_menu: PauseMenu
 ## Pauses the race when a player's gamepad disconnects (ControllerDisconnect).
@@ -152,16 +164,27 @@ func _ready() -> void:
 	coins = TrackCoins.new()
 	coins.name = "TrackCoins"
 	add_child(coins)
-	coins.setup(track, line, player.vehicle, not is_multiplayer()) # no coins in split screen
+	# No coins in split screen or Time Trial.
+	coins.setup(track, line, player.vehicle, not is_multiplayer() and not config.is_time_trial())
 	for i in range(1, players.size()):
 		coins.add_collector(players[i].vehicle)
 	if config.is_elimination():
 		elimination = EliminationTracker.new(racers, track.elimination_gate_index())
 		_build_elimination_gate()
+	if config.is_time_trial():
+		_setup_time_trial()
 	if weapons_enabled and weapon_manager != null:
 		weapon_manager.setup(self)
 		for racer in racers:
 			_attach_ai_combat(racer)
+	elif config.is_time_trial() and weapon_manager != null:
+		# Time Trial: no crates, just one Triple Nitro each for the whole race
+		# (the ghosts were baked with one too). Recoveries don't take it.
+		weapon_manager.setup(self, false)
+		for racer in racers:
+			_attach_ai_combat(racer)
+			racer.vehicle.recovery.keep_items = true
+			racer.vehicle.inventory.add(TimeTrialCatalog.starting_item())
 	_build_wrong_way_signs()
 	if is_multiplayer():
 		# Each player gets a view with their own camera and HUD (SplitScreen).
@@ -238,7 +261,7 @@ func get_vehicles() -> Array[VehicleController]:
 
 
 func combat_enabled() -> bool:
-	return weapons_enabled and weapon_manager != null and weapon_manager.race != null
+	return (weapons_enabled or config.is_time_trial()) and weapon_manager != null and weapon_manager.race != null
 
 
 func get_ai(racer: RaceProgress) -> AIController:
@@ -298,6 +321,12 @@ func quit_to_menu() -> void:
 	GameSession.to_menu(get_tree())
 
 
+## Time Trial results: back to the track list to pick another.
+func change_track() -> void:
+	GameSession.setup_mode = RaceConfig.Mode.TIME_TRIAL
+	GameSession.to_track_select(get_tree())
+
+
 func _apply_config() -> void:
 	if config == null:
 		config = GameSession.current
@@ -308,6 +337,8 @@ func _apply_config() -> void:
 		config.weapons_enabled = weapons_enabled
 	if config.difficulty != null:
 		difficulty = config.difficulty
+	if config.is_time_trial():
+		RaceConfig._force_time_trial(config)
 	weapons_enabled = config.weapons_enabled
 	# The elimination schedule is built around three laps (GDD 2.3).
 	total_laps = 3 if config.is_elimination() else config.total_laps
@@ -341,12 +372,16 @@ func _physics_process(delta: float) -> void:
 	match state:
 		State.COUNTDOWN:
 			_update_countdown(delta)
+			if ghost != null:
+				ghost.place(0.0)
 		State.RACING, State.FINISHED:
 			race_time += delta
 			if race_time >= START_LIGHTS_HOLD and track.start_lights() != 0:
 				track.set_start_lights(0)
 			_update_positions()
 			_update_rubber_band()
+			if ghost != null:
+				ghost.place(race_time, delta)
 			slipstream.update(racers, delta)
 			for i in players.size():
 				_update_wrong_way(i, delta)
@@ -364,9 +399,12 @@ func _spawn_grid() -> void:
 		rivals = rival_roster.rivals
 	var vehicles: Array[VehicleController] = []
 	var grid := _grid_order()
-	for slot in grid.size():
+	for i in grid.size():
+		# Time Trial: one car, on the config's start slot (the bake tool
+		# records ghosts from slot 1, beside where you start).
+		var slot := config.start_slot if config.is_time_trial() else i
 		var car := car_scene.instantiate() as VehicleController
-		var id := grid[slot]
+		var id := grid[i]
 		var is_player := RaceConfig.is_human_id(id)
 		var human := RaceConfig.human_slot(id) if is_player else -1
 		var human_vehicle := _human_vehicle(human) if is_player else null
@@ -485,6 +523,9 @@ func _human_vehicle(human: int) -> VehicleData:
 ## Racer ids by grid slot: the config's order, else rivals in roster order
 ## with the player in player_grid_slot.
 func _grid_order() -> Array[int]:
+	if config.is_time_trial():
+		var solo: Array[int] = [RaceConfig.PLAYER_ID]
+		return solo
 	if config.grid_order.size() == 8 or (config.is_multiplayer() and not config.grid_order.is_empty()):
 		return config.grid_order
 	if config.is_multiplayer():
@@ -813,10 +854,16 @@ func _on_player_finished(racer: RaceProgress = null) -> void:
 		var reward := {}
 		if championship != null:
 			reward = _record_championship()
+		elif config.is_time_trial():
+			reward = _finish_time_trial()
 		elif not is_multiplayer():
 			reward = RaceRewards.compute(player.finish_position, not player.eliminated, coins.collected)
+		_apply_race_unlocks()
 		if not is_multiplayer():
 			_grant_rewards(reward)
+		elif not unlocks.is_empty():
+			# Split screen pays nothing, but cars won are kept.
+			PlayerProfile.get_profile().save()
 	if not racer.eliminated and get_ai(racer) == null:
 		# Hand the car to the autopilot so it keeps driving through the results.
 		var autopilot := _attach_ai(racer.vehicle, RacerProfile.new(), racer.grid_slot)
@@ -839,8 +886,11 @@ func _record_championship() -> Dictionary:
 		order.append(racer.racer_id)
 	championship.record_race(order)
 	if is_multiplayer():
-		# Split screen pays nothing and saves nothing (the single-player
-		# Grand Prix save is left alone).
+		# Split screen pays nothing and saves no championship (the
+		# single-player Grand Prix save is left alone), but any player
+		# winning the cup unlocks its car.
+		if not championship.is_series() and championship.is_complete() and championship.human_won():
+			_apply_cup_unlock()
 		championship_updated.emit(championship)
 		return {}
 	if championship.is_series():
@@ -855,11 +905,147 @@ func _record_championship() -> Dictionary:
 		PlayerProfile.get_profile().record_grand_prix(
 				RaceConfig.gp_record_id(championship.gp.id, championship.cc, championship.mirrored),
 				ranking.find(RaceConfig.PLAYER_ID) + 1, int(championship.points.get(RaceConfig.PLAYER_ID, 0)))
+		if won:
+			_apply_cup_unlock()
 		Championship.clear_save()
 	else:
 		championship.save()
 	championship_updated.emit(championship)
 	return reward
+
+
+## The finished cup's car (GDD 9.1a).
+func _apply_cup_unlock() -> void:
+	_apply_unlocks([UnlockCatalog.cup_unlock(championship.gp.id)], [], championship.gp.display_name + " win",
+			["%s Grand Prix" % championship.gp.display_name,
+			"Won at %dcc%s" % [championship.cc, " · Mirror" if championship.mirrored else ""]])
+
+
+## Cars won by this race's result (GDD 9.1a), judged on the best-placed
+## human, so in split screen any player earns them for everyone: an
+## Elimination win, a Mirror podium (top 3) or a 200cc win, in any racing
+## mode (not Time Trial), against at least one other racer.
+func _apply_race_unlocks() -> void:
+	if config.is_time_trial() or racers.size() < 2:
+		return
+	var best := best_human_finish()
+	if best == 0:
+		return
+	if config.is_elimination() and best == 1:
+		_apply_unlocks([UnlockCatalog.ELIMINATION_UNLOCK], [], "Elimination win",
+				[config.track_name, "Elimination won"])
+	if config.mirrored and best <= UnlockCatalog.MIRROR_PODIUM_PLACES:
+		_apply_unlocks([UnlockCatalog.MIRROR_PODIUM_UNLOCK], [], "Mirror podium",
+				[config.track_name + " · Mirror", "Finished P%d" % best])
+	if config.cc >= UnlockCatalog.TOP_CC and best == 1:
+		_apply_unlocks([UnlockCatalog.TOP_CC_WIN_UNLOCK], [], "%dcc win" % config.cc,
+				[config.track_name, "Won at %dcc" % config.cc])
+
+
+## The best finishing place of any human still in the race (0 = none finished).
+func best_human_finish() -> int:
+	var best := 0
+	for human in players:
+		if human.eliminated or human.finish_position <= 0:
+			continue
+		if best == 0 or human.finish_position < best:
+			best = human.finish_position
+	return best
+
+
+## Records unlocks won this race in `unlocks` and the profile (saved by
+## _grant_rewards). Already-owned ones are skipped. Each new car also gets a
+## card for the CAR UNLOCKED screen: {"vehicle", "line1", "line2"} from
+## `card_lines` (where and how it was won). Saved with the race's rewards
+## (single player) or straight away (split screen).
+func _apply_unlocks(vehicle_ids: Array, item_ids: Array, reason: String, card_lines: Array = []) -> void:
+	var profile := PlayerProfile.get_profile()
+	if unlocks.is_empty():
+		unlocks = {"vehicles": [], "items": [], "lines": [], "cards": []}
+	for id in vehicle_ids:
+		if profile.unlock_vehicle(str(id)):
+			unlocks.vehicles.append(str(id))
+			unlocks.cards.append({"vehicle": str(id),
+					"line1": str(card_lines[0]) if card_lines.size() > 0 else reason.capitalize(),
+					"line2": str(card_lines[1]) if card_lines.size() > 1 else ""})
+			unlocks.lines.append("NEW CAR UNLOCKED: %s (%s)" % [VehicleCatalog.by_id(str(id)).display_name.to_upper(), reason])
+	for id in item_ids:
+		if profile.grant_item(str(id)):
+			var item := CosmeticCatalog.by_id(str(id))
+			unlocks.items.append(str(id))
+			unlocks.lines.append("%s UNLOCKED: %s for the %s" % [
+					"SIGNATURE PAINT" if item.category == CosmeticItem.Category.PAINT else "ANIMATED UNDERGLOW",
+					item.display_name, VehicleCatalog.by_id(item.vehicle_id).display_name])
+
+
+# --- Time Trial (GDD 2.5) ---------------------------------------------------------
+
+## Records your run and puts the chosen ghost on the grid beside you.
+func _setup_time_trial() -> void:
+	ghost_recorder = GhostRecorder.new()
+	ghost_recorder.name = "GhostRecorder"
+	add_child(ghost_recorder)
+	ghost_recorder.setup(self, player)
+	var kind := config.ghost_kind as TimeTrialCatalog.Ghost
+	var data := TimeTrialCatalog.load_ghost(config.track_name, kind)
+	if data == null:
+		return
+	ghost = GhostCar.new()
+	ghost.name = "Ghost"
+	add_child(ghost)
+	ghost.setup(data, kind, car_scene, VehicleCatalog.by_id(data.vehicle_id) if data.vehicle_id != "" else player_vehicle)
+
+
+## Time Trial result: personal best (and your ghost), rival / expert beaten.
+## Beating a ghost counts against its target time, whichever ghost you
+## raced: a run under the expert time beats the rival too.
+func _finish_time_trial() -> Dictionary:
+	var lines: Array = []
+	var total := 0
+	var track_name := config.track_name
+	var time := player.finish_time
+	var profile := PlayerProfile.get_profile()
+	var before: Dictionary = profile.time_trial(track_name).duplicate()
+	var rival_t := TimeTrialCatalog.target_time(track_name, TimeTrialCatalog.Ghost.RIVAL)
+	var expert_t := TimeTrialCatalog.target_time(track_name, TimeTrialCatalog.Ghost.EXPERT)
+	var clean := time > 0.0 and not player.time_projected
+	var beat_rival := clean and rival_t > 0.0 and time < rival_t
+	var beat_expert := clean and expert_t > 0.0 and time < expert_t
+	if ghost_recorder != null:
+		ghost_recorder.finalize()
+	var result := profile.record_time_trial(track_name, time if clean else -1.0, beat_rival, beat_expert)
+	var rival := TimeTrialCatalog.rival_vehicle(track_name)
+	if beat_rival and UnlockCatalog.time_trial_unlocks(rival):
+		_apply_unlocks([rival], [], "beat the rival ghost on " + track_name,
+				[track_name, "Rival ghost beaten by %.3f s" % (rival_t - time)])
+	if beat_expert and not bool(before.get("expert", false)):
+		var reward := TimeTrialCatalog.expert_reward(track_name)
+		var had := reward != "" and profile.owns(reward)
+		_apply_unlocks([], [reward] if reward != "" else [], "expert ghost")
+		if reward == "" or had:
+			lines.append(["Expert ghost beaten", TimeTrialCatalog.EXPERT_COINS])
+			total += TimeTrialCatalog.EXPERT_COINS
+	if bool(result.best) and ghost_recorder != null and ghost_recorder.is_done():
+		save_player_ghost(ghost_recorder.to_data())
+	var target := ghost.data.finish_time() if ghost != null else 0.0
+	time_trial_summary = {
+		"time": time,
+		"ghost_kind": config.ghost_kind,
+		"ghost_time": target,
+		"delta": time - target if target > 0.0 and clean else 0.0,
+		"beat_ghost": clean and target > 0.0 and time < target,
+		"new_best": bool(result.best),
+		"rival_time": rival_t,
+		"expert_time": expert_t,
+	}
+	return {"lines": lines, "total": total}
+
+
+## Saves your run as this track's YOUR BEST ghost.
+static func save_player_ghost(data: GhostData) -> bool:
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(TimeTrialCatalog.player_ghost_dir))
+	data.target_time = 0.0
+	return ResourceSaver.save(data, TimeTrialCatalog.ghost_path(data.track_name, TimeTrialCatalog.Ghost.BEST)) == OK
 
 
 ## Pays out the race's coins and records personal bests (GDD 9.3, 11.7).
@@ -880,6 +1066,7 @@ func _grant_rewards(reward: Dictionary) -> void:
 		"best_race": bests.race,
 		"best_lap": bests.lap,
 		"affordable": profile.newly_affordable(before),
+		"unlocks": unlocks,
 	}
 	rewards_granted.emit(reward_summary)
 

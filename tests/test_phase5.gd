@@ -1,7 +1,7 @@
 extends SceneTree
 ## Phase 5 headless checks: cosmetics catalogue, player profile (coins,
 ## shop, equip, plate, records, save / reload, corrupt saves), race rewards,
-## the eight vehicles, settings and rebinding, HUD scale, cosmetics on the
+## the thirteen vehicles, settings and rebinding, HUD scale, cosmetics on the
 ## car, track coins, rewards paid once (also in a Grand Prix), and the main
 ## menu, race setup, garage and settings screens. Run from the project root:
 ##   godot --headless --import
@@ -19,7 +19,10 @@ var _current: String = ""
 func _initialize() -> void:
 	# Races open the results without the podium ceremony (see test_podium.gd).
 	PodiumCeremony.instant = true
+	CarUnlockScreen.instant = true
 	PlayerProfile.save_path = "user://test_phase5_profile.json"
+	# Every car unlocked: these checks pick any car (unlocks: test_time_trial).
+	PlayerProfile.unlock_all_for_tests()
 	GameSettings.path = "user://test_phase5_settings.cfg"
 	Championship.save_path = "user://test_phase5_gp.json"
 	_run_all.call_deferred()
@@ -204,8 +207,9 @@ func _test_vehicles() -> void:
 	var names: Array[String] = []
 	for v in all:
 		names.append(v.display_name)
-	_check(names == ["V8 Specter", "Aurora GT", "Empyrean S", "Nexus X", "Riviera 88", "Orbiter", "Valkyrie R", "Cipher EVO"],
-			"the eight GDD vehicles (%s)" % [names])
+	_check(names == ["V8 Specter", "Aurora GT", "Riviera 88", "Empyrean S", "Nexus X", "Orbiter", "Valkyrie R", "Cipher EVO",
+			"Switchback", "Afterimage", "High Roller", "Revenant", "Interceptor"],
+			"the thirteen GDD vehicles (%s)" % [names])
 	var base := VehicleCatalog.primary_stats(all[0].stats)
 	var band_ok := true
 	for v in all:

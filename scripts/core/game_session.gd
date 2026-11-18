@@ -185,6 +185,14 @@ static func start_versus_race(tree: SceneTree, track: String) -> void:
 	start_race(tree, config)
 
 
+## Time Trial (GDD 2.5): race `track` against `ghost` (TimeTrialCatalog.Ghost)
+## in the selected car.
+static func start_time_trial(tree: SceneTree, track: String, ghost: int) -> RaceConfig:
+	var config := RaceConfig.time_trial(track, ghost, PlayerProfile.get_profile().selected_vehicle)
+	start_race(tree, config)
+	return config
+
+
 ## Back from the track screen: the setup it came from.
 static func back_from_tracks(tree: SceneTree) -> void:
 	series = null

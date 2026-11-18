@@ -10,6 +10,8 @@ extends Control
 ## Clicking an item's name tries it on in the preview; Buy spends coins
 ## (permanently, GDD 9.4) and equips; Equip puts an owned item on this
 ## vehicle; Apply equips every owned item being tried on.
+## Locked cars (GDD 9.1a) can be looked at, with how to unlock them, but not
+## selected or dressed. Signature items show only on their own car, once won.
 
 const CATEGORY_ICONS := ["brush", "flags", "stripes", "layers", "rim", "plate", "burst", "exhaust"]
 ## Where the car sits in the full-screen room (see VehiclePreview.view_offset).
@@ -114,9 +116,23 @@ func try_on(item: CosmeticItem) -> void:
 	_refresh_items()
 
 
+## The car on show is locked (look, don't touch).
+func vehicle_locked() -> bool:
+	return not PlayerProfile.get_profile().has_vehicle(vehicle().id)
+
+
 ## Returns true on success. Saves.
 func buy(item: CosmeticItem) -> bool:
 	var profile := PlayerProfile.get_profile()
+	if vehicle_locked():
+		_message.text = "Unlock this car first."
+		return false
+	if item.unlock_only:
+		_message.text = "%s can't be bought: beat the expert ghost in Time Trial." % item.display_name
+		return false
+	if not item.fits(vehicle().id):
+		_message.text = "%s only fits the %s." % [item.display_name, VehicleCatalog.by_id(item.vehicle_id).display_name]
+		return false
 	if profile.owns(item.id):
 		_message.text = "You already own %s." % item.display_name
 		return false
@@ -132,6 +148,9 @@ func buy(item: CosmeticItem) -> bool:
 
 
 func equip(item: CosmeticItem) -> bool:
+	if vehicle_locked():
+		_message.text = "Unlock this car first."
+		return false
 	var ok := PlayerProfile.get_profile().equip(vehicle().id, item)
 	if ok:
 		_trying.erase(item.category)
@@ -155,6 +174,9 @@ func pending_items() -> Array[CosmeticItem]:
 ## Returns how many were equipped. Saves.
 func apply() -> int:
 	var profile := PlayerProfile.get_profile()
+	if vehicle_locked():
+		_message.text = "Unlock this car first."
+		return 0
 	var items := pending_items()
 	for item in items:
 		profile.equip(vehicle().id, item)
@@ -220,6 +242,9 @@ func _refresh_items() -> void:
 	var trying := _trying.get(category) as CosmeticItem
 	var first: Control = null
 	for item in CosmeticCatalog.in_category(category):
+		# Signature items: only on their own car; won ones only once won.
+		if not item.fits(vehicle().id) or (item.unlock_only and not profile.owns(item.id)):
+			continue
 		var row := PanelContainer.new()
 		var border := Color(0.38, 0.4, 0.9, 0.45)
 		var fill := Color(0.06, 0.04, 0.15, 0.85)
@@ -273,6 +298,8 @@ func _refresh_items() -> void:
 		else:
 			action = UIStyle.row_action("Buy  %d" % item.price, "buy", buy.bind(item))
 			action.disabled = profile.coins < item.price
+		if vehicle_locked():
+			action.disabled = true
 		action.custom_minimum_size = Vector2(118, 34)
 		action.add_theme_font_size_override("font_size", 18)
 		action.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -296,6 +323,18 @@ func _refresh_info() -> void:
 		child.queue_free()
 	var v := vehicle()
 	var st := v.stats
+	if vehicle_locked():
+		# A mystery until it's unlocked: no name or specs, only how to get it.
+		var mystery := UIStyle.stat("???", 30, UIStyle.CYAN)
+		mystery.add_theme_font_override("font", UIStyle.slanted_font(true))
+		_info_box.add_child(mystery)
+		_info_box.add_child(NeonWidgets.Divider.new())
+		_info_box.add_child(_info_heading("HOW TO UNLOCK"))
+		for way in UnlockCatalog.how_to_unlock(v.id):
+			var line := UIStyle.label(way, 19, UIStyle.GOLD)
+			line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			_info_box.add_child(line)
+		return
 	var title_row := HBoxContainer.new()
 	title_row.add_theme_constant_override("separation", 14)
 	_info_box.add_child(title_row)
@@ -604,7 +643,7 @@ func _plate_strip() -> Control:
 	_plate.right_icon = RaceIcons.texture("pencil", 22)
 	_plate.text_changed.connect(set_plate)
 	row.add_child(_plate)
-	var note := UIStyle.label("Shared by every car\n(%d character max)" % PlayerProfile.PLATE_MAX, 16, Color(1, 1, 1, 0.75))
+	var note := UIStyle.label("Used for all your cars\n(%d character max)" % PlayerProfile.PLATE_MAX, 16, Color(1, 1, 1, 0.75))
 	note.add_theme_font_override("font", UIStyle.slanted_font(false))
 	note.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	row.add_child(note)

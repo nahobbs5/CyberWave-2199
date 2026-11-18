@@ -5,7 +5,7 @@
     "name": "Cyberwave 2199",
     "pitch": "Retrofuturistic cyberpunk combat kart racing: luxury neon cars, drift boosts, weapons and fifteen real-world circuits, against seven AI rivals or in 2–4 player local split screen.",
     "engine": "Godot 4.7.2 · GDScript · Jolt Physics",
-    "gdd": "v10.2",
+    "gdd": "v10.9",
     "phase": "Phase 6: content and polish (GDD §16)",
     "repo": "https://github.com/nahobbs5/CyberWave-2199",
     "demo": "https://nahobbs5.github.io/CyberWave-2199/web/",
@@ -767,6 +767,27 @@
       "title": "Investigate Six Flags test_phase6 failures: ramp item boxes, 'every gate counted' (shortcut lap and full race)",
       "priority": "P1",
       "done": false
+    },
+    {
+      "id": "b20",
+      "system": "Time Trial",
+      "title": "Tune Time Trial ghost targets after playtesting (TimeTrialCatalog.TARGET_OVERRIDES): rival = a clean run in any starter car wins, expert = needs tricks / drift / shortcuts",
+      "priority": "P1",
+      "done": false
+    },
+    {
+      "id": "b21",
+      "system": "Vehicles",
+      "title": "Add the new unlock-only car designs (Switchback, Afterimage, High Roller, Revenant, Interceptor: UnlockCatalog / TimeTrialCatalog rows)",
+      "priority": "P2",
+      "done": true
+    },
+    {
+      "id": "b22",
+      "system": "Time Trial",
+      "title": "Bake rival + expert ghosts for the new cars' tracks (Arashiyama, Vale da Lua, Quinta Normal, Nyiragongo, Kilwa) with tests/tools/bake_ghosts.gd",
+      "priority": "P1",
+      "done": false
     }
   ],
   "decisions": [
@@ -1045,6 +1066,28 @@
       "decision": "One more small ramp and one more half-pipe on every race track (15 + 15), spread away from the other ramps, pipes and shortcut junctions",
       "why": "Wanted more trick ramps and pipes scattered through the tracks",
       "gdd": "v10.2"
+    },
+    {
+      "date": "2026-11-18",
+      "decision": "New boost ring look: slim graphite frame, segmented magenta inner rim, four amber markers tying it to the boost pads, clear centre; two light pulses round the rim on approach, inner-edge flash on the pass",
+      "why": "New reference art (Cyberwave New Boost Ring.png), to sit alongside the restyled boost pads",
+      "gdd": "v10.5"
+    },
+    {
+      "date": "2026-11-18",
+      "decision": "Time Trial mode (3 laps, 100cc, no items) against baked rival / expert ghosts of the locked cars; three starter cars, the other five unlocked by beating their rival ghost, winning a cup, or (Cipher EVO) winning Elimination; expert ghosts give signature paint / animated underglow; Continue Grand Prix removed",
+      "why": "User: racing the actual car you are trying to unlock gives progression and shows what makes the car worth taking out of the garage; new unlock-only car designs to follow",
+      "gdd": "v10.7"
+    },
+    {
+      "date": "2026-11-18",
+      "decision": "CAR UNLOCKED screen after the podium and before the results (Continue / View in Garage); locked cars shown as a black silhouette under a gold ? with a LOCKED plate (name and stats hidden, how-to-unlock kept); car lists in a fixed order with the three starters first; Time Trial HUD drops the ghost time gap",
+      "why": "User: reference art for the unlock screen and the mystery car; the minimap already shows where the ghost is"
+    },
+    {
+      "date": "2026-11-18",
+      "decision": "Five new procedural cars from 'Five Retro-Futuristic Racers' (13 in all, 10 to unlock); each unlocks via one Time Trial rival track (Switchback on Arashiyama as in the unlock mockup); their expert ghost gives a signature paint and their animated underglow is a 600-coin shop item for that car only; two-tone paint (TwoTone mesh) survives repaints",
+      "why": "User chose rival-ghost unlocks, procedural bodies and signature cosmetics; 16 tracks can't give paint + glow to 10 cars, and only tracks without baked ghosts were reassigned"
     }
   ],
   "playtest": [
@@ -1242,6 +1285,18 @@
         },
         {
           "text": "Jumps, small ramps and trick edges at 200cc always land clean; the mid-air turn doesn't feel robotic or too snappy",
+          "done": false
+        },
+        {
+          "text": "Time Trial: beat a rival ghost in a starter car on a few tracks (is the target fair?); the ghost reads clearly, never hides your car; GHOST gap pill; unlock shows on results and the car appears in the garage; expert prize equips",
+          "done": false
+        },
+        {
+          "text": "Unlock a car (rival ghost / cup / Elimination): CAR UNLOCKED screen after the podium, View in Garage lands on the new car; locked cars show as ? in the garage and split-screen strip",
+          "done": false
+        },
+        {
+          "text": "New cars: Switchback / Afterimage / High Roller / Revenant / Interceptor look like the reference sheet in the garage and on track, feel distinct (stats), and the shop glow only appears on its own car once unlocked",
           "done": false
         }
       ]

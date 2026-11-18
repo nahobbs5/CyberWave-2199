@@ -8,12 +8,18 @@ extends Control
 ## In a series it says which race is next; the
 ## screen comes back after each race until the series is done. See CupBoard.
 ## Same neon frame as the Grand Prix cup screen (NeonScreenLayout).
+## Time Trial (GDD 2.5): every cup's tracks plus a STRIP card for Vegas
+## Overdrive, no RANDOM; each card names the rival car and what you've
+## beaten; picking one opens the GhostPicker (Rival / Expert / Your Best /
+## No Ghost), which starts the race.
 
 ## Every race card, cup by cup (flat), and the track each one races.
 var cards: Array[Button] = []
 var track_names: PackedStringArray = PackedStringArray()
 var random_card: Button
 var board: CupBoard
+## Time Trial: the ghost choice overlay (null until a track is picked).
+var ghost_picker: GhostPicker
 var layout: NeonScreenLayout
 
 ## The screen title (the mode); the race / "choose a track" line is the
@@ -36,6 +42,8 @@ func _ready() -> void:
 ## "VERSUS  -  RACE 2 OF 4" in a series, else just "VERSUS" (with the
 ## engine class when it isn't 100cc: "MIRROR 200CC").
 func title_text() -> String:
+	if is_time_trial():
+		return "TIME TRIAL"
 	var mode := RaceConfig.MODE_NAMES[_mode()].to_upper()
 	if GameSession.versus_mirrored():
 		mode = "MIRROR"
@@ -56,7 +64,30 @@ func pick(index: int) -> void:
 	GameSession.track_name = track
 	var setup := PlayerProfile.get_profile().last_setup
 	setup["track_name"] = track
+	if is_time_trial():
+		open_ghost_picker(track)
+		return
 	GameSession.start_versus_race(get_tree(), track)
+
+
+## Time Trial: from the setup's Time Trial (not a Versus set, not split screen).
+static func is_time_trial() -> bool:
+	return GameSession.setup_mode == RaceConfig.Mode.TIME_TRIAL and GameSession.series == null \
+			and not GameSession.split_screen
+
+
+## Time Trial: choose the ghost for `track`.
+func open_ghost_picker(track: String) -> GhostPicker:
+	if ghost_picker != null:
+		ghost_picker.queue_free()
+	ghost_picker = GhostPicker.new(track)
+	add_child(ghost_picker)
+	ghost_picker.closed.connect(func() -> void:
+		ghost_picker = null
+		var i := track_names.find(track)
+		if i >= 0:
+			cards[i].grab_focus())
+	return ghost_picker
 
 
 ## Picks a track by name (tests).
@@ -101,11 +132,15 @@ func back() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
 		get_viewport().set_input_as_handled()
-		if not board.handle_back():
+		if ghost_picker != null:
+			ghost_picker.close()
+		elif not board.handle_back():
 			back()
 
 
 func _mode() -> RaceConfig.Mode:
+	if is_time_trial():
+		return RaceConfig.Mode.TIME_TRIAL
 	if GameSession.series != null:
 		return GameSession.series.series_mode
 	if GameSession.versus_template != null:
@@ -114,6 +149,8 @@ func _mode() -> RaceConfig.Mode:
 
 
 func _laps() -> int:
+	if is_time_trial():
+		return TimeTrialCatalog.LAPS
 	return GameSession.versus_template.total_laps if GameSession.versus_template != null else 3
 
 
@@ -137,11 +174,14 @@ func _build() -> void:
 	board = CupBoard.new()
 	board.name = "CupBoard"
 	var cups := GrandPrixData.all_cups()
+	var tt := is_time_trial()
+	if tt:
+		cups = time_trial_cups()
 	var any_built := false
 	for cup in cups:
 		for i in cup.track_names.size():
 			any_built = any_built or cup.is_track_built(i)
-	board.setup(cups, false, true, _laps(), "A track you haven't raced yet" if s != null else "Surprise me", any_built)
+	board.setup(cups, false, not tt, _laps(), "A track you haven't raced yet" if s != null else "Surprise me", any_built)
 	board.race_picked.connect(pick_track)
 	board.random_picked.connect(pick_random)
 	layout.content.add_theme_constant_override("margin_top", 26)
@@ -151,6 +191,7 @@ func _build() -> void:
 	random_card = board.random_card
 
 	var hints := MenuHints.new([["A", "Enter", "Select"], ["B", "Esc", "Back"]])
+	hints.name = "Hints"
 	hints.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
 	hints.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	hints.offset_right = -24
@@ -158,3 +199,36 @@ func _build() -> void:
 	hints.offset_bottom = -22
 	add_child(hints)
 
+
+
+## Time Trial: every cup, keeping only its Time Trial tracks, then a STRIP
+## "cup" with the tracks no cup has (Vegas Overdrive).
+static func time_trial_cups() -> Array[GrandPrixData]:
+	var out: Array[GrandPrixData] = []
+	var listed := PackedStringArray()
+	for cup in GrandPrixData.all_cups():
+		var c := cup.duplicate() as GrandPrixData
+		c.track_names = PackedStringArray()
+		c.track_scenes = PackedStringArray()
+		c.locations = PackedStringArray()
+		for i in cup.track_names.size():
+			if TimeTrialCatalog.has_track(cup.track_names[i]) and cup.is_track_built(i):
+				c.track_names.append(cup.track_names[i])
+				c.track_scenes.append(cup.track_scenes[i] if i < cup.track_scenes.size() else "")
+				c.locations.append(cup.locations[i] if i < cup.locations.size() else "")
+				listed.append(cup.track_names[i])
+		c.locked = false
+		if not c.track_names.is_empty():
+			out.append(c)
+	var extra := GrandPrixData.new()
+	extra.id = "time_trial_strip"
+	extra.display_name = "The Strip"
+	extra.emblem = "usa"
+	for t in TimeTrialCatalog.tracks():
+		if not listed.has(t):
+			extra.track_names.append(t)
+			extra.track_scenes.append(TrackCatalog.scene_path(t))
+			extra.locations.append(TrackCatalog.location(t))
+	if not extra.track_names.is_empty():
+		out.append(extra)
+	return out

@@ -49,6 +49,8 @@ var name_label: Label
 var location_label: Label
 ## Versus: best time line ("" in Grand Prix).
 var best_label: Label
+## Time Trial: "Rival: Empyrean S  ·  RIVAL BEATEN".
+var rival_label: Label
 
 var _photo_material: ShaderMaterial
 
@@ -136,7 +138,24 @@ static func for_race(cup: GrandPrixData, index: int, show_best: bool, laps: int)
 	card.location_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.7))
 	card.location_label.add_theme_constant_override("outline_size", 4)
 	loc_row.add_child(card.location_label)
-	if show_best and not card.disabled and not GameSession.split_screen:
+	if show_best and not card.disabled and TrackSelect.is_time_trial() and TimeTrialCatalog.has_track(card.track):
+		# Time Trial: the rival car and what you've beaten, then your best.
+		var rec := PlayerProfile.get_profile().time_trial(card.track)
+		var rival := VehicleCatalog.by_id(TimeTrialCatalog.rival_vehicle(card.track)).display_name
+		var status := "EXPERT BEATEN" if bool(rec.get("expert", false)) else ("RIVAL BEATEN" if bool(rec.get("rival", false)) else "")
+		card.rival_label = UIStyle.stat("Rival: %s%s" % [rival, ("  ·  " + status) if status != "" else ""], 15,
+				UIStyle.GOLD if status != "" else Color(1.0, 0.45, 0.9))
+		card.rival_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		card.rival_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
+		card.rival_label.add_theme_constant_override("outline_size", 4)
+		box.add_child(card.rival_label)
+		var tt_text := "Best: %s" % RaceProgress.format_time(float(rec.best)) if rec.has("best") else "No time yet"
+		card.best_label = UIStyle.stat(tt_text, 15, UIStyle.CYAN)
+		card.best_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		card.best_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
+		card.best_label.add_theme_constant_override("outline_size", 4)
+		box.add_child(card.best_label)
+	elif show_best and not card.disabled and not GameSession.split_screen:
 		var record := card.track + (" (Mirror)" if GameSession.versus_mirrored() else "")
 		var best := PlayerProfile.get_profile().best_for(record, laps)
 		var text := "Best (%d laps): %s" % [laps, RaceProgress.format_time(float(best.race))] if best.has("race") else "No time yet"
@@ -197,6 +216,9 @@ func _add_photo(tex: Texture2D) -> void:
 	photo.texture = tex
 	photo.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	photo.stretch_mode = TextureRect.STRETCH_SCALE
+	# Pictures are large (1920x1080) and imported with mipmaps: sample them so
+	# they don't shimmer at card size.
+	photo.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	photo.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	photo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_photo_material = ShaderMaterial.new()

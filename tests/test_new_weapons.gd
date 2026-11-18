@@ -26,6 +26,7 @@ func _initialize() -> void:
 	GameSettings.path = "user://test_new_weapons_settings.cfg"
 	PlayerProfile.delete_save()
 	PodiumCeremony.instant = true
+	CarUnlockScreen.instant = true
 	_run_all.call_deferred()
 
 
@@ -158,10 +159,10 @@ func _test_status_rules() -> void:
 			and is_equal_approx(status.grip_multiplier(), 1.0) and status.can_drive() and status.can_use_weapons(),
 			"glitch changes no physics (visual for humans)")
 	_check(status.apply_attack(&"leash", 5.0), "leash lands")
-	_check(is_equal_approx(status.speed_multiplier(), 0.55) and is_equal_approx(status.accel_multiplier(), 0.35),
-			"leash: 55% top speed, 35% acceleration")
+	_check(is_equal_approx(status.speed_multiplier(), 0.66) and is_equal_approx(status.accel_multiplier(), 0.35),
+			"leash: 66% top speed, 35% acceleration")
 	status.apply_attack(&"override", 3.0)
-	_check(is_equal_approx(status.speed_multiplier(), 0.55 * 0.75) and is_equal_approx(status.accel_multiplier(), 0.35 * 0.7),
+	_check(is_equal_approx(status.speed_multiplier(), 0.66 * 0.75) and is_equal_approx(status.accel_multiplier(), 0.35 * 0.7),
 			"leash stacks with an override")
 	status.clear_all()
 	status.apply_buff(&"shield", 10.0)
@@ -300,7 +301,7 @@ func _test_swarm(race: RaceManager) -> void:
 	_check(target.status.has(&"leash"), "the swarm latches on (%.2f s)" % (frames * DT))
 	_check(absf(target.status.time_left(&"leash") - 5.0) < 0.1, "a 5 s leash")
 	_check(target.get_node_or_null(SwarmLeash.NODE_NAME) != null, "bots cling to the car")
-	_check(is_equal_approx(target.status.speed_multiplier(), 0.55), "top speed cut to 55%")
+	_check(is_equal_approx(target.status.speed_multiplier(), 0.66), "top speed cut to 66%")
 	_check(target.inventory != null, "no item lost (not a hard stun)")
 	# A leashed car accelerates far slower than a free one.
 	var clean := _rival(race, 1)

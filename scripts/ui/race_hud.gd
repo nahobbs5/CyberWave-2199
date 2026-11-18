@@ -67,6 +67,7 @@ var _was_hk_locked: bool = false
 var _last_position: int = 0
 var _lead_cooldown: float = 0.0
 ## Split screen 3-4P: no room for the standings list in a quarter screen.
+## Time Trial: nobody else to list.
 var hide_standings: bool = false
 
 
@@ -102,12 +103,21 @@ func setup(manager: RaceManager) -> void:
 		trick.trick_started.connect(func() -> void: _play("trick"))
 		trick.trick_landed.connect(func() -> void: _play("trick_land"))
 	results.continue_pressed.connect(func() -> void: race.continue_after_results())
-	results.menu_pressed.connect(func() -> void: race.quit_to_menu())
+	results.menu_pressed.connect(func() -> void:
+		if race.config.is_time_trial():
+			race.change_track()
+		else:
+			race.quit_to_menu())
 	info.set_coins_visible(not race.is_multiplayer())
 	minimap.setup(race)
 	if split_view:
 		minimap.visible = false
 	info.elim_label.visible = race.elimination != null
+	if race.config.is_time_trial():
+		# Time Trial (GDD 2.5): no position or standings; the ghost is a
+		# dot on the minimap (no time-gap readout).
+		info.visible = false
+		hide_standings = true
 	items.visible = race.combat_enabled()
 	if race.combat_enabled():
 		race.weapon_manager.hit_resolved.connect(_on_hit_resolved)
@@ -294,7 +304,9 @@ func _on_lap_completed(who: RaceProgress) -> void:
 func _on_player_finished(who: RaceProgress) -> void:
 	if who != racer:
 		return
-	if who.eliminated:
+	if race.config.is_time_trial():
+		announcer.announce("FINISH!", 2.0, MAGENTA, RaceProgress.format_time(who.finish_time))
+	elif who.eliminated:
 		announcer.announce("ELIMINATED", 2.5, UIStyle.DANGER)
 	elif race.elimination != null and who.finish_position == 1:
 		announcer.announce("WINNER!", 2.5, UIStyle.GOLD)

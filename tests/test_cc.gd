@@ -23,12 +23,15 @@ var _current: String = ""
 
 func _initialize() -> void:
 	PlayerProfile.save_path = "user://test_cc_profile.json"
+	# Every car unlocked: these checks pick any car (unlocks: test_time_trial).
+	PlayerProfile.unlock_all_for_tests()
 	GameSettings.path = "user://test_cc_settings.cfg"
 	Championship.save_path = "user://test_cc_gp.json"
 	PlayerProfile.delete_save()
 	Championship.clear_save()
 	GameSession.scene_changes_enabled = false
 	PodiumCeremony.instant = true
+	CarUnlockScreen.instant = true
 	_run_all.call_deferred()
 
 

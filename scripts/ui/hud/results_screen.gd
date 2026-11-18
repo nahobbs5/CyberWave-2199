@@ -57,6 +57,12 @@ func _init() -> void:
 	_build()
 
 
+## Leaves the results with `action` (a button's signal), after any CAR
+## UNLOCKED screens for cars this race won (GDD 9.1a).
+func leave(action: Callable) -> void:
+	CarUnlockScreen.show_then(race, action)
+
+
 func is_animating() -> bool:
 	return _anim != null and _anim.is_valid() and _anim.is_running()
 
@@ -509,8 +515,8 @@ func _build() -> void:
 	buttons.alignment = BoxContainer.ALIGNMENT_CENTER
 	buttons.add_theme_constant_override("separation", 14)
 	outer.add_child(buttons)
-	continue_button = UIStyle.primary_button("Race again", func() -> void: continue_pressed.emit())
-	menu_button = UIStyle.secondary_button("Main menu", func() -> void: menu_pressed.emit())
+	continue_button = UIStyle.primary_button("Race again", func() -> void: leave(continue_pressed.emit))
+	menu_button = UIStyle.secondary_button("Main menu", func() -> void: leave(menu_pressed.emit))
 	buttons.add_child(continue_button)
 	buttons.add_child(menu_button)
 	continue_button.focus_neighbor_right = continue_button.get_path_to(menu_button)

@@ -197,7 +197,7 @@ func _test_models() -> void:
 	var distinct := {}
 	for id in sizes:
 		distinct[str(sizes[id].size.snapped(Vector3.ONE * 0.01))] = true
-	_check(distinct.size() == 8, "eight distinct body shapes (%d)" % distinct.size())
+	_check(distinct.size() == VehicleCatalog.all().size(), "a distinct body shape per car (%d)" % distinct.size())
 	# Meshes are cached: two cars of the same design share geometry.
 	var a := _car()
 	var b := _car()
@@ -207,6 +207,18 @@ func _test_models() -> void:
 			"model meshes are shared between cars")
 	a.queue_free()
 	b.queue_free()
+	# Two-tone cars: a paint cosmetic recolours the body, not the second tone.
+	var tt := _car()
+	var sb := VehicleCatalog.by_id("switchback")
+	var tt_loadout := PlayerProfile.get_profile().loadout_for(sb.id)
+	tt_loadout[CosmeticItem.Category.PAINT] = CosmeticCatalog.by_id("paint_crimson")
+	VehicleCosmetics.apply(tt, sb, tt_loadout, "TEST-1")
+	var tt_paint := (tt.get_node("Body/Model/Paint") as MeshInstance3D).material_override as BaseMaterial3D
+	var tt_two := tt.get_node_or_null("Body/Model/TwoTone") as MeshInstance3D
+	_check(tt_two != null and tt_paint.albedo_color.is_equal_approx(CosmeticCatalog.by_id("paint_crimson").color)
+			and (tt_two.material_override as BaseMaterial3D).albedo_color.is_equal_approx(CarDesigns.get_design("switchback").paint2),
+			"Switchback: repainted body keeps its teal second tone")
+	tt.queue_free()
 	# Falling back to the box car puts the stock wheels back.
 	var c := _car()
 	var stock := (c.get_node("WheelFL/Pivot/Mesh") as MeshInstance3D).mesh
