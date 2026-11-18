@@ -2,7 +2,8 @@ shader_type canvas_item;
 // System Glitch: scrambles the middle of a racer's view (GDD 6.3), like an
 // ink splat over the screen but digital. Only an elliptical centre region is
 // touched; the corners (where every HUD panel lives) stay clean, and the HUD
-// draws on top anyway. Inside: blocky horizontal tearing, RGB split, chunky
+// draws on top anyway. The ellipse reaches most of the way to the screen
+// edges at the middle, so it covers the bulk of the view. Inside: blocky horizontal tearing, RGB split, chunky
 // cyan / magenta noise blocks and dark scan bars.
 //   intensity  0..1 overall strength (ramps in/out; bursts above 0.7)
 //   burst      0..1 extra heavy moment (Inky-style splats)
@@ -14,7 +15,7 @@ uniform float burst : hint_range(0.0, 1.0) = 0.0;
 uniform float calm : hint_range(0.0, 1.0) = 0.0;
 uniform float seed = 0.0;
 // Half-size of the affected ellipse, as a fraction of the view.
-uniform vec2 extent = vec2(0.36, 0.33);
+uniform vec2 extent = vec2(0.54, 0.52);
 
 float hash(vec2 p) {
 	return fract(sin(dot(p, vec2(127.1, 311.7)) + seed) * 43758.5453);
@@ -33,7 +34,7 @@ void fragment() {
 	vec2 d = (uv - 0.5) / extent;
 	// Ragged edge: the splat outline wobbles with noise.
 	float edge = 1.0 + 0.18 * (vnoise(uv * 9.0 + TIME * mix(1.5, 0.3, calm)) - 0.5);
-	float mask = 1.0 - smoothstep(0.65 * edge, 1.0 * edge, length(d));
+	float mask = 1.0 - smoothstep(0.72 * edge, 1.0 * edge, length(d));
 	float k = mask * intensity;
 	if (k <= 0.001) {
 		COLOR = vec4(0.0);

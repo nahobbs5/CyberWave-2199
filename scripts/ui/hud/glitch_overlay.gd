@@ -51,7 +51,7 @@ func _process(delta: float) -> void:
 		_glitched_for += delta
 		var ramp := minf(_glitched_for / RAMP_IN, 1.0)
 		var fade := clampf(left / FADE_OUT, 0.0, 1.0)
-		_intensity = 0.75 * ramp * fade
+		_intensity = 0.85 * ramp * fade
 		var calm := GameSettings.reduced_flashing
 		# Heavy splat moments every so often (gentle swells when calm).
 		_next_burst -= delta

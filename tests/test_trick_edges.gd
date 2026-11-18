@@ -2,7 +2,7 @@ extends SceneTree
 ## Half-pipes (GDD 8.7, the TrickEdge node): stretches of the road's outside
 ## edge that curve up into a 4 m quarter-pipe. Every race track has at least
 ## one, on the outside of a bend, clear of shortcut junctions, features and
-## the start. On The Stacks, both are ridden: at speed the car is carried up
+## the start. On The Stacks, all three are ridden: at speed the car is carried up
 ## the curve, launched above the lip, tricks, grabs an item box, drops back
 ## onto the wall and rides down onto the road facing down the road, with
 ## its trick boost; at 200cc too; slowly, or with no room left, it's just a
@@ -12,7 +12,7 @@ extends SceneTree
 
 const RACE_SCENE := "res://scenes/race/race.tscn"
 const EDGE_SCRIPT := "res://scripts/track/trick_edge.gd"
-const SCENE_EDGES := ["TrickEdgeA", "TrickEdgeB"]
+const SCENE_EDGES := ["TrickEdgeA", "TrickEdgeB", "TrickEdgeC"]
 
 var _passed: int = 0
 var _failed: int = 0
@@ -28,7 +28,7 @@ func _initialize() -> void:
 
 func _run_all() -> void:
 	_test_every_track()
-	await _run("ride both half-pipes on The Stacks", _test_ride, _config(false, 100))
+	await _run("ride every half-pipe on The Stacks", _test_ride, _config(false, 100))
 	await _run("200cc half-pipe ride", _test_fast, _config(false, 200))
 	await _run("Mirror: half-pipes still work", _test_mirror, _config(true, 100))
 	await _run("EMP puddle jams for 3 s", _test_emp_puddle, _config(false, 100))

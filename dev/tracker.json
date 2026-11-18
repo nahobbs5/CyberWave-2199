@@ -1,11 +1,11 @@
 {
   "schema": 1,
-  "updated": "2026-11-17",
+  "updated": "2026-11-18",
   "project": {
     "name": "Cyberwave 2199",
     "pitch": "Retrofuturistic cyberpunk combat kart racing: luxury neon cars, drift boosts, weapons and fifteen real-world circuits, against seven AI rivals or in 2–4 player local split screen.",
     "engine": "Godot 4.7.2 · GDScript · Jolt Physics",
-    "gdd": "v10.0",
+    "gdd": "v10.2",
     "phase": "Phase 6: content and polish (GDD §16)",
     "repo": "https://github.com/nahobbs5/CyberWave-2199",
     "demo": "https://nahobbs5.github.io/CyberWave-2199/web/",
@@ -1039,6 +1039,12 @@
       "decision": "Trick edges become half-pipes: 70 m of the outside edge of a bend curves into a 4 m quarter-pipe; a guided ride (up the curve, launched above the lip for a trick and item boxes, back down the same wall onto the road facing down it); one pipe look tinted per track, the four curb styles removed",
       "why": "Playtest: wanted the edge to curve up so you go up, trick and come back, like a skate half-pipe",
       "gdd": "v9.7"
+    },
+    {
+      "date": "2026-11-18",
+      "decision": "One more small ramp and one more half-pipe on every race track (15 + 15), spread away from the other ramps, pipes and shortcut junctions",
+      "why": "Wanted more trick ramps and pipes scattered through the tracks",
+      "gdd": "v10.2"
     }
   ],
   "playtest": [

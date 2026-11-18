@@ -39,14 +39,14 @@ func _run_all() -> void:
 	await _test_glb_model()
 	_test_wet_status()
 	await _test_layout(VEGAS, "Vegas Overdrive", 3000.0, 3400.0, 9, 90.0)
-	await _test_layout(SIX_FLAGS, "Six Flags New Orleans", 2900.0, 3300.0, 10, 80.0)
-	await _test_layout(STACKS, "The Stacks", 2700.0, 2950.0, 6, 80.0)
-	await _test_layout(HOIA, "Hoia Baciu Run", 3100.0, 3300.0, 7, 80.0)
-	await _test_layout(CATACOMBS, "Catacombs Descent", 2700.0, 2950.0, 8, 150.0)
-	await _test_layout(ARASHIYAMA, "Arashiyama Circuit", 3000.0, 3250.0, 8, 120.0)
-	await _test_layout(GLACIER, "Vatnajökull Glacier", 2950.0, 3200.0, 8, 100.0)
-	await _test_layout(CRAZY, "Crazy House", 2750.0, 3050.0, 7, 100.0)
-	await _test_layout(GARDENS, "Gardens by the Bay", 3200.0, 3500.0, 8, 100.0)
+	await _test_layout(SIX_FLAGS, "Six Flags New Orleans", 2900.0, 3300.0, 11, 80.0)
+	await _test_layout(STACKS, "The Stacks", 2700.0, 2950.0, 7, 80.0)
+	await _test_layout(HOIA, "Hoia Baciu Run", 3100.0, 3300.0, 8, 80.0)
+	await _test_layout(CATACOMBS, "Catacombs Descent", 2700.0, 2950.0, 9, 150.0)
+	await _test_layout(ARASHIYAMA, "Arashiyama Circuit", 3000.0, 3250.0, 9, 120.0)
+	await _test_layout(GLACIER, "Vatnajökull Glacier", 2950.0, 3200.0, 9, 100.0)
+	await _test_layout(CRAZY, "Crazy House", 2750.0, 3050.0, 8, 100.0)
+	await _test_layout(GARDENS, "Gardens by the Bay", 3200.0, 3500.0, 9, 100.0)
 	_test_forest()
 	_test_catacombs()
 	_test_arashiyama()
@@ -379,14 +379,15 @@ func _test_item_boxes(race: RaceManager) -> void:
 	var ramp := track.get_node("JumpCourtyard") as TrackFeature
 	var ramp_boxes := ramp.item_box_transforms()
 	var expected := rows + ramp_boxes.size()
-	var small := track.get_node("SmallRampLoadingDock") as TrackFeature
-	_check(small.item_box_transforms().size() == 2, "the small ramp has 2 item boxes")
-	expected += 2
+	for n in ["SmallRampLoadingDock", "SmallRampB"]:
+		var small := track.get_node(n) as TrackFeature
+		_check(small.item_box_transforms().size() == 2, "%s has 2 item boxes" % n)
+		expected += 2
 	for n in ["BoostRingRotunda", "BoostPadGallery"]:
 		var booster := track.get_node(n) as TrackFeature
 		_check(booster.item_boxes and booster.item_box_transforms().size() == 2, "%s has 2 item boxes" % n)
 		expected += 2
-	for n in ["TrickEdgeA", "TrickEdgeB"]:
+	for n in ["TrickEdgeA", "TrickEdgeB", "TrickEdgeC"]:
 		var edge := track.get_node(n) as TrickEdge
 		_check(edge.item_box_transforms().size() == 2, "%s has 2 item boxes" % n)
 		expected += 2

@@ -149,6 +149,22 @@ anchor_point = Vector3(150.0, 0.0, 337.7)
 side = 1
 tint = Color(0.55, 0.45, 0.36, 1)
 
+[node name="SmallRampB" type="Node3D" parent="."]
+script = ExtResource("3_feature")
+kind = 4
+offset = 0
+lateral = 3.75
+anchor_point = Vector3(350, 0, 154)
+width = 7.5
+length = 11.0
+ramp_height = 0.9
+
+[node name="TrickEdgeC" type="Node3D" parent="."]
+script = ExtResource("90_trick_edge")
+anchor_point = Vector3(-131.3, 0, -6.2)
+side = 1
+tint = Color(0.55, 0.45, 0.36, 1)
+
 [node name="Scenery" type="Node3D" parent="."]
 script = ExtResource("4_scenery")
 cast_shadows = true

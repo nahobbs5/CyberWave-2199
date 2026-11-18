@@ -5,7 +5,8 @@ extends CanvasLayer
 ##   top left       RaceInfoPanel: POSITION, Elimination info
 ##   left           StandingsPanel: live standings
 ##   top right      LAP, race time, coins under the time (info.lap_block)
-##   top centre     HudAnnouncer: countdown, FINAL LAP!, NEW BEST LAP!, FINISH!, warnings
+##   top centre     HudAnnouncer: countdown, FINAL LAP!, NEW BEST LAP!, FINISH!, warnings;
+##                  GlitchIndicator (SYSTEM GLITCH + countdown) above it while glitched
 ##   bottom right   Minimap, with the ItemSlots squares under it
 ##   bottom centre  SlipstreamBanner while a slipstream boost runs
 ##   (bottom left   speed gauge + drift charge, in PrototypeHUD underneath)
@@ -43,6 +44,8 @@ var minimap: Minimap
 var wind_lines: SlipstreamLines
 ## System Glitch: centre-screen scramble at the back of the HUD.
 var glitch: GlitchOverlay
+## "SYSTEM GLITCH" warning + countdown, top centre, while glitched.
+var glitch_indicator: GlitchIndicator
 ## SLIPSTREAM banner (slipstream_banner.gd).
 var slipstream_banner: Control
 ## Single player: the minimap over the item squares, bottom right.
@@ -93,6 +96,7 @@ func setup(manager: RaceManager) -> void:
 		racer.vehicle.slipstream_boost.connect(func() -> void: _play("slipstream"))
 		wind_lines.vehicle = racer.vehicle
 		glitch.vehicle = racer.vehicle
+		glitch_indicator.vehicle = racer.vehicle
 		slipstream_banner.vehicle = racer.vehicle
 	if trick != null:
 		trick.trick_started.connect(func() -> void: _play("trick"))
@@ -447,6 +451,8 @@ func _build() -> void:
 
 	announcer = HudAnnouncer.new()
 	add_child(announcer)
+	glitch_indicator = GlitchIndicator.new()
+	add_child(glitch_indicator)
 
 	slipstream_banner = BANNER_SCRIPT.new()
 	add_child(slipstream_banner)

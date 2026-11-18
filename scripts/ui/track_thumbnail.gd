@@ -8,6 +8,10 @@ static var _cache: Dictionary = {}
 static var _baked: TrackOutlines
 
 var outline: PackedVector2Array = PackedVector2Array()
+## Draw the dark backing rectangle (off on the loading screen's map panel).
+var show_background := true
+## Width of the magenta line; above 3 it also gets a soft neon glow.
+var line_width := 2.5
 
 
 func _init(scene_path: String = "", side: Vector2 = Vector2(220, 150)) -> void:
@@ -34,7 +38,8 @@ static func control_points_2d(scene_path: String) -> PackedVector2Array:
 
 
 func _draw() -> void:
-	draw_rect(Rect2(Vector2.ZERO, size), Color(0.06, 0.02, 0.12, 0.7))
+	if show_background:
+		draw_rect(Rect2(Vector2.ZERO, size), Color(0.06, 0.02, 0.12, 0.7))
 	if outline.size() < 3:
 		return
 	var lo := Vector2(INF, INF)
@@ -50,9 +55,13 @@ func _draw() -> void:
 	for p in outline:
 		pts.append(offset + (p - lo) * s)
 	pts.append(pts[0])
-	draw_polyline(pts, Color(0.22, 0.16, 0.32, 0.95), 8.0, true)
-	draw_polyline(pts, UIStyle.MAGENTA, 2.5, true)
+	if line_width > 3.0:
+		draw_polyline(pts, Color(UIStyle.MAGENTA, 0.12), line_width * 5.0, true)
+		draw_polyline(pts, Color(UIStyle.MAGENTA, 0.25), line_width * 2.6, true)
+	else:
+		draw_polyline(pts, Color(0.22, 0.16, 0.32, 0.95), line_width * 3.2, true)
+	draw_polyline(pts, UIStyle.MAGENTA, line_width, true)
 	# Start: a white tick across the first segment.
 	var dir := (pts[1] - pts[0]).normalized()
-	var across := Vector2(-dir.y, dir.x) * 7.0
-	draw_line(pts[0] - across, pts[0] + across, Color.WHITE, 3.0)
+	var across := Vector2(-dir.y, dir.x) * maxf(7.0, line_width * 2.4)
+	draw_line(pts[0] - across, pts[0] + across, Color.WHITE, maxf(3.0, line_width * 0.8))

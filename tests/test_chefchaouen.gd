@@ -261,11 +261,8 @@ func _test_fountain_jump(race: RaceManager) -> void:
 	var ai := race.get_ai(race.player)
 	if ai != null:
 		ai.forced_branches = {"BlueStairway": false, "MarketLane": false}
-	var ramp: TrackFeature = null
-	for f in track.find_children("*", "TrackFeature", false, false):
-		if (f as TrackFeature).kind == TrackFeature.Kind.JUMP_RAMP and (f as TrackFeature).on_shortcut == "":
-			ramp = f
-	_check(ramp != null, "a jump ramp on the final landing")
+	var ramp := track.get_node_or_null("FountainJump") as TrackFeature
+	_check(ramp != null and ramp.kind == TrackFeature.Kind.JUMP_RAMP, "a jump ramp on the final landing")
 	if ramp == null:
 		return
 	await _frames(20)

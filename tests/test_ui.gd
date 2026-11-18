@@ -1072,11 +1072,25 @@ func _test_loading_card() -> void:
 	await _frames(2)
 	_check(screen.title_label.text == "MARBLE CANYON", "title on screen")
 	_check(screen.thumbnail != null and screen.thumbnail.outline.size() > 10, "track outline on screen")
+	_check(screen.photo != null and screen.photo.texture != null
+			and screen.photo.texture.resource_path == TrackCard.photo_path(str(card.track_path)),
+			"the track's screenshot fills the background")
 	_check(screen.layer > 20, "drawn above the pause menu and HUD")
 	await screen.dismiss()
 	await process_frame
 	_check(not is_instance_valid(screen), "freed after fading out")
 	GameSession.current = null
+	# A track without a screenshot yet: map and text on the plain background.
+	var bare := LoadingScreen.new()
+	bare.build({"title": "Test Circuit", "detail": "Practice", "track_path": TrackCatalog.TEST_CIRCUIT})
+	_check(TrackCard.photo_path(TrackCatalog.TEST_CIRCUIT) == "" and bare.photo == null
+			and bare.thumbnail != null and bare.title_label.text == "TEST CIRCUIT",
+			"no screenshot: track map and title only")
+	bare.free()
+	var plain := LoadingScreen.new()
+	plain.build(LoadingScreen.card_for(""))
+	_check(plain.photo == null and plain.thumbnail == null, "no track: no photo or map")
+	plain.free()
 
 
 func _test_loading_progress() -> void:

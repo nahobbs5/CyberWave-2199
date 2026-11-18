@@ -252,6 +252,12 @@ func _test_glitch_overlay(race: RaceManager) -> void:
 	await process_frame
 	await process_frame
 	_check(overlay.visible and overlay.intensity() > 0.5, "scrambles the screen while glitched (%.2f)" % overlay.intensity())
+	var sign := hud.glitch_indicator
+	_check(sign != null and sign.visible and sign.timer_label.text.ends_with("s") and sign.bar.fraction > 0.7 and sign.bar.fraction < 1.0,
+			"SYSTEM GLITCH indicator with a countdown (%s, %.2f)" % [sign.timer_label.text, sign.bar.fraction])
+	var sign_rect := sign.get_global_rect()
+	var view := hud.get_viewport().get_visible_rect().size
+	_check(sign_rect.position.y < view.y * 0.15 and absf(sign_rect.get_center().x - view.x * 0.5) < 2.0, "indicator sits top centre (%s)" % sign_rect)
 	var after := panels.map(func(c: Control) -> Array: return [c.visible, c.global_position, c.modulate])
 	# (The items column grows by the effects line "GLITCH n.ns", as for any status.)
 	var same := true
@@ -264,6 +270,9 @@ func _test_glitch_overlay(race: RaceManager) -> void:
 	await process_frame
 	await process_frame
 	_check(not overlay.visible, "gone when the glitch ends (%.2f)" % overlay.intensity())
+	await _frames(15)
+	await process_frame
+	_check(not hud.glitch_indicator.visible, "indicator gone when the glitch ends")
 
 
 # --- Swarm Bots ------------------------------------------------------------------
