@@ -1,5 +1,7 @@
 # Cyberwave 2199 — Holographic Kart Recovery System
 
+> **Note (2026-11-19):** this is the original implementation brief, kept for background. The built behaviour is described in the [Reference](Reference.md) and the design rules in the [Game Design Document](Game%20Design%20Document.md) (§5.5).
+
 ## Overview
 
 Cyberwave 2199 will use a **holographic reconstruction system** to recover karts that fall off the track, enter hazardous areas, or become permanently stuck.

@@ -60,7 +60,7 @@ enum Kind { PROJECTILE, GUIDED, AREA, HAZARD, SELF_BOOST, SHIELD, LEADER_DRONE, 
 ## Percent chance from a crate for each position, 1st to 8th (fewer racers
 ## are spread over the same rows). All weapons add up to 100 per position.
 @export var position_chance: PackedFloat32Array = PackedFloat32Array()
-## Rare comeback item (Advanced Weapons doc): Hunter-Killer, Overdrive,
+## Rare comeback item (GDD §6.3): Hunter-Killer, Overdrive,
 ## System Override.
 @export var rare: bool = false
 ## A racer can't hold two of these at once (one per slot): crates never roll

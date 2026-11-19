@@ -79,7 +79,7 @@ signal checkpoint_crossed(index: int, body: Node3D)
 ## Painted slots (bracket + number) on the road, one per possible racer.
 @export var grid_slots: int = 8
 @export_group("Overdrive flight")
-## Height (m) an Overdrive flies above the road centre (Advanced Weapons §2).
+## Height (m) an Overdrive flies above the road centre (GDD §6.5).
 ## Keep it under ~4 m so the car's body stays inside the 6 m checkpoint gates.
 @export var flight_height: float = 3.5
 ## Height under a roof (scenery with is_roofed(), e.g. the catacomb vaults).

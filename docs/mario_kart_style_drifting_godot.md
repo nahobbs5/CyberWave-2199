@@ -1,5 +1,7 @@
 # Mario Kart-Style Drifting: Technical Breakdown and Godot Implementation
 
+> **Note (2026-11-19):** this is the original implementation brief, kept for background. The built behaviour is described in the [Reference](Reference.md) and the design rules in the [Game Design Document](Game%20Design%20Document.md) (§4).
+
 Mario Kart drifting is **not a realistic tire-traction simulation**. It is an arcade movement system that combines steering, sideways sliding, momentum, and a chargeable speed boost.
 
 For **Cyberwave 2199**, a Mario Kart 8 Deluxe-inspired approach can make drifting responsive and rewarding while retaining control over the kart.

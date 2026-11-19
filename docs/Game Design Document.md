@@ -1,5 +1,5 @@
 # CYBERWAVE 2199
-## Game Design Document — Version 10.13
+## Game Design Document — Version 10.14
 
 **Status:** Development Baseline  
 **Engine:** Godot 4  
@@ -105,7 +105,7 @@ Grand Prix order: main menu → **race setup** (car, CC, Mirror on/off, NPC diff
 
 | Race | Track | Location |
 |---|---|---|
-| 1 | Vegas Overdrive | Las Vegas, Nevada |
+| 1 | Marble Canyon | Marble Canyon, Arizona |
 | 2 | Six Flags New Orleans | Louisiana |
 | 3 | The Stacks | Library of Congress, Washington, DC |
 
@@ -548,6 +548,7 @@ Automatic targeting with lock-on is the standard system.
 | Hunter Drone | Pursues and stuns a target | 2.3s stun |
 | Holo Decoy | A hologram clone of your car rides behind you; targeted attacks aimed at you hit it instead | 8s lifetime or one hit |
 | Road Spike | Deploys electrified spikes | 12s lifetime, 2s traction penalty |
+| Triple Spike | Three Road Spikes in one slot, dropped one at a time | Per spike as Road Spike |
 | Nitro Overload | Temporary speed boost | 3s |
 | Triple Nitro | Three Nitro Overload charges in one slot, used one at a time | 3s per charge |
 | Gravity Mine | Creates a localized gravity pull | 12s lifetime, 1.5s pull |
@@ -557,10 +558,13 @@ Automatic targeting with lock-on is the standard system.
 | Railgun | Fires a fast projectile | 0.7s stagger |
 | Triple Railgun | Three Railgun shots in one slot, fired one at a time | 0.7s stagger per shot |
 | Swarm Bots | Bots chase your lock and latch on like a leash: much slower top speed and acceleration | 5s leash |
+| Hunter-Killer Drone | Rare. Hunts the leader at launch and spins them out; only a well-timed Nitro dodges it | 1.5s spin-out, 12s lifetime |
+| Overdrive Protocol | Rare. The kart lifts off and flies itself along the course at 2× top speed, untouchable | 8.5s (7s of flight) |
+| System Override | Rare. Hacks every racer ahead of the user | 3–12s by the victim's position |
 
 The Firewall shows as an orange force field around the car: a glowing rim and a drifting hex energy grid. It fades in, dissolves away when it runs out, and bursts with a flash when it blocks a hit (`assets/shaders/force_field.gdshader`).
 
-All values are initial balance targets.
+All values are initial balance targets. Gravity Mine and Cyber Leech are designed but not built; the other fifteen are in the game. The three rare items (Hunter-Killer, Overdrive, System Override) are comeback items and never drop for 1st or 2nd (§6.5).
 
 ### Excluded Weapons
 
@@ -587,7 +591,12 @@ Weapons may affect their owner **only when that makes sense for their mechanics*
 | System Glitch | No |
 | Cyber Leech | No |
 | Railgun | No under normal mechanics |
+| Triple Railgun | No |
+| Triple Spike | Yes (each spike, as Road Spike) |
 | Swarm Bots | No |
+| Hunter-Killer Drone | No |
+| Overdrive Protocol | No |
+| System Override | No |
 
 Road Spikes and Gravity Mines receive a short deployment grace period before they can affect the owner.
 
@@ -631,7 +640,11 @@ Crate odds by race position (each column adds up to 100%; with fewer than 8 race
 
 **Swarm Bots** lock on like the Hunter Drone (or chase the nearest racer ahead). The swarm latches on and leashes the car for 5 s: top speed ×0.66 and acceleration ×0.35 (boosts are capped too). Bots crawl over the car and glowing tethers drag behind it. It's not a hard stun (no spin, no item lost). A Firewall blocks it.
 
-**Hunter-Killer** goes straight through a Firewall. The only escape is a Nitro fired in the last 0.4 s of its red-reticle warning or during its dive: it misses and fizzles out.
+**Hunter-Killer Drone** is a telegraphed threat to the leader. A matte-black angular drone with a red sensor eye locks on to whoever leads at launch and keeps that racer even if they lose the lead (it tracks the racer, not the position). It flies along the road at 1.8× the target's top speed, passing everyone else. Close behind, it holds a red reticle and targeting beam over the target for 1.2 s with a rising warning tone (and a HUNTER-KILLER LOCKED banner), then dives and discharges a blue-white blast: a 1.5 s spin-out (hard stun). It goes straight through a Firewall. The only escape is a Nitro fired in the last 0.4 s of the warning or during the dive: it misses (DODGED) and fizzles out. It waits while the target is recovering or in Overdrive, and burns out after 12 s or when the target finishes. No splash damage.
+
+**Overdrive Protocol** is the last-place comeback. Cyan energy flows over the kart, thruster pods deploy, and it lifts about 3.5 m off the road (lower under low ceilings such as the catacomb vaults) and flies itself along the road centre at 2× top speed for about 7 s (8.5 s in all with take-off and landing). The kart stays recognisably the player's car. While flying it can't be hit, steered or recovered, and cars under its path are nudged aside with no lasting damage. Every checkpoint gate still counts, so it never skips race progress. When time runs out it keeps flying to the next clear stretch of road (not near a jump ramp or another car), lands, and hands back control at top speed. Starting it shrugs off a System Override, and an active Overdrive ignores every attack.
+
+**Interactions:** a Firewall soaks a System Override (and is used up) but does nothing against a Hunter-Killer; a Hunter-Killer waits out an Overdrive or a recovery; effects end cleanly when a racer finishes, recovers or the race restarts.
 
 ---
 
@@ -712,7 +725,7 @@ AI must support:
 
 # 8. Tracks and Environments
 
-Fifteen tracks are included at launch, three in each of the five cups (§2.2).
+Fifteen tracks are included at launch, three in each of the five cups (§2.2). Vegas Overdrive (§8.3), the original American Cup opener, is no longer in a cup: it's the hidden developer track in Practice and THE STRIP in Time Trial. The graybox Test Circuit is the other Practice track.
 
 ## 8.1 The Stacks
 
@@ -743,6 +756,8 @@ A neon-lit circuit through a futuristic casino district, entertainment complexes
 **Identity:** High speed, wide roads, spectacle.
 
 About 3.2 km, after playtesting found the first 4.4 km layout and its 900 m opening straight too long.
+
+**Practice only (v10.14):** Marble Canyon (§8.6j) replaced Vegas as American Cup race 1, so Vegas is in no cup and not in Versus. It stays playable as a free-drive track in Practice (the "developer's discarded versus rough draft"; a full lap unlocks the Interceptor, §9.1a) and as THE STRIP in Time Trial (§2.5). In Practice it plays the Test Circuit's song.
 
 ## 8.4 Hoia Baciu Run
 
@@ -1010,6 +1025,23 @@ Built at about 3.15 km. The main road (the wide routes, the start and the shared
 **Balance:** in headless testing, with the field forced onto each route, the Blue Stairway and the Outer Street take about the same time from the shared approach to the shared exit (about 32.5 s and 32.1 s). The Market Lane is about 6% quicker than the Fountain Steps (25.0 s and 26.4 s) but narrow, with no item boxes. The AI pick routes about evenly, and less often into a branch that already has traffic in its first stretch.
 
 Race music: *Atlas Morocco* (§12.1).
+
+## 8.6j Marble Canyon
+
+**Location:** Marble Canyon, Arizona
+
+A switchback climb up the red-and-cream sandstone of the Arizona canyon country, through a natural rock window at the top, and back down into a wave-striped basin (after "reference files/Marble Canyon 1–6.webp").
+
+**Identity:** Stacked hairpins, big climbs and drops, a gateway at the summit. The American Cup opener (race 1).
+
+Built at about 3.05 km under a bright, partly cloudy desert sky, on an 18 m road (wide enough for two cars side by side through the hairpins) of worn rock between low stone barriers with cyan and magenta edge neon. In driving order:
+- the canyon floor: the start, with a gentle banked sweeper away from the grid;
+- the switchbacks: the road climbs a stack of terraces cut into the slope round two rounded sandstone masses, through four alternating hairpins, each with a rounded rock nose filling its inside (small jump ramp on the climb);
+- the rock window: a thick fin of sandstone standing across the summit ridge, with a tall, irregular opening (about 30 m wide and 32 m high) the road drives through. It's the high point, about 54 m above the start;
+- the descent: two more hairpins and a long run down, steeper than the climb (small jump ramp on the canyon descent);
+- the wave basin: a long sweeper banked 6° round the basin floor, back to the start.
+
+Grades reach about 11% on the descent, eased at every hairpin apex. Each switchback leg sits on a level shelf with a cut rock face above it and a fill slope below. The rock near the road is solid, so a car that leaves a terrace lands on rock; if it drops onto a terrace it didn't drive to, it is recovered to its last safe point, facing the right way ("off route", items kept), so a fall can never skip part of the lap. Five crate rows, twelve coins, twelve checkpoints, two small jump ramps and two trick edges. No shortcut or boost pads. Race music: *Heavy Racing* (§12). Time Trial rival: Nexus X (expert prize: its signature paint).
 
 ## 8.7 Shared Track Features
 
@@ -1285,7 +1317,7 @@ The game opens on a title menu: Single Player, Multiplayer (§2.4), Settings, Cr
 - Grand Prix
 - Versus (Standard, Elimination or Mirror, picked on the race setup screen)
 - Time Trial (§2.5)
-- Practice
+- Practice (free drive on Vegas Overdrive or the Test Circuit)
 - Garage
 - Settings
 - Credits
@@ -1488,7 +1520,7 @@ One song per screen or track. Moving between menus that share a song doesn't res
 | Other results screens (no podium) | Background Music | alex-morgan |
 | The Stacks | Cyber Dreams | Lilex |
 | Six Flags New Orleans | Race Winner | TheBoysBeats |
-| Vegas Overdrive | Heavy Racing | SPmusic |
+| Marble Canyon | Heavy Racing | SPmusic |
 | Hoia Baciu Run | Cyberpunk Music | kulakovka |
 | Catacombs Descent | Hard Cyberpunk | kulakovka |
 | Arashiyama Circuit | The Cyber Geisha | Ob-Lix |
@@ -1501,7 +1533,7 @@ One song per screen or track. Moving between menus that share a song doesn't res
 | Kilwa Kisiwani Ruins | The Dragon's Lair | vishiv |
 | Fires of Nyiragongo | Danger Imminent | Jean-Paul-V |
 | Chefchaouen | Atlas Morocco | vadim_makes_sound |
-| Test Circuit and Free Drive | The Garden Wakes | stageechoesmusic |
+| Practice (Test Circuit and Vegas Overdrive) | The Garden Wakes | stageechoesmusic |
 
 The web build plays smaller 96 kbps .ogg copies (`music/web/`) of every song.
 
@@ -1947,5 +1979,6 @@ Changes after Version 1.0 should be tracked as revisions rather than silently re
 | 10.11 | 2026-11-18 | Two new race routes: **Afterimage** for a top-3 finish in a Mirror race, **High Roller** for winning a race at 200cc; Revenant and Interceptor stay Time Trial unlocks. Cup, Elimination, Mirror and 200cc routes now count in **split screen** too (best-placed player; the car is saved to the profile) (§9.1a). |
 | 10.12 | 2026-11-18 | The **CAR UNLOCKED screen moves after the results** (you see the scores first): any results button opens it, and Continue then carries out that button. Shown in split screen too (§9.1a). |
 | 10.13 | 2026-11-18 | **Interceptor** is now unlocked by finding the developer track (Vegas Overdrive) in Practice and running a full lap; the game pauses on CAR UNLOCKED, Continue drives on. Revenant is the only Time Trial rival unlock (§2.5, §9.1a). |
+| 10.14 | 2026-11-19 | Docs brought up to date. **Marble Canyon** (built 2026-11-16) documented as American Cup race 1 (§2.2, §8.6j, §12.1); **Vegas Overdrive** is now a Practice-only developer track and THE STRIP in Time Trial (§8, §8.3, §11.2). The separate Advanced Weapons doc is retired: Hunter-Killer Drone, Overdrive Protocol and System Override are now specified here, with Triple Spike, in the roster, self-effects and fairness rules (§6.3–§6.5). |
 
-**End of Game Design Document — Version 10.6**
+**End of Game Design Document — Version 10.14**

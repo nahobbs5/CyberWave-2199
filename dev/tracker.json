@@ -1,11 +1,11 @@
 {
   "schema": 1,
-  "updated": "2026-11-18",
+  "updated": "2026-11-19",
   "project": {
     "name": "Cyberwave 2199",
     "pitch": "Retrofuturistic cyberpunk combat kart racing: luxury neon cars, drift boosts, weapons and fifteen real-world circuits, against seven AI rivals or in 2–4 player local split screen.",
     "engine": "Godot 4.7.2 · GDScript · Jolt Physics",
-    "gdd": "v10.9",
+    "gdd": "v10.14",
     "phase": "Phase 6: content and polish (GDD §16)",
     "repo": "https://github.com/nahobbs5/CyberWave-2199",
     "demo": "https://nahobbs5.github.io/CyberWave-2199/web/",
@@ -56,7 +56,7 @@
       },
       {
         "path": "docs/",
-        "what": "GDD, Reference, physics guide, advanced weapons, recovery"
+        "what": "GDD, Reference, physics guide, recovery, drifting notes"
       }
     ]
   },
@@ -133,7 +133,7 @@
       "blockers": "",
       "notes": "Don't clamp spring force at full travel: ramp take-offs rely on it. Higher damping or force caps also shorten jumps. Anti-roll stays at 0 because grip is velocity-driven, so there's no real cornering roll and bars only make kerbs worse.",
       "open_decisions": "Is top speed right after the earlier 'lower top speed' request?\nAnti-roll: keep at 0, or give heavier cars a small value?\nCamera jitter on high-refresh monitors: turn on physics interpolation?",
-      "next_steps": "Drive one car from each class on Vegas, Catacombs and Kilwa and note understeer and oversteer per corner type."
+      "next_steps": "Drive one car from each class on Marble Canyon, Catacombs and Kilwa and note understeer and oversteer per corner type."
     },
     {
       "id": "drift",
@@ -213,7 +213,7 @@
         "scripts/combat/weapon_manager.gd",
         "scripts/combat/status_effects.gd",
         "scripts/ai/ai_combat.gd",
-        "docs/Cyberwave_2199_Advanced_Weapons.md",
+        "docs/Game Design Document.md",
         "scripts/ui/hud/glitch_overlay.gd"
       ],
       "prerequisites": [
@@ -281,7 +281,7 @@
       "test": {
         "headless": "godot --headless --fixed-fps 60 -s res://tests/test_weapons_advanced.gd",
         "also": "test_recovery_items.gd, test_weapon_sfx.gd, test_phase3.gd",
-        "manual": "Versus on Vegas, Items on, start 8th. Fire a System Override from 7th: every car ahead shows red arcs, and the effects timer reads longer the farther ahead that car is (leader 12 s). A repeat Override does nothing."
+        "manual": "Versus on Marble Canyon, Items on, start 8th. Fire a System Override from 7th: every car ahead shows red arcs, and the effects timer reads longer the farther ahead that car is (leader 12 s). A repeat Override does nothing."
       },
       "blockers": "test_phase3 full-race gate check fails. It fails with the old odds too, so the v7.4 rebalance didn't cause it; the cause hasn't been checked. test_weapons_advanced: 2 System Override speed / acceleration checks also fail, with the old odds as well.",
       "notes": "Override durations are 3× the original spec (your call, GDD v5.1). The 8th-place value (1.5 s) never applies because nobody is behind 8th. Weapons stay usable while hacked.",
@@ -666,7 +666,7 @@
     {
       "id": "b5",
       "system": "Weapons",
-      "title": "Decide on Holo Decoy / Gravity Mine / System Glitch / Cyber Leech / Swarm Bots",
+      "title": "Decide on Gravity Mine / Cyber Leech (Holo Decoy, System Glitch and Swarm Bots are built)",
       "priority": "P3",
       "done": false
     },
@@ -706,13 +706,6 @@
       "done": false
     },
     {
-      "id": "b11",
-      "system": "UI",
-      "title": "First-time tutorial (GDD §11.9)",
-      "priority": "P3",
-      "done": false
-    },
-    {
       "id": "b12",
       "system": "Race start",
       "title": "Web build check of the start-light / beep sync",
@@ -724,7 +717,7 @@
       "system": "Controllers",
       "title": "Pad disconnect / reconnect handling",
       "priority": "P2",
-      "done": false
+      "done": true
     },
     {
       "id": "b14",
@@ -1038,6 +1031,12 @@
       "gdd": "v9.3"
     },
     {
+      "date": "2026-11-16",
+      "decision": "Marble Canyon (Arizona switchback climb through a rock window) replaces Vegas Overdrive as American Cup race 1; Vegas moves to Practice as the hidden developer track",
+      "why": "User built a new American Cup opener; Vegas stays playable in Practice and Time Trial (THE STRIP)",
+      "gdd": "v10.14"
+    },
+    {
       "date": "2026-11-17",
       "decision": "EMP puddles jam for 3 s (was 1 s); Mario Kart-style trick edges (TrickEdge): the road edge on the outside of a bend pops cars up and back in for a trick, with two item boxes in the hop; four looks (banked shoulder, raised curb, crested verge, broken edge) matched to each track, 20 in all, working in Mirror too",
       "why": "Playtest: a 1 s puddle zap barely registered; edge tricks add optional skill lines and item pickups off the racing line",
@@ -1088,6 +1087,12 @@
       "date": "2026-11-18",
       "decision": "Five new procedural cars from 'Five Retro-Futuristic Racers' (13 in all, 10 to unlock); each unlocks via one Time Trial rival track (Switchback on Arashiyama as in the unlock mockup); their expert ghost gives a signature paint and their animated underglow is a 600-coin shop item for that car only; two-tone paint (TwoTone mesh) survives repaints",
       "why": "User chose rival-ghost unlocks, procedural bodies and signature cosmetics; 16 tracks can't give paint + glow to 10 cars, and only tracks without baked ghosts were reassigned"
+    },
+    {
+      "date": "2026-11-19",
+      "decision": "Advanced Weapons doc retired: Hunter-Killer, Overdrive Protocol and System Override specs folded into GDD §6.3 / §6.5",
+      "why": "User: the separate doc isn't needed; the GDD is the single design authority",
+      "gdd": "v10.14"
     }
   ],
   "playtest": [

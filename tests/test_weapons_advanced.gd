@@ -1,5 +1,5 @@
 extends SceneTree
-## Advanced weapons (docs/Cyberwave_2199_Advanced_Weapons.md): crate odds,
+## Advanced weapons (GDD §6.3, §6.5): crate odds,
 ## System Override, the Hunter-Killer Drone and Overdrive Protocol, plus AI
 ## use. Run from the project root:
 ##   godot --headless --import

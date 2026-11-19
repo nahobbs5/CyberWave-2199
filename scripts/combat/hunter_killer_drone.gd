@@ -1,6 +1,6 @@
 class_name HunterKillerDrone
 extends Node3D
-## Hunter-Killer Drone (docs/Cyberwave_2199_Advanced_Weapons.md §1): locks on
+## Hunter-Killer Drone (GDD §6.3, §6.5): locks on
 ## to the race leader at launch and keeps that racer as its target even if
 ## they lose the lead. It flies along the road (above the centre line, by
 ## distance, so it passes everyone else and never cuts through scenery) at

@@ -39,7 +39,7 @@ const FORCE_FIELD_SHADER := preload("res://assets/shaders/force_field.gdshader")
 @export var traction_grip_multiplier: float = 0.2
 @export var wet_speed_multiplier: float = 0.88
 @export var wet_grip_multiplier: float = 0.75
-## System Override (Advanced Weapons §3): top speed and acceleration kept.
+## System Override (GDD §6.5): top speed and acceleration kept.
 @export var override_speed_multiplier: float = 0.75
 @export var override_accel_multiplier: float = 0.7
 ## Swarm Bots leash: top speed and acceleration kept.
@@ -68,7 +68,7 @@ func _ready() -> void:
 ## Applies a harmful effect. Returns false if a shield or stun protection
 ## blocked it. `pierce_shield` attacks ignore (and keep) a Firewall.
 func apply_attack(effect: StringName, duration: float, pierce_shield: bool = false) -> bool:
-	# An Overdrive flight is untouchable (Advanced Weapons §5).
+	# An Overdrive flight is untouchable (GDD §6.5).
 	if has(&"overdrive"):
 		attack_blocked.emit(effect, &"overdrive")
 		return false

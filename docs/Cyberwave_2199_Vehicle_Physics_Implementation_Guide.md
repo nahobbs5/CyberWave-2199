@@ -1,5 +1,7 @@
 # Cyberwave 2199 — Vehicle Physics Improvement Guide
 
+> **Note (2026-11-19):** this is the original implementation brief, kept for background. The built behaviour is described in the [Reference](Reference.md) and the design rules in the [Game Design Document](Game%20Design%20Document.md) (tracks are now sloped, so the flat-track scope below no longer applies).
+
 **Target:** Godot 4 / GDScript · **Vehicle root:** `RigidBody3D` · **Handling style:** fast, controlled arcade kart racer with believable suspension
 
 **Scope for this iteration:** flat tracks. Do **not** implement slope-following alignment yet. Preserve existing driving feel, drift charging, boosts, AI input, weapons/status effects, recovery, tricks, cosmetics, and split-screen controls.

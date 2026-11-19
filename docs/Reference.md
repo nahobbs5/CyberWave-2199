@@ -107,7 +107,7 @@ The layout is the `control_points` list on `scenes/tracks/test_circuit.tscn`, sa
 
 ### Game modes
 
-**Cups and tracks (Mario Kart style).** Grand Prix and Versus share one **cup screen** (`CupBoard`, used by `CupSelect` and `TrackSelect`): a row of round **cup badges** (`CupBadge`, drawn in code: a gold-rimmed medallion in the cup's colours with its map: the USA, Europe, Asia, South America, Africa) above a panel that previews the focused cup's races (the cup's trophy, then a card per race with its outline, location and your best time). The panel header shows no race count (Grand Prix adds your best finish), and there's no "CHOOSE A CUP" subtitle (the track screen shows "RACE x OF y" only mid-series). Moving across the badges previews each cup; opening one (click, Enter or A) moves into the panel, and Back returns to the badges. **Grand Prix** confirms the cup with **START GRAND PRIX**, then goes to the setup screen and races the whole cup (a cup locked for Grand Prix is greyed with a padlock and can't be confirmed). **Versus** starts on the setup screen (car, race type, **number of races**, laps, NPC difficulty, weapons), then the cup screen: open a cup and pick a race, or open the **"?" Random badge** for a RANDOM card. There are five cups: the **American Cup** (Vegas Overdrive, Six Flags New Orleans, The Stacks), the **Europe Cup** (Hoia Baciu Run, Catacombs Descent, Vatnajökull Glacier), the **Asia Cup** (Arashiyama Circuit, Crazy House, Gardens by the Bay), the **South America Cup** (Parque Quinta Normal, Vale da Lua, Choquequirao) and the **Africa Cup** (Kilwa Kisiwani Ruins, Fires of Nyiragongo, Chefchaouen). The Europe Cup was the World Cup; its resource keeps the old file name and id (`world_circuit`) so saved results carry over. A cup can be greyed out as "coming soon" with `locked = true` on its resource. Each cup is data (`resources/grand_prix/*.tres`, listed in `GrandPrixData.CUPS`); its `emblem` picks the trophy picture. The Test Circuit isn't in a cup: it's the Practice track.
+**Cups and tracks (Mario Kart style).** Grand Prix and Versus share one **cup screen** (`CupBoard`, used by `CupSelect` and `TrackSelect`): a row of round **cup badges** (`CupBadge`, drawn in code: a gold-rimmed medallion in the cup's colours with its map: the USA, Europe, Asia, South America, Africa) above a panel that previews the focused cup's races (the cup's trophy, then a card per race with its outline, location and your best time). The panel header shows no race count (Grand Prix adds your best finish), and there's no "CHOOSE A CUP" subtitle (the track screen shows "RACE x OF y" only mid-series). Moving across the badges previews each cup; opening one (click, Enter or A) moves into the panel, and Back returns to the badges. **Grand Prix** confirms the cup with **START GRAND PRIX**, then goes to the setup screen and races the whole cup (a cup locked for Grand Prix is greyed with a padlock and can't be confirmed). **Versus** starts on the setup screen (car, race type, **number of races**, laps, NPC difficulty, weapons), then the cup screen: open a cup and pick a race, or open the **"?" Random badge** for a RANDOM card. There are five cups: the **American Cup** (Marble Canyon, Six Flags New Orleans, The Stacks), the **Europe Cup** (Hoia Baciu Run, Catacombs Descent, Vatnajökull Glacier), the **Asia Cup** (Arashiyama Circuit, Crazy House, Gardens by the Bay), the **South America Cup** (Parque Quinta Normal, Vale da Lua, Choquequirao) and the **Africa Cup** (Kilwa Kisiwani Ruins, Fires of Nyiragongo, Chefchaouen). The Europe Cup was the World Cup; its resource keeps the old file name and id (`world_circuit`) so saved results carry over. A cup can be greyed out as "coming soon" with `locked = true` on its resource. Each cup is data (`resources/grand_prix/*.tres`, listed in `GrandPrixData.CUPS`); its `emblem` picks the trophy picture. Vegas Overdrive and the Test Circuit aren't in a cup: they're the Practice tracks (`TrackCatalog.PRACTICE_TRACKS`, picked on `PracticeSelect`, which focuses Vegas first). Marble Canyon replaced Vegas as American Cup race 1 (GDD v10.14), so Vegas isn't in Versus either.
 
 - **Versus** (GDD §2.1): you start eighth. Pick **1, 2, 3, 4, 6, 8, 12 or 16 races**. With one race, the results offer **Race again** or the menu. With more, the track screen comes back before each race ("RACE 2 OF 4"; the standings stay on the results screen), points and grids work like a Grand Prix, and the last results name the series winner. A series isn't saved; each race pays its normal coins.
 - **Grand Prix** (GDD §2.2): any of the five cups (three races each), three laps per race. The cup-win bonus is 100 coins for three races, scaled by the cup's race count.
@@ -318,7 +318,7 @@ One song per screen or track (`scripts/core/music.gd`; race music per track in `
 | Other results screens (no podium) | Background Music | alex-morgan |
 | The Stacks | Cyber Dreams | Lilex |
 | Six Flags New Orleans | Race Winner | TheBoysBeats |
-| Vegas Overdrive | Heavy Racing | SPmusic |
+| Marble Canyon | Heavy Racing | SPmusic |
 | Hoia Baciu Run | Cyberpunk Music | kulakovka |
 | Catacombs Descent | Hard Cyberpunk | kulakovka |
 | Arashiyama Circuit | The Cyber Geisha | Ob-Lix |
@@ -331,7 +331,7 @@ One song per screen or track (`scripts/core/music.gd`; race music per track in `
 | Kilwa Kisiwani Ruins | The Dragon's Lair | vishiv |
 | Fires of Nyiragongo | Danger Imminent | Jean-Paul-V |
 | Chefchaouen | Atlas Morocco | vadim_makes_sound |
-| Test Circuit and Practice | The Garden Wakes | stageechoesmusic |
+| Practice (Test Circuit and Vegas Overdrive) | The Garden Wakes | stageechoesmusic |
 
 - **Final lap:** in races of 2+ laps (Elimination included), the race music speeds up 5%, pitch and all, over about 0.4 s. Restarting or leaving the race puts it back.
 - **Countdown:** the clip has four beeps a second apart, one per start light and word (3, 2, 1, START).
@@ -342,17 +342,29 @@ One song per screen or track (`scripts/core/music.gd`; race music per track in `
 
 ### Tracks
 
-Fifteen tracks in five cups, raced in this order in a Grand Prix. The **Test Circuit** is used for Practice.
+Fifteen tracks in five cups, raced in this order in a Grand Prix. **Practice** offers Vegas Overdrive (the old American Cup opener, now the hidden developer track) and the graybox **Test Circuit**.
 
 | Cup | Race 1 | Race 2 | Race 3 |
 |---|---|---|---|
-| American | Vegas Overdrive | Six Flags New Orleans | The Stacks |
+| American | Marble Canyon | Six Flags New Orleans | The Stacks |
 | Europe | Hoia Baciu Run | Catacombs Descent | Vatnajökull Glacier |
 | Asia | Arashiyama Circuit | Crazy House | Gardens by the Bay |
 | South America | Parque Quinta Normal | Vale da Lua | Choquequirao |
 | Africa | Kilwa Kisiwani Ruins | Fires of Nyiragongo | Chefchaouen |
 
 Each track below lists its race music in the Audio table above. Best times saved under the old name "The Stacks Grand Prix" carry over to The Stacks.
+
+#### Marble Canyon (GDD §8.6j)
+
+American Cup race 1. A 3.05 km **switchback climb through Arizona's sandstone canyon country**, through a natural rock window at the summit and down into a basin, under a bright partly cloudy sky (kloofendal_48d_partly_cloudy HDRI). The road is 18 m of worn rock (Poly Haven rock_ground) with cyan / magenta edge neon, wide enough for two cars side by side through the hairpins. In driving order:
+- **Canyon floor** (start): the grid sits level on the floor, about 54 m below the window, with a 3° banked sweeper away from it.
+- **Switchbacks:** four alternating hairpins (`MarbleCanyonScenery.HAIRPINS` H1–H4) climbing terraces cut round two rounded sandstone masses. Every hairpin has a rounded rock nose inside it (squashed spheres) and its grade eased at the apex. Small jump ramp on the climb (`SmallRampB`).
+- **Rock window:** a thick sandstone fin across the summit ridge (`SandstoneArchBuilder`: 18 m thick, an irregular opening 15 m either side of the centre and 32 m high, trimesh `WindowCollider`). It's the high point of the lap (`WINDOW_OFFSET`).
+- **Descent:** two more hairpins (H5, H6) and a long run down, steeper than the climb (grades up to about 11%). Small jump ramp (`SmallRampCanyonDescent`).
+- **Wave basin:** a long 6° banked sweeper (`BASIN`) back to the start.
+- **Terraces:** the land is one heightfield (5 m cells). Near a road it sits just under it; between two legs it blends their heights, so each leg gets a level shelf with a cut face above and a fill slope below. Masses rise behind the hairpins, a ridge crosses at the window, and canyon walls ring the layout. Land within 45 m of the road has a collider. **`TrackCircuit.terrace_guard`**: a car that drops onto road it didn't drive to (another terrace) is recovered to its last safe point, facing along the road ("off route", keeps its items), so a fall can't skip part of the lap.
+- 5 crate rows, 12 coins, 12 checkpoints, two trick edges; no shortcut or boost pads. Time Trial rival: Nexus X (expert prize: its signature paint).
+- Built from code: `MarbleCanyonScenery` (Poly Haven rock_face for the sandstone). Tests: `tests/test_marble_canyon.gd`.
 
 #### The Stacks (GDD §8.1)
 
@@ -585,7 +597,7 @@ It keeps its jump ramps, water patches, EMP puddle and smashable fence.
 
 #### Vegas Overdrive (GDD §8.3)
 
-A 3.2 km night circuit (shortened from 4.4 km after your first drive) with 20 m wide roads:
+**Practice only** since Marble Canyon took its cup slot: free drive from `PracticeSelect` (a full lap unlocks the Interceptor) and THE STRIP in Time Trial; not in any cup or in Versus. A 3.2 km night circuit (shortened from 4.4 km after your first drive) with 20 m wide roads:
 - **The Strip:** a roughly 500 m boulevard lined with neon casino towers, palms and billboards, starting past the "Welcome to Fabulous Las Vegas" sign. Two boost pads.
 - **Fountain lake:** a sweeping right-hander along a lake with an animated fountain show and a grand hotel.
 - **Paris:** an Eiffel-style tower and a glowing balloon along the south-east straight.
@@ -663,24 +675,27 @@ The crates (`scripts/combat/weapon_crate.gd`, GDD v10.1 §6.1, ref "reference fi
   - A landed Railgun or Hunter Drone hit knocks out the victim's selected weapon (or the other one if that slot is empty). Hits blocked by a Firewall or stun protection cost nothing.
 - **Self-effects** (GDD §6.4): only the Road Spike can hit its owner, and only after a 1 s grace period. Everything else ignores its owner.
 - **Crate odds** depend on race position (GDD §6.5). Each weapon has a percent chance per position (`WeaponData.position_chance`, 1st to 8th), and a crate makes one pick from those. Leaders get weak and defensive items: Road Spikes only drop for 1st–3rd and Firewalls only for 1st–5th. Odds climb toward stronger items further back, and 7th–8th mostly get Overdrive, System Override and Triple Nitro.
-- **Advanced weapons** (`docs/Cyberwave_2199_Advanced_Weapons.md`): the three rare items (`WeaponData.rare`) never drop for 1st and 2nd.
+- **Rare weapons** (GDD §6.3, §6.5): Hunter-Killer, Overdrive Protocol and System Override (`WeaponData.rare`) never drop for 1st and 2nd.
 - **Crate roulette** (GDD §6.1, v9.9): a crate pickup spins its slot for `ItemInventory.ROULETTE_TIME` (2.5 s) before the weapon can be used. The weapon is rolled at pickup; `current()` is null while the slot spins. The weapon button lands every rolling slot at once without firing (`request_use` → `stop_spin`), and `revealed` / `WeaponManager.weapon_revealed` fire when a slot lands. `inventory.add(w)` without `spin` (tests, debug) skips the roll; `WeaponManager.roulette_enabled` turns it off for crates. AI ignores rolling slots and waits out the spin.
 - **One per inventory** (v9.9): `WeaponData.one_per_inventory` (Overdrive, System Override). `try_give_weapon` passes held ones to `roll_weapon(..., exclude)`, so the rest of the odds scale up, and `add()` refuses a duplicate. Checked by `tests/test_weapon_roulette.gd`.
 
   | Weapon | 1st | 2nd | 3rd | 4th | 5th | 6th | 7th | 8th |
   |---|---:|---:|---:|---:|---:|---:|---:|---:|
-  | Road Spike | 30% | 25% | 15% | 0% | 0% | 0% | 0% | 0% |
-  | Triple Spike | 12% | 12% | 10% | 6% | 0% | 0% | 0% | 0% |
-  | Firewall | 25% | 23% | 18% | 14% | 8% | 0% | 0% | 0% |
-  | Railgun | 15% | 15% | 13% | 12% | 9% | 7% | 0% | 0% |
-  | Triple Railgun | 0% | 0% | 4% | 6% | 8% | 8% | 4% | 0% |
-  | EMP Pulse | 8% | 9% | 11% | 13% | 12% | 11% | 4% | 2% |
-  | Hunter Drone | 5% | 8% | 12% | 15% | 16% | 14% | 7% | 4% |
-  | Nitro Overload | 5% | 8% | 11% | 15% | 15% | 14% | 9% | 5% |
-  | Triple Nitro | 0% | 0% | 4% | 9% | 14% | 18% | 22% | 25% |
+  | Road Spike | 27% | 22% | 12% | 0% | 0% | 0% | 0% | 0% |
+  | Triple Spike | 12% | 10% | 8% | 5% | 0% | 0% | 0% | 0% |
+  | Firewall | 22% | 20% | 15% | 11% | 5% | 0% | 0% | 0% |
+  | Holo Decoy | 8% | 8% | 7% | 5% | 3% | 0% | 0% | 0% |
+  | Railgun | 13% | 13% | 11% | 10% | 7% | 5% | 0% | 0% |
+  | Triple Railgun | 0% | 0% | 3% | 5% | 6% | 6% | 3% | 0% |
+  | EMP Pulse | 8% | 8% | 9% | 10% | 9% | 9% | 3% | 1% |
+  | Hunter Drone | 5% | 7% | 10% | 12% | 12% | 11% | 5% | 3% |
+  | Nitro Overload | 5% | 7% | 10% | 12% | 12% | 11% | 7% | 4% |
+  | System Glitch | 0% | 3% | 5% | 6% | 7% | 7% | 6% | 4% |
+  | Swarm Bots | 0% | 2% | 4% | 6% | 8% | 7% | 5% | 2% |
+  | Triple Nitro | 0% | 0% | 4% | 8% | 13% | 17% | 20% | 24% |
   | Hunter-Killer | 0% | 0% | 0% | 2% | 4% | 6% | 8% | 8% |
-  | Overdrive | 0% | 0% | 0% | 3% | 6% | 10% | 20% | 25% |
-  | System Override | 0% | 0% | 2% | 5% | 8% | 12% | 26% | 31% |
+  | Overdrive | 0% | 0% | 0% | 3% | 6% | 10% | 19% | 24% |
+  | System Override | 0% | 0% | 2% | 5% | 8% | 11% | 24% | 30% |
 
   With fewer than 8 racers, positions are spread over the same columns. **Counters:**
   - A Firewall soaks a System Override (and is used up). It does nothing against a Hunter-Killer.
@@ -708,11 +723,11 @@ The crates (`scripts/combat/weapon_crate.gd`, GDD v10.1 §6.1, ref "reference fi
 project.godot                Main scene: scenes/boot.tscn (loading splash, then the title menu)
 scenes/
   boot.tscn                  Loading splash with progress bar
-  menu/                      title_menu, main_menu, race_setup, cup_select, track_select, garage,
-                             settings_menu, credits, multiplayer_connect / _cars / _setup
+  menu/                      title_menu, main_menu, race_setup, cup_select, track_select, practice_select,
+                             garage, settings_menu, credits, multiplayer_connect / _cars / _setup
   race/race.tscn             The race (RaceManager + track + cameras + HUDs); F6 runs a Versus race
   free_drive.tscn            Practice sandbox (one car, no race rules)
-  tracks/*.tscn              15 race tracks + test_circuit.tscn (layout, shortcuts, features, scenery, environment)
+  tracks/*.tscn              15 cup tracks + vegas_overdrive.tscn and test_circuit.tscn (Practice) (layout, shortcuts, features, scenery, environment)
   vehicles/placeholder_car.tscn  The shared car: body, 4 raycast wheels, drift / recovery / feedback
 scripts/
   core/                      Static services: GameSession, GameSettings, InputSetup, Music, SaveUtil, boot
@@ -721,6 +736,7 @@ scripts/
                              VehicleStats / VehicleData / VehicleCatalog, CarModelBuilder + CarDesigns, VehicleCosmetics
   race/                      RaceManager, RaceProgress, RaceConfig, Championship, GrandPrixData, EliminationTracker,
                              Slipstream, StartLaunch (rocket start), SplitScreen, WrongWaySign, RacerProfile, RivalRoster
+  race/ghost/                Time Trial ghosts: GhostData, GhostRecorder, GhostCar
   combat/                    WeaponManager, WeaponData, ItemInventory, TargetingSystem, StatusEffects, CombatSfx,
                              railgun_shot, hunter_drone, hunter_killer_drone, road_spike, emp_blast, weapon_crate
   ai/                        AIController, AICombat, RacingLine, AIDifficulty
@@ -736,8 +752,10 @@ scripts/
   ui/hud/                    RaceHUD parts: race_info_panel, standings_panel, speed_drift_panel, item_slots,
                              announcer, slipstream_banner, neon_results_screen, results_screen
   ui/podium/                 PodiumCeremony, PodiumStage
+  (resources/ghosts/)        Baked rival / expert Time Trial ghosts, <track>_{rival,expert}.res
   menu/                      One script per menu scene, plus CupBoard and DeviceInput
-  progression/               PlayerProfile, CosmeticCatalog, CosmeticItem, RaceRewards, TrackCoins
+  progression/               PlayerProfile, CosmeticCatalog, CosmeticItem, RaceRewards, TrackCoins, UnlockCatalog,
+                             TimeTrialCatalog
 resources/
   vehicles/                  The thirteen cars (+ stats/)
   weapons/*.tres             The fifteen weapons: durations, speeds, position_chance odds
@@ -750,7 +768,7 @@ assets/                      shaders/, fonts/, logo/, ui/ (weapon icons, track p
 models/                      Blender .glb props for tracks (Y-up, metres), loaded with GlbProp
 music/, sounds/              Audio (music/web/ holds the .ogg copies for the web build)
 tests/                       Headless suites (below) and tools/ (screenshot, car_showroom, track_cards, perf_probe, ...)
-docs/                        GDD, this reference, physics guide, advanced weapons, recovery, drifting notes
+docs/                        GDD, this reference, physics guide, recovery, drifting notes
 web/                         The exported browser build (GitHub Pages)
 dev/                         The dev tracker site (GitHub Pages)
 ```
@@ -804,6 +822,7 @@ Swap in any suite:
 | `test_start_boost.gd` | Rocket start: timing window, boost, burnout, revving, AI odds |
 | `test_start_grid.gd` | Starting grid on every track: slots on the road with room to the walls, 6 m apart, on a straight; painted slot markers 1–8 |
 | `test_weapons_advanced.gd` | Hunter-Killer, Overdrive, System Override: odds, counters, AI use |
+| `test_new_weapons.gd` | Holo Decoy, System Glitch, Swarm Bots: data, status rules, glitch overlay, swarm leash, decoys soaking attacks, AI use |
 | `test_recovery_items.gd` | Which recoveries clear the item slots |
 | `test_weapon_roulette.gd` | Crate roulette (spin, press to land, HUD) and one Overdrive / System Override per inventory |
 | `test_weapon_sfx.gd` | Weapon and barrier sounds |
@@ -819,6 +838,10 @@ Swap in any suite:
 | `test_cc.gd` | Engine classes: scaled stats and boosts, per-class record names and Grand Prix keys, save round-trip, Grand Prix setup → cup → start flow with CC and Mirror, Versus and split-screen CC rows, the race setup's top-speed card following the CC, Test Circuit races at 100cc and 200cc |
 | `test_air_attitude.gd` | Air attitude control: landing pose (wheels down, nose along travel, backwards stays backwards, flung past 90° comes round), a hard-spun launch lands level and still with an unchanged flight path, 200cc ramps on The Stacks touch down level, on line and not spinning, with tricks |
 | `test_audio.gd` | Music per screen / track, crossfades, countdown, web copies |
+| `test_textures.gd` | Every track is textured with Poly Haven sets (or a deliberate material), every named texture exists, procedural shaders carry the detail maps (quick; no track is built) |
+| `test_controller_disconnect.gd` | Controller disconnected screen: pause, reclaim a pad or the keyboard, resume countdown |
+| `test_haptics.gd` | Controller rumble (`VehicleHaptics`) and the Vibration setting (no real pad needed) |
+| `test_marble_canyon.gd` | Marble Canyon: six hairpins, grades, the window as the high point, terraces kept apart, land under the road, window clearance, American Cup race 1 and Vegas in Practice, terrace guard, an 8-car opening lap and a full race (`-- quick` skips the race) |
 | `test_quinta_normal.gd`, `test_vale_da_lua.gd`, `test_choquequirao.gd`, `test_kilwa_kisiwani.gd`, `test_nyiragongo.gd`, `test_chefchaouen.gd` | Per-track layout, shortcut and scenery checks |
 
 **Track outlines:** menu cards, the loading screen and results draw each track's outline from `resources/ui/track_outlines.tres` (`TrackOutlines`). This way the menus never load whole track scenes; loading them froze the track screen on the web build. After moving a track's control points or adding a track, rebake with `godot --headless --path . -s res://tests/tools/bake_track_outlines.gd`. `test_ui.gd` fails while the baked copy is out of date.
@@ -906,13 +929,14 @@ Environment textures and the track skies are from [Poly Haven](https://polyhaven
 
 ## Status and known issues
 
-As of 2026-11-14 (GDD v7.9). Phase 6, content and polish, is in progress. The [dev tracker](https://nahobbs5.github.io/CyberWave-2199/dev/) holds the live milestone status.
+As of 2026-11-19 (GDD v10.14). Phase 6, content and polish, is in progress. The [dev tracker](https://nahobbs5.github.io/CyberWave-2199/dev/) holds the live milestone status.
 
-- **Content built:** 15 race tracks in 5 cups (all open for Grand Prix) plus the Test Circuit, 13 cars, 15 weapons, 7 named rivals, split screen for 2–4 players, podium, music on every track.
-- **Weapons:** Railgun, Hunter Drone, EMP Pulse, Road Spike, Nitro Overload, Triple Nitro, Triple Spike, Triple Railgun, Firewall, Hunter-Killer Drone, Overdrive Protocol and System Override. The GDD §6.3 roster's Holo Decoy, Gravity Mine, System Glitch, Cyber Leech and Swarm Bots are not built.
+- **Content built:** 15 race tracks in 5 cups (all open for Grand Prix) plus Vegas Overdrive and the Test Circuit for Practice, 13 cars (3 starters, 10 to unlock), 15 weapons, 7 named rivals, Time Trial with baked ghosts, Mirror, 50–200cc, split screen for 2–4 players, podium, music on every track.
+- **Weapons:** Railgun, Triple Railgun, Hunter Drone, EMP Pulse, Road Spike, Triple Spike, Nitro Overload, Triple Nitro, Firewall, Holo Decoy, System Glitch, Swarm Bots, Hunter-Killer Drone, Overdrive Protocol and System Override. The GDD §6.3 roster's Gravity Mine and Cyber Leech are not built.
 - **Known failing checks** (they failed before the latest work):
   - `test_phase3`: "every racer crossed every gate despite weapons" (also fails with the pre-v7.4 crate odds; cause not yet checked);
   - `test_weapons_advanced`: System Override "victim's top speed is cut by 25%" and "hacked car accelerates slower" (also fail with the pre-v7.4 odds);
+  - `test_time_trial`: "baked ghost" checks fail on Arashiyama, Vale da Lua, Quinta Normal, Nyiragongo and Kilwa until their ghosts are re-baked for the new cars (backlog b22);
   - `test_phase6`: Arashiyama "shortcut is shorter" and "every gate counted on the shortcut"; Six Flags "the ramp's item boxes gave the car a weapon", and "every gate counted" on the forced-shortcut lap and in the full race (all three also fail at e57fcde, before the bumper-car pavilion).
 - **Running tests:** run `test_phase4` and `test_phase6` on their own. Parallel runs slow the track builds past the build-time limit, and suites that share a save file can clash.
 - **Screenshots from the dev container are software-rendered** (Compatibility / lavapipe). Forward+ on Windows shows stronger glow, fog and reflections.

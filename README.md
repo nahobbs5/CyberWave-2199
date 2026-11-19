@@ -3,9 +3,9 @@
 **Retrofuturistic cyberpunk combat kart racing, built in Godot 4.**
 Luxury neon cars, drift boosts, weapons and fifteen circuits set in real-world places, against seven AI rivals or with up to four players in local split screen.
 
-**▶ [Play the browser demo](https://nahobbs5.github.io/CyberWave-2199/web/)** · **🛠 [Dev tracker](https://nahobbs5.github.io/CyberWave-2199/dev/)** · **📖 [Full reference](docs/Reference.md)** · **📐 [Game Design Document](docs/Game%20Design%20Document.md)** (v6.9)
+**▶ [Play the browser demo](https://nahobbs5.github.io/CyberWave-2199/web/)** · **📐 [Game Design Document](docs/Game%20Design%20Document.md)** (v10.14) · **🛠 [Dev tracker](https://nahobbs5.github.io/CyberWave-2199/dev/)** · **📖 [Full reference](docs/Reference.md)**
 
-> **Status (2026-11-14):** Phase 6, content and polish, is in progress (GDD §16). Every track, car and mode below is playable. Handling, drift timing, weapon balance, atmosphere, UI and controller support are still being tuned; the dev tracker has the details.
+> **Status (2026-11-19):** Phase 6, content and polish, is in progress (GDD §16). Every track, car and mode below is playable. Handling, drift timing, weapon balance, atmosphere, UI and controller support are still being tuned; the dev tracker has the details.
 
 ---
 
@@ -15,7 +15,7 @@ Luxury neon cars, drift boosts, weapons and fifteen circuits set in real-world p
 - **2–4 player split screen** on one PC with keyboard and gamepads, a live spectator view for three players, and an optional AI field.
 - **Drifting:** hold drift and steer to charge **Cyan → Magenta → Gold** boosts. Steering into the slide charges faster.
 - **Rocket start:** hold accelerate as the "2" fades to launch, but too early and you burn out. A four-lamp start-light board on the gantry counts you in.
-- **Slipstream, tricks off ramps and half-pipes, and boost pads / rings,** plus shortcuts with smashable barriers on every track.
+- **Slipstream, tricks off ramps and half-pipes, and boost pads / rings,** plus shortcuts with smashable barriers on most tracks.
 - **15 weapons** with position-based crate odds. System Override hacks everyone ahead of you, and the leader stays hacked longest.
 - **Holographic recovery** that never moves you forward.
 - **13 cars** (3 starters, 10 to unlock) with distinct stats, a neon garage with 8 cosmetic categories, coins and license plates.
@@ -25,7 +25,7 @@ Luxury neon cars, drift boosts, weapons and fifteen circuits set in real-world p
 
 | Cup | Track | Setting | Length | GDD |
 |---|---|---|---:|---|
-| **American** | Vegas Overdrive | The Strip at night, Luxor pyramid shortcut | 3.2 km | §8.3 |
+| **American** | Marble Canyon | Arizona sandstone switchbacks through a rock window | 3.05 km | §8.6j |
 | | Six Flags New Orleans | Abandoned, flooded amusement park and its derelict bumper-car ride | 3.1 km | §8.2 |
 | | The Stacks | Library of Congress at sunset | 2.9 km | §8.1 |
 | **Europe** | Hoia Baciu Run | Romania's haunted forest, foggy night | 3.2 km | §8.4 |
@@ -41,7 +41,7 @@ Luxury neon cars, drift boosts, weapons and fifteen circuits set in real-world p
 | | Fires of Nyiragongo | Inside the volcano's crater at dusk, D.R. Congo | 3.2 km | §8.6h |
 | | Chefchaouen | Blue medina with two forks per lap, Morocco | 3.15 km | §8.6i |
 
-All five cups are complete and open for Grand Prix and Versus. The graybox Test Circuit is the Practice track.
+All five cups are complete and open for Grand Prix and Versus. Practice offers the graybox Test Circuit and a hidden developer track.
 
 ## Controls
 
@@ -67,11 +67,10 @@ Every action can be rebound in **Settings → Controls**.
 | Doc | What's in it |
 |---|---|
 | [Game Design Document](docs/Game%20Design%20Document.md) | The design authority, with its revision history |
+| [Dev tracker](https://nahobbs5.github.io/CyberWave-2199/dev/) ([source](dev/)) | Milestones, backlog, decision log and playtest checklist |
 | [Reference](docs/Reference.md) | How every built system works, track by track, plus the project layout and tests |
 | [Vehicle Physics Guide](docs/Cyberwave_2199_Vehicle_Physics_Implementation_Guide.md) | Raycast suspension and handling notes |
-| [Advanced Weapons](docs/Cyberwave_2199_Advanced_Weapons.md) | Hunter-Killer, Overdrive Protocol, System Override |
 | [Recovery System](docs/Recovery%20System.md) | The holographic recovery sequence |
-| [Dev tracker](https://nahobbs5.github.io/CyberWave-2199/dev/) ([source](dev/)) | Milestones, backlog, decision log and playtest checklist |
 
 ## Credits
 

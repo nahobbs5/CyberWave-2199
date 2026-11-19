@@ -1,6 +1,6 @@
 class_name OverdriveController
 extends Node
-## Overdrive Protocol (docs/Cyberwave_2199_Advanced_Weapons.md §2): the kart
+## Overdrive Protocol (GDD §6.3, §6.5): the kart
 ## lifts off and flies itself along the course, then lands on a safe stretch
 ## of road. Lives on the car (VehicleController.overdrive), made on first use.
 ##

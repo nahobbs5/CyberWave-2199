@@ -321,7 +321,7 @@ func _deploy(user: VehicleController, weapon: WeaponData) -> void:
 
 
 ## System Override: every racer ahead of the user right now is hacked
-## (slowed); nobody behind is touched (Advanced Weapons §3). The leader is
+## (slowed); nobody behind is touched (GDD §6.5). The leader is
 ## hacked longest: each victim's time comes from their position right now.
 ## Already-hacked cars are skipped (no stacking, no extending).
 func _system_override(user: VehicleController, weapon: WeaponData) -> Array[VehicleController]:
