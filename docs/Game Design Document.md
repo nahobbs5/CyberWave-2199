@@ -16,9 +16,9 @@
 
 ## 1.1 Concept
 
-Cyberwave 2199 is a single-player arcade combat racing game featuring luxury retrofuturistic vehicles, futuristic weapons, challenging AI opponents, and atmospheric circuits inspired by recognizable real-world locations.
+Cyberwave 2199 is an arcade combat racing game for one player or 2–4 players in local split screen, featuring luxury retrofuturistic vehicles, futuristic weapons, challenging AI opponents, and atmospheric circuits inspired by recognizable real-world locations.
 
-Players compete against seven AI racers in conventional races, three-race championships, and checkpoint-based elimination events.
+Players compete against seven AI racers, or each other in split screen (with an optional AI field), in conventional races, three-race championships, checkpoint-based elimination events and mirror races. Solo players also have Time Trial against ghosts.
 
 The experience emphasizes accessible driving, rewarding drifting, tactical weapon use, and memorable environments.
 
@@ -46,7 +46,7 @@ AI difficulty should primarily reflect driving ability and tactical decisions ra
 
 **Manageable scope**
 
-The initial release focuses on polished single-player racing. Additional features are considered only after the core experience works.
+The initial release focuses on polished offline racing: single player and 2–4 player local split screen on one PC (§2.4). Online play and other additional features are considered only after the core experience works (§17).
 
 ---
 
@@ -1858,7 +1858,7 @@ Detailed artwork, weapons, cosmetics, and completed environments are not require
 **Status:** Approved design baseline for initial development  
 **Engine:** Godot 4  
 **Initial Platform:** Windows PC  
-**Initial Mode:** Single-player  
+**Modes:** Single-player and 2–4 player local split screen (originally single-player only)  
 **Core Content:** 8 vehicles, 6 tracks, 12 weapons, 3 game modes  
 **Progression:** Coins and cosmetic customization  
 **Next Milestone:** First playable driving and racing prototype
@@ -1979,6 +1979,6 @@ Changes after Version 1.0 should be tracked as revisions rather than silently re
 | 10.11 | 2026-11-18 | Two new race routes: **Afterimage** for a top-3 finish in a Mirror race, **High Roller** for winning a race at 200cc; Revenant and Interceptor stay Time Trial unlocks. Cup, Elimination, Mirror and 200cc routes now count in **split screen** too (best-placed player; the car is saved to the profile) (§9.1a). |
 | 10.12 | 2026-11-18 | The **CAR UNLOCKED screen moves after the results** (you see the scores first): any results button opens it, and Continue then carries out that button. Shown in split screen too (§9.1a). |
 | 10.13 | 2026-11-18 | **Interceptor** is now unlocked by finding the developer track (Vegas Overdrive) in Practice and running a full lap; the game pauses on CAR UNLOCKED, Continue drives on. Revenant is the only Time Trial rival unlock (§2.5, §9.1a). |
-| 10.14 | 2026-11-19 | Docs brought up to date. **Marble Canyon** (built 2026-11-16) documented as American Cup race 1 (§2.2, §8.6j, §12.1); **Vegas Overdrive** is now a Practice-only developer track and THE STRIP in Time Trial (§8, §8.3, §11.2). The separate Advanced Weapons doc is retired: Hunter-Killer Drone, Overdrive Protocol and System Override are now specified here, with Triple Spike, in the roster, self-effects and fairness rules (§6.3–§6.5). |
+| 10.14 | 2026-11-19 | Docs brought up to date. The overview (§1.1, §1.2) and Document Control (§20) now say the game is single player **and** 2–4 player local split screen, not single-player only. **Marble Canyon** (built 2026-11-16) documented as American Cup race 1 (§2.2, §8.6j, §12.1); **Vegas Overdrive** is now a Practice-only developer track and THE STRIP in Time Trial (§8, §8.3, §11.2). The separate Advanced Weapons doc is retired: Hunter-Killer Drone, Overdrive Protocol and System Override are now specified here, with Triple Spike, in the roster, self-effects and fairness rules (§6.3–§6.5). |
 
 **End of Game Design Document — Version 10.14**
