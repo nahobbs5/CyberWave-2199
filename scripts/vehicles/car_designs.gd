@@ -19,7 +19,8 @@ extends RefCounted
 ##        TwoTone (paint2: flares, stripes; paint cosmetics don't touch it).
 ## accent: the car's signature light colour. paint: default body colour.
 ## paint2: optional second body colour for TwoTone parts.
-## Optional: plate_anchor (Transform3D), decal (right-side position; mirrored).
+## Optional: plate_anchor (Transform3D), decal and exhaust (right-side positions;
+## mirrored).
 
 const DESIGNS := {
 	# Classic muscle silhouette: long hood, fastback, full-width light bars.
@@ -384,6 +385,7 @@ const DESIGNS := {
 		"cabin": [[-1.1, 0.24, 0.12], [-0.5, 0.26, 0.5], [0.2, 0.26, 0.55], [0.95, 0.3, 0.247]],
 		"plate_anchor": Transform3D(Basis.IDENTITY, Vector3(0.0, -0.04, 2.31)),
 		"decal": Vector3(0.715, -0.1, 0.35), # on the sidepods
+		"exhaust": Vector3(0.18, -0.22, 2.33), # on the diffuser, under the plate
 		"parts": [
 			["box", "TwoTone", Vector3(0.3, 0.03, 1.2), Vector3(0, 0.03, -1.85), Vector3(-6, 0, 0)],
 			["mirror_box", "TwoTone", Vector3(0.03, 0.1, 1.1), Vector3(0.3, -0.06, -1.5), Vector3(0, 5, 0)],
@@ -401,7 +403,7 @@ const DESIGNS := {
 			["mirror_box", "Trim", Vector3(0.48, 0.025, 0.06), Vector3(0.6, -0.2, -1.35)],
 			["mirror_box", "Trim", Vector3(0.45, 0.025, 0.06), Vector3(0.6, -0.08, 1.35)],
 			["mirror_box", "Trim", Vector3(0.45, 0.025, 0.06), Vector3(0.6, -0.2, 1.35)],
-			["mirror_box", "Tail", Vector3(0.1, 0.04, 0.04), Vector3(0.18, -0.02, 2.31)],
+			["mirror_box", "Tail", Vector3(0.16, 0.04, 0.04), Vector3(0.13, 0.12, 2.31)], # above the plate
 			["box", "Trim", Vector3(0.6, 0.12, 0.15), Vector3(0, -0.2, 2.25)],
 		],
 	},

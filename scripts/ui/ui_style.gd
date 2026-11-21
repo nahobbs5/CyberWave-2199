@@ -442,9 +442,11 @@ static var _flags_two_tone: Dictionary = {}
 ## The crossed checkered flags in real colours (white and black squares,
 ## black poles and outline), for gold buttons where a single dark tint reads
 ## as grey. Draw it untinted. Cached per size.
-static func flags_two_tone(size: int) -> Texture2D:
-	if _flags_two_tone.has(size):
-		return _flags_two_tone[size]
+## light_poles: white poles (for dark backgrounds) instead of black ones.
+static func flags_two_tone(size: int, light_poles: bool = false) -> Texture2D:
+	var key := "%d/%s" % [size, light_poles]
+	if _flags_two_tone.has(key):
+		return _flags_two_tone[key]
 	var img := Image.create(size, size, false, Image.FORMAT_RGBA8)
 	var s := float(size)
 	var w := maxf(0.09, 1.6 / s) # pole thickness, in icon widths
@@ -457,24 +459,25 @@ static func flags_two_tone(size: int) -> Texture2D:
 			for sy in SUB:
 				for sx in SUB:
 					var q := Vector2((x + (sx + 0.5) / SUB) / s, (y + (sy + 0.5) / SUB) / s)
-					sum += _flags_two_tone_sample(q, w, OUTLINE, INK)
+					sum += _flags_two_tone_sample(q, w, OUTLINE, INK, light_poles)
 			var c := sum / float(SUB * SUB)
 			# Un-premultiply so edges keep their colour.
 			if c.a > 0.0:
 				c = Color(c.r / c.a, c.g / c.a, c.b / c.a, c.a)
 			img.set_pixel(x, y, c)
 	var tex := ImageTexture.create_from_image(img)
-	_flags_two_tone[size] = tex
+	_flags_two_tone[key] = tex
 	return tex
 
 
 ## One premultiplied sample of flags_two_tone at q (0..1).
-static func _flags_two_tone_sample(q: Vector2, w: float, outline: float, ink: Color) -> Color:
-	# Poles on top: black.
+static func _flags_two_tone_sample(q: Vector2, w: float, outline: float, ink: Color,
+		light_poles: bool = false) -> Color:
+	# Poles on top: black (white with light_poles).
 	var pole := minf(_segment_distance(q, Vector2(0.18, 0.92), Vector2(0.56, 0.08)),
 			_segment_distance(q, Vector2(0.82, 0.92), Vector2(0.44, 0.08)))
 	if pole <= w * 0.5:
-		return Color(ink.r, ink.g, ink.b, 1.0)
+		return Color(1, 1, 1, 1) if light_poles else Color(ink.r, ink.g, ink.b, 1.0)
 	for side in [-1.0, 1.0]:
 		var local := Vector2((q.x - 0.5) * side, q.y)
 		var y0 := 0.1 + local.x * 0.15

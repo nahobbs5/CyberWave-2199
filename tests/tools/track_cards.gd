@@ -6,7 +6,8 @@ extends SceneTree
 ##   godot --path . -s res://tests/tools/track_cards.gd
 ##   godot --path . -s res://tests/tools/track_cards.gd -- vegas_overdrive hoia_baciu
 ##   godot --path . -s res://tests/tools/track_cards.gd -- --size=2560x1440 --ss=2 six_flags_new_orleans
-## With no names, every built track in every cup is shot.
+## With no names, every built track in every cup is shot. Names are scene file
+## names; tracks outside the cups (test_circuit) can be named too.
 ##   --size=WxH  output size (default 1920x1080), whatever the window size is:
 ##               the shot renders in an offscreen viewport.
 ##   --ss=N      supersampling: render N times larger and scale down (default 1;
@@ -81,6 +82,15 @@ func _go() -> void:
 			var key := scene.get_file().get_basename()
 			if not scenes.has(scene) and (wanted.is_empty() or wanted.has(key)):
 				scenes.append(scene)
+	# Named tracks outside the cups (e.g. test_circuit) by scene file name.
+	for key in wanted:
+		var path := "res://scenes/tracks/%s.tscn" % key
+		if scenes.has(path):
+			continue
+		if ResourceLoader.exists(path):
+			scenes.append(path)
+		elif not Array(scenes).any(func(s: String) -> bool: return s.get_file().get_basename() == key):
+			push_warning("track_cards: no track scene named '%s'" % key)
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUT_DIR))
 	for scene in scenes:
 		await _shoot(scene)

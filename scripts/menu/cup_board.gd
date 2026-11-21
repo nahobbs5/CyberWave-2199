@@ -101,7 +101,7 @@ func preview(index: int) -> void:
 	if is_random(index):
 		_trophy_holder.add_child(CupBadge.new("random", false, 84.0))
 		_cup_title.text = "RANDOM"
-		_cup_info.text = "Any track from any cup"
+		_cup_info.text = ""
 	else:
 		var cup := cups[index]
 		var shut := not cup.is_open(grand_prix)

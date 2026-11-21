@@ -5,10 +5,15 @@ extends RefCounted
 ## texture(kind, px) makes a white texture, cached; tint with modulate.
 ##
 ## Kinds: robot, item_box, laurel, pin, pencil, gauge, rocket, wheel,
-## checker, lock. Any other kind falls back to UIStyle.cached_icon.
+## checker, lock, circuit, race_flags (white-and-black, not tintable). Any other kind falls back to UIStyle.cached_icon.
 
 const KINDS: Array[String] = ["robot", "item_box", "laurel", "pin", "pencil", "gauge", "rocket", "wheel",
-		"checker", "lock"]
+		"checker", "lock", "circuit"]
+## The "circuit" icon's track map: a closed, squiggly loop (wraps last -> first).
+const CIRCUIT: Array[Vector2] = [Vector2(0.2, 0.86), Vector2(0.62, 0.86), Vector2(0.81, 0.81),
+		Vector2(0.9, 0.66), Vector2(0.84, 0.52), Vector2(0.66, 0.52), Vector2(0.57, 0.42),
+		Vector2(0.64, 0.28), Vector2(0.8, 0.2), Vector2(0.74, 0.1), Vector2(0.5, 0.1),
+		Vector2(0.32, 0.2), Vector2(0.3, 0.4), Vector2(0.14, 0.5), Vector2(0.1, 0.72)]
 const FILL := -1.0
 const HOLE := 1.0
 
@@ -16,6 +21,8 @@ static var _cache: Dictionary = {}
 
 
 static func texture(kind: String, px: int) -> Texture2D:
+	if kind == "race_flags":
+		return UIStyle.flags_two_tone(px, true)
 	if not KINDS.has(kind):
 		return UIStyle.cached_icon(kind, px)
 	var key := "%s/%d" % [kind, px]
@@ -138,6 +145,12 @@ static func distance(kind: String, q: Vector2) -> float:
 				var cx := int(floor((q.x - 0.14) / 0.19))
 				var cy := int(floor((q.y - 0.1) / 0.16))
 				return FILL if (cx + cy) % 2 == 0 else maxf(d, 0.05)
+			return d
+		"circuit":
+			# A minimap of a race track, with a start / finish tick on the straight.
+			var d := NeonIcons._segment(q, Vector2(0.42, 0.78), Vector2(0.42, 0.94))
+			for i in CIRCUIT.size():
+				d = minf(d, NeonIcons._segment(q, CIRCUIT[i], CIRCUIT[(i + 1) % CIRCUIT.size()]))
 			return d
 		"lock":
 			var d := INF

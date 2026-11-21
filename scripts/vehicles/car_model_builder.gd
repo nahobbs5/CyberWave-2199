@@ -327,9 +327,9 @@ static func _get_cached(id: String, design: Dictionary) -> Dictionary:
 	var decal: Vector3 = design.get("decal", Vector3(door[1] + 0.012, lerpf(door[2] + SILL_DROP, door[3], 0.55), decal_z))
 	anchors["DecalL"] = Transform3D(Basis(Vector3.UP, -PI * 0.5), Vector3(-decal.x, decal.y, decal.z))
 	anchors["DecalR"] = Transform3D(Basis(Vector3.UP, PI * 0.5), decal)
-	var ex: float = last[1] * 0.5
-	anchors["ExhaustL"] = Transform3D(Basis.IDENTITY, Vector3(-ex, last[2] + 0.07, last[0] + 0.02))
-	anchors["ExhaustR"] = Transform3D(Basis.IDENTITY, Vector3(ex, last[2] + 0.07, last[0] + 0.02))
+	var exhaust: Vector3 = design.get("exhaust", Vector3(last[1] * 0.5, last[2] + 0.07, last[0] + 0.02))
+	anchors["ExhaustL"] = Transform3D(Basis.IDENTITY, Vector3(-exhaust.x, exhaust.y, exhaust.z))
+	anchors["ExhaustR"] = Transform3D(Basis.IDENTITY, exhaust)
 	var min_w := INF
 	for s in stations:
 		if s[0] > -1.2 and s[0] < 1.2:

@@ -319,7 +319,7 @@ func _build() -> void:
 			_race_type.add_item(t)
 		_race_type.selected = race_type_index()
 		_race_type.item_selected.connect(set_race_type)
-		_add_row(rows, SetupWidgets.setting_row("flags", "Race Type", _race_type))
+		_add_row(rows, SetupWidgets.setting_row("race_flags", "Race Type", _race_type))
 	# Engine class: under Race Type in Versus, first in Grand Prix.
 	_cc = NeonStepper.new()
 	for c in RaceConfig.CC_CLASSES:
@@ -346,7 +346,7 @@ func _build() -> void:
 	for i in range(1, 10):
 		_laps.add_item(str(i))
 	_laps.item_selected.connect(func(_i: int) -> void: _update_note())
-	_laps_row = SetupWidgets.setting_row("flags", "Laps", _laps)
+	_laps_row = SetupWidgets.setting_row("circuit", "Laps", _laps)
 	_laps_row.visible = mode == RaceConfig.Mode.VERSUS
 	rows.add_child(_laps_row)
 	_weapons = NeonToggle.new()

@@ -1,5 +1,5 @@
 # CYBERWAVE 2199
-## Game Design Document — Version 10.14
+## Game Design Document — Version 10.15
 
 **Status:** Development Baseline  
 **Engine:** Godot 4  
@@ -57,7 +57,7 @@ The initial release focuses on polished offline racing: single player and 2–4 
 A race, or a set of races, against seven AI opponents. Set up Mario Kart style:
 
 1. Race setup: vehicle, race type (Standard, Elimination or Mirror), engine class (**CC**, §2.1a), **number of races** (1, 2, 3, 4, 6, 8, 12 or 16), lap count, Easy / Normal / Hard AI, weapons on or off. Defaults: Standard, 3 races, 3 laps, Normal AI, weapons on; split-screen Multiplayer uses the same defaults (Versus mode) with NPCs on.
-2. Cup screen (Versus): a row of cup badges plus a "?" Random badge. Moving across the badges previews each cup's races; opening a cup moves into its race cards, and picking one races it. The Random badge opens a **RANDOM** card for a random built track from any cup (in a series, one not raced yet while any are left). Built tracks of a cup that's locked for Grand Prix can be raced here.
+2. Cup screen (Versus): a row of cup badges plus a "?" Random badge. Moving across the badges previews each cup's races; opening a cup moves into its race cards, and picking one races it. The Random badge opens a **RANDOM** card ("Surprise me", no cup info line) for a random built track from any cup (in a series, one not raced yet while any are left). Built tracks of a cup that's locked for Grand Prix can be raced here.
 
 With more than one race, the track screen comes back before each race (showing "RACE 2 OF 4"; the standings stay on the results screen). Points and the next grid work like a Grand Prix (§2.2). The final results name the series winner. A series isn't saved: quitting part-way ends it. Each race pays its normal coins, with no cup bonus.
 
@@ -1354,7 +1354,7 @@ Previously selected settings are remembered until the game is closed; every laun
 
 The setup, cup and track screens share the Settings look (§11.2): the dimmed street behind them, the screen name along the top, coins at the top right and Back at the bottom left.
 
-- **Race setup.** On the left is a settings panel with one rounded row per setting, each with an icon and a ‹ value › stepper (left / right changes it): Race Type, CC, Races, NPC Difficulty, Laps, and an ON / OFF switch for Items. Grand Prix shows CC, a Mirror ON / OFF switch, NPC Difficulty and Items. A note explains the race type and Mirror (Grand Prix: "Grand Prix: Race a Complete Cup", plus a warning when a saved Grand Prix would be replaced); there's no CC line. Below the panel is a big gold button: Track Selection, or Choose Cup. On the right is the car on its platform with gold arrows (LB / RB also change it), its name on a magenta banner, a cyan type tag, segmented stat bars with icons, a top-speed card (in km/h for the chosen CC, §2.1a) and the plate. Hints along the bottom: B Back, A Next, Y Garage. The garage's Back returns to the setup.
+- **Race setup.** On the left is a settings panel with one rounded row per setting, each with an icon (Laps has its own track-map loop icon) and a ‹ value › stepper (left / right changes it): Race Type, CC, Races, NPC Difficulty, Laps, and an ON / OFF switch for Items. Grand Prix shows CC, a Mirror ON / OFF switch, NPC Difficulty and Items. A note explains the race type and Mirror (Grand Prix: "Grand Prix: Race a Complete Cup", plus a warning when a saved Grand Prix would be replaced); there's no CC line. Below the panel is a big gold button: Track Selection, or Choose Cup. On the right is the car on its platform with gold arrows (LB / RB also change it), its name on a magenta banner, a cyan type tag, segmented stat bars with icons, a top-speed card (in km/h for the chosen CC, §2.1a) and the plate. Hints along the bottom: B Back, A Next, Y Garage. The garage's Back returns to the setup.
 - **Cup screen (Grand Prix) and track screen (Versus).** These use the cup cards and race panel described in §2.2. Grand Prix confirms with a gold START GRAND PRIX button at the bottom right. A track without a screenshot shows its outline instead.
 
 ## 11.4 Garage
@@ -1980,5 +1980,6 @@ Changes after Version 1.0 should be tracked as revisions rather than silently re
 | 10.12 | 2026-11-18 | The **CAR UNLOCKED screen moves after the results** (you see the scores first): any results button opens it, and Continue then carries out that button. Shown in split screen too (§9.1a). |
 | 10.13 | 2026-11-18 | **Interceptor** is now unlocked by finding the developer track (Vegas Overdrive) in Practice and running a full lap; the game pauses on CAR UNLOCKED, Continue drives on. Revenant is the only Time Trial rival unlock (§2.5, §9.1a). |
 | 10.14 | 2026-11-19 | Docs brought up to date. The overview (§1.1, §1.2) and Document Control (§20) now say the game is single player **and** 2–4 player local split screen, not single-player only. **Marble Canyon** (built 2026-11-16) documented as American Cup race 1 (§2.2, §8.6j, §12.1); **Vegas Overdrive** is now a Practice-only developer track and THE STRIP in Time Trial (§8, §8.3, §11.2). The separate Advanced Weapons doc is retired: Hunter-Killer Drone, Overdrive Protocol and System Override are now specified here, with Triple Spike, in the roster, self-effects and fairness rules (§6.3–§6.5). |
+| 10.15 | 2026-11-21 | Polish: the **Interceptor**'s tail lights sit above the plate and its exhaust tips on the diffuser below it, so the plate is clear. Laps rows use a new track-map loop icon instead of the Race Type flags. The Random cup shows no cup info line and its card always reads "Surprise me". |
 
-**End of Game Design Document — Version 10.14**
+**End of Game Design Document — Version 10.15**

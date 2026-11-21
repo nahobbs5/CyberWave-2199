@@ -181,7 +181,7 @@ func _build() -> void:
 	for cup in cups:
 		for i in cup.track_names.size():
 			any_built = any_built or cup.is_track_built(i)
-	board.setup(cups, false, not tt, _laps(), "A track you haven't raced yet" if s != null else "Surprise me", any_built)
+	board.setup(cups, false, not tt, _laps(), "Surprise me", any_built)
 	board.race_picked.connect(pick_track)
 	board.random_picked.connect(pick_random)
 	layout.content.add_theme_constant_override("margin_top", 26)

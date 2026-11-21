@@ -276,7 +276,7 @@ func _build() -> void:
 	_mode = _stepper(MODES)
 	left.add_child(SetupWidgets.setting_row("flags", "Mode", _mode))
 	_race_type = _stepper(RACE_TYPES)
-	_race_type_row = SetupWidgets.setting_row("flags", "Race Type", _race_type)
+	_race_type_row = SetupWidgets.setting_row("race_flags", "Race Type", _race_type)
 	left.add_child(_race_type_row)
 	var classes: Array[String] = []
 	for c in RaceConfig.CC_CLASSES:
@@ -304,7 +304,7 @@ func _build() -> void:
 	for i in range(1, 10):
 		laps.append(str(i))
 	_laps = _stepper(laps)
-	_laps_row = SetupWidgets.setting_row("flags", "Laps", _laps)
+	_laps_row = SetupWidgets.setting_row("circuit", "Laps", _laps)
 	right.add_child(_laps_row)
 	_weapons = NeonToggle.new()
 	right.add_child(_toggle_row("item_box", "Items", _weapons))
