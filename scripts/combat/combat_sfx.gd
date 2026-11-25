@@ -15,6 +15,12 @@ const BARRIER_SMASH := preload("res://sounds/freesound_community-planks-clatteri
 const HK_LAUNCH := preload("res://sounds/fronbondi_skegs-field-launching-a-small-model-rocket-recording-240139.mp3")
 const HK_WARNING := preload("res://sounds/freesound_community-missile-lock-detected-34074JustBeeps.mp3")
 const HK_EXPLOSION := preload("res://sounds/voicebosch-missile-explosion-168600.mp3")
+## System Glitch. The file opens with ~1 s of near silence and runs 8 s, so it
+## is played from GLITCH_START and cut to the length it's needed for.
+const GLITCH := preload("res://sounds/pwlpl-digital-glitch-361820.mp3")
+const GLITCH_START := 0.95
+## How long the user who fires System Glitch hears it (s).
+const GLITCH_CAST := 1.5
 ## Fire pressed while an EMP has weapons offline (ItemSlots).
 const DENIED := preload("res://sounds/u_edtmwfwu7c-beep-329314.mp3")
 
@@ -24,6 +30,9 @@ const HEADROOM_DB := 3.0
 
 ## Distance (m) at which a sound is at full volume before it starts fading.
 const UNIT_SIZE := 12.0
+
+## Fade (s) when a clip is cut short (play_on's max_length).
+const FADE_OUT := 0.4
 
 
 ## Level (dB) for each clip, so its loudest moments sit just above the race
@@ -41,14 +50,17 @@ static func level_db(stream: AudioStream) -> float:
 		HK_LAUNCH: return 3.0
 		HK_WARNING: return 8.0
 		HK_EXPLOSION: return 5.0
+		GLITCH: return 12.0
 		DENIED: return -5.0
 	return 0.0
 
 
 ## Plays `stream` on `node` at its level plus `volume_db`, and returns the
 ## player (null when `node` isn't in the scene tree). Players are named
-## "Sfx<name>" so tests can find them.
-static func play_on(node: Node3D, stream: AudioStream, sfx_name: String, volume_db: float = 0.0) -> AudioStreamPlayer3D:
+## "Sfx<name>" so tests can find them. `from` starts partway into the clip;
+## a `max_length` (s) cuts it short with a quick fade.
+static func play_on(node: Node3D, stream: AudioStream, sfx_name: String, volume_db: float = 0.0,
+		from: float = 0.0, max_length: float = 0.0) -> AudioStreamPlayer3D:
 	if node == null or not node.is_inside_tree():
 		return null
 	var player := AudioStreamPlayer3D.new()
@@ -60,5 +72,11 @@ static func play_on(node: Node3D, stream: AudioStream, sfx_name: String, volume_
 	player.max_db = player.volume_db + HEADROOM_DB
 	player.finished.connect(player.queue_free)
 	node.add_child(player)
-	player.play()
+	player.play(from)
+	if max_length > 0.0 and max_length < stream.get_length() - from:
+		var fade := minf(FADE_OUT, max_length * 0.5)
+		var tween := player.create_tween()
+		tween.tween_interval(max_length - fade)
+		tween.tween_property(player, "volume_db", player.volume_db - 40.0, fade)
+		tween.tween_callback(player.queue_free)
 	return player

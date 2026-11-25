@@ -335,7 +335,7 @@ One song per screen or track (`scripts/core/music.gd`; race music per track in `
 
 - **Final lap:** in races of 2+ laps (Elimination included), the race music speeds up 5%, pitch and all, over about 0.4 s. Restarting or leaving the race puts it back.
 - **Countdown:** the clip has four beeps a second apart, one per start light and word (3, 2, 1, START).
-- **Weapon and track sounds** (`CombatSfx`, GDD §12.2) come from the car or object that makes them, so they fade with distance: Firewall up / down, Railgun, EMP, System Override, Road Spike drop, Hunter-Killer launch / lock warning / hit, barrier smashes, and a denied beep when you press fire while an EMP has your weapons offline. Each clip has its own level so it sits just above the music, and a hard limiter on the Master bus stops loud moments distorting.
+- **Weapon and track sounds** (`CombatSfx`, GDD §12.2) come from the car or object that makes them, so they fade with distance: Firewall up / down, Railgun, EMP, System Override, System Glitch (a digital glitch, skipped past its silent first second: a 1.5 s burst at the user, the whole 4.5 s glitch on glitched human players; `play_on` can start partway in and cut a clip short with a fade), Road Spike drop, Hunter-Killer launch / lock warning / hit, barrier smashes, and a denied beep when you press fire while an EMP has your weapons offline. Each clip has its own level so it sits just above the music, and a hard limiter on the Master bus stops loud moments distorting.
 - **Buses:** music plays on the Music bus and effects on the SFX bus (`default_bus_layout.tres`), so the Settings sliders control each.
 - **Web build:** plays 96 kbps `.ogg` copies from `music/web/`.
 - Every song and clip used must be credited. `tests/test_ui.gd` checks this by the author prefix in each file name.
@@ -615,7 +615,7 @@ It keeps its jump ramps, water patches, EMP puddle and smashable fence.
 - **AI shortcuts:** each AI decides once per approach (the shortcut's `ai_chance` × the difficulty's `shortcut_chance` × aggression), then follows the shortcut at its own safe speeds and rejoins the racing line. If it gets pinned while still heading for a shortcut it isn't on (a late turn-in), it gives up and follows the main road.
 - **Junction design:** a shortcut should leave at a gentle angle (the Luxor one turns in about 55°). A first version peeled off at nearly 110° and trapped a car in the wedge between the roads.
 - **`TrackFeature`**: boost pads, boost rings, EMP puddles, breakable barriers, **jump ramps** and **water**, placed by distance (or near a layout point) on the main road or a shortcut. Every kind is lit and marked so it reads at speed.
-  - **Boost pad patterns:** each main-road boost pad is laid out as a single pad, three in a diagonal, or a triangle (two side by side, then one ahead). The pattern is random per pad but seeded by the track, so a track always has the same layout. The first pad is the `TrackFeature`; the others are generated copies (`pattern_copy`). Checks: `tests/test_boost_patterns.gd`.
+  - **Boost pad patterns:** each main-road boost pad is laid out as a single pad, three in a diagonal, a triangle (two side by side, then one ahead), or a diamond (one, two side by side, one). The pattern is random per pad but seeded by the track, so a track always has the same layout. The first pad is the `TrackFeature`; the others are generated copies (`pattern_copy`). Checks: `tests/test_boost_patterns.gd`.
   - **Boost pad look:** a beveled graphite frame with clipped corners, a ribbed centre plate with three segmented cyan chevrons and four amber corner lights (`TrackFeature._pad_visual`, `assets/shaders/boost_pad.gdshader`). A soft pulse runs through the chevrons in the driving direction; crossing the pad flashes it once (`pad_flash()`). Reduced flashing slows the pulse and softens the flash. Frame meshes are cached per width and shared. Checks: `tests/test_boost_pad_look.gd`.
   - **Boost ring look** (ref `reference files/Cyberwave New Boost Ring.png`): a slim beveled graphite frame (`RingFrame`), a segmented magenta inner rim (`RingRim`, `assets/shaders/boost_ring.gdshader`), four graphite pods with amber lamps (`RingMarker0-3`, `RingLamp0-7`, the pads' amber material) and two feet; the centre stays clear. Frame and rim meshes are shared by every ring. A second area, `RingApproach` (±22 m along the road, so Mirror works too), starts two rim pulses that run one lap in 0.9 s (`sweep`); the pass-through flashes the inner edge (`flash`). Reduced flashing: dimmer pulses, flash at 35%. The boost trigger is unchanged (7×7×2 m). Checks: `tests/test_boost_ring_look.gd`.
   - **Item boxes:** every jump ramp carries a row of "?" crates just above its lip (about one per 4.5 m of width), so you grab one at take-off. A boost pad or ring gets two crates when its `item_boxes` box is ticked in the Inspector. Currently ticked: The Stacks' Gallery pad and Rotunda ring, Six Flags' Coaster Run pad, and Vegas' second Strip pad and tunnel ring.
@@ -701,7 +701,7 @@ The crates (`scripts/combat/weapon_crate.gd`, GDD v10.1 §6.1, ref "reference fi
   - A Firewall soaks a System Override (and is used up). It does nothing against a Hunter-Killer.
   - An active Overdrive ignores every attack.
   - The Hunter-Killer joins the INCOMING warning. AI rivals try the Nitro dodge against it.
-  - The target also gets a "HUNTER-KILLER LOCKED" banner during the 1.2 s warning.
+  - The target also gets a "HUNTER-KILLER LOCKED" banner with a "Nitro now!" prompt during the 1.2 s warning (a Nitro is the only dodge; a Firewall doesn't help).
   - Icons:
     - The drone and Overdrive icons are crops of the concept art in `reference files/Weapons concept_art/`.
     - System Override's is a symbol (a hacked chip split by a glitch bolt), drawn as SVG.
@@ -827,7 +827,7 @@ Swap in any suite:
 | `test_weapon_roulette.gd` | Crate roulette (spin, press to land, HUD) and one Overdrive / System Override per inventory |
 | `test_weapon_sfx.gd` | Weapon and barrier sounds |
 | `test_race_end.gd` | Last-car classification, projected times, DNF |
-| `test_boost_patterns.gd` | Boost-pad patterns: single, diagonal, triangle, same layout every load |
+| `test_boost_patterns.gd` | Boost-pad patterns: single, diagonal, triangle, diamond, same layout every load |
 | `test_podium.gd` | Podium ceremony timeline |
 | `test_slipstream_ring.gd` | Slipstream ring |
 | `test_multiplayer.gd` | Split screen: devices, views, setup screens |
@@ -919,7 +919,7 @@ The exit code is non-zero if anything fails. These checks do **not** judge how t
 
 - **Game:** Cyberwave 2199 by Nathan Hobbs.
 - **Music:** see the Audio table above (ikoliks_aj, ikoliks, alex-morgan, Lilex, TheBoysBeats, SPmusic, kulakovka, Ob-Lix, ed-musicproductions, sonican, elisaveta_stoycheva, theorienvibes, restum-anoush, DesiFreeMusic, vishiv, Jean-Paul-V, vadim_makes_sound, stageechoesmusic).
-- **Sound:** Short beep countdown, Shield drop, Electric zap 001, Crowbar drop 1 (rear), Planks clattering and Missile lock detected by freesound_community; Sci-fi energy shield activation by vadim_makes_sound; Electrical current 2 by 49053354; Sci-fi weapon shoot firing pulse TM 05 by rescopicsound; Field: launching a small model rocket by fronbondi_skegs; Missile explosion by voicebosch; Beep by u_edtmwfwu7c.
+- **Sound:** Short beep countdown, Shield drop, Electric zap 001, Crowbar drop 1 (rear), Planks clattering and Missile lock detected by freesound_community; Sci-fi energy shield activation by vadim_makes_sound; Electrical current 2 by 49053354; Sci-fi weapon shoot firing pulse TM 05 by rescopicsound; Field: launching a small model rocket by fronbondi_skegs; Missile explosion by voicebosch; Beep by u_edtmwfwu7c; Digital glitch by pwlpl.
 - **Fonts:** Oxanium and Rajdhani, SIL Open Font License 1.1 (`assets/fonts/`).
 - **Engine:** Godot Engine, MIT License.
 

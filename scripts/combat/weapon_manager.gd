@@ -379,10 +379,12 @@ func _system_glitch(user: VehicleController, weapon: WeaponData) -> Array[Vehicl
 	pulse.color = weapon.color
 	pulse.position = user.global_position
 	add_child(pulse)
-	CombatSfx.play_on(user, CombatSfx.EMP, "Glitch")
+	# The user hears a short burst; a glitched human hears it for as long as
+	# their screen is scrambled.
+	CombatSfx.play_on(user, CombatSfx.GLITCH, "Glitch", 0.0, CombatSfx.GLITCH_START, CombatSfx.GLITCH_CAST)
 	for car in hit:
 		if car.is_player:
-			CombatSfx.play_on(car, CombatSfx.OVERRIDE, "Glitch", -4.0)
+			CombatSfx.play_on(car, CombatSfx.GLITCH, "Glitch", 0.0, CombatSfx.GLITCH_START, weapon.effect_duration)
 	return hit
 
 

@@ -227,7 +227,7 @@ func _process(delta: float) -> void:
 		# The Hunter-Killer's 1.2 s warning before it strikes.
 		var locked := _hunter_killer_warning(p.vehicle) and not p.finished
 		if locked and not _was_hk_locked:
-			announcer.announce("HUNTER-KILLER LOCKED", 1.2, UIStyle.DANGER, "Firewall now!")
+			announcer.announce("HUNTER-KILLER LOCKED", 1.2, UIStyle.DANGER, "Nitro now!")
 			_play("incoming")
 		_was_hk_locked = locked
 

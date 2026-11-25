@@ -51,6 +51,11 @@ func _run_all() -> void:
 		_check(s != null and s.get_length() > 0.1 and s.get_length() < 8.0,
 				"clip loads and is short (%.2f s)" % (s.get_length() if s != null else 0.0))
 		_check(s is AudioStreamMP3 and not (s as AudioStreamMP3).loop, "clip doesn't loop")
+	# System Glitch's clip is long; it is skipped into and cut short instead.
+	var glitch := CombatSfx.GLITCH as AudioStream
+	_check(glitch is AudioStreamMP3 and not (glitch as AudioStreamMP3).loop, "glitch clip loads and doesn't loop")
+	_check(glitch.get_length() - CombatSfx.GLITCH_START > _weapon("system_glitch").effect_duration,
+			"glitch clip outlasts the glitch effect (%.2f s)" % glitch.get_length())
 
 	# Levels: louder clips can't be capped by max_db, and Master has a limiter.
 	var boosted := CombatSfx.play_on(null, CombatSfx.HK_WARNING, "X")
@@ -133,6 +138,33 @@ func _run_all() -> void:
 			ai_quiet = ai_quiet and _sfx(car, "Override") == 0
 	_check(humans_ok, "override sound plays on hacked human cars")
 	_check(ai_quiet, "no override sound on hacked AI cars (no stacking)")
+
+	# System Glitch from last place: a short burst at the user, the full glitch
+	# for glitched humans, nothing on AI.
+	for racer in race.racers:
+		racer.vehicle.status.clear_all()
+	await _frames(2)
+	var glitched: Array[VehicleController] = wm._system_glitch(last, _weapon("system_glitch"))
+	_check(glitched.size() > 0, "glitch hit someone")
+	var cast := last.get_node_or_null("SfxGlitch") as AudioStreamPlayer3D
+	_check(cast != null and cast.stream == CombatSfx.GLITCH, "glitch sound plays at the user")
+	_check(cast != null and cast.get_playback_position() >= CombatSfx.GLITCH_START - 0.05,
+			"glitch sound skips the silent lead-in")
+	humans_ok = true
+	ai_quiet = true
+	for car in glitched:
+		if car.is_player:
+			humans_ok = humans_ok and _sfx(car, "Glitch") == 1
+		else:
+			ai_quiet = ai_quiet and _sfx(car, "Glitch") == 0
+	_check(humans_ok, "glitch sound plays on glitched human cars")
+	_check(ai_quiet, "no glitch sound on glitched AI cars")
+	var cut_wait := 0.0
+	while _sfx(last, "Glitch") > 0 and cut_wait < 4.0:
+		await create_timer(0.25).timeout
+		cut_wait += 0.25
+	_check(_sfx(last, "Glitch") == 0 and cut_wait >= CombatSfx.GLITCH_CAST - 0.3,
+			"the user's glitch burst is cut short (%.2f s)" % cut_wait)
 
 	# Hunter-Killer: launch at the user, lock beeps then explosion on the leader.
 	for racer in race.racers:

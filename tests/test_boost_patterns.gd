@@ -1,6 +1,6 @@
 extends SceneTree
 ## Boost-pad patterns (TrackFeature._place_pattern): every main-road pad is a
-## single, a diagonal of three or a triangle, fixed per track. Run:
+## single, a diagonal of three, a triangle or a diamond, fixed per track. Run:
 ##   godot --headless --import
 ##   godot --headless --fixed-fps 60 -s res://tests/test_boost_patterns.gd
 
@@ -32,7 +32,7 @@ func _run_all() -> void:
 		for pad in pads.filter(func(f: TrackFeature) -> bool: return not f.pattern_copy):
 			var copies := pads.filter(func(f: TrackFeature) -> bool:
 				return f.pattern_copy and String(f.name).begins_with(TrackCircuit.GENERATED_PREFIX + String(pad.name) + "_")).size()
-			var want := 0 if pad.pattern == &"single" else 2
+			var want: int = {&"single": 0, &"diagonal": 2, &"triangle": 2, &"diamond": 3}[pad.pattern]
 			# Kilwa drops a copy that would sit under a column.
 			groups_ok = groups_ok and (copies == want or (track.road_columns.size() > 0 and copies <= want))
 		var layout := _layout(track)
@@ -47,9 +47,9 @@ func _run_all() -> void:
 		await process_frame
 	_current = "all tracks"
 	_check(all_on_road, "every boost pad sits on the road")
-	_check(groups_ok, "each pattern has its pads (single 1, diagonal 3, triangle 3)")
-	_check(seen.has(&"single") and seen.has(&"diagonal") and seen.has(&"triangle"),
-			"all three patterns appear across the tracks (%s)" % [seen.keys()])
+	_check(groups_ok, "each pattern has its pads (single 1, diagonal 3, triangle 3, diamond 4)")
+	_check(TrackFeature.PATTERNS.all(func(p: StringName) -> bool: return seen.has(p)),
+			"all four patterns appear across the tracks (%s)" % [seen.keys()])
 	print("\n%d checks passed, %d failed" % [_passed, _failed])
 	quit(1 if _failed > 0 else 0)
 

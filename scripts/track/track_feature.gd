@@ -76,7 +76,8 @@ var mirror_landing: bool = false
 ## Main-road boost pads become a pattern (BoostPattern): this node is the
 ## first pad; the others are generated copies (pattern_copy).
 var pattern_copy: bool = false
-## The pattern this pad was given: &"single", &"diagonal" or &"triangle".
+## The pattern this pad was given: &"single", &"diagonal", &"triangle" or
+## &"diamond".
 var pattern: StringName = &"single"
 
 var _cooldowns: Dictionary = {}
@@ -100,7 +101,7 @@ func _ready() -> void:
 	_rebuild_visuals()
 
 
-const PATTERNS: Array[StringName] = [&"single", &"diagonal", &"triangle"]
+const PATTERNS: Array[StringName] = [&"single", &"diagonal", &"triangle", &"diamond"]
 ## Boost-pad patterns: metres between rows along the road, and sideways.
 const PATTERN_ROW_GAP := 14.0
 const DIAGONAL_STEP := 4.5
@@ -115,8 +116,8 @@ func place_on_track(track: TrackCircuit) -> void:
 	_place_at(track, 0.0, lateral)
 
 
-## Main-road boost pad: a single pad, three in a diagonal, or two side by
-## side then one (a triangle). Picked from a seed of the track and this
+## Main-road boost pad: a single pad, three in a diagonal, two side by
+## side then one (a triangle), or one, two side by side, one (a diamond). Picked from a seed of the track and this
 ## node's name, so a track always has the same layout.
 func _place_pattern(track: TrackCircuit) -> void:
 	var rng := RandomNumberGenerator.new()
@@ -133,6 +134,10 @@ func _place_pattern(track: TrackCircuit) -> void:
 		&"triangle":
 			var half := minf(TRIANGLE_HALF, room)
 			spots.append_array([Vector2(0.0, -half), Vector2(0.0, half), Vector2(PATTERN_ROW_GAP, 0.0)])
+		&"diamond":
+			var half := minf(TRIANGLE_HALF, room)
+			spots.append_array([Vector2.ZERO, Vector2(PATTERN_ROW_GAP, -half),
+					Vector2(PATTERN_ROW_GAP, half), Vector2(PATTERN_ROW_GAP * 2.0, 0.0)])
 		_:
 			spots.append(Vector2.ZERO)
 	# Keep the whole pattern on the road.

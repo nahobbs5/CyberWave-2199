@@ -1,5 +1,5 @@
 # CYBERWAVE 2199
-## Game Design Document — Version 10.15
+## Game Design Document — Version 10.16
 
 **Status:** Development Baseline  
 **Engine:** Godot 4  
@@ -1048,7 +1048,7 @@ Grades reach about 11% on the descent, eased at every hairpin apex. Each switchb
 Tracks may contain:
 - Question-mark weapon crates
 - Collectible coins
-- Speed boost pads. Each pad on the main road is laid out as one of three patterns: a single pad, three in a diagonal, or two side by side then one ahead (a triangle). The pattern is picked at random per pad but seeded by the track, so a track always has the same layout. Look (v10.6): a beveled graphite frame with clipped corners around a ribbed dark centre, three segmented cyan chevrons pointing the way to drive (bright enough to read far downtrack in daylight), and amber lights in the four corners so the pad's width is easy to judge on approach. A soft pulse runs through the chevrons from back to front about once a second, and the whole pad flashes once as a car crosses it. With Reduced flashing the pulse is slower and shallower and the flash is a soft brighten.
+- Speed boost pads. Each pad on the main road is laid out as one of four patterns: a single pad, three in a diagonal, two side by side then one ahead (a triangle), or one, then two side by side, then one (a diamond). The pattern is picked at random per pad but seeded by the track, so a track always has the same layout. Look (v10.6): a beveled graphite frame with clipped corners around a ribbed dark centre, three segmented cyan chevrons pointing the way to drive (bright enough to read far downtrack in daylight), and amber lights in the four corners so the pad's width is easy to judge on approach. A soft pulse runs through the chevrons from back to front about once a second, and the whole pad flashes once as a car crosses it. With Reduced flashing the pulse is slower and shallower and the flash is a soft brighten.
 - Speed boost rings: a slim graphite frame with a segmented magenta inner rim, four amber markers (top, bottom and sides, like the boost pads' corner lights) and a clear centre, so you can line up the approach and see the track beyond. As a car comes within about 20 m, two light pulses run once round the rim; as it passes through, the inner edge flashes once. With Reduced flashing the pulses are dimmer and the flash is a soft brighten.
 - Jump ramps. Most are full width; every race track also has at least one small ramp (about half the road wide, 0.9–1.1 m high) on one side of a straight or crest, so you choose a side: take the jump (air time, a trick, the ramp's two item boxes) or drive past it. Small ramps: Arashiyama (main street), Catacombs (ossuary crest), Choquequirao (west terrace), Gardens by the Bay (skyway crest), Hoia Baciu (forest crest), Kilwa Kisiwani (harbour road), The Stacks (loading dock), Vatnajökull (moraine crest), Quinta Normal (park avenue), Nyiragongo (lava flats), Marble Canyon (canyon descent); Vale da Lua's rock hump, Six Flags' Bayou jump and the Crazy House's Bone Gallery stair jump were cut to half width, and Chefchaouen's Fountain Steps drop already was. A second small ramp was added to every race track (v10.2), on the opposite side of the road to the first, on a straight well away (at least ~150 m) from the track's other ramps, half-pipes and shortcut junctions: `SmallRampB` (or `SmallRampA` where the first is a cut-down jump). On Gardens by the Bay it avoids the open edges.
 - Trick window: brushing the edge or ramp again just after take-off (within the 0.25 s lip grace, or on one wheel) no longer closes the trick window; only a real landing (two wheels down) does.
@@ -1555,7 +1555,7 @@ Weapon sounds come from the car (or object) that makes them, so they are loud cl
 | Smashing a breakable barrier (shortcut blockers included) | Planks clattering | The barrier |
 | Fire pressed while weapons are offline (EMP) | Short beep | User (human players only) |
 | Holo Decoy out | Sci-fi energy shield activation (quieter) | User |
-| System Glitch | Electric zap; electrical current on each glitched human player | User / glitched humans |
+| System Glitch | Digital glitch: a 1.5 s burst at the user; the full 4.5 s glitch (fading out as it ends) on each glitched human player | User / glitched humans |
 | Swarm Bots launched | Sci-fi weapon firing pulse (quieter) | User |
 
 Other sounds: the countdown beeps (§11.8), drift tones and the skid loop (§4.3), the Hunter-Killer's flight whine, recovery and Overdrive sounds, and the podium fanfare (§11.7a). Every song and clip used is listed in the credits.
@@ -1981,5 +1981,6 @@ Changes after Version 1.0 should be tracked as revisions rather than silently re
 | 10.13 | 2026-11-18 | **Interceptor** is now unlocked by finding the developer track (Vegas Overdrive) in Practice and running a full lap; the game pauses on CAR UNLOCKED, Continue drives on. Revenant is the only Time Trial rival unlock (§2.5, §9.1a). |
 | 10.14 | 2026-11-19 | Docs brought up to date. The overview (§1.1, §1.2) and Document Control (§20) now say the game is single player **and** 2–4 player local split screen, not single-player only. **Marble Canyon** (built 2026-11-16) documented as American Cup race 1 (§2.2, §8.6j, §12.1); **Vegas Overdrive** is now a Practice-only developer track and THE STRIP in Time Trial (§8, §8.3, §11.2). The separate Advanced Weapons doc is retired: Hunter-Killer Drone, Overdrive Protocol and System Override are now specified here, with Triple Spike, in the roster, self-effects and fairness rules (§6.3–§6.5). |
 | 10.15 | 2026-11-21 | Polish: the **Interceptor**'s tail lights sit above the plate and its exhaust tips on the diffuser below it, so the plate is clear. Laps rows use a new track-map loop icon instead of the Race Type flags. The Random cup shows no cup info line and its card always reads "Surprise me". |
+| 10.16 | 2026-11-24 | New boost-pad pattern: the **diamond** (one pad, two side by side, one) joins single, diagonal and triangle (§8.7). **System Glitch** has its own digital-glitch sound in place of the EMP zap and electrical current (§12.2). |
 
-**End of Game Design Document — Version 10.15**
+**End of Game Design Document — Version 10.16**
